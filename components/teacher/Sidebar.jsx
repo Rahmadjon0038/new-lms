@@ -23,16 +23,16 @@ const TeacherSidebarItems = [
     icon: BookOpenIcon,
     href: "/teacher/my-groups",
   },
-  {
-    name: "Davomat Jurnali", // Kiritish uchun mosroq nom
-    icon: ChartBarIcon,
-    href: "/teacher/attendance-journal",
-  },
-  {
-    name: "Talabalar To'lovlari", // To'lovlar statusini ko'rish uchun
-    icon: BriefcaseIcon,
-    href: "/teacher/payments-info",
-  },
+  // {
+  //   name: "Davomat Jurnali", // Kiritish uchun mosroq nom
+  //   icon: ChartBarIcon,
+  //   href: "/teacher/attendance-journal",
+  // },
+  // {
+  //   name: "Talabalar To'lovlari", // To'lovlar statusini ko'rish uchun
+  //   icon: BriefcaseIcon,
+  //   href: "/teacher/payments-info",
+  // },
 ];
 
 function TeacherSidebar() {

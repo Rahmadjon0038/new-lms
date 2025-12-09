@@ -1,18 +1,17 @@
 // app/layout.js
 
+import AdministratorSidebar from "../../components/admistrator/Sidebar";
 import Navbar from "../../components/Navbar";
-import TeacherSidebar from "../../components/teacher/Sidebar";
 
 export default function RootLayout({ children }) {
   return (
     <html lang="uz">
       <body>
-        <Navbar userName="Rahmadjon Abdullayev" role="Teacher" />
+        <Navbar userName="Dildora Alimjanova" role="Admistrator" />
         <div className="flex min-h-screen bg-gray-50">
           {/* 1. Sidebar */}
           {/* Bu yerda sizning sidebar komponentingiz turadi. */}
-          <TeacherSidebar />
-
+          <AdministratorSidebar />
           {/* 2. Asosiy Kontent (Sahifalar) */}
           {/* Next.js sahifalari (page.js) shu joyga yuklanadi. */}
           <main className="flex-1 p-6 md:p-8 overflow-y-auto">{children}</main>

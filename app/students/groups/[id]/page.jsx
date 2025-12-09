@@ -1,3 +1,4 @@
+"use client";
 import React from "react";
 import {
   ClockIcon,
@@ -9,7 +10,7 @@ import {
   AcademicCapIcon,
 } from "@heroicons/react/24/outline";
 
-// --- Mock Data (Telefon raqamlari qo'shildi) ---
+// --- Mock Data (Talaba Email va Telefonlari olib tashlandi) ---
 const mockGroupDetails = {
   id: 1,
   name: "Web Dasturlash (Fullstack) 1-guruh",
@@ -17,65 +18,47 @@ const mockGroupDetails = {
   teacher: {
     name: "Jasur Raximov",
     phone: "+998 90 123 45 67",
-    email: "jasur.rax@example.com",
   },
   schedule: "Dush / Chor / Jum - 18:00",
   time: "18:00 - 20:00",
   days: ["Dushanba", "Chorshanba", "Juma"],
   currentStudents: 15,
   uniqueCode: "WD-FS-101",
-  // Guruhdoshlar ma'lumotiga telefon raqami qo'shildi
+  // Guruhdoshlar ma'lumotidan faqat ism qoldi
   peers: [
     {
       id: 101,
       name: "Ali Karimov",
-      email: "student1@example.com",
-      phone: "+998 99 111 22 33",
+      // email olib tashlandi
     },
     {
       id: 102,
       name: "Olim Salimov",
-      email: "olim.s@example.com",
-      phone: "+998 90 333 44 55",
+      // email olib tashlandi
     },
     {
       id: 103,
       name: "Diyora Olimova",
-      email: "diyora.o@example.com",
-      phone: "+998 91 555 66 77",
+      // email olib tashlandi
     },
     {
       id: 104,
       name: "Samandar Ergashev",
-      email: "samandar.e@example.com",
-      phone: "+998 97 888 99 00",
+      // email olib tashlandi
     },
   ],
 };
 
 // --- Yordamchi Komponent: Guruhdoshlar Kartochkasi ---
 const PeerCard = ({ peer }) => (
-  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 transition duration-150 hover:bg-gray-100 shadow-sm">
-    {/* Chap Qism: Ism va Email */}
+  <div className="flex items-center p-4 bg-gray-50 rounded-lg border border-gray-200 transition duration-150 hover:bg-gray-100 shadow-sm">
     <div className="flex items-center">
       <UserCircleIcon className="h-8 w-8 text-blue-500 mr-3 flex-shrink-0" />
       <div>
+        {/* Faqat Ism qoldi */}
         <p className="text-sm font-semibold text-gray-800">{peer.name}</p>
-        <p className="text-xs text-gray-500">{peer.email}</p>
+        {/* Email olib tashlandi */}
       </div>
-    </div>
-
-    {/* O'ng Qism: Telefon Raqami */}
-    <div className="flex items-center text-sm font-medium text-blue-600 ml-4 flex-shrink-0">
-      {/* Telefon raqamiga bosilganda qo'ng'iroq qilish imkoniyati (tel: link) */}
-      <a
-        href={`tel:${peer.phone.replace(/\s/g, "")}`}
-        className="flex items-center hover:text-blue-700"
-        title={`Qo'ng'iroq qilish: ${peer.phone}`}
-      >
-        <PhoneIcon className="h-4 w-4 mr-1" />
-        {peer.phone}
-      </a>
     </div>
   </div>
 );
@@ -112,13 +95,16 @@ function GroupDetails() {
           <p className="text-xl font-bold text-gray-800">
             {group.teacher.name}
           </p>
-          <div className="mt-3 space-y-1 text-sm text-gray-600">
-            <p className="flex items-center">
-              <PhoneIcon className="h-4 w-4 mr-2 text-gray-400" />{" "}
+          {/* O'qituvchi telefoni qoldi */}
+          <p className="mt-3 text-sm text-gray-600 flex items-center">
+            <PhoneIcon className="h-4 w-4 mr-2 text-gray-400" />{" "}
+            <a
+              href={`tel:${group.teacher.phone.replace(/\s/g, "")}`}
+              className="hover:text-blue-600 font-medium"
+            >
               {group.teacher.phone}
-            </p>
-            <p className="text-xs text-gray-500">{group.teacher.email}</p>
-          </div>
+            </a>
+          </p>
         </div>
 
         {/* Dars Jadvali Kartochkasi */}
@@ -150,7 +136,7 @@ function GroupDetails() {
         </div>
       </div>
 
-      {/* 2. Guruhdoshlar Ro'yxati (Endi telefon raqami bilan) */}
+      {/* 2. Guruhdoshlar Ro'yxati */}
       <div className="bg-white p-6 rounded-xl shadow-xl border border-gray-100 mb-10">
         <h2 className="text-xl font-semibold text-gray-800 mb-5 flex items-center">
           <UsersIcon className="h-6 w-6 mr-2 text-blue-600" /> Guruhdoshlaringiz
@@ -162,8 +148,6 @@ function GroupDetails() {
           ))}
         </div>
       </div>
-
-      {/* 3. Haftalik Dars Jadvali bloki TALABINGIZGA BINOAN O'CHIRILDI */}
     </div>
   );
 }

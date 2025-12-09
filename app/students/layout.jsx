@@ -7,7 +7,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="uz">
       <body>
-        <Navbar userName="G'ISH" />
+        <Navbar userName="Abdurohmonov Dilshod" role="Student" />
         <div className="flex min-h-screen bg-gray-50">
           {/* 1. Sidebar */}
           {/* Bu yerda sizning sidebar komponentingiz turadi. */}

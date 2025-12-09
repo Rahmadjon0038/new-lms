@@ -7,7 +7,7 @@ import {
   WalletIcon,
   CheckIcon,
   XMarkIcon,
-  PhoneIcon, // Telefon ikonkasini qo'shamiz
+  PhoneIcon,
 } from "@heroicons/react/24/outline";
 
 // --- Mock Data ---
@@ -17,7 +17,6 @@ const mockGroup = {
   schedule: ["Dush", "Chor", "Jum"],
 };
 
-// **15 ta dars kuni** bilan sinaymiz
 const mockDates = [
   "01/12",
   "04/12",
@@ -36,122 +35,145 @@ const mockDates = [
   "19/01",
 ];
 const MAX_ATTENDANCE = mockDates.length;
+const REQUIRED_MONTHLY_PAYMENT = 500000; // Majburiy to'lov miqdori
 
-// Talabalar Davomat, To'lov va YANGI: Telefon Ma'lumotlari (Har oy uchun)
+// Pul formatlash yordamchi funksiya
+const formatMoney = (amount) => {
+  // Summani formatlash va "so'm" so'zini qo'shish
+  return (
+    new Intl.NumberFormat("uz-UZ", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount) + " so'm"
+  );
+};
+
+// Talabalar Davomat, To'lov Miqdori va Telefon Ma'lumotlari
 const allStudentsData = {
   "Fevral 2026": [
     {
       id: 101,
       name: "Ali Karimov",
       phone: "+998 90 123 45 67",
-      paid: true,
+      paidAmount: 500000,
+      requiredAmount: REQUIRED_MONTHLY_PAYMENT,
       dailyRecords: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     },
     {
       id: 102,
       name: "Olim Salimov",
       phone: "+998 99 234 56 78",
-      paid: false,
+      paidAmount: 200000,
+      requiredAmount: REQUIRED_MONTHLY_PAYMENT,
       dailyRecords: [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
     },
     {
       id: 103,
       name: "Diyora Olimova",
       phone: "+998 91 345 67 89",
-      paid: true,
+      paidAmount: 500000,
+      requiredAmount: REQUIRED_MONTHLY_PAYMENT,
       dailyRecords: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
     },
     {
       id: 104,
       name: "Samandar Ergashev",
       phone: "+998 97 456 78 90",
-      paid: false,
+      paidAmount: 0,
+      requiredAmount: REQUIRED_MONTHLY_PAYMENT,
       dailyRecords: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     },
     {
       id: 105,
       name: "Lola Abduqayumova",
       phone: "+998 93 567 89 01",
-      paid: true,
+      paidAmount: 500000,
+      requiredAmount: REQUIRED_MONTHLY_PAYMENT,
       dailyRecords: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1],
     },
     {
       id: 106,
       name: "Ziyodulla O'ktamov",
       phone: "+998 94 678 90 12",
-      paid: true,
+      paidAmount: 500000,
+      requiredAmount: REQUIRED_MONTHLY_PAYMENT,
       dailyRecords: [1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0],
     },
     {
       id: 107,
       name: "Nigina Saidova",
       phone: "+998 95 789 01 23",
-      paid: false,
+      paidAmount: 400000,
+      requiredAmount: REQUIRED_MONTHLY_PAYMENT,
       dailyRecords: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     },
     {
       id: 108,
       name: "Akbar Xolmatov",
       phone: "+998 98 890 12 34",
-      paid: true,
+      paidAmount: 500000,
+      requiredAmount: REQUIRED_MONTHLY_PAYMENT,
       dailyRecords: [1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     },
     {
       id: 109,
       name: "Shaxzoda Alimova",
       phone: "+998 90 901 23 45",
-      paid: true,
+      paidAmount: 500000,
+      requiredAmount: REQUIRED_MONTHLY_PAYMENT,
       dailyRecords: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1],
     },
     {
       id: 110,
       name: "Dilshod Kamolov",
       phone: "+998 99 012 34 56",
-      paid: false,
+      paidAmount: 10000,
+      requiredAmount: REQUIRED_MONTHLY_PAYMENT,
       dailyRecords: [0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     },
   ],
-  // Boshqa oylar ma'lumotlari (qisqartirilgan)
   "Yanvar 2026": [
     {
       id: 101,
       name: "Ali Karimov",
       phone: "+998 90 123 45 67",
-      paid: true,
+      paidAmount: 500000,
+      requiredAmount: REQUIRED_MONTHLY_PAYMENT,
       dailyRecords: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     },
     {
       id: 102,
       name: "Olim Salimov",
       phone: "+998 99 234 56 78",
-      paid: true,
+      paidAmount: 500000,
+      requiredAmount: REQUIRED_MONTHLY_PAYMENT,
       dailyRecords: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
     },
     {
       id: 103,
       name: "Diyora Olimova",
       phone: "+998 91 345 67 89",
-      paid: true,
+      paidAmount: 500000,
+      requiredAmount: REQUIRED_MONTHLY_PAYMENT,
       dailyRecords: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     },
     {
       id: 104,
       name: "Samandar Ergashev",
       phone: "+998 97 456 78 90",
-      paid: true,
+      paidAmount: 500000,
+      requiredAmount: REQUIRED_MONTHLY_PAYMENT,
       dailyRecords: [1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1],
     },
-    // ... boshqa talabalar ...
   ],
 };
 
 const monthOptions = Object.keys(allStudentsData).reverse();
 
-// --- Asosiy Komponent ---
+// --- Asosiy Komponent Logikasi ---
 function GroupAttendance() {
   const [currentMonth, setCurrentMonth] = useState(monthOptions[0]);
 
-  // ... useMemo, useState va useEffect logikasi o'zgarishsiz qoldi ...
   const initialStudents = useMemo(() => {
     return allStudentsData[currentMonth] || [];
   }, [currentMonth]);
@@ -183,9 +205,32 @@ function GroupAttendance() {
     return dailyRecords.reduce((sum, record) => sum + record, 0);
   };
 
+  // To'lov uchun rang hisoblash funksiyasi (Qator rangi va maydon rangi uchun)
+  const getPaymentColor = (paid, required) => {
+    const isFullyPaid = paid >= required;
+    const ratio = paid / required;
+
+    let bg, text, rowBg;
+
+    if (isFullyPaid) {
+      bg = "bg-green-100";
+      text = "text-green-700";
+      rowBg = "hover:bg-gray-50";
+    } else if (ratio > 0.1) {
+      bg = "bg-yellow-100";
+      text = "text-yellow-700";
+      rowBg = "bg-yellow-50/50 hover:bg-yellow-100/50";
+    } else {
+      bg = "bg-red-100";
+      text = "text-red-700";
+      rowBg = "bg-red-50/50 hover:bg-red-100/50";
+    }
+    return { bg, text, rowBg };
+  };
+
   return (
     <div className="min-h-full">
-      {/* ... Sarlavha va Oy Tanlash ... */}
+      {/* --- Sarlavha --- */}
       <a
         href="/teacher/my-groups"
         className="flex items-center text-blue-600 hover:text-blue-700 mb-6 font-medium transition duration-150"
@@ -198,12 +243,12 @@ function GroupAttendance() {
         {mockGroup.name}
       </h1>
 
-      {/* OY TANLASH BLOKI */}
+      {/* --- OY TANLASH BLOKI --- */}
       <div className="flex items-center space-x-4 mb-8 bg-gray-50 p-4 rounded-xl border border-gray-200 shadow-sm max-w-lg">
-        <CalendarDaysIcon className="h-6 w-6 text-blue-600 flex-shrink-0" />
+        <CalendarDaysIcon className="h-6 w-6 text-blue-600 " />
         <label
           htmlFor="month-selector"
-          className="text-base font-semibold text-gray-700 flex-shrink-0"
+          className="text-base whitespace-nowrap font-semibold text-gray-700 "
         >
           Oy Tanlash:
         </label>
@@ -221,7 +266,7 @@ function GroupAttendance() {
         </select>
       </div>
 
-      {/* Talabalar Jadvali */}
+      {/* --- Talabalar Jadvali --- */}
       <div className="bg-white rounded-xl shadow-xl border border-gray-100 overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-blue-50 sticky top-0">
@@ -232,20 +277,21 @@ function GroupAttendance() {
               >
                 Talaba
               </th>
-              {/* YANGI USTUN: Telefon Raqami */}
+              {/* Telefon Raqami */}
               <th
                 scope="col"
                 className="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider min-w-[150px]"
               >
                 Telefon
               </th>
-              {/* Mavjud Ustunlar */}
+              {/* SODDALASHTIRILGAN USTUN: To'lov */}
               <th
                 scope="col"
-                className="px-6 py-3 text-center text-xs font-medium text-blue-700 uppercase tracking-wider"
+                className="px-6 py-3 text-center text-xs font-medium text-blue-700 uppercase tracking-wider min-w-[150px]"
               >
                 To'lov
               </th>
+              {/* Kunlar */}
               {mockDates.slice(0, MAX_ATTENDANCE).map((date, index) => (
                 <th
                   key={index}
@@ -277,14 +323,17 @@ function GroupAttendance() {
                     : attendancePercent < 70
                     ? "text-yellow-600"
                     : "text-green-600";
-                const rowClass = student.paid
-                  ? "hover:bg-gray-50"
-                  : "bg-red-50/50 hover:bg-red-100";
+
+                // To'lovni hisoblash
+                const { bg, text, rowBg } = getPaymentColor(
+                  student.paidAmount,
+                  student.requiredAmount
+                );
 
                 return (
                   <tr
                     key={student.id}
-                    className={`transition duration-100 ${rowClass}`}
+                    className={`transition duration-100 ${rowBg}`}
                   >
                     {/* Talaba nomi */}
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -296,7 +345,7 @@ function GroupAttendance() {
                       </div>
                     </td>
 
-                    {/* YANGI QISM: Telefon Raqami */}
+                    {/* Telefon Raqami */}
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <a
                         href={`tel:${student.phone.replace(/\s/g, "")}`}
@@ -307,18 +356,13 @@ function GroupAttendance() {
                       </a>
                     </td>
 
-                    {/* To'lov Statusi */}
+                    {/* To'lov Miqdori (Faqat to'langan summa) */}
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       <div
-                        className={`px-3 py-1 text-xs font-semibold rounded-full flex items-center justify-center
-                                                ${
-                                                  student.paid
-                                                    ? "bg-green-100 text-green-700"
-                                                    : "bg-red-100 text-red-700 border border-red-400"
-                                                }`}
+                        className={`px-3 py-2 text-sm font-bold rounded-lg ${bg} ${text}`}
                       >
-                        <WalletIcon className="h-4 w-4 mr-1" />
-                        {student.paid ? "To'landi" : "Yo'q (Qarz)"}
+                        <WalletIcon className="h-4 w-4 inline mr-1" />
+                        {formatMoney(student.paidAmount)}
                       </div>
                     </td>
 
@@ -366,7 +410,7 @@ function GroupAttendance() {
             ) : (
               <tr>
                 <td
-                  colSpan={4 + MAX_ATTENDANCE}
+                  colSpan={5 + MAX_ATTENDANCE}
                   className="text-center py-10 text-gray-500"
                 >
                   Bu oy uchun talabalar ma'lumoti topilmadi.
@@ -376,25 +420,6 @@ function GroupAttendance() {
           </tbody>
         </table>
       </div>
-
-      {/* <div className="mt-8 p-4 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 rounded-lg shadow-sm">
-        <p className="text-sm font-medium">Eslatma:</p>
-        <ul className="list-disc list-inside ml-4 text-xs">
-          <li>
-            **Telefon Raqami:** Har bir talabaning telefon raqami jadvalga
-            qo'shildi va to'g'ridan-to'g'ri qo'ng'iroq qilish imkoniyati
-            yaratildi.
-          </li>
-          <li>
-            **Kunlik Belgilash:** Har bir sana ostidagi belgiga bosish orqali
-            **Davomatni `1` (✅) yoki `0` (❌) ga o'zgartirishingiz** mumkin.
-          </li>
-          <li>
-            **To'lov Qarz:** Agar talabaning to'lovi **To'lanmagan** bo'lsa,
-            qator **och pushti rangda** ajratiladi.
-          </li>
-        </ul>
-      </div> */}
     </div>
   );
 }
