@@ -15,6 +15,7 @@ import ViewStudentPay from "../../../components/admistrator/ViewStudentPay";
 
 // ====================================================================
 // --- MOCK DATA: O'qituvchilar Ro'yxati ---
+// QO'SHIMCHA: latePaidStudentsCount maydoni qo'shildi
 // ====================================================================
 
 const initialMockTeachers = [
@@ -28,9 +29,10 @@ const initialMockTeachers = [
     unpaidStudents: 5,
     avans: 400000,
     isMonthlySalaryPaid: false,
-    latePaymentsReceived: 150000, // Kechikkan to'lov bor, lekin oylik yopilmagan
+    latePaymentsReceived: 150000, // Kechikkan to'lov summasi
     isLatePaymentPaid: false,
     pricePerStudent: 300000,
+    latePaidStudentsCount: 3, // Kechikib to'lagan o'quvchilar soni
   },
   {
     id: 2,
@@ -45,6 +47,7 @@ const initialMockTeachers = [
     latePaymentsReceived: 0,
     isLatePaymentPaid: true,
     pricePerStudent: 250000,
+    latePaidStudentsCount: 0,
   },
   {
     id: 3,
@@ -56,9 +59,10 @@ const initialMockTeachers = [
     unpaidStudents: 7,
     avans: 1000000,
     isMonthlySalaryPaid: false,
-    latePaymentsReceived: 300000, // Kechikkan to'lov bor, oylik yopilmagan
+    latePaymentsReceived: 300000, // Kechikkan to'lov summasi
     isLatePaymentPaid: false,
     pricePerStudent: 350000,
+    latePaidStudentsCount: 5, // Kechikib to'lagan o'quvchilar soni
   },
   {
     id: 4,
@@ -70,9 +74,10 @@ const initialMockTeachers = [
     unpaidStudents: 0,
     avans: 500000,
     isMonthlySalaryPaid: true, // Oylik yopilgan
-    latePaymentsReceived: 450000, // Kechikkan to'lov bor
+    latePaymentsReceived: 450000, // Kechikkan to'lov summasi
     isLatePaymentPaid: false, // Lekin hali to'lanmagan
     pricePerStudent: 225000,
+    latePaidStudentsCount: 4, // Kechikib to'lagan o'quvchilar soni
   },
   {
     id: 5,
@@ -87,6 +92,7 @@ const initialMockTeachers = [
     latePaymentsReceived: 100000,
     isLatePaymentPaid: false,
     pricePerStudent: 300000,
+    latePaidStudentsCount: 2, // Kechikib to'lagan o'quvchilar soni
   },
   {
     id: 6,
@@ -101,6 +107,7 @@ const initialMockTeachers = [
     latePaymentsReceived: 0,
     isLatePaymentPaid: true,
     pricePerStudent: 150000,
+    latePaidStudentsCount: 0,
   },
 ];
 
@@ -124,7 +131,7 @@ const calculateSalary = (teacher) => {
 
   let latePaymentShare = 0;
 
-  // ✅ Yangilangan mantiq: Kechikgan to'lov ulushi faqat asosiy oylik yopilgan bo'lsa hisoblanadi
+  // Kechikgan to'lov ulushi faqat asosiy oylik yopilgan bo'lsa hisoblanadi
   if (
     teacher.isMonthlySalaryPaid &&
     teacher.latePaymentsReceived > 0 &&
@@ -390,8 +397,8 @@ function TeachersPage() {
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[150px]">
                 Fan / Ulush (%)
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px]">
-                O'quvchilar (Tolov/Qarz)
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">
+                O'quvchilar (To'lagan/Jami)
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">
                 Umumiy Tushum
@@ -406,8 +413,9 @@ function TeachersPage() {
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px]">
                 2. Oyni Yopish
               </th>
+              {/* === O'ZGARTIRILGAN SARLAVHA === */}
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">
-                3. Kechikgan Oylik
+                3. Kechikkan To'lov Ma'lumoti
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px]">
                 4. Kechikgan Yopish
@@ -530,7 +538,7 @@ function TeachersPage() {
                       )}
                     </td>
 
-                    {/* O'quvchilar */}
+                    {/* O'quvchilar (To'lagan/Qarz) */}
                     <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-600">
                       <div className="flex items-center space-x-1">
                         <span className="text-green-600 font-semibold">
@@ -602,15 +610,22 @@ function TeachersPage() {
                       )}
                     </td>
 
-                    {/* 3. Kechikgan Oylik */}
+                    {/* 3. Kechikkan To'lov Ma'lumoti (YANGILANGAN QISM) */}
                     <td className="px-4 py-2 whitespace-nowrap text-sm font-medium">
-                      {/* ✅ Mantiq yangilandi: Faqat asosiy oylik yopilgan bo'lsa kechikkan to'lovni ko'rsatish */}
+                      {/* Kechikkan to'lov bor va asosiy oylik yopilgan bo'lsa */}
                       {teacher.isMonthlySalaryPaid &&
                       teacher.latePaymentsReceived > 0 ? (
-                        <span className="font-bold text-yellow-600">
-                          {teacher.latePaymentsReceived.toLocaleString("uz-UZ")}{" "}
-                          UZS
-                        </span>
+                        <>
+                          <span className="font-bold text-yellow-600 block">
+                            {/* O'qituvchining ulushini ko'rsatish */}
+                            {latePaymentShare.toLocaleString("uz-UZ")} UZS
+                          </span>
+                          <span className="text-xs text-gray-500 font-medium">
+                            {/* Kechikib to'lagan o'quvchilar sonini ko'rsatish */}
+                            ({teacher.latePaidStudentsCount} nafar o'quvchi
+                            to'ladi)
+                          </span>
+                        </>
                       ) : (
                         <span className="text-gray-400">0 UZS</span>
                       )}
