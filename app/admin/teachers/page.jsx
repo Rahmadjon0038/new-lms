@@ -8,7 +8,7 @@ import {
   PlusIcon,
   ArrowTrendingUpIcon,
   CheckIcon,
-  XMarkIcon,
+  XMarkIcon, 
   LockClosedIcon,
 } from "@heroicons/react/24/outline";
 import ViewStudentPay from "../../../components/admistrator/ViewStudentPay";
