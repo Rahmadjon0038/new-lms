@@ -153,9 +153,8 @@ const StudentsPage = () => {
         }
     };
 
-
     return (
-        <div className="p-4 md:p-8 max-w-7xl mx-auto font-sans bg-gray-50 min-h-screen">
+        <div className="p-4 md:p-8  mx-auto font-sans bg-gray-50 min-h-screen">
             <h1 className="text-3xl font-bold mb-6 text-gray-800">🎓 Talabalar Ro'yxati (Admin)</h1>
 
             {/* --- Filtrlar va Qidiruv Bloki --- */}
