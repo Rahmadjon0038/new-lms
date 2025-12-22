@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import Image from "next/image";
+import Snowfall from "react-snowfall";
 
 function Login() {
   const [username, setUsername] = useState("");
@@ -35,12 +36,16 @@ function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#fdfdfd] p-4 sm:p-6 lg:p-8 font-sans relative overflow-hidden">
-
-      {/* Orqa fondagi dekorativ elementlar - Mobil qurilmalarda kichraytirilgan */}
+    // bg-[#5578e1] -> bg-[#A60E07] ga o'zgardi
+    <div className="min-h-screen flex items-center justify-center bg-[#A60E07] p-4 sm:p-6 lg:p-8 font-sans relative overflow-hidden">
+      <Snowfall
+        snowflakeCount={100}
+        color="white"
+      />
+      {/* Orqa fondagi dekorativ elementlar */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
-        <div className="absolute -top-12 -right-12 sm:-top-24 sm:-right-24 w-48 h-48 sm:w-96 sm:h-96 bg-red-50 rounded-full opacity-50"></div>
-        <div className="absolute -bottom-12 -left-12 sm:-bottom-24 sm:-left-24 w-48 h-48 sm:w-96 sm:h-96 bg-red-50 rounded-full opacity-50"></div>
+        <div className="absolute -top-12 -right-12 sm:-top-24 sm:-right-24 w-48 h-48 sm:w-96 sm:h-96 bg-white/10 rounded-full opacity-50"></div>
+        <div className="absolute -bottom-12 -left-12 sm:-bottom-24 sm:-left-24 w-48 h-48 sm:w-96 sm:h-96 bg-white/10 rounded-full opacity-50"></div>
       </div>
 
       <div className="bg-white p-6 sm:p-8 md:p-12 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] w-full max-w-[600px] z-10 border border-gray-100 transition-all duration-300">
@@ -48,8 +53,8 @@ function Login() {
         {/* Logotip qismi */}
         <div className="flex flex-col items-center mb-8 sm:mb-10">
           <div className="w-20 h-20 sm:w-24 sm:h-24 mb-4 relative">
-            <div className="absolute inset-0 border-2 border-[#8B1A1A] rounded-full flex items-center justify-center p-2 overflow-hidden bg-white">
-              {/* To'g'ri rasm manzili */}
+            {/* Border rangi #A60E07 ga o'zgardi */}
+            <div className="absolute inset-0 border-2 border-[#A60E07] rounded-full flex items-center justify-center p-2 overflow-hidden bg-white">
               <Image
                 src='/logo.png'
                 alt="Taraqqiyot Logo"
@@ -79,7 +84,8 @@ function Login() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
-                className="w-full pl-11 pr-4 py-3 sm:py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-[#8B1A1A]/20 focus:border-[#8B1A1A] outline-none transition-all text-gray-700 text-sm sm:text-base"
+                // Focus ring va border ranglari #A60E07 ga moslandi
+                className="w-full pl-11 pr-4 py-3 sm:py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-[#A60E07]/20 focus:border-[#A60E07] outline-none transition-all text-gray-700 text-sm sm:text-base"
               />
             </div>
           </div>
@@ -99,16 +105,18 @@ function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full pl-11 pr-4 py-3 sm:py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-[#8B1A1A]/20 focus:border-[#8B1A1A] outline-none transition-all text-gray-700 text-sm sm:text-base"
+                // Focus ring va border ranglari #A60E07 ga moslandi
+                className="w-full pl-11 pr-4 py-3 sm:py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-[#A60E07]/20 focus:border-[#A60E07] outline-none transition-all text-gray-700 text-sm sm:text-base"
               />
             </div>
           </div>
 
           {/* Login Button */}
+          {/* bg-[#1448E5] -> bg-[#A60E07] va shadow ranglari o'zgardi */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full group relative flex justify-center py-3.5 sm:py-4 px-4 border border-transparent rounded-2xl text-white font-bold bg-[#8B1A1A] hover:bg-[#6b1414] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#8B1A1A] transition-all overflow-hidden shadow-lg shadow-red-900/20"
+            className="w-full group relative flex justify-center py-3.5 sm:py-4 px-4 border border-transparent rounded-2xl text-white font-bold bg-[#A60E07] hover:bg-[#8B0C06] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#A60E07] transition-all overflow-hidden shadow-lg shadow-[#A60E07]/20"
           >
             <span className="relative z-10 flex items-center text-sm sm:text-base">
               {loading && (
