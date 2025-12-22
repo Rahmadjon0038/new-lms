@@ -4,11 +4,13 @@ import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import Image from "next/image";
 import Snowfall from "react-snowfall";
+import { useGetNotify } from "../hooks/notify";
 
 function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const notify  = useGetNotify();
   const router = useRouter();
 
   const handleSubmit = (e) => {
@@ -29,7 +31,7 @@ function Login() {
         Cookies.set("role", role, { expires: 1 });
         window.location.href = `/${role}`;
       } else {
-        alert("Username yoki parol xato! \n(Test: admin / 123456)");
+        notify('ok','Username yoki parol xato! \n(Test: admin / 123456)')
         setLoading(false);
       }
     }, 1200);
