@@ -22,6 +22,7 @@ const sidebarItems = [
     icon: Squares2X2Icon,
     href: "/admin", // Administratorlarning asosiy yo'li
   },
+   
   {
     name: "O'qituvchilar",
     icon: UserGroupIcon, // O'qituvchilarni ifodalovchi ikonka

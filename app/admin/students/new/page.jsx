@@ -1,297 +1,160 @@
 "use client";
-import React, { useState } from "react";
-import {
-  UserIcon,
-  LockClosedIcon,
-  PhoneIcon,
-  UserGroupIcon,
-  ArrowRightIcon,
-  ArrowLeftIcon,
+import React, { useState, useEffect } from "react";
+import { 
+  UserIcon, AcademicCapIcon, ExclamationTriangleIcon 
 } from "@heroicons/react/24/outline";
 
-// Mock ma'lumotlar
-const MOCK_SUBJECTS = ["Web Dasturlash", "Python AI", "Ingliz Tili (B1)", "Grafik Dizayn", "SMM", "Matematika"];
-const MOCK_GROUPS = {
-  "Web Dasturlash": [
-    { groupName: "Web Pro 201", teacher: "Jasur Raximov" },
-    { groupName: "Web Pro 202", teacher: "Jasur Raximov" },
-  ],
-  "Python AI": [
-    { groupName: "Python 301", teacher: "Shahnoza Qodirova" },
-    { groupName: "Python 302", teacher: "Shahnoza Qodirova" },
-  ],
-  "Ingliz Tili (B1)": [
-    { groupName: "English B1 N1", teacher: "Raxmadjon Abdullaev" },
-    { groupName: "English B1 N2", teacher: "Raxmadjon Abdullaev" },
-  ],
-  "Grafik Dizayn": [{ groupName: "Grafika B1", teacher: "Shoxrux Tursunov" }],
-  "SMM": [{ groupName: "SMM Master", teacher: "Shoxrux Tursunov" }],
-  "Matematika": [{ groupName: "Matematika K2", teacher: "Umid Karimov" }],
-  default: [{ groupName: "Yangi Guruh", teacher: "Noma'lum O'qituvchi" }],
+const ACADEMIC_DATA = {
+  "Web Dasturlash": {
+    teachers: ["Jasur Raximov", "Anvar Olimov"],
+    groups: [
+      { name: "Web Pro 201", price: 800000 },
+      { name: "Web Pro 202", price: 850000 }
+    ]
+  },
+  "Python AI": {
+    teachers: ["Shahnoza Qodirova"],
+    groups: [
+      { name: "Python 301", price: 1000000 },
+      { name: "Python 302", price: 1200000 }
+    ]
+  }
 };
 
-const Page = () => {
-  const [step, setStep] = useState(1);
-  const [successMessage, setSuccessMessage] = useState("");
+const StudentRegistration = () => {
+  const [formData, setFormData] = useState({
+    name: "", surname: "", username: "", password: "",
+    phone: "", phone2: "", subject: "", teacher: "", group: "",
+    status: "active", course_price: 0, paid_amount: 0 
+  });
 
-  // 1-qadam: Login
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-
-  // 2-qadam: Shaxsiy ma'lumotlar
-  const [name, setName] = useState("");
-  const [surname, setSurname] = useState("");
-  const [phone1, setPhone1] = useState("");
-  const [phone2, setPhone2] = useState("");
-  const [subject, setSubject] = useState("");
-
-  // Xatolar
-  const [errors, setErrors] = useState({});
-
-  const validateStep1 = () => {
-    if (!username.trim() || !password.trim()) {
-      setErrors({ step1: "Username va parol majburiy!" });
-      return false;
+  useEffect(() => {
+    if (formData.subject && formData.group) {
+      const selectedGroup = ACADEMIC_DATA[formData.subject]?.groups.find(
+        (g) => g.name === formData.group
+      );
+      if (selectedGroup) {
+        setFormData((prev) => ({ ...prev, course_price: selectedGroup.price }));
+      }
     }
-    setErrors({});
-    return true;
+  }, [formData.group, formData.subject]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: name === "course_price" ? Number(value) : value,
+      ...(name === "subject" ? { teacher: "", group: "", course_price: 0 } : {}),
+    }));
   };
 
-  const validateStep2 = () => {
-    const err = {};
-    if (!name.trim()) err.name = "Ism majburiy";
-    if (!surname.trim()) err.surname = "Familiya majburiy";
-
-    // Faqat raqamlarni hisoblaymiz, kamida 9 ta raqam bo'lishi kerak
-    const digitsOnly = phone1.replace(/\D/g, "");
-    if (digitsOnly.length < 9) {
-      err.phone1 = "Telefon raqamida kamida 9 ta raqam bo'lishi kerak";
-    }
-
-    if (!subject) err.subject = "Fan tanlash majburiy";
-    setErrors(err);
-    return Object.keys(err).length === 0;
+  const handleRegister = (e) => {
+    e.preventDefault();
+    const payload = { ...formData, role: "student" };
+    console.log("Backendga yuboriladigan ma'lumot:", payload);
+    alert("Ma'lumotlar konsolga chiqdi!");
   };
-
-  const handleNextFromStep1 = () => {
-    if (validateStep1()) {
-      setSuccessMessage("Login muvaffaqiyatli yaratildi!");
-      setTimeout(() => {
-        setSuccessMessage("");
-        setStep(2);
-      }, 1500);
-    }
-  };
-
-  const handleSaveStudent = () => {
-    if (!validateStep2()) return;
-
-    const newStudent = {
-      id: Date.now(),
-      name,
-      surname,
-      phone: phone1.trim(),
-      phone2: phone2.trim() || null,
-      subject,
-      group: null,
-      teacher: null,
-      status: "Qo'shilmagan",
-      registrationDate: new Date().toISOString().split("T")[0],
-      username,
-    };
-
-    console.log("Yangi talaba saqlandi:", newStudent);
-    alert("Talaba muvaffaqiyatli qo'shildi! Status: Qo'shilmagan");
-  };
-
-  const availableGroups = subject ? MOCK_GROUPS[subject] || MOCK_GROUPS.default : [];
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl p-8">
-        <h1 className="text-3xl font-bold text-center text-gray-800 mb-8">
-          Yangi Talaba Qabul Qilish
-        </h1>
+    <div className="w-full min-h-screen bg-[#F8FAFC] p-6 lg:p-10 font-sans">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Talaba qabul qilish</h1>
+      </div>
 
-        {/* Qadamlar ko'rsatkichi — 2 ta */}
-        <div className="flex justify-center mb-10">
-          {[1, 2].map((i) => (
-            <div key={i} className="flex items-center">
-              <div
-                className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-white ${
-                  step >= i ? "bg-blue-600" : "bg-gray-300"
-                }`}
-              >
-                {i}
-              </div>
-              {i < 2 && <div className="w-48 h-1 bg-gray-300 mx-2" />}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <form onSubmit={handleRegister}>
+          
+          {/* 1. Shaxsiy ma'lumotlar */}
+          <div className="p-8 border-b border-slate-100">
+            <div className="flex items-center gap-2 mb-8 text-[#1448E5]">
+              <UserIcon className="h-5 w-5" />
+              <h2 className="font-bold uppercase tracking-wider text-xs">Shaxsiy ma'lumotlar</h2>
             </div>
-          ))}
-        </div>
-
-        {/* Muvaffaqiyat habari */}
-        {successMessage && (
-          <div className="mb-6 p-4 bg-green-100 text-green-700 rounded-lg text-center font-medium">
-            {successMessage}
-          </div>
-        )}
-
-        {/* 1-QADAM: Login */}
-        {step === 1 && (
-          <div>
-            <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-              <LockClosedIcon className="h-6 w-6 text-blue-600" />
-              Login yaratish
-            </h2>
-            <div className="space-y-5">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="masalan: alijon2005"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Parol</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="Kamida 6 belgidan iborat"
-                />
-              </div>
-              {errors.step1 && <p className="text-red-600 text-sm">{errors.step1}</p>}
-            </div>
-            <div className="mt-8 flex justify-end">
-              <button
-                onClick={handleNextFromStep1}
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg flex items-center gap-2 transition"
-              >
-                Keyingi qadam
-                <ArrowRightIcon className="h-5 w-5" />
-              </button>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <input name="name" placeholder="Ism *" onChange={handleChange} required className="full-input" />
+              <input name="surname" placeholder="Familiya *" onChange={handleChange} required className="full-input" />
+              <input name="phone" placeholder="Telefon *" onChange={handleChange} required className="full-input" />
+              <input name="phone2" placeholder="Qo'shimcha tel (Ixtiyoriy)" onChange={handleChange} className="full-input border-dashed" />
             </div>
           </div>
-        )}
 
-        {/* 2-QADAM: Shaxsiy ma'lumotlar */}
-        {step === 2 && (
-          <div>
-            <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-              <UserIcon className="h-6 w-6 text-blue-600" />
-              Shaxsiy ma'lumotlar
-            </h2>
+          {/* 2. Akademik taqsimot */}
+          <div className="p-8 lg:p-10 border-b border-slate-100 bg-slate-50/20">
+            <div className="flex items-center gap-2 mb-8 text-[#1448E5]">
+              <AcademicCapIcon className="h-5 w-5" />
+              <h2 className="font-bold uppercase tracking-wider text-xs">O'quv ma'lumotlari</h2>
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Ism *</label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
-                {errors.name && <p className="text-red-600 text-xs mt-1">{errors.name}</p>}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Subject - Majburiy */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Fan *</label>
+                <select name="subject" value={formData.subject} onChange={handleChange} required className="full-input">
+                  <option value="">Fanni tanlang</option>
+                  {Object.keys(ACADEMIC_DATA).map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Familiya *</label>
-                <input
-                  type="text"
-                  value={surname}
-                  onChange={(e) => setSurname(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
-                {errors.surname && <p className="text-red-600 text-xs mt-1">{errors.surname}</p>}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Telefon 1 (majburiy) *
-                </label>
-                <input
-                  type="text"
-                  value={phone1}
-                  onChange={(e) => setPhone1(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="+998 90 123 45 67"
-                />
-                {errors.phone1 && <p className="text-red-600 text-xs mt-1">{errors.phone1}</p>}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Telefon 2</label>
-                <input
-                  type="text"
-                  value={phone2}
-                  onChange={(e) => setPhone2(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="+998 99 999 99 99"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Fan tanlang *</label>
-                <select
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">-- Fan tanlang --</option>
-                  {MOCK_SUBJECTS.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
+              {/* Teacher - Ixtiyoriy */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase italic">O'qituvchi (Ixtiyoriy)</label>
+                <select name="teacher" value={formData.teacher} onChange={handleChange} disabled={!formData.subject} className="full-input bg-white disabled:bg-slate-100 border-dashed">
+                  <option value="">Tanlash ixtiyoriy</option>
+                  {formData.subject && ACADEMIC_DATA[formData.subject].teachers.map(t => (
+                    <option key={t} value={t}>{t}</option>
                   ))}
                 </select>
-                {errors.subject && <p className="text-red-600 text-xs mt-1">{errors.subject}</p>}
               </div>
-            </div>
 
-            {/* Guruhga qo'shish tugmasi — faqat tugma (keyinchalik modal uchun) */}
-            {subject && availableGroups.length > 0 && (
-              <div className="mt-10 text-center">
-                <button
-                  onClick={() => {
-                    console.log("Guruhga qo'shish tugmasi bosildi — modal ochiladi");
-                  }}
-                  className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-md transition flex items-center gap-3 mx-auto"
-                >
-                  <UserGroupIcon className="h-6 w-6" />
-                  Guruhga qo'shish (ixtiyoriy)
-                </button>
+              {/* Group - Ixtiyoriy */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase italic">Guruh (Ixtiyoriy)</label>
+                <select name="group" value={formData.group} onChange={handleChange} disabled={!formData.subject} className="full-input bg-white disabled:bg-slate-100 border-dashed">
+                  <option value="">Tanlash ixtiyoriy</option>
+                  {formData.subject && ACADEMIC_DATA[formData.subject].groups.map(g => (
+                    <option key={g.name} value={g.name}>{g.name}</option>
+                  ))}
+                </select>
               </div>
-            )}
 
-            {subject && availableGroups.length === 0 && (
-              <p className="mt-8 text-center text-gray-500">Bu fan uchun guruhlar mavjud emas.</p>
-            )}
-
-            <div className="mt-12 flex justify-between">
-              <button
-                onClick={() => setStep(1)}
-                className="px-6 py-3 bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium rounded-lg flex items-center gap-2"
-              >
-                <ArrowLeftIcon className="h-5 w-5" />
-                Oldingi
-              </button>
-
-              <button
-                onClick={handleSaveStudent}
-                className="px-8 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg shadow-lg transition"
-              >
-                Saqlash
-              </button>
+              {/* Price */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Kurs summasi</label>
+                <input type="number" name="course_price" value={formData.course_price} onChange={handleChange} className="full-input font-bold text-blue-600" />
+              </div>
             </div>
           </div>
-        )}
+
+          {/* 3. Tizim ma'lumotlari */}
+          <div className="p-8 lg:p-10 bg-blue-50/30">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
+              <div className="bg-amber-50 p-4 rounded-xl border border-amber-200 flex items-center gap-3">
+                <ExclamationTriangleIcon className="h-6 w-6 text-amber-600" />
+                <p className="text-xs font-bold text-amber-900">Ushbu loginlarni talabaga bering</p>
+              </div>
+              <input name="username" placeholder="Username *" onChange={handleChange} required className="full-input bg-white" />
+              <input name="password" type="password" placeholder="Parol *" onChange={handleChange} required className="full-input bg-white" />
+            </div>
+          </div>
+
+          <div className="p-8 lg:p-10 flex justify-end gap-4 bg-white">
+            <button type="submit" className="px-16 py-4 bg-[#1448E5] text-white font-bold rounded-xl shadow-lg hover:bg-[#0c36b3] transition-all uppercase text-sm tracking-widest">
+              Talabani saqlash
+            </button>
+          </div>
+        </form>
       </div>
+
+      <style jsx>{`
+        .full-input {
+          width: 100%; padding: 12px 16px; border: 1.5px solid #E2E8F0; border-radius: 12px;
+          outline: none; font-size: 14px; color: #1e293b; transition: all 0.2s;
+        }
+        .full-input:focus { border-color: #1448E5; box-shadow: 0 0 0 3px rgba(20, 72, 229, 0.05); }
+        .border-dashed { border-style: dashed; }
+      `}</style>
     </div>
   );
 };
 
-export default Page;
+export default StudentRegistration;
