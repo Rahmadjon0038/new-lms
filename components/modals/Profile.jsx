@@ -1,253 +1,231 @@
 "use client";
 
-import React, { useState } from "react";
-// Heroicons ikonkalari
+import React, { useState, useEffect } from "react";
 import {
   XMarkIcon,
   UserIcon,
   PhoneIcon,
-  AcademicCapIcon, // Rol uchun ikonka
-  PencilSquareIcon, // Tahrirlash ikonka
-  ArrowUpOnSquareIcon, // Saqlash ikonka
+  AcademicCapIcon,
+  PencilSquareIcon,
+  CheckIcon,
+  CalendarDaysIcon,
 } from "@heroicons/react/24/outline";
 
-// Material-UI importlari
 import Box from "@mui/material/Box";
 import Modal from "@mui/material/Modal";
+import { usegetProfile } from "../../hooks/user";
 
-// --- MOCK DATA (YANGILANDI: role qo'shildi) ---
-const mockUserProfile = {
-  id: 1,
-  firstName: "Rahmadjon",
-  lastName: "Abdullayev",
-  phone: "+998 90 123 45 67",
-  role: "O'qituvchi", // Yangi: Rol
-};
-
-// --- MUI Style Objekti ---
 const modalStyle = {
   position: "absolute",
   top: "50%",
   left: "50%",
   transform: "translate(-50%, -50%)",
-  width: 600,
-  bgcolor: "background.paper",
-  borderRadius: "12px",
-  boxShadow: 24,
-  p: 3,
+  width: { xs: "90%", sm: 550 },
+  bgcolor: "white",
+  borderRadius: "16px",
+  boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1)",
+  p: 0,
   outline: "none",
-  maxHeight: "90vh",
-  overflowY: "auto",
+  overflow: "hidden",
 };
 
-// --- PROFILE MODAL KOMPONENTI ---
 export default function ProfileModal({ children }) {
   const [isOpen, setIsOpen] = useState(false);
-
-  // Tahrirlanadigan ma'lumotlar uchun holat (state)
-  const [profileData, setProfileData] = useState({
-    firstName: mockUserProfile.firstName,
-    lastName: mockUserProfile.lastName,
-    phone: mockUserProfile.phone,
-    // Rolni statega kiritmaymiz, chunki u tahrirlanmaydi
-  });
-
+  const { data: user, isLoading } = usegetProfile();
   const [isEditing, setIsEditing] = useState(false);
 
-  // Modalni ochish/yopish funksiyalari
-  const handleOpen = () => setIsOpen(true);
+  const [profileData, setProfileData] = useState({
+    name: "",
+    surname: "",
+    phone: "",
+    phone2: "",
+  });
 
+  useEffect(() => {
+    if (user) {
+      setProfileData({
+        name: user.name || "",
+        surname: user.surname || "",
+        phone: user.phone || "",
+        phone2: user.phone2 || "",
+      });
+    }
+  }, [user]);
+
+  const handleOpen = () => setIsOpen(true);
   const handleClose = () => {
     setIsEditing(false);
     setIsOpen(false);
   };
 
-  // Foydalanuvchi blokini bosish uchun trigger
-  const trigger = children && (
-    <div onClick={handleOpen} className="cursor-pointer">
-      {children}
-    </div>
-  );
-
-  // Input qiymatlari o'zgarganda holatni yangilash
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setProfileData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setProfileData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // SAQLASH FUNKSIYASI
   const handleSave = () => {
-    console.log("-----------------------------------------");
-    console.log("✅ Profil Ma'lumotlari Yangilandi:");
-    console.log(`Ism: ${profileData.firstName}`);
-    console.log(`Familiya: ${profileData.lastName}`);
-    console.log(`Telefon: ${profileData.phone}`);
-    console.log("-----------------------------------------");
-
-    // Tahrirlash holatini yopish
+    console.log("Saving...", profileData);
     setIsEditing(false);
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return "";
+    return new Date(dateString).toLocaleDateString("uz-UZ", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  if (isLoading) return children;
+
   return (
     <>
-      {trigger}
+      <div onClick={handleOpen} className="cursor-pointer">{children}</div>
 
-      {/* MUI Modal Komponenti */}
-      <Modal
-        open={isOpen}
-        onClose={handleClose}
-        aria-labelledby="profile-modal-title"
-        aria-describedby="profile-modal-description"
-      >
+      <Modal open={isOpen} onClose={handleClose}>
         <Box sx={modalStyle}>
-          {/* Modal Kontent Bloki (Ichki Tailwind sinflari saqlanadi) */}
-          <div className="relative">
-            {/* Yopish tugmasi */}
-            <button
-              onClick={handleClose}
-              className="absolute top-0 right-0 text-gray-400 hover:text-red-600 transition duration-150 p-1 rounded-full hover:bg-gray-100"
-              title="Yopish"
-            >
+          {/* MODAL HEADER - #A60E07 Rangida */}
+          <div className="p-6 text-white relative" style={{ backgroundColor: '#A60E07' }}>
+            <button onClick={handleClose} className="absolute top-4 right-4 text-red-200 hover:text-white transition-colors">
               <XMarkIcon className="h-6 w-6" />
             </button>
+            
+            <div className="flex items-center space-x-4">
+              <div className="bg-white/10 p-3 rounded-2xl shadow-inner border border-white/20">
+                <UserIcon className="h-10 w-10 text-white" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold tracking-tight">Profil Sozlamalari</h3>
+                <p className="text-red-100 text-sm font-medium opacity-80">@{user?.username}</p>
+              </div>
+            </div>
+          </div>
 
-            {/* Tahrirlash/Saqlash Tugmasi */}
-            <button
-              onClick={() => (isEditing ? handleSave() : setIsEditing(true))}
-              className={`absolute top-0 right-10 text-white p-2 rounded-full transition duration-150 shadow-md ${
-                isEditing
-                  ? "bg-green-600 hover:bg-green-700"
-                  : "bg-blue-600 hover:bg-blue-700"
-              }`}
-              title={
-                isEditing ? "Ma'lumotlarni Saqlash" : "Tahrirlashni Boshlash"
-              }
-            >
-              {isEditing ? (
-                <ArrowUpOnSquareIcon className="h-5 w-5" />
-              ) : (
-                <PencilSquareIcon className="h-5 w-5" />
-              )}
-            </button>
-
-            {/* Modal Sarlavhasi */}
-            <h3
-              id="profile-modal-title"
-              className="text-2xl font-bold text-gray-900 mb-6 border-b pb-3 flex items-center"
-            >
-              <UserIcon className="h-7 w-7 mr-3 text-blue-600" />
-              Profil Ma'lumotlari
-            </h3>
-
-            {/* Forma kontenti */}
+          <div className="p-6 bg-gray-50/50">
             <form className="space-y-5">
-              {/* 1. Rol (Disabled/O'chirilgan) */}
-              <div className="flex flex-col">
-                <label
-                  htmlFor="role"
-                  className="text-sm font-medium text-gray-600 mb-1 flex items-center"
-                >
-                  <AcademicCapIcon className="h-4 w-4 mr-1 text-gray-500" /> Rol
-                </label>
-                <input
-                  type="text"
-                  id="role"
-                  name="role"
-                  value={mockUserProfile.role}
-                  disabled={true} // ROL UCHUN QAT'IY O'CHIRILGAN
-                  className="px-4 py-2 border rounded-lg text-gray-800 bg-gray-100 border-gray-200 cursor-not-allowed font-semibold"
-                />
-              </div>
-
-              {/* 2. Ism (Input) */}
-              <div className="flex flex-col">
-                <label
-                  htmlFor="firstName"
-                  className="text-sm font-medium text-gray-600 mb-1"
-                >
-                  Ism
-                </label>
-                <input
-                  type="text"
-                  id="firstName"
-                  name="firstName"
-                  value={profileData.firstName}
-                  onChange={handleInputChange}
-                  disabled={!isEditing}
-                  className={`px-4 py-2 border rounded-lg text-gray-800 focus:ring-blue-500 focus:border-blue-500 transition duration-150 
-                    ${
-                      isEditing
-                        ? "bg-white border-gray-300"
-                        : "bg-gray-50 border-gray-200 cursor-not-allowed"
-                    }`}
-                />
-              </div>
-
-              {/* 3. Familiya (Input) */}
-              <div className="flex flex-col">
-                <label
-                  htmlFor="lastName"
-                  className="text-sm font-medium text-gray-600 mb-1"
-                >
-                  Familiya
-                </label>
-                <input
-                  type="text"
-                  id="lastName"
-                  name="lastName"
-                  value={profileData.lastName}
-                  onChange={handleInputChange}
-                  disabled={!isEditing}
-                  className={`px-4 py-2 border rounded-lg text-gray-800 focus:ring-blue-500 focus:border-blue-500 transition duration-150 
-                    ${
-                      isEditing
-                        ? "bg-white border-gray-300"
-                        : "bg-gray-50 border-gray-200 cursor-not-allowed"
-                    }`}
-                />
-              </div>
-
-              {/* 4. Telefon Raqami (Input) */}
-              <div className="flex flex-col">
-                <label
-                  htmlFor="phone"
-                  className="text-sm font-medium text-gray-600 mb-1"
-                >
-                  Telefon Raqami
-                </label>
-                <div className="relative">
-                  <PhoneIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <input
-                    type="text"
-                    id="phone"
-                    name="phone"
-                    value={profileData.phone}
-                    onChange={handleInputChange}
-                    disabled={!isEditing}
-                    className={`pl-10 pr-4 py-2 border rounded-lg w-full text-gray-800 focus:ring-blue-500 focus:border-blue-500 transition duration-150 
-                      ${
-                        isEditing
-                          ? "bg-white border-gray-300"
-                          : "bg-gray-50 border-gray-200 cursor-not-allowed"
-                      }`}
-                  />
+              {/* TOP INFO CARDS */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center mb-1">
+                    <AcademicCapIcon className="h-3 w-3 mr-1" style={{ color: '#A60E07' }} /> Rol
+                  </label>
+                  <p className="text-sm font-bold text-gray-800 capitalize">{user?.role}</p>
+                </div>
+                <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center mb-1">
+                    <CalendarDaysIcon className="h-3 w-3 mr-1" style={{ color: '#A60E07' }} /> Qo'shilgan
+                  </label>
+                  <p className="text-sm font-semibold text-gray-700">{formatDate(user?.created_at)}</p>
                 </div>
               </div>
 
-              {/* Saqlash Tugmasi */}
-              {isEditing && (
-                <button
-                  type="button"
-                  onClick={handleSave}
-                  className="w-full flex items-center justify-center px-4 py-2 mt-6 rounded-lg text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition duration-200 shadow-md"
-                >
-                  <ArrowUpOnSquareIcon className="h-5 w-5 mr-2" />
-                  Yangilash va Saqlash
-                </button>
-              )}
+              {/* INPUTS GROUP */}
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col">
+                    <label className="text-xs font-bold text-gray-500 ml-1 mb-1">Ism</label>
+                    <input
+                      name="name"
+                      value={isEditing ? profileData.name : user?.name}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      className={`px-4 py-2.5 rounded-xl border transition-all duration-300 ${
+                        isEditing 
+                        ? "bg-white shadow-lg text-gray-900 outline-none" 
+                        : "bg-gray-100 border-transparent text-gray-600 cursor-not-allowed"
+                      } font-medium text-sm`}
+                      style={isEditing ? { borderColor: '#A60E07', boxShadow: '0 0 0 4px rgba(166, 14, 7, 0.1)' } : {}}
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <label className="text-xs font-bold text-gray-500 ml-1 mb-1">Familiya</label>
+                    <input
+                      name="surname"
+                      value={isEditing ? profileData.surname : user?.surname}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      className={`px-4 py-2.5 rounded-xl border transition-all duration-300 ${
+                        isEditing 
+                        ? "bg-white shadow-lg text-gray-900 outline-none" 
+                        : "bg-gray-100 border-transparent text-gray-600 cursor-not-allowed"
+                      } font-medium text-sm`}
+                      style={isEditing ? { borderColor: '#A60E07', boxShadow: '0 0 0 4px rgba(166, 14, 7, 0.1)' } : {}}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col">
+                  <label className="text-xs font-bold text-gray-500 ml-1 mb-1">Asosiy telefon</label>
+                  <div className="relative">
+                    <PhoneIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 transition-colors" style={{ color: isEditing ? '#A60E07' : '#9CA3AF' }} />
+                    <input
+                      name="phone"
+                      value={isEditing ? profileData.phone : user?.phone}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      className={`pl-10 pr-4 py-2.5 w-full rounded-xl border transition-all duration-300 ${
+                        isEditing 
+                        ? "bg-white shadow-lg text-gray-900 outline-none" 
+                        : "bg-gray-100 border-transparent text-gray-600"
+                      } font-medium text-sm`}
+                      style={isEditing ? { borderColor: '#A60E07', boxShadow: '0 0 0 4px rgba(166, 14, 7, 0.1)' } : {}}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col">
+                  <label className="text-xs font-bold text-gray-500 ml-1 mb-1">Qo'shimcha telefon</label>
+                  <div className="relative">
+                    <PhoneIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 transition-colors" style={{ color: isEditing ? '#A60E07' : '#9CA3AF' }} />
+                    <input
+                      name="phone2"
+                      value={isEditing ? profileData.phone2 : user?.phone2}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      className={`pl-10 pr-4 py-2.5 w-full rounded-xl border transition-all duration-300 ${
+                        isEditing 
+                        ? "bg-white shadow-lg text-gray-900 outline-none" 
+                        : "bg-gray-100 border-transparent text-gray-600"
+                      } font-medium text-sm`}
+                      style={isEditing ? { borderColor: '#A60E07', boxShadow: '0 0 0 4px rgba(166, 14, 7, 0.1)' } : {}}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* ACTION BUTTONS */}
+              <div className="pt-4">
+                {!isEditing ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsEditing(true)}
+                    className="w-full flex items-center justify-center space-x-2 py-3 text-white rounded-xl font-bold transition-all shadow-lg active:scale-[0.98] hover:opacity-90"
+                    style={{ backgroundColor: '#A60E07', shadowColor: 'rgba(166, 14, 7, 0.2)' }}
+                  >
+                    <PencilSquareIcon className="h-5 w-5" />
+                    <span>Ma'lumotlarni tahrirlash</span>
+                  </button>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setIsEditing(false)}
+                      className="py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl font-bold transition-all"
+                    >
+                      Bekor qilish
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSave}
+                      className="flex items-center justify-center space-x-2 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold transition-all shadow-lg"
+                    >
+                      <CheckIcon className="h-5 w-5" />
+                      <span>Saqlash</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </form>
           </div>
         </Box>

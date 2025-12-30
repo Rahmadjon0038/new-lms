@@ -1,6 +1,6 @@
 "use client";
+
 import React from "react";
-// Next.js App Router uchun muhim hook
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
@@ -10,61 +10,53 @@ import {
   BriefcaseIcon,
 } from "@heroicons/react/24/outline";
 
-// Menyu elementlari ma'lumotlari
 const sidebarItems = [
-  // {
-  //   name: "Dashboard",
-  //   icon: Squares2X2Icon,
-  //   href: "/students", // Studentlarning asosiy yo'li
-  // },
   {
     name: "Mening Guruhlarim",
     icon: BookOpenIcon,
-    href: "/students",
+    href: "/student",
   },
   {
     name: "Davomat",
     icon: ChartBarIcon,
-    href: "/students/my-attendance",
+    href: "/student/my-attendance",
   },
   {
-    name: "To'lovlari",
+    name: "To'lovlarim",
     icon: BriefcaseIcon,
-    href: "/students/my-payments",
+    href: "/student/my-payments",
   },
 ];
 
 function Sidebar() {
-  // 1. Joriy URL yo'lini olish uchun usePathname dan foydalanamiz
   const pathname = usePathname();
 
   return (
-    <div className="flex flex-col w-60 min-h-screen bg-white shadow-xl">
-      <nav className="flex-1 px-4 py-6 space-y-2">
+    <div className="flex flex-col w-60 min-h-screen bg-white shadow-2xl border-r border-gray-100">
+      <nav className="flex-1 px-4 py-8 space-y-2">
         {sidebarItems.map((item) => {
-          // 2. Aktivlikni tekshirish logikasi:
-          // Joriy pathname menyu elementining href qiymatiga teng bo'lsa, u aktivdir.
-          // "/students" yo'li uchun ham ishlashi uchun maxsus tekshiruv qo'shildi.
+          // Aktivlikni tekshirish
           const isActive = pathname === item.href;
 
           return (
             <Link
               key={item.name}
-              href={item.href} // Endi href to'liq yo'lni o'z ichiga oladi
+              href={item.href}
               className={`
-                flex items-center px-3 py-3 rounded-lg text-sm font-medium transition duration-150 ease-in-out
+                flex items-center px-4 py-3.5 rounded-xl text-sm font-bold transition-all duration-200
                 ${
                   isActive
-                    ? "bg-blue-600 text-white" // Aktiv uslub
-                    : "text-gray-700 hover:bg-gray-100 hover:text-gray-900" // Noaktiv uslub
+                    ? "text-white shadow-lg shadow-red-100" // Aktiv uslub
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900" // Noaktiv uslub
                 }
               `}
+              style={isActive ? { backgroundColor: '#A60E07' } : {}}
             >
               <item.icon
-                className={`mr-3 h-5 w-5 ${
+                className={`mr-3 h-5 w-5 transition-colors ${
                   isActive
                     ? "text-white"
-                    : "text-gray-500 group-hover:text-gray-600"
+                    : "text-gray-400 group-hover:text-gray-600"
                 }`}
                 aria-hidden="true"
               />
@@ -73,6 +65,16 @@ function Sidebar() {
           );
         })}
       </nav>
+
+      {/* Sidebar ostida kichik brend belgi (ixtiyoriy) */}
+      <div className="p-4 border-t border-gray-50">
+        <div 
+          className="rounded-lg p-3 text-[10px] font-bold text-center opacity-40 uppercase tracking-widest"
+          style={{ color: '#A60E07' }}
+        >
+          LMS v2.0
+        </div>
+      </div>
     </div>
   );
 }

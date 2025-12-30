@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 export function middleware(request) {
-  const token = request.cookies.get('token')?.value;
+  const token = request.cookies.get('accessToken')?.value;
   const role = request.cookies.get('role')?.value;
   const { pathname } = request.nextUrl;
 

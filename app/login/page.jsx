@@ -2,15 +2,17 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Snowfall from "react-snowfall";
-import { useAddUser } from "../hooks/user";
-import { useGetNotify } from "../hooks/notify";
+import { useAddUser } from "../../hooks/user";
+import { useGetNotify } from "../../hooks/notify";
 import Cookies from "js-cookie";
+import { useRouter } from "next/navigation";
 
 function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const addUserMutation = useAddUser();
   const notify = useGetNotify()
+  const navigate = useRouter()
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -18,20 +20,15 @@ function Login() {
     addUserMutation.mutate( {
       logindata,
       onSuccess: (data) => {
-
-        if (data?.success) {
-          console.log(data)
-          notify('ok', data.message);
+      navigate.push(data?.user?.role)
+          notify('ok', 'Tizimga kirish mofaqqiyatli');
           Cookies.set('accessToken', data.accessToken);
           Cookies.set('refreshToken', data.refreshToken);
-          Cookies.set('role', data.role);
-        } else {
-          // Server 200 qaytargan, lekin body.success=false bo'lsa
-          notify('err',data.response?.data?.err || 'Xatolik');
-        }
+          Cookies.set('role', data.user.role);
       },
       onError: (err) => {
-        notify('error', err.response?.data?.message || 'Server xatosi');
+        notify('err', err.response?.data?.message || 'Server xatosi');
+        
       }
     });
   };
