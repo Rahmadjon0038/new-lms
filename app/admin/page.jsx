@@ -3,31 +3,25 @@ import React, { useState, useMemo } from "react";
 import {
   UsersIcon,
   BookOpenIcon,
-  UserGroupIcon,
   PlusIcon,
   PhoneIcon,
   CalendarDaysIcon,
-  CheckCircleIcon,
   XCircleIcon,
   TrashIcon, 
   InformationCircleIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 
-// --- Yagona Mock Data Strukturasi (phone2 qo'shildi) ---
+const MAIN_COLOR = "#A60E07"; // Siz ko'rsatgan rang
+
+// --- Mock Data ---
 const UNIFIED_STUDENTS_DATA = [
-    // Qo'shilmagan
     { id: 1001, name: "Alijon", surname: "Murodov", group: null, subject: "Web Dasturlash", teacher: null, status: "Qo'shilmagan", paymentAmount: 0, requiredAmount: 1000, registrationDate: "2025-12-10", phone: "+998 90 123 45 67", phone2: "+998 93 111 22 33" },
     { id: 1003, name: "Rustam", surname: "Tursunov", group: null, subject: "Python AI", teacher: null, status: "Qo'shilmagan", paymentAmount: 0, requiredAmount: 1000, registrationDate: "2025-12-10", phone: "+998 99 555 11 22", phone2: null },
     { id: 1004, name: "Lola", surname: "Saidova", group: null, subject: "Ingliz Tili (B1)", teacher: null, status: "Qo'shilmagan", paymentAmount: 0, requiredAmount: 800, registrationDate: "2025-12-05", phone: "+998 90 111 22 33", phone2: "+998 97 444 55 66" },
-    // O'qiyapti
     { id: 1002, name: "Feruza", surname: "Sobirova", group: "Grafika B1", subject: "Grafik Dizayn", teacher: "Shoxrux Tursunov", status: "O'qiyapti", paymentAmount: 1000, requiredAmount: 1000, registrationDate: "2025-12-10", phone: "+998 91 987 65 43", phone2: null },
-    { id: 1007, name: "Diyora", surname: "Valiyeva", group: "SMM Master", subject: "SMM", teacher: "Shoxrux Tursunov", status: "O'qiyapti", paymentAmount: 800, requiredAmount: 1000, registrationDate: "2025-12-09", phone: "+998 97 123 45 67", phone2: "+998 94 777 88 99" },
-    { id: 1005, name: "Sherzod", surname: "Nazarov", group: "Matematika K2", subject: "Matematika", teacher: "Umid Karimov", status: "O'qiyapti", paymentAmount: 1000, requiredAmount: 1000, registrationDate: "2025-12-04", phone: "+998 94 444 55 66", phone2: null },
-    { id: 1006, name: "Zuhra", surname: "Rustamova", group: "Web Pro B1", subject: "Web Dasturlash", teacher: "Jasur Raximov", status: "O'qiyapti", paymentAmount: 700, requiredAmount: 1000, registrationDate: "2025-11-01", phone: "+998 93 777 88 99", phone2: "+998 90 888 99 00" },
 ];
 
-// --- Guruhga Qo'shish uchun Mock Ma'lumotlar ---
 const MOCK_GROUP_INFO = {
     "Web Dasturlash": { groupName: "Web Pro 201", teacherName: "Jasur Raximov" },
     "Python AI": { groupName: "Python 302", teacherName: "Shahnoza Qodirova" },
@@ -35,16 +29,13 @@ const MOCK_GROUP_INFO = {
     default: { groupName: "Yangi Guruh", teacherName: "Noma'lum O'qituvchi" },
 };
 
-// --- Ma'lumotlarni Filtrlash Mantig'i ---
 const getFilteredStudents = (students, period) => {
   const unEnrolledStudents = students.filter(student => student.status === "Qo'shilmagan");
-
   const today = new Date("2025-12-10"); 
   today.setHours(0, 0, 0, 0);
 
   return unEnrolledStudents.filter((student) => {
     if (!student.registrationDate) return false;
-    
     const studentDate = new Date(student.registrationDate); 
     studentDate.setHours(0, 0, 0, 0);
 
@@ -68,9 +59,8 @@ const getFilteredStudents = (students, period) => {
   });
 };
 
-// --- Yordamchi Komponent: StatCard ---
-const StatCard = ({ title, value, icon: Icon, color }) => (
-  <div className={`bg-white p-6 rounded-xl shadow-lg border-b-4 border-${color}-500`}>
+const StatCard = ({ title, value, icon: Icon }) => (
+  <div className="bg-white p-6 rounded-xl shadow-lg border-b-4" style={{ borderColor: MAIN_COLOR }}>
     <div className="flex items-center justify-between">
       <span className="text-sm font-medium text-gray-500">{title}</span>
       <Icon className="h-6 w-6 text-gray-400" />
@@ -79,13 +69,11 @@ const StatCard = ({ title, value, icon: Icon, color }) => (
   </div>
 );
 
-// --- Student Enrollment Table Komponenti (phone2 qo'shildi) ---
 const StudentEnrollmentTable = ({ students, onDelete, onEnroll }) => {
   if (students.length === 0) {
     return (
       <div className="text-center py-10 text-gray-500">
-        <p>Tanlangan davr uchun guruhga qo'shilmagan talabalar mavjud emas.</p>
-        <p className="text-sm mt-1">Bu ro'yxat faqat arizalar (pending) uchun ishlaydi.</p>
+        <p>Guruhga qo'shilmagan talabalar mavjud emas.</p>
       </div>
     );
   }
@@ -95,94 +83,42 @@ const StudentEnrollmentTable = ({ students, onDelete, onEnroll }) => {
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
-            <th scope="col" className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-[25%]">
-              Ism & Familiya / Telefon
-            </th>
-            <th scope="col" className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-              Fan
-            </th>
-            <th scope="col" className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-              O'qituvchi / Guruh
-            </th>
-            <th scope="col" className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-              Ro'yxatdan sana
-            </th>
-            <th scope="col" className="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider w-[100px]">
-              Status
-            </th>
-            <th scope="col" className="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider w-[120px]">
-              Amallar
-            </th>
+            <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Ism / Telefon</th>
+            <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Fan</th>
+            <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Guruh</th>
+            <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Sana</th>
+            <th className="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Status</th>
+            <th className="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Amallar</th>
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-100">
           {students.map((student, index) => (
-            <tr 
-              key={student.id} 
-              className={index % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50 hover:bg-gray-100'}
-            >
+            <tr key={student.id} className={index % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50 hover:bg-gray-100'}>
               <td className="px-3 py-3 whitespace-nowrap">
-                <div className="font-bold text-gray-900">
-                  {student.name} {student.surname}
-                </div>
-                <div className="text-xs text-gray-500 mt-0.5 space-y-0.5">
-                  <span className="flex items-center">
-                    <PhoneIcon className="h-4 w-4 mr-1 text-gray-400" />
-                    {student.phone}
-                  </span>
-                  {student.phone2 && (
-                    <span className="flex items-center">
-                      <PhoneIcon className="h-4 w-4 mr-1 text-gray-400" />
-                      {student.phone2}
-                    </span>
-                  )}
+                <div className="font-bold text-gray-900">{student.name} {student.surname}</div>
+                <div className="text-xs text-gray-500 mt-0.5">
+                  <span className="flex items-center"><PhoneIcon className="h-4 w-4 mr-1" />{student.phone}</span>
                 </div>
               </td>
-
               <td className="px-3 py-3 whitespace-nowrap">
-                <p className="text-sm text-blue-600 font-medium">
-                  {student.subject}
-                </p>
+                <p className="text-sm font-medium" style={{ color: MAIN_COLOR }}>{student.subject}</p>
               </td>
-
-              <td className="px-3 py-3 whitespace-nowrap">
-                <p className="text-sm text-gray-400 italic">Guruhlanmagan</p>
-              </td>
-              
-              <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-600">
-                {student.registrationDate}
-              </td>
-
+              <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-400 italic">Guruhlanmagan</td>
+              <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-600">{student.registrationDate}</td>
               <td className="px-3 py-3 whitespace-nowrap text-center">
                 <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
-                  <XCircleIcon className="h-4 w-4" />
-                  Qo'shilmagan
+                  <XCircleIcon className="h-4 w-4" />Qo'shilmagan
                 </span>
               </td>
-
               <td className="px-3 py-3 whitespace-nowrap text-center">
                 <div className="flex justify-center items-center gap-2">
-                  <button
-                    onClick={() => onEnroll(student)}
-                    className="p-2 rounded-lg bg-green-600 hover:bg-green-700 text-white transition duration-200"
-                    title="Guruhga qo'shish"
-                  >
+                  <button onClick={() => onEnroll(student)} className="p-2 rounded-lg text-white transition hover:opacity-80" style={{ backgroundColor: '#10b981' }}>
                     <PlusIcon className="h-5 w-5" />
                   </button>
-
-                  <Link
-                    href={`/admin/students/${student.id}`}
-                    className="p-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition duration-200"
-                    title="Batafsil ma'lumot"
-                  >
+                  <Link href={`/admin/students/${student.id}`} className="p-2 rounded-lg text-white transition hover:opacity-80" style={{ backgroundColor: MAIN_COLOR }}>
                     <InformationCircleIcon className="h-5 w-5" />
                   </Link>
-
-                  <button
-                    onClick={() => onDelete(student.id)}
-                    className="p-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition duration-200"
-                    title="O'chirish"
-                  >
+                  <button onClick={() => onDelete(student.id)} className="p-2 rounded-lg bg-gray-200 text-gray-600 hover:bg-red-600 hover:text-white transition">
                     <TrashIcon className="h-5 w-5" />
                   </button>
                 </div>
@@ -195,121 +131,75 @@ const StudentEnrollmentTable = ({ students, onDelete, onEnroll }) => {
   );
 };
 
-// --- Asosiy Komponent ---
 function AdminDashboard() {
   const [students, setStudents] = useState(UNIFIED_STUDENTS_DATA);
   const [enrollmentPeriod, setEnrollmentPeriod] = useState("today");
 
   const handleEnrollStudent = (studentToEnroll) => {
     const mockGroup = MOCK_GROUP_INFO[studentToEnroll.subject] || MOCK_GROUP_INFO.default;
-    const updatedPayment = studentToEnroll.requiredAmount; 
-
-    if (window.confirm(`${studentToEnroll.name} ni "${mockGroup.groupName}" guruhiga qo'shishga va statusini "O'qiyapti" ga o'zgartirishga ishonchingiz komilmi?`)) {
-      setStudents(prevStudents => 
-        prevStudents.map(s => 
-          s.id === studentToEnroll.id 
-            ? { 
-                ...s, 
-                group: mockGroup.groupName,
-                teacher: mockGroup.teacherName,
-                status: "O'qiyapti",
-                paymentAmount: updatedPayment,
-              } 
-            : s
-        )
-      );
-      alert(`${studentToEnroll.name} muvaffaqiyatli guruhga qo'shildi va ro'yxatdan olib tashlandi.`);
+    if (window.confirm(`${studentToEnroll.name} ni guruhga qo'shish?`)) {
+      setStudents(prev => prev.map(s => s.id === studentToEnroll.id ? { ...s, status: "O'qiyapti" } : s));
     }
   };
 
   const handleDeleteStudent = (id) => {
-    if (window.confirm(`ID ${id} bo'lgan talabani ro'yxatdan o'chirishga ishonchingiz komilmi?`)) {
-      setStudents(prevStudents => prevStudents.filter(s => s.id !== id));
+    if (window.confirm(`O'chirishga ishonchingiz komilmi?`)) {
+      setStudents(prev => prev.filter(s => s.id !== id));
     }
   };
 
-  const filteredStudents = useMemo(() => {
-    return getFilteredStudents(students, enrollmentPeriod);
-  }, [enrollmentPeriod, students]);
+  const filteredStudents = useMemo(() => getFilteredStudents(students, enrollmentPeriod), [enrollmentPeriod, students]);
   
-  const totalStudents = students.length;
-  const totalUnEnrolled = students.filter(s => s.status === "Qo'shilmagan").length;
-  const todayEnrollmentCount = getFilteredStudents(students, "today").length;
-  
-  const generalStats = {
-    totalGroups: 15,
-    totalTeachers: 8,
-  };
-
   const periodOptions = [
-    { value: "today", name: `Bugun (${getFilteredStudents(students, "today").length} ta)` },
-    { value: "yesterday", name: `Kecha (${getFilteredStudents(students, "yesterday").length} ta)` },
-    { value: "last7days", name: `So'nggi 7 kun (${getFilteredStudents(students, "last7days").length} ta)` },
-    { value: "last30days", name: `So'nggi 30 kun (${getFilteredStudents(students, "last30days").length} ta)` },
+    { value: "today", name: `Bugun (${getFilteredStudents(students, "today").length})` },
+    { value: "yesterday", name: `Kecha (${getFilteredStudents(students, "yesterday").length})` },
+    { value: "last7days", name: `7 kun (${getFilteredStudents(students, "last7days").length})` },
+    { value: "last30days", name: `30 kun (${getFilteredStudents(students, "last30days").length})` },
   ];
 
   return (
     <div className="min-h-full p-8 bg-gray-50">
-      {/* 1. Sarlavha + Yangi talaba tugmasi */}
       <div className="flex justify-between items-start mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-1">
-            Administrator Boshqaruv Paneli
-          </h1>
-          <p className="text-lg text-gray-500">
-            Markazning umumiy ko'rsatkichlari
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-1">Administrator Boshqaruv Paneli</h1>
+          <p className="text-lg text-gray-500">Markazning umumiy ko'rsatkichlari</p>
         </div>
-
-        {/* YANGI TALABA QO'SHISH TUGMASI */}
-        <Link href={'/admin/students/new'} className="flex items-center gap-2 px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-md transition duration-200">
-          <PlusIcon className="h-6 w-6" />
-          Yangi talaba qo'shish
+        <Link href={'/admin/students/new'} className="flex items-center gap-2 px-5 py-3 text-white font-medium rounded-lg shadow-md transition hover:opacity-90" style={{ backgroundColor: MAIN_COLOR }}>
+          <PlusIcon className="h-6 w-6" /> Yangi talaba qo'shish
         </Link>
       </div>
 
-      {/* 2. UMUMIY STATISTIKA */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-        <StatCard title="Jami Teacherlar (Umumiy)" value={totalStudents} icon={UsersIcon} color="green" />
-        <StatCard title="Jami Guruhlar" value={generalStats.totalGroups} icon={BookOpenIcon} color="blue" />
-        <StatCard title="Bugun Ariza" value={todayEnrollmentCount} icon={UsersIcon} color="yellow" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+        <StatCard title="Jami Talabalar" value={students.length} icon={UsersIcon} />
+        <StatCard title="Jami Guruhlar" value={15} icon={BookOpenIcon} />
+        <StatCard title="Bugungi Arizalar" value={getFilteredStudents(students, "today").length} icon={PlusIcon} />
       </div>
 
-      {/* 3. QABUL RO'YXATI */}
       <div className="bg-white p-6 rounded-xl shadow-xl border border-gray-100">
         <div className="flex justify-between items-center border-b border-gray-200 pb-4 mb-6">
           <h2 className="text-2xl font-semibold text-gray-800 flex items-center">
-            <XCircleIcon className="h-6 w-6 text-red-600 mr-2"/>
-            Guruhga Qo'shilmagan Talabalar Ro'yxati 
+            <XCircleIcon className="h-6 w-6 mr-2" style={{ color: MAIN_COLOR }}/>
+            Guruhga Qo'shilmaganlar
           </h2>
           <div className="flex items-center space-x-3">
-            <CalendarDaysIcon className="h-5 w-5 text-blue-600" />
+            <CalendarDaysIcon className="h-5 w-5" style={{ color: MAIN_COLOR }} />
             <select
               value={enrollmentPeriod}
               onChange={(e) => setEnrollmentPeriod(e.target.value)}
-              className="block border border-gray-300 rounded-lg shadow-sm py-2 px-3 text-sm font-medium text-gray-800 focus:ring-blue-500 focus:border-blue-500 bg-white cursor-pointer"
+              className="block border border-gray-300 rounded-lg py-2 px-3 text-sm focus:ring-red-500 focus:border-red-500 bg-white"
             >
               {periodOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.name}
-                </option>
+                <option key={option.value} value={option.value}>{option.name}</option>
               ))}
             </select>
           </div>
         </div>
-
-        <StudentEnrollmentTable 
-          students={filteredStudents} 
-          onDelete={handleDeleteStudent} 
-          onEnroll={handleEnrollStudent} 
-        />
+        <StudentEnrollmentTable students={filteredStudents} onDelete={handleDeleteStudent} onEnroll={handleEnrollStudent} />
       </div>
     </div>
   );
 }
 
-function page() {
+export default function page() {
   return <AdminDashboard />;
 }
-
-export default page;

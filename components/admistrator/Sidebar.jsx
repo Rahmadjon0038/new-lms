@@ -7,30 +7,29 @@ import {
   Squares2X2Icon, // Dashboard
   UserGroupIcon, // O'qituvchilar / Talabalar
   BookOpenIcon, // Guruhlar
-  ChartBarIcon, // Davomat
-  BriefcaseIcon, // To'lovlar (yoki WalletIcon, BriefcaseIcon mos keladi)
-  // Guruhlar va O'qituvchilar uchun alohida ikonka kerak bo'lsa, uni quyida aniqlaymiz
   UsersIcon, // Talabalar uchun alohida
   ClipboardDocumentListIcon, // Davomat uchun
   WalletIcon, // To'lovlar uchun
 } from "@heroicons/react/24/outline";
 
-// Menyu elementlari ma'lumotlari (Administrator uchun yangilandi)
+// Asosiy rang konstantasi
+const MAIN_COLOR = "#A60E07";
+
+// Menyu elementlari ma'lumotlari
 const sidebarItems = [
   {
     name: "Dashboard",
     icon: Squares2X2Icon,
-    href: "/admin", // Administratorlarning asosiy yo'li
+    href: "/admin",
   },
-   
   {
     name: "O'qituvchilar",
-    icon: UserGroupIcon, // O'qituvchilarni ifodalovchi ikonka
+    icon: UserGroupIcon,
     href: "/admin/teachers",
   },
   {
     name: "Talabalar",
-    icon: UsersIcon, // Talabalarni ifodalovchi ikonka
+    icon: UsersIcon,
     href: "/admin/students",
   },
   {
@@ -40,48 +39,45 @@ const sidebarItems = [
   },
   {
     name: "Davomat",
-    icon: ClipboardDocumentListIcon, // Davomat sahifasiga mosroq ikonka
+    icon: ClipboardDocumentListIcon,
     href: "/admin/attendance",
   },
   {
     name: "To'lovlar",
-    icon: WalletIcon, // To'lovlarni ifodalovchi ikonka
+    icon: WalletIcon,
     href: "/admin/payments",
   },
 ];
 
 function AdministratorSidebar() {
-  // 1. Joriy URL yo'lini olish uchun usePathname dan foydalanamiz
   const pathname = usePathname();
 
   return (
     <div className="flex flex-col w-60 min-h-screen bg-white shadow-xl">
       <nav className="flex-1 px-4 py-6 space-y-2">
         {sidebarItems.map((item) => {
-          // 2. Aktivlikni tekshirish logikasi:
-          // Joriy pathname menyu elementining href qiymatiga teng bo'lsa, u aktivdir.
+          // Aktivlikni tekshirish logikasi
           const isActive = pathname === item.href;
-
-          // Dashboard uchun alohida tekshiruv (agar u /admin bo'lsa, /admin/xyz emas)
-          const isDashboardActive =
-            item.href === "/admin" && pathname === "/admin";
+          const isDashboardActive = item.href === "/admin" && pathname === "/admin";
+          const currentActive = isActive || isDashboardActive;
 
           return (
             <Link
               key={item.name}
-              href={item.href} // Endi href to'liq yo'lni o'z ichiga oladi
+              href={item.href}
               className={`
                 flex items-center px-3 py-3 rounded-lg text-sm font-medium transition duration-150 ease-in-out
                 ${
-                  isActive || isDashboardActive
-                    ? "bg-blue-600 text-white" // Aktiv uslub
-                    : "text-gray-700 hover:bg-gray-100 hover:text-gray-900" // Noaktiv uslub
+                  currentActive
+                    ? "text-white shadow-md" // Aktiv holatda text oq
+                    : "text-gray-700 hover:bg-gray-100 hover:text-gray-900" 
                 }
               `}
+              style={currentActive ? { backgroundColor: MAIN_COLOR } : {}}
             >
               <item.icon
                 className={`mr-3 h-5 w-5 ${
-                  isActive || isDashboardActive
+                  currentActive
                     ? "text-white"
                     : "text-gray-500 group-hover:text-gray-600"
                 }`}
@@ -96,5 +92,4 @@ function AdministratorSidebar() {
   );
 }
 
-// Fayl nomingizga mos keladigan eksportni ta'minlash uchun
 export default AdministratorSidebar;

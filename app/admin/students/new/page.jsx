@@ -4,6 +4,9 @@ import {
   UserIcon, AcademicCapIcon, ExclamationTriangleIcon 
 } from "@heroicons/react/24/outline";
 
+// Asosiy rang
+const MAIN_COLOR = "#A60E07";
+
 const ACADEMIC_DATA = {
   "Web Dasturlash": {
     teachers: ["Jasur Raximov", "Anvar Olimov"],
@@ -52,13 +55,13 @@ const StudentRegistration = () => {
     e.preventDefault();
     const payload = { ...formData, role: "student" };
     console.log("Backendga yuboriladigan ma'lumot:", payload);
-    alert("Ma'lumotlar konsolga chiqdi!");
+    alert("Ma'lumotlar saqlandi (Konsolni ko'ring)");
   };
 
   return (
-    <div className="w-full min-h-screen bg-[#F8FAFC] p-6 lg:p-10 font-sans">
+    <div className="w-full min-h-screen bg-[#F8FAFC] p-8 font-sans">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Talaba qabul qilish</h1>
+        <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Talaba qabul qilish</h1>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
@@ -66,7 +69,7 @@ const StudentRegistration = () => {
           
           {/* 1. Shaxsiy ma'lumotlar */}
           <div className="p-8 border-b border-slate-100">
-            <div className="flex items-center gap-2 mb-8 text-[#1448E5]">
+            <div className="flex items-center gap-2 mb-8" style={{ color: MAIN_COLOR }}>
               <UserIcon className="h-5 w-5" />
               <h2 className="font-bold uppercase tracking-wider text-xs">Shaxsiy ma'lumotlar</h2>
             </div>
@@ -80,13 +83,12 @@ const StudentRegistration = () => {
 
           {/* 2. Akademik taqsimot */}
           <div className="p-8 lg:p-10 border-b border-slate-100 bg-slate-50/20">
-            <div className="flex items-center gap-2 mb-8 text-[#1448E5]">
+            <div className="flex items-center gap-2 mb-8" style={{ color: MAIN_COLOR }}>
               <AcademicCapIcon className="h-5 w-5" />
               <h2 className="font-bold uppercase tracking-wider text-xs">O'quv ma'lumotlari</h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {/* Subject - Majburiy */}
               <div className="space-y-1">
                 <label className="text-[10px] font-bold text-slate-500 uppercase">Fan *</label>
                 <select name="subject" value={formData.subject} onChange={handleChange} required className="full-input">
@@ -95,7 +97,6 @@ const StudentRegistration = () => {
                 </select>
               </div>
 
-              {/* Teacher - Ixtiyoriy */}
               <div className="space-y-1">
                 <label className="text-[10px] font-bold text-slate-400 uppercase italic">O'qituvchi (Ixtiyoriy)</label>
                 <select name="teacher" value={formData.teacher} onChange={handleChange} disabled={!formData.subject} className="full-input bg-white disabled:bg-slate-100 border-dashed">
@@ -106,7 +107,6 @@ const StudentRegistration = () => {
                 </select>
               </div>
 
-              {/* Group - Ixtiyoriy */}
               <div className="space-y-1">
                 <label className="text-[10px] font-bold text-slate-400 uppercase italic">Guruh (Ixtiyoriy)</label>
                 <select name="group" value={formData.group} onChange={handleChange} disabled={!formData.subject} className="full-input bg-white disabled:bg-slate-100 border-dashed">
@@ -117,16 +117,15 @@ const StudentRegistration = () => {
                 </select>
               </div>
 
-              {/* Price */}
               <div className="space-y-1">
                 <label className="text-[10px] font-bold text-slate-500 uppercase">Kurs summasi</label>
-                <input type="number" name="course_price" value={formData.course_price} onChange={handleChange} className="full-input font-bold text-blue-600" />
+                <input type="number" name="course_price" value={formData.course_price} onChange={handleChange} className="full-input font-bold" style={{ color: MAIN_COLOR }} />
               </div>
             </div>
           </div>
 
           {/* 3. Tizim ma'lumotlari */}
-          <div className="p-8 lg:p-10 bg-blue-50/30">
+          <div className="p-8 lg:p-10 bg-slate-50/50">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
               <div className="bg-amber-50 p-4 rounded-xl border border-amber-200 flex items-center gap-3">
                 <ExclamationTriangleIcon className="h-6 w-6 text-amber-600" />
@@ -138,7 +137,11 @@ const StudentRegistration = () => {
           </div>
 
           <div className="p-8 lg:p-10 flex justify-end gap-4 bg-white">
-            <button type="submit" className="px-16 py-4 bg-[#1448E5] text-white font-bold rounded-xl shadow-lg hover:bg-[#0c36b3] transition-all uppercase text-sm tracking-widest">
+            <button 
+              type="submit" 
+              className="px-16 py-4 text-white font-bold rounded-xl shadow-lg transition-all uppercase text-sm tracking-widest hover:opacity-90 active:scale-95"
+              style={{ backgroundColor: MAIN_COLOR }}
+            >
               Talabani saqlash
             </button>
           </div>
@@ -150,7 +153,10 @@ const StudentRegistration = () => {
           width: 100%; padding: 12px 16px; border: 1.5px solid #E2E8F0; border-radius: 12px;
           outline: none; font-size: 14px; color: #1e293b; transition: all 0.2s;
         }
-        .full-input:focus { border-color: #1448E5; box-shadow: 0 0 0 3px rgba(20, 72, 229, 0.05); }
+        .full-input:focus { 
+          border-color: ${MAIN_COLOR}; 
+          box-shadow: 0 0 0 3px rgba(166, 14, 7, 0.05); 
+        }
         .border-dashed { border-style: dashed; }
       `}</style>
     </div>

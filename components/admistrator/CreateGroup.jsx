@@ -1,283 +1,255 @@
-// components/teacher/AdminNewGroupModal.jsx (yoki o'z joyiga qarab nom bering)
-
 "use client";
 
 import React, { useState } from "react";
-// Heroicons ikonkalari
 import {
   XMarkIcon,
-  UsersIcon, // Guruh ikonka
-  CalendarDaysIcon, // Kunlar
-  ClockIcon, // Soat
-  PlusCircleIcon, // Yaratish
-  UserIcon, // Teacher ikonka
+  UsersIcon,
+  ClockIcon,
+  UserIcon,
+  KeyIcon,
 } from "@heroicons/react/24/outline";
 
-// Material-UI importlari
 import Box from "@mui/material/Box";
 import Modal from "@mui/material/Modal";
+import { useCreateGroup } from "../../hooks/groups";
 
-// --- MOCK TEACHER DATA ---
-const MOCK_TEACHERS = [
-    { id: 1, name: "Jasur Raximov" },
-    { id: 2, name: "Alijon Vohidov" },
-    { id: 3, name: "Nigora Qosimova" },
-    { id: 4, name: "Umid Karimov" },
+const MAIN_COLOR = "#A60E07";
+
+const WEEK_DAYS = [
+  { id: "Dush", label: "Dush" },
+  { id: "Sesh", label: "Sesh" },
+  { id: "Chor", label: "Chor" },
+  { id: "Pay", label: "Pay" },
+  { id: "Jum", label: "Jum" },
+  { id: "Shan", label: "Shan" },
 ];
 
-// --- MUI Style Objekti ---
+const MOCK_TEACHERS = [
+  { id: 101, name: "Jasur Raximov" },
+  { id: 102, name: "Alijon Vohidov" },
+  { id: 103, name: "Nigora Qosimova" },
+  { id: 104, name: "Umid Karimov" },
+];
+
 const modalStyle = {
   position: "absolute",
   top: "50%",
   left: "50%",
   transform: "translate(-50%, -50%)",
-  width: 450, 
+  width: "90%",
+  maxWidth: "550px",
   bgcolor: "background.paper",
-  borderRadius: "16px",
-  boxShadow: 24,
-  p: 4,
+  borderRadius: "20px",
+  boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1)",
+  p: { xs: 2, sm: 4 },
   outline: "none",
+  border: "none",
+  maxHeight: "90vh",
+  overflowY: "auto",
 };
 
-// --- YENGI GURUH YARATISH KOMPONENTI ---
 export default function AdminNewGroupModal({ children }) {
+  // ------------ crate group hook ---------
+  const createGroupMutation = useCreateGroup()
   const [isOpen, setIsOpen] = useState(false);
 
-  // Yangi guruh ma'lumotlari uchun boshlang'ich holat
   const [groupData, setGroupData] = useState({
-    groupName: "",
-    teacherName: "", 
-    scheduleDays: "",
-    // O'ZGARISH: Boshlang'ich vaqt qiymatlari matn sifatida
-    startTime: "18:00", // Default qiymat HH:MM
-    endTime: "20:00",  // Default qiymat HH:MM
+    name: "",
+    unique_code: "",
+    teacher_id: "",
+    selectedDays: [], // Tanlangan kunlar arrayi
+    startTime: "09:00",
+    endTime: "11:00",
   });
 
   const handleOpen = () => setIsOpen(true);
 
-  // Yopishda ma'lumotlarni tozalash
   const handleClose = () => {
     setGroupData({
-      groupName: "",
-      teacherName: "",
-      scheduleDays: "",
-      startTime: "18:00",
-      endTime: "20:00",
+      name: "",
+      unique_code: "",
+      teacher_id: "",
+      selectedDays: [],
+      startTime: "09:00",
+      endTime: "11:00",
     });
     setIsOpen(false);
   };
 
-  // Input qiymatlari o'zgarganda holatni yangilash
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setGroupData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    if (name === "name") {
+      const slug = value.toLowerCase().replace(/ /g, "-").replace(/[^\w-]+/g, "");
+      setGroupData(prev => ({ ...prev, name: value, unique_code: slug }));
+    } else {
+      setGroupData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
-  // GURUH YARATISH FUNKSIYASI
+  // Hafta kunini tanlash funksiyasi
+  const toggleDay = (dayId) => {
+    setGroupData(prev => {
+      const isSelected = prev.selectedDays.includes(dayId);
+      const newDays = isSelected
+        ? prev.selectedDays.filter(d => d !== dayId)
+        : [...prev.selectedDays, dayId];
+      return { ...prev, selectedDays: newDays };
+    });
+  };
+
   const handleCreateGroup = (e) => {
     e.preventDefault();
 
-    // Ma'lumotlarni tekshirish
-    if (!groupData.groupName || !groupData.scheduleDays || !groupData.teacherName) {
-      alert("Guruh nomi, O'qituvchi va Dars kunlari majburiy!");
-      return;
-    }
-    
-    if (groupData.teacherName === "") {
-        alert("Iltimos, o'qituvchini tanlang!");
-        return;
-    }
+    // Backend kutayotgan format
+    const groupdata = {
+      name: groupData.name,
+      unique_code: groupData.unique_code,
+      teacher_id: groupData.teacher_id ? Number(groupData.teacher_id) : null,
+      schedule: {
+        days: groupData.selectedDays, // Array formatida: ["Dush", "Chor", "Jum"]
+        time: `${groupData.startTime}-${groupData.endTime}`
+      }
+    };
 
-    // Guruh kodi bu yerda backendda yaratiladi/0 ga tenglashtiriladi
-    const newGroupCode = `G-${Math.random()
-      .toString(36)
-      .substring(2, 6)
-      .toUpperCase()}`; 
-
-    console.log("-----------------------------------------");
-    console.log("🚀 Yangi Guruh Yaratish So'rovi:");
-    console.log(`[AVTOMATIK KOD]: ${newGroupCode}`);
-    console.log(`Nomi: ${groupData.groupName}`);
-    console.log(`O'qituvchi: ${groupData.teacherName}`); 
-    console.log(`Dars Kunlari: ${groupData.scheduleDays}`);
-    console.log(`Boshlanish Soati: ${groupData.startTime}`);
-    console.log(`Tugash Soati: ${groupData.endTime}`);
-    console.log("-----------------------------------------");
-
-    // Haqiqiy ilovada bu joyda POST API chaqiruvi bo'ladi
-
-    handleClose(); 
+    createGroupMutation.mutate({
+      groupdata,
+      onSuccess: (data) => {
+        console.log(data)
+      },
+      onError: (err) => {
+        console.log(err)
+      }
+    })
   };
-
-  // Foydalanuvchi blokini bosish uchun trigger
-  const trigger = children && (
-    <div onClick={handleOpen} className="cursor-pointer">
-      {children}
-    </div>
-  );
 
   return (
     <>
-      {trigger}
+      {children && <div onClick={handleOpen} className="cursor-pointer">{children}</div>}
 
-      {/* MUI Modal Komponenti */}
-      <Modal
-        open={isOpen}
-        onClose={handleClose}
-        aria-labelledby="new-group-modal-title"
-      >
+      <Modal open={isOpen} onClose={handleClose}>
         <Box sx={modalStyle}>
-          {/* Modal Kontent Bloki (Toza dizayn) */}
-          <div className="relative">
-            {/* Yopish tugmasi */}
-            <button
-              onClick={handleClose}
-              className="absolute top-0 right-0 text-gray-400 hover:text-red-600 transition duration-150 p-1 rounded-full hover:bg-gray-100"
-              title="Yopish"
-            >
+          <div className="relative w-full">
+            <button onClick={handleClose} className="absolute -top-1 -right-1 text-gray-400 hover:text-[#A60E07] p-1">
               <XMarkIcon className="h-6 w-6" />
             </button>
 
-            {/* Modal Sarlavhasi */}
-            <h3
-              id="new-group-modal-title"
-              className="text-2xl font-extrabold text-blue-700 mb-6 pb-3 flex items-center border-b border-blue-100"
-            >
-              <UsersIcon className="h-7 w-7 mr-3 text-blue-600" />
-              Yangi Guruh Qo'shish (Admin)
+            <h3 className="text-xl font-bold text-gray-800 mb-6 pb-4 border-b border-gray-100 flex items-center uppercase tracking-tight">
+              <UsersIcon className="h-6 w-6 mr-3 text-[#A60E07]" />
+              Yangi Guruh Ochish
             </h3>
 
-            {/* Forma kontenti */}
             <form className="space-y-5" onSubmit={handleCreateGroup}>
-              {/* 1. Guruh Nomi (Input) */}
-              <div className="flex flex-col">
-                <label
-                  htmlFor="groupName"
-                  className="text-sm font-semibold text-gray-700 mb-1"
-                >
-                  Guruh Nomi <span className="text-red-500">*</span>
+              {/* 1. Guruh Nomi */}
+              <div>
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Guruh Nomi *</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={groupData.name}
+                  onChange={handleInputChange}
+                  required
+                  placeholder="Ingliz tili beginner"
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none text-sm font-semibold"
+                />
+              </div>
+
+              {/* 2. Unique Code */}
+              <div>
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1 flex items-center">
+                  <KeyIcon className="h-3 w-3 mr-1" /> Guruh Kodi *
                 </label>
                 <input
                   type="text"
-                  id="groupName"
-                  name="groupName"
-                  value={groupData.groupName}
+                  name="unique_code"
+                  value={groupData.unique_code}
                   onChange={handleInputChange}
-                  placeholder="Misol: Frontend Dasturlash 101"
                   required
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-800 focus:ring-blue-500 focus:border-blue-500 transition duration-150 bg-white shadow-sm"
+                  placeholder="english-001"
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none text-sm font-mono text-[#A60E07]"
                 />
               </div>
-              
-              {/* 2. O'qituvchini Tanlash (Select) */}
-              <div className="flex flex-col relative">
-                <label
-                  htmlFor="teacherName"
-                  className="text-sm font-semibold text-gray-700 mb-1 flex items-center"
-                >
-                  <UserIcon className="h-4 w-4 mr-2 text-blue-500" />{" "}
-                  O'qituvchi <span className="text-red-500">*</span>
+
+              {/* 3. O'qituvchi */}
+              <div>
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1 flex items-center">
+                  <UserIcon className="h-3 w-3 mr-1" /> O'qituvchi
                 </label>
                 <select
-                  id="teacherName"
-                  name="teacherName"
-                  value={groupData.teacherName}
+                  name="teacher_id"
+                  value={groupData.teacher_id}
                   onChange={handleInputChange}
-                  required
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-800 focus:ring-blue-500 focus:border-blue-500 transition duration-150 bg-white shadow-sm appearance-none pr-8"
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-white focus:outline-none text-sm font-semibold cursor-pointer"
                 >
-                  <option value="" disabled>--- O'qituvchini tanlang ---</option> 
-                  
-                  {MOCK_TEACHERS.map((teacher) => (
-                    <option key={teacher.id} value={teacher.name}>
-                      {teacher.name}
-                    </option>
+                  <option value="">Tayinlanmagan</option>
+                  {MOCK_TEACHERS.map((t) => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
                   ))}
                 </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700 mt-6">
-                    {/* Select uchun o'ng tomondagi pastga qaragan o'q */}
-                    <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l-.707.707L15 20.001l6-6-1.414-1.414L10 17.586l-4.586-4.586z"/></svg>
+              </div>
+
+              {/* 4. Hafta kunlari (Tugmachalar) */}
+              <div>
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Dars Kunlari *</label>
+                <div className="flex flex-wrap gap-2">
+                  {WEEK_DAYS.map((day) => {
+                    const isSelected = groupData.selectedDays.includes(day.id);
+                    return (
+                      <button
+                        key={day.id}
+                        type="button"
+                        onClick={() => toggleDay(day.id)}
+                        className={`px-3 py-2 rounded-lg text-xs font-bold transition-all border ${isSelected
+                            ? "bg-[#A60E07] text-white border-[#A60E07] shadow-md shadow-red-900/20"
+                            : "bg-gray-50 text-gray-500 border-gray-200 hover:border-[#A60E07]"
+                          }`}
+                      >
+                        {day.label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-
-              {/* 3. Dars Kunlari (Input) */}
-              <div className="flex flex-col">
-                <label
-                  htmlFor="scheduleDays"
-                  className="text-sm font-semibold text-gray-700 mb-1 flex items-center"
-                >
-                  <CalendarDaysIcon className="h-4 w-4 mr-2 text-blue-500" />{" "}
-                  Dars Kunlari <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="scheduleDays"
-                  name="scheduleDays"
-                  value={groupData.scheduleDays}
-                  onChange={handleInputChange}
-                  placeholder="Masalan: Dush, Chor, Juma"
-                  required
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-800 focus:ring-blue-500 focus:border-blue-500 transition duration-150 bg-white shadow-sm"
-                />
-              </div>
-
-              {/* 4. Dars Soatlari (Split Input) --- O'ZGARISH AMALGA OSHIRILDI --- */}
-              <div className="flex space-x-4">
-                <div className="flex flex-col flex-1">
-                  <label
-                    htmlFor="startTime"
-                    className="text-sm font-semibold text-gray-700 mb-1 flex items-center"
-                  >
-                    <ClockIcon className="h-4 w-4 mr-2 text-blue-500" />{" "}
-                    Boshlanish Soati
-                  </label>
+              {/* 5. Vaqt */}
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Boshlanish</label>
                   <input
-                    // type="time" o'rniga type="text"
                     type="text"
-                    id="startTime"
                     name="startTime"
                     value={groupData.startTime}
                     onChange={handleInputChange}
-                    placeholder="Masalan: 18:00"
-                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-800 focus:ring-blue-500 focus:border-blue-500 transition duration-150 bg-white shadow-sm"
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none text-sm font-semibold"
                   />
                 </div>
-                <div className="flex flex-col flex-1">
-                  <label
-                    htmlFor="endTime"
-                    className="text-sm font-semibold text-gray-700 mb-1"
-                  >
-                    Tugash Soati
-                  </label>
+                <div className="flex-1">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Tugash</label>
                   <input
-                    // type="time" o'rniga type="text"
                     type="text"
-                    id="endTime"
                     name="endTime"
                     value={groupData.endTime}
                     onChange={handleInputChange}
-                    placeholder="Masalan: 20:00"
-                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-800 focus:ring-blue-500 focus:border-blue-500 transition duration-150 bg-white shadow-sm"
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none text-sm font-semibold"
                   />
                 </div>
               </div>
 
-              {/* Guruh Yaratish Tugmasi */}
               <button
                 type="submit"
-                className="w-full flex items-center justify-center px-4 py-3 mt-6 rounded-lg text-lg font-bold text-white bg-green-600 hover:bg-green-700 transition duration-200 shadow-lg shadow-green-200/50"
+                className="w-full py-4 mt-2 rounded-xl text-sm font-black text-white transition-all shadow-lg uppercase tracking-widest hover:opacity-90 active:scale-95 bg-[#A60E07]"
               >
-                <PlusCircleIcon className="h-6 w-6 mr-2" />
                 Guruhni Yaratish
               </button>
             </form>
           </div>
         </Box>
       </Modal>
+
+      <style jsx>{`
+        input:focus, select:focus {
+          border-color: ${MAIN_COLOR} !important;
+        }
+      `}</style>
     </>
   );
 }
