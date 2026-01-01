@@ -1,20 +1,46 @@
+// ----------- update group -----------------
+const updateGroup = async ({ id, groupdata }) => {
+    const response = await instance.patch(`/api/groups/${id}`, groupdata);
+    return response.data;
+}
+
+export const useUpdateGroup = () => {
+    const quericlient = useQueryClient();
+    const updateGroupMutation = useMutation({
+        mutationFn: updateGroup,
+        onSuccess: (data, vars) => {
+            if (vars.onSuccess) {
+                vars.onSuccess(data);
+                quericlient.invalidateQueries(['groups']);
+            }
+        },
+        onError: (err, vars) => {
+            if (vars.onError) {
+                vars.onError(err);
+            }
+        }
+    });
+    return updateGroupMutation;
+}
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { instance } from "./api";
 
 // -------------- I am getting prifile information ----------
-const getAllgroups = async () => {
-    const response = await instance.get('/api/groups');
-    return response.data
+const getAllgroups = async (is_active) => {
+    let url = '/api/groups';
+    if (typeof is_active === 'boolean') {
+        url += `?is_active=${is_active}`;
+    }
+    const response = await instance.get(url);
+    return response.data;
 }
 
-
-export const usegetAllgroups = () => {
+export const usegetAllgroups = (is_active) => {
     const { data, isLoading, error } = useQuery({
-        queryKey: ['groups'],
-        queryFn: getAllgroups,
-    })
-
-    return { data, isLoading, error }
+        queryKey: ['groups', is_active],
+        queryFn: () => getAllgroups(is_active),
+    });
+    return { data, isLoading, error };
 }
 
 // -----------  create new group -----------------

@@ -1,17 +1,17 @@
 "use client";
+import { zonedTimeToUtc, toZonedTime, format } from "date-fns-tz";
 
 import React, { useState, useEffect } from "react";
 import {
   XMarkIcon,
   UsersIcon, 
-  CalendarDaysIcon, 
-  ClockIcon, 
-  ArrowUpOnSquareIcon, 
   UserIcon,
-  CalendarIcon,
 } from "@heroicons/react/24/outline";
+
 import Box from "@mui/material/Box";
 import Modal from "@mui/material/Modal";
+import { useUpdateGroup } from "../../hooks/groups";
+import { useGetNotify } from "../../hooks/notify";
 
 const MAIN_COLOR = "#A60E07";
 
@@ -22,13 +22,22 @@ const MOCK_TEACHERS = [
     { id: 4, name: "Umid Karimov" },
 ];
 
+const WEEK_DAYS = [
+  { id: "Dushanba", short: "Dush" },
+  { id: "Seshanba", short: "Sesh" },
+  { id: "Chorshanba", short: "Chor" },
+  { id: "Payshanba", short: "Pay" },
+  { id: "Juma", short: "Jum" },
+  { id: "Shanba", short: "Shan" },
+];
+
 const modalStyle = {
   position: "absolute",
   top: "50%",
   left: "50%",
   transform: "translate(-50%, -50%)",
   width: "90%",
-  maxWidth: "450px", 
+  maxWidth: "500px",
   bgcolor: "background.paper",
   borderRadius: "20px",
   boxShadow: 24,
@@ -40,30 +49,41 @@ const modalStyle = {
 
 export default function AdminUpdateGroupModal({ children, initialData }) {
   const [isOpen, setIsOpen] = useState(false);
-  
+  const updateGroupMutation = useUpdateGroup();
+  const notify = useGetNotify()
+
   const [groupData, setGroupData] = useState({
     name: "",
-    teacher_name: "",
-    created_at: "", // Только дата (YYYY-MM-DD)
+    teacher_id: "",
+    start_date: "2025-01-10",
+    price: "",
     schedule: {
       days: [],
-      time: ""
+      time: "18:00-20:00"
     }
   });
 
   useEffect(() => {
     if (isOpen && initialData) {
-      // Извлекаем только дату (YYYY-MM-DD)
-      const formattedDate = initialData.created_at ? initialData.created_at.substring(0, 10) : "";
-      
+      let startDateValue = "";
+      if (initialData.start_date) {
+        // Convert UTC date to Asia/Tashkent and format as yyyy-MM-dd
+        try {
+          const tz = "Asia/Tashkent";
+          const zoned = toZonedTime(initialData.start_date, tz);
+          startDateValue = format(zoned, "yyyy-MM-dd", { timeZone: tz });
+        } catch (e) {
+          startDateValue = initialData.start_date.split("T")[0];
+        }
+      }
       setGroupData({
-        id: initialData.id,
         name: initialData.name || "",
-        teacher_name: initialData.teacher_name || "",
-        created_at: formattedDate,
+        teacher_id: initialData.teacher_id ? String(initialData.teacher_id) : "",
+        start_date: startDateValue,
+        price: initialData.price ? String(initialData.price) : "",
         schedule: {
           days: initialData.schedule?.days || [],
-          time: initialData.schedule?.time || "09:00-11:00"
+          time: initialData.schedule?.time || "18:00-20:00"
         }
       });
     }
@@ -77,12 +97,21 @@ export default function AdminUpdateGroupModal({ children, initialData }) {
     setGroupData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleDaysChange = (e) => {
-    const daysArray = e.target.value.split(",").map(day => day.trim());
-    setGroupData(prev => ({
-      ...prev,
-      schedule: { ...prev.schedule, days: daysArray }
-    }));
+  const handleDayToggle = (dayId) => {
+    setGroupData(prev => {
+      // Find both full and short names for the day
+      const dayObj = WEEK_DAYS.find(d => d.id === dayId || d.short === dayId);
+      if (!dayObj) return prev;
+      const { id, short } = dayObj;
+      // Remove both forms if present
+      const filtered = prev.schedule.days.filter(d => d !== id && d !== short);
+      const isSelected = prev.schedule.days.includes(id) || prev.schedule.days.includes(short);
+      const newDays = isSelected ? filtered : [...filtered, id];
+      return {
+        ...prev,
+        schedule: { ...prev.schedule, days: newDays }
+      };
+    });
   };
 
   const handleTimeUpdate = (type, value) => {
@@ -96,18 +125,35 @@ export default function AdminUpdateGroupModal({ children, initialData }) {
 
   const handleUpdate = (e) => {
     e.preventDefault();
-    
-    // Собираем объект в оригинальном формате для бэкенда
+
     const finalData = {
-      ...groupData,
-      // Превращаем дату обратно в ISO формат (начало дня) для корректности ключа created_at
-      created_at: groupData.created_at ? new Date(groupData.created_at).toISOString() : null
+      teacher_id: groupData.teacher_id ? Number(groupData.teacher_id) : 1,
+      name: groupData.name,
+      price: groupData.price ? Number(groupData.price) : null,
+      schedule: {
+        days: groupData.schedule.days,
+        time: groupData.schedule.time
+      },
+      start_date: groupData.start_date
     };
 
-    console.log("%c🔥 ДАННЫЕ ДЛЯ БЭКЕНДА (ГОТОВО):", "color: #A60E07; font-weight: bold;");
-    console.log(finalData); 
+    if (!initialData?.id) {
+      // console.error("Guruh ID topilmadi!");
+      return;
+    }
 
-    handleClose();
+    updateGroupMutation.mutate({
+      id: initialData.id,
+      groupdata: finalData,
+      onSuccess: (data) => {
+        notify('ok','Guruh muvaffaqiyatli yangilandi')
+        handleClose();
+      },
+      onError: (err) => {
+        console.error("Xatolik:", err);
+        notify('err',`Guruhni yangilab bo'lmadi`)
+      }
+    });
   };
 
   const [startTime, endTime] = groupData.schedule.time.split("-");
@@ -129,9 +175,9 @@ export default function AdminUpdateGroupModal({ children, initialData }) {
             </h3>
 
             <form className="space-y-4" onSubmit={handleUpdate}>
-              {/* key: name */}
+              {/* Guruh Nomi */}
               <div>
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Guruh Nomi (name)</label>
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Guruh Nomi *</label>
                 <input
                   type="text"
                   name="name"
@@ -141,52 +187,84 @@ export default function AdminUpdateGroupModal({ children, initialData }) {
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-[#A60E07] text-sm font-semibold"
                 />
               </div>
-              
-              {/* key: teacher_name */}
+
+              {/* O'qituvchi */}
               <div>
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">O'qituvchi (teacher_name)</label>
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1 flex items-center">
+                  <UserIcon className="h-3 w-3 mr-1" /> O'qituvchi
+                </label>
                 <select
-                  name="teacher_name"
-                  value={groupData.teacher_name}
+                  name="teacher_id"
+                  value={groupData.teacher_id}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-[#A60E07] text-sm font-semibold"
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-[#A60E07] text-sm font-semibold cursor-pointer"
                 >
-                  <option value="">Tayinlanmagan</option> 
+                  <option value="">Tayinlanmagan</option>
                   {MOCK_TEACHERS.map((t) => (
-                    <option key={t.id} value={t.name}>{t.name}</option>
+                    <option key={t.id} value={t.id}>{t.name}</option>
                   ))}
                 </select>
               </div>
 
-              {/* key: created_at (Sana faqat) */}
+              {/* Narxi */}
               <div>
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1 flex items-center">
-                  <CalendarIcon className="h-3 w-3 mr-1" /> Yaratilgan sana (created_at)
-                </label>
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Guruh narxi (so‘m)</label>
                 <input
-                  type="date"
-                  name="created_at"
-                  value={groupData.created_at}
+                  type="number"
+                  name="price"
+                  value={groupData.price}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-[#A60E07] text-sm font-semibold outline-none"
-                />
-              </div>
-
-              {/* key: schedule.days */}
-              <div>
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Dars Kunlari (days)</label>
-                <input
-                  type="text"
-                  value={groupData.schedule.days.join(", ")}
-                  onChange={handleDaysChange}
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-[#A60E07] text-sm font-semibold"
+                  placeholder="Masalan: 300000"
+                  min="0"
                 />
               </div>
 
-              {/* key: schedule.time */}
+              {/* Dars boshlanish sanasi */}
               <div className="flex gap-4">
                 <div className="flex-1">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1 text-gray-400">Vaqt (start)</label>
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Dars boshlanish sanasi</label>
+                  <input
+                    type="date"
+                    name="start_date"
+                    value={groupData.start_date || ""}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none text-sm font-semibold"
+                    placeholder="Belgilanmagan"
+                  />
+                  {!groupData.start_date && (
+                    <span className="text-xs text-gray-400">Belgilanmagan</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Dars Kunlari (Tugmachalar) */}
+              <div>
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Dars Kunlari *</label>
+                <div className="flex flex-wrap gap-2">
+                  {WEEK_DAYS.map((day) => {
+                    // Normalize for both short and full names
+                    const isSelected = groupData.schedule.days.includes(day.id) || groupData.schedule.days.includes(day.short);
+                    return (
+                      <button
+                        key={day.id}
+                        type="button"
+                        onClick={() => handleDayToggle(day.id)}
+                        className={`px-3 py-2 rounded-lg text-xs font-bold transition-all border ${isSelected
+                          ? "bg-[#A60E07] text-white border-[#A60E07] shadow-md shadow-red-900/20"
+                          : "bg-gray-50 text-gray-500 border-gray-200 hover:border-[#A60E07]"}`}
+                      >
+                        {day.id}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Vaqt */}
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1 text-gray-400">Boshlanish</label>
                   <input
                     type="text"
                     value={startTime}
@@ -195,7 +273,7 @@ export default function AdminUpdateGroupModal({ children, initialData }) {
                   />
                 </div>
                 <div className="flex-1">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1 text-gray-400">Vaqt (end)</label>
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1 text-gray-400">Tugash</label>
                   <input
                     type="text"
                     value={endTime}

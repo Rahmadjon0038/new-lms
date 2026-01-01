@@ -12,17 +12,54 @@ import {
     XMarkIcon,
     ArchiveBoxXMarkIcon,
     LockClosedIcon,
-    CalendarIcon, // Sana uchun ikonka
+    CalendarIcon,
 } from "@heroicons/react/24/outline";
 import { FiFilter } from 'react-icons/fi';
 import Link from "next/link";
 import AdminUpdateGroupModal from "../../../components/admistrator/AdminUpdateGroup";
+import { useUpdateGroup } from "../../../hooks/groups";
 import AdminNewGroupModal from "../../../components/admistrator/CreateGroup";
 import { usegetAllgroups } from "../../../hooks/groups";
 import { Clock } from "lucide-react";
 
+// --- Tasdiqlash Modali Komponenti ---
+const ConfirmToggleModal = ({ isOpen, onClose, onConfirm, isClosing, isLoading }) => {
+    if (!isOpen) return null;
+    return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+            <div className="bg-white p-6 rounded-2xl shadow-2xl max-w-sm w-full animate-in fade-in zoom-in duration-200">
+                <div className="flex justify-center mb-4">
+                    {isClosing ? 
+                        <ArchiveBoxXMarkIcon className="h-14 w-14 text-orange-500" /> : 
+                        <CheckIcon className="h-14 w-14 text-green-500" />
+                    }
+                </div>
+                <h3 className="text-xl font-bold text-center text-gray-800 mb-2">
+                    {isClosing ? "Guruhni yopish" : "Guruhni ochish"}
+                </h3>
+                <p className="text-gray-500 text-center text-sm mb-6">
+                    {isClosing 
+                        ? "Haqiqatan ham ushbu guruhni yopmoqchimisiz? Guruh yopilgach, talabalar uni faol guruhlar ro'yxatida ko'ra olmaydi." 
+                        : "Ushbu guruhni qayta faollashtirmoqchimisiz?"}
+                </p>
+                <div className="flex gap-3">
+                    <button onClick={onClose} className="flex-1 py-2.5 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition">
+                        Bekor qilish
+                    </button>
+                    <button 
+                        onClick={onConfirm} 
+                        disabled={isLoading} 
+                        className={`flex-1 py-2.5 rounded-xl font-bold text-white transition disabled:opacity-50 ${isClosing ? 'bg-orange-600' : 'bg-[#A60E07]'}`}
+                    >
+                        {isLoading ? "Bajarilmoqda..." : "Tasdiqlash"}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
 
-const GroupCard = ({ group, onToggleGroupStatus }) => {
+const GroupCard = ({ group, onToggleGroupStatus, updateGroupLoading = false }) => {
     const [isCopied, setIsCopied] = useState(false);
 
     const handleCopy = () => {
@@ -34,9 +71,8 @@ const GroupCard = ({ group, onToggleGroupStatus }) => {
     const scheduleDays = group.schedule?.days?.join(", ") || "Belgilanmagan";
     const timeInfo = group.schedule?.time ? ` (${group.schedule.time})` : "";
     
-    // Sana formatlash (Kun.Oy.Yil)
-    const createdAtDate = group.created_at 
-        ? new Date(group.created_at).toLocaleDateString('uz-UZ') 
+    const startDate = group.start_date
+        ? new Date(group.start_date).toLocaleDateString('uz-UZ')
         : "Belgilanmagan";
 
     const borderColor = group.is_active ? "border-[#A60E07]" : "border-gray-400";
@@ -56,6 +92,12 @@ const GroupCard = ({ group, onToggleGroupStatus }) => {
                     {!group.is_active && <span className="ml-2 text-sm font-medium text-gray-400">(Yopilgan)</span>}
                 </h3>
 
+                {/* Narxi yuqorida, ko'zga tashlanadigan */}
+                <div className="flex items-center gap-2 mb-3">
+                    <span className="text-2xl font-extrabold text-[#A60E07]">{group.price ? group.price + ' so‘m' : 'Narxi belgilanmagan'}</span>
+                    <span className="text-lg">💵</span>
+                </div>
+
                 <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-gray-200 mb-4">
                     <span className="text-sm font-semibold text-gray-700">
                         Kod: <span className="font-mono text-[#A60E07] ml-1">{group.unique_code}</span>
@@ -69,26 +111,25 @@ const GroupCard = ({ group, onToggleGroupStatus }) => {
                 </div>
 
                 <div className="space-y-2 text-sm text-gray-700">
-                    <p className="flex items-center">
+                    <p className="flex ">
                         <UsersIcon className="h-4 w-4 mr-2 text-gray-400" />
                         Holati: <span className="ml-1 font-semibold text-[#A60E07]">{group.is_active ? "Aktiv" : "Nofaol"}</span>
                     </p>
-                    <p className="flex items-center">
+                    <p className="flex ">
                         <CalendarDaysIcon className="h-4 w-4 mr-2 text-gray-400" />
                         Jadval: <span className="ml-1 font-semibold">{scheduleDays}</span>
                     </p>
-                    <p className="flex items-center">
+                    <p className="flex ">
                         <Clock className="h-4 w-4 mr-2 text-gray-400" />
                         Vaqti: <span className="ml-1 font-medium text-gray-600">{timeInfo}</span>
                     </p>
-                    <p className="flex items-center">
+                    <p className="flex ">
                         <PencilSquareIcon className="h-4 w-4 mr-2 text-gray-400" />
                         O'qituvchi: <span className="ml-1 font-bold text-gray-800">{group.teacher_name || "Tayinlanmagan"}</span>
                     </p>
-                    {/* YARATILGAN VAQT QATORI */}
-                    <p className="flex items-center">
+                    <p className="flex ">
                         <CalendarIcon className="h-4 w-4 mr-2 text-gray-400" />
-                        Ochilgan sana: <span className="ml-1 font-semibold text-gray-600">{createdAtDate}</span>
+                        Dars boshlanish sanasi: <span className="ml-1 font-semibold text-gray-600">{startDate}</span>
                     </p>
                 </div>
             </div>
@@ -113,6 +154,7 @@ const GroupCard = ({ group, onToggleGroupStatus }) => {
                 <button
                     onClick={() => onToggleGroupStatus(group.id, !group.is_active)}
                     className={`p-2.5 rounded-lg text-white transition duration-150 shadow-md h-full ${group.is_active ? 'bg-orange-600 hover:bg-orange-700' : 'bg-[#A60E07] hover:opacity-90'}`}
+                    disabled={updateGroupLoading}
                 >
                     {group.is_active ? <LockClosedIcon className="h-5 w-5" /> : <CheckIcon className="h-5 w-5" />}
                 </button>
@@ -122,19 +164,36 @@ const GroupCard = ({ group, onToggleGroupStatus }) => {
 };
 
 function AdminGroupsPage() {
-    const { data: backendData, isLoading, error } = usegetAllgroups();
     const [selectedTeacher, setSelectedTeacher] = useState('all');
     const [currentTab, setCurrentTab] = useState('active');
-    const [groups, setGroups] = useState([]);
+    
+    // --- Modal State ---
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false, groupId: null, newStatus: null });
 
-    useEffect(() => {
-        if (backendData?.groups) {
-            setGroups(backendData.groups);
-        }
-    }, [backendData]);
+    const isActive = currentTab === 'active' ? true : false;
+    const { data: backendData, isLoading, error } = usegetAllgroups(isActive);
+    const updateGroupMutation = useUpdateGroup();
 
-    const handleToggleGroupStatus = (groupId, newStatus) => {
-        setGroups(prev => prev.map(g => g.id === groupId ? { ...g, is_active: newStatus } : g));
+    const groups = backendData?.groups || [];
+
+    // Modalni ochish funksiyasi
+    const handleOpenConfirm = (groupId, newStatus) => {
+        setConfirmModal({ isOpen: true, groupId, newStatus });
+    };
+
+    // Haqiqiy update funksiyasi
+    const handleConfirmToggle = () => {
+        updateGroupMutation.mutate({
+            id: confirmModal.groupId,
+            groupdata: { is_active: confirmModal.newStatus },
+            onSuccess: () => {
+                setConfirmModal({ isOpen: false, groupId: null, newStatus: null });
+            },
+            onError: (err) => {
+                alert("Guruhni yangilashda xatolik: " + (err?.message || ""));
+                setConfirmModal({ isOpen: false, groupId: null, newStatus: null });
+            }
+        });
     };
 
     const TEACHERS = useMemo(() => {
@@ -144,13 +203,11 @@ function AdminGroupsPage() {
 
     const filteredGroups = useMemo(() => {
         return groups.filter(g => {
-            const statusMatch = currentTab === 'active' ? g.is_active : !g.is_active;
             const teacherMatch = selectedTeacher === 'all' || g.teacher_name === selectedTeacher;
-            return statusMatch && teacherMatch;
+            return teacherMatch;
         });
-    }, [selectedTeacher, currentTab, groups]);
+    }, [selectedTeacher, groups]);
 
-    // YUKLANMOQDA YOZUVI
     if (isLoading) return <div className="p-10 text-center font-bold text-[#A60E07] text-xl animate-pulse">Guruhlar yuklanmoqda...</div>;
     if (error) return <div className="p-10 text-center text-red-600 font-bold">Xatolik yuz berdi!</div>;
 
@@ -169,16 +226,10 @@ function AdminGroupsPage() {
                 <button onClick={() => setCurrentTab('active')} className={tabClass('active')}>
                     <UsersIcon className="h-5 w-5 inline mr-2" />
                     Aktiv Guruhlar
-                    <span className="ml-2 text-sm font-semibold p-1 rounded-full bg-red-100 text-[#A60E07]">
-                        {groups.filter(g => g.is_active).length}
-                    </span>
                 </button>
                 <button onClick={() => setCurrentTab('closed')} className={tabClass('closed')}>
                     <LockClosedIcon className="h-5 w-5 inline mr-2" />
                     Yopilgan Guruhlar
-                    <span className="ml-2 text-sm font-semibold p-1 rounded-full bg-gray-200 text-gray-700">
-                        {groups.filter(g => !g.is_active).length}
-                    </span>
                 </button>
             </div>
 
@@ -203,9 +254,23 @@ function AdminGroupsPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredGroups.map((group) => (
-                    <GroupCard key={group.id} group={group} onToggleGroupStatus={handleToggleGroupStatus} />
+                    <GroupCard 
+                        key={group.id} 
+                        group={group} 
+                        onToggleGroupStatus={handleOpenConfirm} 
+                        updateGroupLoading={updateGroupMutation.isLoading} 
+                    />
                 ))}
             </div>
+
+            {/* TASDIQLASH MODALI */}
+            <ConfirmToggleModal 
+                isOpen={confirmModal.isOpen}
+                onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+                onConfirm={handleConfirmToggle}
+                isClosing={confirmModal.newStatus === false}
+                isLoading={updateGroupMutation.isLoading}
+            />
 
             {filteredGroups.length === 0 && (
                 <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-300 mt-8">

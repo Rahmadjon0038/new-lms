@@ -12,6 +12,7 @@ import {
 import Box from "@mui/material/Box";
 import Modal from "@mui/material/Modal";
 import { useCreateGroup } from "../../hooks/groups";
+import { useGetNotify } from "../../hooks/notify";
 
 const MAIN_COLOR = "#A60E07";
 
@@ -49,17 +50,19 @@ const modalStyle = {
 };
 
 export default function AdminNewGroupModal({ children }) {
+  const notify = useGetNotify();
   // ------------ crate group hook ---------
   const createGroupMutation = useCreateGroup()
   const [isOpen, setIsOpen] = useState(false);
 
   const [groupData, setGroupData] = useState({
     name: "",
-    unique_code: "",
     teacher_id: "",
     selectedDays: [], // Tanlangan kunlar arrayi
     startTime: "09:00",
     endTime: "11:00",
+    start_date: null, // Dars boshlanish sanasi (ixtiyoriy)
+    price: "",
   });
 
   const handleOpen = () => setIsOpen(true);
@@ -67,11 +70,11 @@ export default function AdminNewGroupModal({ children }) {
   const handleClose = () => {
     setGroupData({
       name: "",
-      unique_code: "",
       teacher_id: "",
       selectedDays: [],
       startTime: "09:00",
       endTime: "11:00",
+      start_date: null,
     });
     setIsOpen(false);
   };
@@ -81,6 +84,8 @@ export default function AdminNewGroupModal({ children }) {
     if (name === "name") {
       const slug = value.toLowerCase().replace(/ /g, "-").replace(/[^\w-]+/g, "");
       setGroupData(prev => ({ ...prev, name: value, unique_code: slug }));
+    } else if (name === "start_date") {
+      setGroupData(prev => ({ ...prev, start_date: value || null }));
     } else {
       setGroupData((prev) => ({ ...prev, [name]: value }));
     }
@@ -103,21 +108,28 @@ export default function AdminNewGroupModal({ children }) {
     // Backend kutayotgan format
     const groupdata = {
       name: groupData.name,
-      unique_code: groupData.unique_code,
       teacher_id: groupData.teacher_id ? Number(groupData.teacher_id) : null,
+      price: groupData.price ? Number(groupData.price) : null,
       schedule: {
         days: groupData.selectedDays, // Array formatida: ["Dush", "Chor", "Jum"]
         time: `${groupData.startTime}-${groupData.endTime}`
-      }
+      },
+      start_date: groupData.start_date ? groupData.start_date : null,
     };
+    console.log(groupData)
 
     createGroupMutation.mutate({
       groupdata,
       onSuccess: (data) => {
         console.log(data)
+        if(data.success){
+        notify('ok','Guruh muvaffaqiyatli yaratildi')
+        }
+        setIsOpen(false);
       },
       onError: (err) => {
         console.log(err)
+        notify('err','Guruh yaratishda xatolik')
       }
     })
   };
@@ -153,19 +165,18 @@ export default function AdminNewGroupModal({ children }) {
                 />
               </div>
 
-              {/* 2. Unique Code */}
+              {/* Narxi (Yuqorida ko'rsatiladi) */}
               <div>
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1 flex items-center">
-                  <KeyIcon className="h-3 w-3 mr-1" /> Guruh Kodi *
-                </label>
+                <label className="text-[10px] font-bold  uppercase tracking-widest block mb-1">Guruh narxi (so‘m) *</label>
                 <input
-                  type="text"
-                  name="unique_code"
-                  value={groupData.unique_code}
+                  type="number"
+                  name="price"
+                  value={groupData.price}
                   onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none"
+                  placeholder="Masalan: 300000"
+                  min="0"
                   required
-                  placeholder="english-001"
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none text-sm font-mono text-[#A60E07]"
                 />
               </div>
 
@@ -187,6 +198,7 @@ export default function AdminNewGroupModal({ children }) {
                 </select>
               </div>
 
+
               {/* 4. Hafta kunlari (Tugmachalar) */}
               <div>
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Dars Kunlari *</label>
@@ -199,8 +211,8 @@ export default function AdminNewGroupModal({ children }) {
                         type="button"
                         onClick={() => toggleDay(day.id)}
                         className={`px-3 py-2 rounded-lg text-xs font-bold transition-all border ${isSelected
-                            ? "bg-[#A60E07] text-white border-[#A60E07] shadow-md shadow-red-900/20"
-                            : "bg-gray-50 text-gray-500 border-gray-200 hover:border-[#A60E07]"
+                          ? "bg-[#A60E07] text-white border-[#A60E07] shadow-md shadow-red-900/20"
+                          : "bg-gray-50 text-gray-500 border-gray-200 hover:border-[#A60E07]"
                           }`}
                       >
                         {day.label}
@@ -232,6 +244,22 @@ export default function AdminNewGroupModal({ children }) {
                     className="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none text-sm font-semibold"
                   />
                 </div>
+              </div>
+
+              {/* Dars boshlanish sanasi (ixtiyoriy) */}
+              <div>
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Dars boshlanish sanasi (ixtiyoriy)</label>
+                <input
+                  type="date"
+                  name="start_date"
+                  value={groupData.start_date || ""}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none text-sm font-semibold"
+                  placeholder="Belgilanmagan"
+                />
+                {groupData.start_date === null || groupData.start_date === "" ? (
+                  <span className="text-xs text-gray-400">Belgilanmagan</span>
+                ) : null}
               </div>
 
               <button

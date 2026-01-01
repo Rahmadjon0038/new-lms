@@ -49,66 +49,7 @@ const initialMockTeachers = [
     pricePerStudent: 250000,
     latePaidStudentsCount: 0,
   },
-  {
-    id: 3,
-    name: "Shahnoza Qodirova",
-    subjects: ["Python", "Data Science"],
-    startDate: "2023-11-20",
-    salaryPercentage: 60,
-    paidStudents: 28,
-    unpaidStudents: 7,
-    avans: 1000000,
-    isMonthlySalaryPaid: false,
-    latePaymentsReceived: 300000, // Kechikkan to'lov summasi
-    isLatePaymentPaid: false,
-    pricePerStudent: 350000,
-    latePaidStudentsCount: 5, // Kechikib to'lagan o'quvchilar soni
-  },
-  {
-    id: 4,
-    name: "Raxmadjon Abdullaev",
-    subjects: ["Inglis Tili", "IELTS"],
-    startDate: "2024-02-01",
-    salaryPercentage: 65,
-    paidStudents: 40,
-    unpaidStudents: 0,
-    avans: 500000,
-    isMonthlySalaryPaid: true, // Oylik yopilgan
-    latePaymentsReceived: 450000, // Kechikkan to'lov summasi
-    isLatePaymentPaid: false, // Lekin hali to'lanmagan
-    pricePerStudent: 225000,
-    latePaidStudentsCount: 4, // Kechikib to'lagan o'quvchilar soni
-  },
-  {
-    id: 5,
-    name: "Malika Yusupova",
-    subjects: ["Matematika", "Fizika"],
-    startDate: "2023-08-10",
-    salaryPercentage: 55,
-    paidStudents: 30,
-    unpaidStudents: 4,
-    avans: 0,
-    isMonthlySalaryPaid: false,
-    latePaymentsReceived: 100000,
-    isLatePaymentPaid: false,
-    pricePerStudent: 300000,
-    latePaidStudentsCount: 2, // Kechikib to'lagan o'quvchilar soni
-  },
-  {
-    id: 6,
-    name: "Farrux Olimov",
-    subjects: ["Ona Tili", "Adabiyot"],
-    startDate: "2024-04-05",
-    salaryPercentage: 50,
-    paidStudents: 18,
-    unpaidStudents: 0,
-    avans: 200000,
-    isMonthlySalaryPaid: true,
-    latePaymentsReceived: 0,
-    isLatePaymentPaid: true,
-    pricePerStudent: 150000,
-    latePaidStudentsCount: 0,
-  },
+ 
 ];
 
 // Sanani DD/MM/YYYY formatiga o'tkazish

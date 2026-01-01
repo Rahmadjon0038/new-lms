@@ -10,6 +10,8 @@ import {
 } from "@heroicons/react/24/outline";
 import ProfileModal from "./modals/Profile";
 import { usegetProfile } from "../hooks/user";
+import Cookies from "js-cookie";
+import { useRouter } from "next/navigation";
 
 // Rol uchun rangni aniqlash
 const getRoleColor = (role = "") => {
@@ -28,10 +30,13 @@ const getRoleColor = (role = "") => {
 
 function Navbar() {
   const { data: user, isLoading } = usegetProfile();
+  const navigate = useRouter()
 
   const handleLogout = () => {
-    localStorage.clear();
-    window.location.href = "/login";
+    Cookies.remove('accessToken');
+    Cookies.remove('refreshToken');
+    Cookies.remove('role');
+    navigate.push('/')
   };
 
   const fullName = user ? `${user.name} ${user.surname}` : "";
@@ -41,8 +46,7 @@ function Navbar() {
   return (
     <header 
       className="w-full shadow-xl border-b sticky top-0 z-10" 
-      style={{ backgroundColor: '#A60E07', borderColor: 'rgba(255,255,255,0.1)' }}
-    >
+      style={{ backgroundColor: '#A60E07', borderColor: 'rgba(255,255,255,0.1)' }}>
       <div className="flex justify-between items-center h-16 px-4 md:px-8">
         {/* 1. Logotip har doim ko'rinadi */}
         <Link
