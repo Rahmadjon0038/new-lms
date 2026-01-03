@@ -10,14 +10,9 @@ const months = [
     { value: '01', label: "Yanvar" }, { value: '02', label: "Fevral" }, { value: '03', label: "Mart" },
 ];
 
-const subjects = [
-    { value: 'all', label: "Barcha Fanlar" },
+const groupFilters = [
+    { value: 'all', label: "Barcha Guruhlar" },
     { value: 'NoGroup', label: "Guruhlanmaganlar" },
-    { value: 'Web Dasturlash', label: "Web Dasturlash" },
-    { value: 'Grafik Dizayn', label: "Grafik Dizayn" },
-    { value: 'Python AI', label: "Python AI" },
-    { value: 'SMM', label: "SMM" },
-    { value: 'Ingliz Tili (B1)', label: "Ingliz Tili (B1)" },
 ];
 
 // --- Tahrirlash Holatida Input Komponenti ---
@@ -37,10 +32,11 @@ const EditableCell = memo(EditableCellComponent);
 const StudentsPage = () => {
     // Backenddan ma'lumotlarni olish
     const { data: backendData, isLoading, error } = useGetAllStudents();
+    console.log(backendData)
 
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedMonth, setSelectedMonth] = useState('all');
-    const [selectedSubject, setSelectedSubject] = useState('all');
+    const [selectedGroup, setSelectedGroup] = useState('all');
     
     // Backenddan kelgan ma'lumotlarni boshqarish uchun lokal state
     const [students, setStudents] = useState([]);
@@ -61,10 +57,10 @@ const StudentsPage = () => {
         if (selectedMonth !== 'all') {
             currentList = currentList.filter(student => student.registration_date?.substring(5, 7) === selectedMonth); 
         }
-        if (selectedSubject === 'NoGroup') {
+        if (selectedGroup === 'NoGroup') {
              currentList = currentList.filter(student => !student.group_name);
-        } else if (selectedSubject !== 'all') {
-            currentList = currentList.filter(student => student.subject_name === selectedSubject);
+        } else if (selectedGroup !== 'all') {
+            currentList = currentList.filter(student => student.group_name === selectedGroup);
         }
         if (searchTerm) {
             const lowerCaseSearch = searchTerm.toLowerCase();
@@ -75,7 +71,7 @@ const StudentsPage = () => {
             );
         }
         return currentList;
-    }, [selectedMonth, selectedSubject, searchTerm, students]);
+    }, [selectedMonth, selectedGroup, searchTerm, students]);
 
     const handleEditChange = useCallback((e) => {
         const { name, value, type } = e.target;
@@ -91,8 +87,9 @@ const StudentsPage = () => {
             surname: student.surname,
             registration_date: student.registration_date?.split('T')[0],
             group_name: student.group_name || '',
-            paid_amount: student.paid_amount,
-            required_amount: student.required_amount, 
+            phone: student.phone,
+            phone2: student.phone2,
+            status: student.status,
         });
     };
 
@@ -105,9 +102,6 @@ const StudentsPage = () => {
     };
 
     const handleSave = (uniqueId) => {
-        const newPaidAmount = Number(editData.paid_amount) || 0;
-        const newRequiredAmount = Number(editData.required_amount) || 0;
-
         setStudents(prevStudents => 
             prevStudents.map((s, idx) => 
                 `${s.id}-${idx}` === uniqueId 
@@ -116,9 +110,10 @@ const StudentsPage = () => {
                         name: String(editData.name).trim(), 
                         surname: String(editData.surname).trim(),
                         registration_date: editData.registration_date, 
-                        group_name: String(editData.group_name).trim() || null, 
-                        paid_amount: newPaidAmount,
-                        required_amount: newRequiredAmount
+                        group_name: String(editData.group_name).trim() || null,
+                        phone: String(editData.phone).trim(),
+                        phone2: String(editData.phone2).trim(),
+                        status: editData.status
                     } 
                     : s
             )
@@ -156,11 +151,11 @@ const StudentsPage = () => {
                     />
                 </div>
                 <select 
-                    value={selectedSubject} 
-                    onChange={(e) => setSelectedSubject(e.target.value)} 
+                    value={selectedGroup} 
+                    onChange={(e) => setSelectedGroup(e.target.value)} 
                     className="p-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:border-[#A60E07]"
                 >
-                    {subjects.map(sub => (<option key={sub.value} value={sub.value}>{sub.label}</option>))}
+                    {groupFilters.map(group => (<option key={group.value} value={group.value}>{group.label}</option>))}
                 </select>
                 <select 
                     value={selectedMonth} 
@@ -184,9 +179,9 @@ const StudentsPage = () => {
                     <thead className="bg-gray-50">
                         <tr>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[180px]">Ism / Telefon</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[220px]">Guruh / Fan / O'qituvchi</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[220px]">Guruh / O'qituvchi</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ro'yxatdan sana</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">To'lov (Talab / To'langan)</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Holat</th>
                             <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[150px]">Amallar</th> 
                         </tr>
                     </thead>
@@ -195,9 +190,6 @@ const StudentsPage = () => {
                             filteredStudents.map((student, index) => {
                                 const rowKey = `${student.id}-${index}`;
                                 const isEditing = editingId === rowKey;
-                                const reqAmount = Number(student.required_amount) || 0;
-                                const paidAmount = Number(student.paid_amount) || 0;
-                                const isDebt = reqAmount - paidAmount > 0;
                                 
                                 return (
                                     <tr key={rowKey} className={`${isEditing ? 'bg-red-50' : (index % 2 === 0 ? 'bg-white' : 'bg-gray-50')} hover:bg-gray-100 transition duration-150`}>
@@ -206,9 +198,12 @@ const StudentsPage = () => {
                                                 <div className="flex flex-col gap-1">
                                                     <EditableCell name="name" value={editData.name} onChange={handleEditChange} placeholder="Ism"/>
                                                     <EditableCell name="surname" value={editData.surname} onChange={handleEditChange} placeholder="Familiya"/>
+                                                    <EditableCell name="phone" value={editData.phone} onChange={handleEditChange} placeholder="Telefon 1"/>
+                                                    <EditableCell name="phone2" value={editData.phone2} onChange={handleEditChange} placeholder="Telefon 2"/>
                                                 </div>
                                             ) : (
                                                 <div>
+                                                    <span className='mr-2 text-xl font-bold  text-red-500'> {student.id}</span>
                                                     <span className="font-semibold text-gray-900">{student.name} {student.surname}</span>
                                                     <div className="text-xs text-gray-500 mt-0.5">{student.phone}</div>
                                                     <div className="text-xs text-gray-500 mt-0.5">{student.phone2}</div>
@@ -236,7 +231,6 @@ const StudentsPage = () => {
                                                             {student.group_name ? <FiEdit size={14}/> : <FiUserPlus size={14}/>}
                                                         </button>
                                                     </div>
-                                                    <div className='text-xs text-gray-500'>Fan: {student.subject_name || 'Yo\'q'}</div>
                                                     {student.group_name && <div className="text-xs text-gray-500 mt-0.5">O'qituvchi: {student.teacher_name || 'Aniqlanmagan'}</div>}
                                                 </div>
                                             )}
@@ -250,18 +244,26 @@ const StudentsPage = () => {
                                         
                                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                                             {isEditing ? (
-                                                <div className="flex flex-col gap-1">
-                                                    <label className="text-xs text-gray-600 font-bold">Talab:</label>
-                                                    <EditableCell name="required_amount" type="number" value={editData.required_amount} onChange={handleEditChange} />
-                                                    <label className="text-xs text-gray-600 font-bold">To'langan:</label>
-                                                    <EditableCell name="paid_amount" type="number" value={editData.paid_amount} onChange={handleEditChange} />
-                                                </div>
+                                                <select 
+                                                    name="status"
+                                                    value={editData.status}
+                                                    onChange={handleEditChange}
+                                                    className="p-2 border border-[#A60E07] rounded w-full text-sm outline-none transition duration-200 focus:ring-1 focus:ring-[#A60E07]"
+                                                >
+                                                    <option value="active">Faol</option>
+                                                    <option value="inactive">Nofaol</option>
+                                                    <option value="graduated">Bitirgan</option>
+                                                </select>
                                             ) : (
                                                 <div className="flex flex-col">
-                                                    <span className="font-bold text-gray-900">{reqAmount} / {paidAmount}</span>
-                                                    <div className={`text-xs font-semibold mt-1 ${isDebt ? 'text-[#A60E07]' : 'text-green-600'}`}>
-                                                        {isDebt ? `Qarzdor: ${reqAmount - paidAmount}` : "To'liq to'langan"}
-                                                    </div>
+                                                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                                        student.status === 'active' ? 'bg-green-100 text-green-800' :
+                                                        student.status === 'inactive' ? 'bg-red-100 text-red-800' :
+                                                        'bg-blue-100 text-blue-800'
+                                                    }`}>
+                                                        {student.status === 'active' ? 'Faol' : 
+                                                         student.status === 'inactive' ? 'Nofaol' : 'Bitirgan'}
+                                                    </span>
                                                 </div>
                                             )}
                                         </td>

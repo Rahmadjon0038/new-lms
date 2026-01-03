@@ -68,3 +68,18 @@ export const useCreateGroup = () => {
 
     return createGroupMutation
 }
+
+// ----------- get group by id -----------------
+const getGroupById = async (id) => {
+    const response = await instance.get(`/api/groups/${id}`);
+    return response.data;
+}
+
+export const useGetGroupById = (id) => {
+    const { data, isLoading, error } = useQuery({
+        queryKey: ['group', id],
+        queryFn: () => getGroupById(id),
+        enabled: !!id, // Only run query if id exists
+    });
+    return { data, isLoading, error };
+}

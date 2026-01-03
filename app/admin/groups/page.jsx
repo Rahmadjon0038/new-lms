@@ -9,7 +9,6 @@ import {
     PencilSquareIcon,
     DocumentDuplicateIcon,
     CheckIcon,
-    XMarkIcon,
     ArchiveBoxXMarkIcon,
     LockClosedIcon,
     CalendarIcon,
@@ -29,8 +28,8 @@ const ConfirmToggleModal = ({ isOpen, onClose, onConfirm, isClosing, isLoading }
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
             <div className="bg-white p-6 rounded-2xl shadow-2xl max-w-sm w-full animate-in fade-in zoom-in duration-200">
                 <div className="flex justify-center mb-4">
-                    {isClosing ? 
-                        <ArchiveBoxXMarkIcon className="h-14 w-14 text-orange-500" /> : 
+                    {isClosing ?
+                        <ArchiveBoxXMarkIcon className="h-14 w-14 text-orange-500" /> :
                         <CheckIcon className="h-14 w-14 text-green-500" />
                     }
                 </div>
@@ -38,17 +37,17 @@ const ConfirmToggleModal = ({ isOpen, onClose, onConfirm, isClosing, isLoading }
                     {isClosing ? "Guruhni yopish" : "Guruhni ochish"}
                 </h3>
                 <p className="text-gray-500 text-center text-sm mb-6">
-                    {isClosing 
-                        ? "Haqiqatan ham ushbu guruhni yopmoqchimisiz? Guruh yopilgach, talabalar uni faol guruhlar ro'yxatida ko'ra olmaydi." 
+                    {isClosing
+                        ? "Haqiqatan ham ushbu guruhni yopmoqchimisiz? Guruh yopilgach, talabalar uni faol guruhlar ro'yxatida ko'ra olmaydi."
                         : "Ushbu guruhni qayta faollashtirmoqchimisiz?"}
                 </p>
                 <div className="flex gap-3">
                     <button onClick={onClose} className="flex-1 py-2.5 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition">
                         Bekor qilish
                     </button>
-                    <button 
-                        onClick={onConfirm} 
-                        disabled={isLoading} 
+                    <button
+                        onClick={onConfirm}
+                        disabled={isLoading}
                         className={`flex-1 py-2.5 rounded-xl font-bold text-white transition disabled:opacity-50 ${isClosing ? 'bg-orange-600' : 'bg-[#A60E07]'}`}
                     >
                         {isLoading ? "Bajarilmoqda..." : "Tasdiqlash"}
@@ -70,7 +69,7 @@ const GroupCard = ({ group, onToggleGroupStatus, updateGroupLoading = false }) =
 
     const scheduleDays = group.schedule?.days?.join(", ") || "Belgilanmagan";
     const timeInfo = group.schedule?.time ? ` (${group.schedule.time})` : "";
-    
+
     const startDate = group.start_date
         ? new Date(group.start_date).toLocaleDateString('uz-UZ')
         : "Belgilanmagan";
@@ -86,6 +85,7 @@ const GroupCard = ({ group, onToggleGroupStatus, updateGroupLoading = false }) =
     return (
         <div className={`flex flex-col justify-between bg-white p-6 rounded-xl shadow-lg border-t-4 ${borderColor} transition duration-150 hover:shadow-xl`}>
             <div className="mb-4">
+                <b>Id: {group.id} </b>
                 <h3 className={`text-xl font-bold ${statusTextColor} flex items-center mb-2`}>
                     {statusIcon}
                     {group.name}
@@ -166,7 +166,7 @@ const GroupCard = ({ group, onToggleGroupStatus, updateGroupLoading = false }) =
 function AdminGroupsPage() {
     const [selectedTeacher, setSelectedTeacher] = useState('all');
     const [currentTab, setCurrentTab] = useState('active');
-    
+
     // --- Modal State ---
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, groupId: null, newStatus: null });
 
@@ -254,17 +254,17 @@ function AdminGroupsPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredGroups.map((group) => (
-                    <GroupCard 
-                        key={group.id} 
-                        group={group} 
-                        onToggleGroupStatus={handleOpenConfirm} 
-                        updateGroupLoading={updateGroupMutation.isLoading} 
+                    <GroupCard
+                        key={group.id}
+                        group={group}
+                        onToggleGroupStatus={handleOpenConfirm}
+                        updateGroupLoading={updateGroupMutation.isLoading}
                     />
                 ))}
             </div>
 
             {/* TASDIQLASH MODALI */}
-            <ConfirmToggleModal 
+            <ConfirmToggleModal
                 isOpen={confirmModal.isOpen}
                 onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
                 onConfirm={handleConfirmToggle}
