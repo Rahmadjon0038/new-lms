@@ -83,3 +83,74 @@ export const useGetGroupById = (id) => {
     });
     return { data, isLoading, error };
 }
+
+// ----------- get student's groups -----------------
+const getStudentGroups = async () => {
+    const response = await instance.get('/api/students/my-groups');
+    return response.data;
+}
+
+export const useGetStudentGroups = () => {
+    const { data, isLoading, error } = useQuery({
+        queryKey: ['student-groups'],
+        queryFn: getStudentGroups,
+    });
+    return { data, isLoading, error };
+}
+
+// ----------- join group by code -----------------
+const joinGroupByCode = async (unique_code) => {
+    const response = await instance.post('/api/groups/join', { unique_code });
+    return response.data;
+}
+
+export const useJoinGroupByCode = () => {
+    const queryClient = useQueryClient();
+    const joinGroupMutation = useMutation({
+        mutationFn: joinGroupByCode,
+        onSuccess: (data) => {
+            // Refresh student groups after joining
+            queryClient.invalidateQueries(['student-groups']);
+        }
+    });
+    return joinGroupMutation;
+}
+
+// ----------- change student group -----------------
+const changeStudentGroup = async ({ student_id, new_group_id }) => {
+    const response = await instance.post('/api/groups/change-student-group', {
+        student_id: parseInt(student_id),
+        new_group_id: parseInt(new_group_id)
+    });
+    return response.data;
+}
+
+export const useChangeStudentGroup = () => {
+    const queryClient = useQueryClient();
+    const changeGroupMutation = useMutation({
+        mutationFn: changeStudentGroup,
+        onSuccess: () => {
+            queryClient.invalidateQueries(['students']);
+            queryClient.invalidateQueries(['groups']);
+        }
+    });
+    return changeGroupMutation;
+}
+
+// ----------- remove student from group -----------------
+const removeStudentFromGroup = async ({ group_id, student_id }) => {
+    const response = await instance.delete(`/api/groups/${group_id}/remove-student/${student_id}`);
+    return response.data;
+}
+
+export const useRemoveStudentFromGroup = () => {
+    const queryClient = useQueryClient();
+    const removeStudentMutation = useMutation({
+        mutationFn: removeStudentFromGroup,
+        onSuccess: () => {
+            queryClient.invalidateQueries(['students']);
+            queryClient.invalidateQueries(['groups']);
+        }
+    });
+    return removeStudentMutation;
+}

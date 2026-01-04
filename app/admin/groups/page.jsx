@@ -170,7 +170,7 @@ function AdminGroupsPage() {
     // --- Modal State ---
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, groupId: null, newStatus: null });
 
-    const isActive = currentTab === 'active' ? true : false;
+    const isActive = currentTab === 'active' ? true : currentTab === 'closed' ? false : undefined;
     const { data: backendData, isLoading, error } = usegetAllgroups(isActive);
     const updateGroupMutation = useUpdateGroup();
 
@@ -225,7 +225,7 @@ function AdminGroupsPage() {
             <div className="flex border-b border-gray-200 mb-6">
                 <button onClick={() => setCurrentTab('active')} className={tabClass('active')}>
                     <UsersIcon className="h-5 w-5 inline mr-2" />
-                    Aktiv Guruhlar
+                    Faol Guruhlar
                 </button>
                 <button onClick={() => setCurrentTab('closed')} className={tabClass('closed')}>
                     <LockClosedIcon className="h-5 w-5 inline mr-2" />

@@ -9,56 +9,20 @@ import {
   PlusCircleIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
-
-const mockGroupsData = [
-  {
-    id: 1,
-    name: "Web Dasturlash (Fullstack) 1-guruh",
-    uniqueCode: "WD-FS-101",
-    teacher: "Jasur Raximov",
-    schedule: "Dush / Chor / Jum - 18:00",
-    studentsCount: 15,
-    status: "Faol",
-  },
-  {
-    id: 2,
-    name: "Python / Data Science 2-guruh",
-    uniqueCode: "PY-DS-202",
-    teacher: "Madina To'rayeva",
-    schedule: "Seshanba / Payshanba - 14:00",
-    studentsCount: 12,
-    status: "Faol",
-  },
-  {
-    id: 3,
-    name: "Mobile Development (Flutter) 3-guruh",
-    uniqueCode: "MB-FL-303",
-    teacher: "Javlon Saidov",
-    schedule: "Shanba - ertalab",
-    studentsCount: 8,
-    status: "Yopilgan",
-  },
-];
+import { useGetStudentGroups, useJoinGroupByCode } from '../../hooks/groups';
+import { toast } from 'react-hot-toast';
 
 // --- Guruh Kartochkasi Komponenti ---
 const GroupCard = ({ group }) => {
-  const isStatusActive = group.status === "Faol";
-  const [copied, setCopied] = useState(false);
+  const isStatusActive = group.is_active;
 
-  const copyCodeToClipboard = () => {
-    if (typeof navigator.clipboard === "undefined") {
-      alert("Nusxalash funksiyasi brauzeringiz tomonidan qo'llab-quvvatlanmaydi.");
-      return;
-    }
-    navigator.clipboard.writeText(group.uniqueCode);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  // Schedule formatini to'g'rilash
+  const scheduleDisplay = group.schedule.days.join(' / ') + ' - ' + group.schedule.time;
 
   return (
     <div 
       className="flex flex-col bg-white p-6 rounded-2xl shadow-xl transition-all duration-300 hover:shadow-2xl hover:translate-y-[-2px] border-t-4"
-      style={{ borderTopColor: '#A60E07' }} // Dinamik border rangi
+      style={{ borderTopColor: '#A60E07' }}
     >
       <div className="flex-grow">
         <div className="flex justify-between items-start mb-4">
@@ -66,7 +30,7 @@ const GroupCard = ({ group }) => {
             <span className="mr-2" style={{ color: '#A60E07' }}>
               <BookOpenIcon className="h-6 w-6 inline" />
             </span>
-            {group.name}
+            {group.group_name}
           </h3>
           <span
             className={`px-3 py-1 text-xs font-bold rounded-full uppercase tracking-wider ${
@@ -75,7 +39,7 @@ const GroupCard = ({ group }) => {
                 : "bg-red-50 text-red-600"
             }`}
           >
-            {group.status}
+            {isStatusActive ? 'Faol' : 'Nofaol'}
           </span>
         </div>
 
@@ -83,20 +47,27 @@ const GroupCard = ({ group }) => {
           <div className="flex items-center">
             <CalendarDaysIcon className="h-5 w-5 mr-3 text-gray-400" />
             <span className="font-semibold">O'qituvchi:</span>{" "}
-            <span className="ml-1 text-gray-800">{group.teacher}</span>
+            <span className="ml-1 text-gray-800">{group.teacher_name || 'Tayinlanmagan'}</span>
           </div>
 
           <div className="flex items-center">
             <ClockIcon className="h-5 w-5 mr-3 text-gray-400" />
             <span className="font-semibold">Jadval:</span>{" "}
-            <span className="ml-1 text-gray-800">{group.schedule}</span>
+            <span className="ml-1 text-gray-800">{scheduleDisplay}</span>
           </div>
 
           <div className="flex items-center">
             <UsersIcon className="h-5 w-5 mr-3 text-gray-400" />
-            <span className="font-semibold">Talabalar soni:</span>{" "}
+            <span className="font-semibold">Narx:</span>{" "}
             <span className="ml-1 font-bold" style={{ color: '#A60E07' }}>
-              {group.studentsCount} ta
+              {Number(group.price).toLocaleString()} so'm
+            </span>
+          </div>
+
+          <div className="flex items-center">
+            <span className="font-semibold text-xs text-gray-500">Status:</span>{" "}
+            <span className={`ml-1 text-xs font-medium ${group.student_status === 'active' ? 'text-green-600' : 'text-red-600'}`}>
+              {group.student_status === 'active' ? 'Faol' : 'Nofaol'}
             </span>
           </div>
         </div>
@@ -104,50 +75,83 @@ const GroupCard = ({ group }) => {
 
       <div className="flex-none mt-4 space-y-3 pt-4 border-t border-gray-100">
         <Link
-          href={`/students/groups/${group.id}`}
+          href={`/student/groups/${group.group_id}`}
           className="block text-center w-full text-white py-2.5 rounded-xl font-bold transition duration-150 ease-in-out text-base shadow-md hover:opacity-90 active:scale-[0.98]"
-          style={{ backgroundColor: '#A60E07' }} // Asosiy tugma rangi
+          style={{ backgroundColor: '#A60E07' }}
         >
           Guruhni ko'rish
         </Link>
 
-        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-          <span className="font-mono text-gray-800 text-sm tracking-widest font-semibold">
-            {group.uniqueCode}
-          </span>
-          <button
-            onClick={copyCodeToClipboard}
-            className={`flex items-center text-xs font-bold px-3 py-1.5 rounded-lg transition duration-150 shadow-sm
-                    ${
-                      copied
-                        ? "bg-green-600 text-white"
-                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                    }`}
-            title="Guruh kodini nusxalash"
-          >
-            <DocumentDuplicateIcon className="h-4 w-4 mr-1" />
-            {copied ? "Nusxalandi" : "Kod"}
-          </button>
+        <div className="bg-gray-50 rounded-lg p-3">
+          <div className="text-xs text-gray-500 mb-1">Qo'shilgan sana:</div>
+          <div className="text-sm font-medium text-gray-800">
+            {new Date(group.joined_at).toLocaleDateString('uz-UZ')}
+          </div>
         </div>
       </div>
     </div>
   );
 };
-
 // --- Asosiy Komponent ---
 function StudetGroup() {
   const [joinCode, setJoinCode] = useState("");
+  
+  // API hooks
+  const { data: studentGroupsData, isLoading, error } = useGetStudentGroups();
+  const joinGroupMutation = useJoinGroupByCode();
 
-  const handleJoin = (e) => {
+  const handleJoin = async (e) => {
     e.preventDefault();
-    if (joinCode.trim()) {
-      console.log("Kiritilgan kod:", joinCode);
-      setJoinCode("");
-      alert(`Kod: ${joinCode} kiritildi!`);
-    } else {
-      alert("Iltimos, guruh kodini kiriting.");
+    if (!joinCode.trim()) {
+      toast.error("Iltimos, guruh kodini kiriting.");
+      return;
     }
+
+    console.log('Guruhga qo\'shilish jarayoni boshlandi, kod:', joinCode.trim());
+
+    joinGroupMutation.mutate(joinCode.trim(), {
+      onSuccess: (data) => {
+        console.log('API dan kelgan success response:', data);
+        toast.success(data.message || 'Guruhga muvaffaqiyatli qo\'shildingiz!');
+        setJoinCode("");
+        // Page-ni reload qilamiz yoki manual refetch qilamiz
+        window.location.reload();
+      },
+      onError: (error) => {
+        console.log('API dan kelgan error response:', error);
+        console.log('Error response data:', error.response?.data);
+        
+        // Faqat haqiqiy xatolik bo'lsagina error toast ko'rsatamiz
+        const errorMessage = error.response?.data?.message || error.message || 'Guruhga qo\'shilishda xatolik yuz berdi!';
+        
+        // Agar server 200 status bilan success message yuborgan bo'lsa, error ko'rsatmaymiz
+        if (error.response?.data?.success === true) {
+          console.log('Server success yubordi, error toast ko\'rsatmaymiz');
+          return;
+        }
+        
+        toast.error(errorMessage);
+      }
+    });
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-full flex items-center justify-center">
+        <div className="text-lg text-gray-600">Yuklanmoqda...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-full flex items-center justify-center">
+        <div className="text-lg text-red-600">Xatolik yuz berdi: {error.message}</div>
+      </div>
+    );
+  }
+
+  const groups = studentGroupsData?.groups || [];
 
   return (
     <div className="min-h-full">
@@ -175,35 +179,48 @@ function StudetGroup() {
             <input
               type="text"
               id="joinCode"
-              placeholder="Masalan: PY-DS-202"
+              placeholder="Masalan: GR-A1B2C3"
               value={joinCode}
               onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none transition-all placeholder-gray-400 text-base shadow-sm"
               style={{ 
                 borderWidth: '1px',
-                borderColor: joinCode ? '#A60E07' : '#D1D5DB' // Fokus bo'lmasa ham kod yozilsa rang o'zgaradi
+                borderColor: joinCode ? '#A60E07' : '#D1D5DB'
               }}
+              disabled={joinGroupMutation.isLoading}
               required
             />
           </div>
 
           <button
             type="submit"
-            className="flex-none text-white py-2.5 px-8 rounded-lg font-bold hover:opacity-90 transition duration-150 ease-in-out text-base shadow-lg h-[46px]"
+            disabled={joinGroupMutation.isLoading}
+            className="flex-none text-white py-2.5 px-8 rounded-lg font-bold hover:opacity-90 transition duration-150 ease-in-out text-base shadow-lg h-[46px] disabled:opacity-50 flex items-center"
             style={{ backgroundColor: '#A60E07' }}
           >
-            Qo'shilish
+            {joinGroupMutation.isLoading ? (
+              <>
+                <svg className="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Qo'shilmoqda...
+              </>
+            ) : (
+              'Qo\'shilish'
+            )}
           </button>
         </form>
       </div>
 
+      {/* Guruhlar ro'yxati */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
-        {mockGroupsData.map((group) => (
-          <GroupCard key={group.id} group={group} />
+        {groups.map((group) => (
+          <GroupCard key={group.group_id} group={group} />
         ))}
       </div>
 
-      {mockGroupsData.length === 0 && (
+      {groups.length === 0 && (
         <div className="text-center py-12 rounded-2xl shadow-inner mt-8 border-t-2" style={{ backgroundColor: '#FDF2F2', borderColor: '#F8D7DA' }}>
           <p className="text-lg font-bold" style={{ color: '#A60E07' }}>
             Siz hali birorta guruhga a'zo emassiz.
