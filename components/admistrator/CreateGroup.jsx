@@ -13,6 +13,7 @@ import Box from "@mui/material/Box";
 import Modal from "@mui/material/Modal";
 import { useCreateGroup } from "../../hooks/groups";
 import { useGetNotify } from "../../hooks/notify";
+import TeacherSelect from "../teacher/Select";
 
 const MAIN_COLOR = "#A60E07";
 
@@ -23,13 +24,6 @@ const WEEK_DAYS = [
   { id: "Pay", label: "Pay" },
   { id: "Jum", label: "Jum" },
   { id: "Shan", label: "Shan" },
-];
-
-const MOCK_TEACHERS = [
-  { id: 101, name: "Jasur Raximov" },
-  { id: 102, name: "Alijon Vohidov" },
-  { id: 103, name: "Nigora Qosimova" },
-  { id: 104, name: "Umid Karimov" },
 ];
 
 const modalStyle = {
@@ -185,17 +179,12 @@ export default function AdminNewGroupModal({ children }) {
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1 flex items-center">
                   <UserIcon className="h-3 w-3 mr-1" /> O'qituvchi
                 </label>
-                <select
-                  name="teacher_id"
-                  value={groupData.teacher_id}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-white focus:outline-none text-sm font-semibold cursor-pointer"
-                >
-                  <option value="">Tayinlanmagan</option>
-                  {MOCK_TEACHERS.map((t) => (
-                    <option key={t.id} value={t.id}>{t.name}</option>
-                  ))}
-                </select>
+
+               <TeacherSelect
+                 value={groupData.teacher_id}
+                 onChange={(teacherId) => setGroupData(prev => ({ ...prev, teacher_id: teacherId }))}
+               />
+
               </div>
 
 

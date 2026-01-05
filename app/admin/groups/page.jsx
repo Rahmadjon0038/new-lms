@@ -20,6 +20,7 @@ import { useUpdateGroup } from "../../../hooks/groups";
 import AdminNewGroupModal from "../../../components/admistrator/CreateGroup";
 import { usegetAllgroups } from "../../../hooks/groups";
 import { Clock } from "lucide-react";
+import TeacherSelect from "../../../components/teacher/Select";
 
 // --- Tasdiqlash Modali Komponenti ---
 const ConfirmToggleModal = ({ isOpen, onClose, onConfirm, isClosing, isLoading }) => {
@@ -60,6 +61,7 @@ const ConfirmToggleModal = ({ isOpen, onClose, onConfirm, isClosing, isLoading }
 
 const GroupCard = ({ group, onToggleGroupStatus, updateGroupLoading = false }) => {
     const [isCopied, setIsCopied] = useState(false);
+    console.log(group)
 
     const handleCopy = () => {
         navigator.clipboard.writeText(group.unique_code);
@@ -171,7 +173,7 @@ function AdminGroupsPage() {
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, groupId: null, newStatus: null });
 
     const isActive = currentTab === 'active' ? true : currentTab === 'closed' ? false : undefined;
-    const { data: backendData, isLoading, error } = usegetAllgroups(isActive);
+    const { data: backendData, isLoading, error } = usegetAllgroups(isActive, selectedTeacher);
     const updateGroupMutation = useUpdateGroup();
 
     const groups = backendData?.groups || [];
@@ -195,18 +197,6 @@ function AdminGroupsPage() {
             }
         });
     };
-
-    const TEACHERS = useMemo(() => {
-        const teachers = Array.from(new Set(groups.map(g => g.teacher_name).filter(Boolean)));
-        return [{ value: 'all', label: 'Barcha O\'qituvchilar' }, ...teachers.map(t => ({ value: t, label: t }))];
-    }, [groups]);
-
-    const filteredGroups = useMemo(() => {
-        return groups.filter(g => {
-            const teacherMatch = selectedTeacher === 'all' || g.teacher_name === selectedTeacher;
-            return teacherMatch;
-        });
-    }, [selectedTeacher, groups]);
 
     if (isLoading) return <div className="p-10 text-center font-bold text-[#A60E07] text-xl animate-pulse">Guruhlar yuklanmoqda...</div>;
     if (error) return <div className="p-10 text-center text-red-600 font-bold">Xatolik yuz berdi!</div>;
@@ -236,13 +226,12 @@ function AdminGroupsPage() {
             <div className="flex flex-wrap items-center justify-between gap-4 mb-8 p-4 bg-white rounded-xl shadow-sm border border-gray-100">
                 <div className="flex flex-wrap items-center gap-3">
                     <FiFilter className="h-5 w-5 text-[#A60E07]" />
-                    <select
-                        value={selectedTeacher}
-                        onChange={(e) => setSelectedTeacher(e.target.value)}
-                        className="border border-gray-300 rounded-lg py-2 px-3 text-sm focus:ring-[#A60E07] outline-none"
-                    >
-                        {TEACHERS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-                    </select>
+                    <div className="min-w-[200px]">
+                        <TeacherSelect
+                            value={selectedTeacher}
+                            onChange={setSelectedTeacher}
+                        />
+                    </div>
                 </div>
 
                 <AdminNewGroupModal>
@@ -253,7 +242,7 @@ function AdminGroupsPage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredGroups.map((group) => (
+                {groups.map((group) => (
                     <GroupCard
                         key={group.id}
                         group={group}
@@ -272,7 +261,7 @@ function AdminGroupsPage() {
                 isLoading={updateGroupMutation.isLoading}
             />
 
-            {filteredGroups.length === 0 && (
+            {groups.length === 0 && (
                 <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-300 mt-8">
                     <p className="text-xl text-gray-600 font-medium">Bu bo'limda guruhlar mavjud emas.</p>
                 </div>

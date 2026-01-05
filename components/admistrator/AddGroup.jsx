@@ -10,12 +10,12 @@ const AddGroup = ({ children, student, onSuccess }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedGroupId, setSelectedGroupId] = useState('');
     const [actionType, setActionType] = useState('join'); // 'join', 'change', 'remove'
-    
+
     const { data: groupsData, isLoading: groupsLoading } = usegetAllgroups(true);
     const joinStudentMutation = useJoinStudentToGroup();
     const changeGroupMutation = useChangeStudentGroup();
     const removeStudentMutation = useRemoveStudentFromGroup();
-    
+
     // Modal ochilganda to'g'ri actionType'ni o'rnatish
     React.useEffect(() => {
         if (isModalOpen) {
@@ -23,7 +23,7 @@ const AddGroup = ({ children, student, onSuccess }) => {
             setActionType(hasGroup ? 'change' : 'join');
         }
     }, [isModalOpen, student]);
-    
+
     // Mutation result'larni kuzatish
     React.useEffect(() => {
         if (removeStudentMutation.isSuccess) {
@@ -39,7 +39,7 @@ const AddGroup = ({ children, student, onSuccess }) => {
             removeStudentMutation.reset();
         }
     }, [removeStudentMutation.isSuccess, removeStudentMutation.isError]);
-    
+
     React.useEffect(() => {
         if (changeGroupMutation.isSuccess) {
             toast.success('Student guruhi muvaffaqiyatli o\'zgartirildi!');
@@ -54,7 +54,7 @@ const AddGroup = ({ children, student, onSuccess }) => {
             changeGroupMutation.reset();
         }
     }, [changeGroupMutation.isSuccess, changeGroupMutation.isError]);
-    
+
     React.useEffect(() => {
         if (joinStudentMutation.isSuccess) {
             toast.success('Student muvaffaqiyatli guruhga qo\'shildi!');
@@ -69,29 +69,29 @@ const AddGroup = ({ children, student, onSuccess }) => {
             joinStudentMutation.reset();
         }
     }, [joinStudentMutation.isSuccess, joinStudentMutation.isError]);
-    
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         if (actionType === 'remove') {
             // Guruhdan chiqarish
             if (!student.group_id) {
                 toast.error('Student guruh ma\'lumoti topilmadi!');
                 return;
             }
-            
+
             removeStudentMutation.mutate({
                 group_id: student.group_id,
                 student_id: student.id
             });
             return;
         }
-        
+
         if (!selectedGroupId) {
             toast.error('Iltimos, guruhni tanlang!');
             return;
         }
-        
+
         if (actionType === 'change') {
             // Guruhni o'zgartirish
             changeGroupMutation.mutate({
@@ -106,32 +106,32 @@ const AddGroup = ({ children, student, onSuccess }) => {
             });
         }
     };
-    
+
     const hasGroup = student?.group_name && student.group_name !== 'Guruh biriktirilmagan';
     const isLoading = joinStudentMutation.isLoading || changeGroupMutation.isLoading || removeStudentMutation.isLoading;
-    
+
     const handleActionTypeChange = (type) => {
         setActionType(type);
         setSelectedGroupId('');
     };
-    
+
     const handleModalClose = () => {
         setIsModalOpen(false);
         setSelectedGroupId('');
         setActionType('join');
     };
-    
+
     return (
         <>
             <button onClick={() => setIsModalOpen(true)}>
                 {children}
             </button>
-            
+
             {/* Modal */}
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black/60 bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto break-words"
-                         style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}>
+                        style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}>
                         {/* Header */}
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-xl font-semibold text-gray-800 flex items-center">
@@ -145,7 +145,7 @@ const AddGroup = ({ children, student, onSuccess }) => {
                                 <XMarkIcon className="h-6 w-6" />
                             </button>
                         </div>
-                        
+
                         {/* Student info */}
                         <div className="bg-gray-50 rounded-lg p-4 mb-6">
                             <div className="flex justify-between items-center">
@@ -173,7 +173,7 @@ const AddGroup = ({ children, student, onSuccess }) => {
                                 </div>
                             </div>
                         </div>
-                        
+
                         {/* Action Type Selection */}
                         <div className="mb-6">
                             <h4 className="text-sm font-medium text-gray-700 mb-3">Amalni tanlang:</h4>
@@ -183,46 +183,43 @@ const AddGroup = ({ children, student, onSuccess }) => {
                                     type="button"
                                     onClick={() => handleActionTypeChange('join')}
                                     disabled={isLoading}
-                                    className={`p-4 rounded-lg border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                                        actionType === 'join'
+                                    className={`p-4 rounded-lg border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${actionType === 'join'
                                             ? 'border-green-500 bg-green-50 text-green-700'
                                             : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-                                    }`}
+                                        }`}
                                 >
                                     <UserGroupIcon className="h-6 w-6 mx-auto mb-2" />
                                     <p className="text-sm font-medium">Guruhga Qo'shish</p>
                                     <p className="text-xs opacity-75">Yangi guruhga biriktirish</p>
                                 </button>
-                                
+
                                 {/* Change Group */}
                                 {hasGroup && (
                                     <button
                                         type="button"
                                         onClick={() => handleActionTypeChange('change')}
                                         disabled={isLoading}
-                                        className={`p-4 rounded-lg border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                                            actionType === 'change'
+                                        className={`p-4 rounded-lg border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${actionType === 'change'
                                                 ? 'border-blue-500 bg-blue-50 text-blue-700'
                                                 : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-                                        }`}
+                                            }`}
                                     >
                                         <ArrowRightOnRectangleIcon className="h-6 w-6 mx-auto mb-2" />
                                         <p className="text-sm font-medium">Guruhni O'zgartirish</p>
                                         <p className="text-xs opacity-75">Boshqa guruhga ko'chirish</p>
                                     </button>
                                 )}
-                                
+
                                 {/* Remove from Group */}
                                 {hasGroup && (
                                     <button
                                         type="button"
                                         onClick={() => handleActionTypeChange('remove')}
                                         disabled={isLoading}
-                                        className={`p-4 rounded-lg border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                                            actionType === 'remove'
+                                        className={`p-4 rounded-lg border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${actionType === 'remove'
                                                 ? 'border-red-500 bg-red-50 text-red-700'
                                                 : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-                                        }`}
+                                            }`}
                                     >
                                         <UserMinusIcon className="h-6 w-6 mx-auto mb-2" />
                                         <p className="text-sm font-medium">Guruhdan Chiqarish</p>
@@ -231,7 +228,7 @@ const AddGroup = ({ children, student, onSuccess }) => {
                                 )}
                             </div>
                         </div>
-                        
+
                         {/* Form */}
                         <form onSubmit={handleSubmit}>
                             {actionType !== 'remove' && (
@@ -258,24 +255,24 @@ const AddGroup = ({ children, student, onSuccess }) => {
                                     )}
                                 </div>
                             )}
-                            
+
                             {actionType === 'remove' && (
                                 <div className="mb-6 p-4 bg-red-50 rounded-lg border border-red-200">
-                                    <div className="flex">
+                                    <div className="flex items-start"> {/* items-start rasm va matnni yuqoridan tekislaydi */}
                                         <TrashIcon className="h-5 w-5 text-red-500 mr-3 mt-0.5 flex-shrink-0" />
-                                        <div className="flex-1">
-                                            <h4 className="text-sm font-medium text-red-800">
+                                        <div className="flex-1 min-w-0"> {/* min-w-0 klassi flex ichida matn siqilishini ta'minlaydi */}
+                                            <h4 className="text-sm font-medium text-red-800 truncate">
                                                 Studentni guruhdan chiqarish
                                             </h4>
-                                            <p className="text-sm text-red-700 mt-1 break-words">
-                                                Bu student <strong className="break-words">{student?.group_name}</strong> guruhidan butunlay chiqarib tashlanadi. 
+                                            <p className="text-sm text-red-700 mt-1 break-words whitespace-normal">
+                                                Bu student <strong className="font-semibold">{student?.group_name}</strong> guruhidan butunlay chiqarib tashlanadi.
                                                 Bu amalni bekor qilish mumkin emas.
                                             </p>
                                         </div>
                                     </div>
                                 </div>
                             )}
-                            
+
                             {/* Actions */}
                             <div className="flex gap-3">
                                 <button
@@ -288,13 +285,12 @@ const AddGroup = ({ children, student, onSuccess }) => {
                                 <button
                                     type="submit"
                                     disabled={isLoading || (actionType !== 'remove' && !selectedGroupId)}
-                                    className={`flex-1 px-4 py-2 rounded-lg text-white transition-colors flex items-center justify-center ${
-                                        actionType === 'remove'
+                                    className={`flex-1 px-4 py-2 rounded-lg text-white transition-colors flex items-center justify-center ${actionType === 'remove'
                                             ? 'bg-red-600 hover:bg-red-700'
                                             : actionType === 'change'
-                                            ? 'bg-blue-600 hover:bg-blue-700'
-                                            : 'bg-green-600 hover:bg-green-700'
-                                    } disabled:opacity-50`}
+                                                ? 'bg-blue-600 hover:bg-blue-700'
+                                                : 'bg-green-600 hover:bg-green-700'
+                                        } disabled:opacity-50`}
                                 >
                                     {isLoading ? (
                                         <>

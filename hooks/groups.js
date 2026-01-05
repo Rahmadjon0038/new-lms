@@ -26,19 +26,29 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { instance } from "./api";
 
 // -------------- I am getting prifile information ----------
-const getAllgroups = async (is_active) => {
+const getAllgroups = async (is_active, teacher_id) => {
     let url = '/api/groups';
+    const params = new URLSearchParams();
+    
     if (typeof is_active === 'boolean') {
-        url += `?is_active=${is_active}`;
+        params.append('is_active', is_active);
     }
+    if (teacher_id && teacher_id !== 'all') {
+        params.append('teacher_id', teacher_id);
+    }
+    
+    if (params.toString()) {
+        url += `?${params.toString()}`;
+    }
+    
     const response = await instance.get(url);
     return response.data;
 }
 
-export const usegetAllgroups = (is_active) => {
+export const usegetAllgroups = (is_active, teacher_id) => {
     const { data, isLoading, error } = useQuery({
-        queryKey: ['groups', is_active],
-        queryFn: () => getAllgroups(is_active),
+        queryKey: ['groups', is_active, teacher_id],
+        queryFn: () => getAllgroups(is_active, teacher_id),
     });
     return { data, isLoading, error };
 }
@@ -79,6 +89,21 @@ export const useGetGroupById = (id) => {
     const { data, isLoading, error } = useQuery({
         queryKey: ['group', id],
         queryFn: () => getGroupById(id),
+        enabled: !!id, // Only run query if id exists
+    });
+    return { data, isLoading, error };
+}
+
+// ----------- get group view (for students) -----------------
+const getGroupView = async (id) => {
+    const response = await instance.get(`/api/groups/${id}/view`);
+    return response.data;
+}
+
+export const useGetGroupView = (id) => {
+    const { data, isLoading, error } = useQuery({
+        queryKey: ['group-view', id],
+        queryFn: () => getGroupView(id),
         enabled: !!id, // Only run query if id exists
     });
     return { data, isLoading, error };

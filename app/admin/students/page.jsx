@@ -33,7 +33,7 @@ const EditableCell = memo(EditableCellComponent);
 const StudentsPage = () => {
     // Backenddan ma'lumotlarni olish
     const { data: backendData, isLoading, error, refetch } = useGetAllStudents();
-    
+
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedMonth, setSelectedMonth] = useState('all');
     const [selectedGroup, setSelectedGroup] = useState('all');
@@ -261,8 +261,8 @@ const StudentsPage = () => {
                                             ) : (
                                                 <div className="flex flex-col">
                                                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${student.status === 'active' ? 'bg-green-100 text-green-800' :
-                                                            student.status === 'inactive' ? 'bg-red-100 text-red-800' :
-                                                                'bg-blue-100 text-blue-800'
+                                                        student.status === 'inactive' ? 'bg-red-100 text-red-800' :
+                                                            'bg-blue-100 text-blue-800'
                                                         }`}>
                                                         {student.status === 'active' ? 'Faol' :
                                                             student.status === 'inactive' ? 'Nofaol' : 'Bitirgan'}
