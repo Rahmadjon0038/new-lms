@@ -28,10 +28,15 @@ export default function NewStudentPage() {
         username: '',
         password: '',
         phone: '',
-        phone2: ''
+        phone2: '',
+        father_name: '',
+        father_phone: '',
+        address: '',
+        age: ''
     });
     
     const [selectedGroup, setSelectedGroup] = useState('');
+    const [groupFilter, setGroupFilter] = useState('all'); // all, active, blocked, draft
     
     const { data: groupsData, isLoading: groupsLoading } = usegetAllgroups(true);
     const registerMutation = useRegisterStudent();
@@ -46,7 +51,7 @@ export default function NewStudentPage() {
         e.preventDefault();
         
         // Validate required fields
-        if (!formData.name || !formData.surname || !formData.username || !formData.password || !formData.phone) {
+        if (!formData.name || !formData.surname || !formData.username || !formData.password || !formData.phone || !formData.father_name || !formData.age) {
             toast.error('Iltimos, barcha majburiy maydonlarni to\'ldiring!');
             return;
         }
@@ -213,6 +218,56 @@ export default function NewStudentPage() {
                                             placeholder="Familiyasini kiriting"
                                         />
                                     </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Otasining ismi *
+                                        </label>
+                                        <input
+                                            type="text"
+                                            name="father_name"
+                                            value={formData.father_name}
+                                            onChange={handleInputChange}
+                                            required
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition-all"
+                                            style={{ focusRingColor: `${MAIN_COLOR}40` }}
+                                            placeholder="Otasining ismini kiriting"
+                                        />
+                                    </div>
+                                </div>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Yoshi *
+                                        </label>
+                                        <input
+                                            type="number"
+                                            name="age"
+                                            value={formData.age}
+                                            onChange={handleInputChange}
+                                            required
+                                            min="1"
+                                            max="100"
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition-all"
+                                            style={{ focusRingColor: `${MAIN_COLOR}40` }}
+                                            placeholder="Yoshini kiriting"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            <PhoneIcon className="w-4 h-4 inline mr-1" />
+                                            Ota telefoni (ixtiyoriy)
+                                        </label>
+                                        <input
+                                            type="tel"
+                                            name="father_phone"
+                                            value={formData.father_phone}
+                                            onChange={handleInputChange}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition-all"
+                                            style={{ focusRingColor: `${MAIN_COLOR}40` }}
+                                            placeholder="+998901111111"
+                                        />
+                                    </div>
                                 </div>
                                 
                                 <div>
@@ -280,6 +335,21 @@ export default function NewStudentPage() {
                                     />
                                 </div>
                                 
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Manzil (ixtiyoriy)
+                                    </label>
+                                    <textarea
+                                        name="address"
+                                        value={formData.address}
+                                        onChange={handleInputChange}
+                                        rows={3}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition-all resize-none"
+                                        style={{ focusRingColor: `${MAIN_COLOR}40` }}
+                                        placeholder="Yashash manzilini kiriting"
+                                    />
+                                </div>
+                                
                                 <div className="flex justify-end pt-4">
                                     <button 
                                         type="submit" 
@@ -327,6 +397,71 @@ export default function NewStudentPage() {
                             
                             {/* Group Selection */}
                             <div className="space-y-4">
+                                {/* Group Filter */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Guruh turi
+                                    </label>
+                                    <div className="flex space-x-2 mb-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => setGroupFilter('all')}
+                                            className={`px-3 py-1 rounded-full text-sm font-medium transition-all ${
+                                                groupFilter === 'all'
+                                                    ? 'text-white'
+                                                    : 'text-gray-600 bg-gray-100 hover:bg-gray-200'
+                                            }`}
+                                            style={{
+                                                backgroundColor: groupFilter === 'all' ? MAIN_COLOR : undefined
+                                            }}
+                                        >
+                                            Barcha guruhlar
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setGroupFilter('active')}
+                                            className={`px-3 py-1 rounded-full text-sm font-medium transition-all ${
+                                                groupFilter === 'active'
+                                                    ? 'text-white'
+                                                    : 'text-gray-600 bg-gray-100 hover:bg-gray-200'
+                                            }`}
+                                            style={{
+                                                backgroundColor: groupFilter === 'active' ? MAIN_COLOR : undefined
+                                            }}
+                                        >
+                                            Faol guruhlar
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setGroupFilter('blocked')}
+                                            className={`px-3 py-1 rounded-full text-sm font-medium transition-all ${
+                                                groupFilter === 'blocked'
+                                                    ? 'text-white'
+                                                    : 'text-gray-600 bg-gray-100 hover:bg-gray-200'
+                                            }`}
+                                            style={{
+                                                backgroundColor: groupFilter === 'blocked' ? MAIN_COLOR : undefined
+                                            }}
+                                        >
+                                            Bloklangan guruhlar
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setGroupFilter('draft')}
+                                            className={`px-3 py-1 rounded-full text-sm font-medium transition-all ${
+                                                groupFilter === 'draft'
+                                                    ? 'text-white'
+                                                    : 'text-gray-600 bg-gray-100 hover:bg-gray-200'
+                                            }`}
+                                            style={{
+                                                backgroundColor: groupFilter === 'draft' ? MAIN_COLOR : undefined
+                                            }}
+                                        >
+                                            Darsi hali boshlanmagan
+                                        </button>
+                                    </div>
+                                </div>
+                                
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
                                         <UserGroupIcon className="w-4 h-4 inline mr-1" />
@@ -340,9 +475,19 @@ export default function NewStudentPage() {
                                         disabled={groupsLoading}
                                     >
                                         <option value="">Guruh tanlash (ixtiyoriy)</option>
-                                        {groupsData?.groups?.map((group) => (
+                                        {groupsData?.groups
+                                            ?.filter(group => {
+                                                if (groupFilter === 'all') return true;
+                                                if (groupFilter === 'active') return group.status === 'active';
+                                                if (groupFilter === 'blocked') return group.status === 'blocked';
+                                                if (groupFilter === 'draft') return group.status === 'draft';
+                                                return true;
+                                            })
+                                            ?.map((group) => (
                                             <option key={group.id} value={group.id}>
                                                 {group.name} - {group.teacher_name || 'O\'qituvchisiz'} - {Number(group.price).toLocaleString()} so'm
+                                                {group.status === 'blocked' && ' (Bloklangan)'}
+                                                {group.status === 'draft' && ' (Darsi boshlanmagan)'}
                                             </option>
                                         ))}
                                     </select>
