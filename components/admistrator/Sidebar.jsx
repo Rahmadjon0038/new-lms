@@ -8,6 +8,7 @@ import {
   UserGroupIcon, // O'qituvchilar / Talabalar
   BookOpenIcon, // Guruhlar
   UsersIcon, // Talabalar uchun alohida
+  AcademicCapIcon, // Fanlar uchun
   ClipboardDocumentListIcon, // Davomat uchun
   WalletIcon, // To'lovlar uchun
 } from "@heroicons/react/24/outline";
@@ -31,6 +32,11 @@ const sidebarItems = [
     name: "Talabalar",
     icon: UsersIcon,
     href: "/admin/students",
+  },
+  {
+    name: "Fanlar",
+    icon: AcademicCapIcon,
+    href: "/admin/subjects",
   },
   {
     name: "Guruhlar",

@@ -2,16 +2,36 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { instance } from "./api";
 
-// Get all students
-const getAllstudent = async () => {
-    const response = await instance.get('/api/students/all');
+// Get all students with filters
+const getAllstudent = async (filters = {}) => {
+    let url = '/api/students/all';
+    const params = new URLSearchParams();
+    
+    if (filters.teacher_id && filters.teacher_id !== 'all') {
+        params.append('teacher_id', filters.teacher_id);
+    }
+    if (filters.group_id && filters.group_id !== 'all') {
+        params.append('group_id', filters.group_id);
+    }
+    if (filters.subject_id && filters.subject_id !== 'all') {
+        params.append('subject_id', filters.subject_id);
+    }
+    if (filters.status && filters.status !== 'all') {
+        params.append('status', filters.status);
+    }
+    
+    if (params.toString()) {
+        url += `?${params.toString()}`;
+    }
+    
+    const response = await instance.get(url);
     return response.data
 }
 
-export const useGetAllStudents = () => {
+export const useGetAllStudents = (filters = {}) => {
     const { data, isLoading, error, refetch } = useQuery({
-        queryKey: ['students'],
-        queryFn: getAllstudent,
+        queryKey: ['students', filters],
+        queryFn: () => getAllstudent(filters),
     })
 
     return { data, isLoading, error, refetch }
@@ -58,4 +78,29 @@ export const useJoinStudentToGroup = () => {
         }
     });
     return joinStudentMutation;
+}
+
+// -------------- Update student status ----------
+const updateStudentStatus = async ({ id, status }) => {
+    const response = await instance.patch(`/api/students/${id}/status`, { status });
+    return response.data;
+}
+
+export const useUpdateStudentStatus = () => {
+    const queryClient = useQueryClient();
+    const updateStatusMutation = useMutation({
+        mutationFn: updateStudentStatus,
+        onSuccess: (data, vars) => {
+            queryClient.invalidateQueries(['students']);
+            if (vars.onSuccess) {
+                vars.onSuccess(data);
+            }
+        },
+        onError: (err, vars) => {
+            if (vars.onError) {
+                vars.onError(err);
+            }
+        }
+    });
+    return updateStatusMutation;
 }
