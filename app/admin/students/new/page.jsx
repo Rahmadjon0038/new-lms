@@ -9,10 +9,13 @@ import {
   CheckCircleIcon,
   ArrowLeftIcon,
   ArrowRightIcon,
+  EyeIcon,
+  EyeSlashIcon,
 } from "@heroicons/react/24/outline";
 import { useRouter } from 'next/navigation';
 import { useRegisterStudent, useJoinStudentToGroup } from '../../../../hooks/students';
 import { usegetAllgroups } from '../../../../hooks/groups';
+import { useGetAllSubjects } from '../../../../hooks/subjects';
 import { toast } from 'react-hot-toast';
 
 const MAIN_COLOR = "#A60E07";
@@ -36,15 +39,33 @@ export default function NewStudentPage() {
     });
     
     const [selectedGroup, setSelectedGroup] = useState('');
-    const [groupFilter, setGroupFilter] = useState('all'); // all, active, blocked, draft
+    const [showPassword, setShowPassword] = useState(true); // Default: show password
+    const [subjectFilter, setSubjectFilter] = useState(''); // Filter by subject
     
     const { data: groupsData, isLoading: groupsLoading } = usegetAllgroups(true);
+    const { data: subjectsData, isLoading: subjectsLoading } = useGetAllSubjects();
     const registerMutation = useRegisterStudent();
     const joinGroupMutation = useJoinStudentToGroup();
     
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+    };
+    
+    const clearForm = () => {
+        setFormData({
+            name: '',
+            surname: '',
+            username: '',
+            password: '',
+            phone: '',
+            phone2: '',
+            father_name: '',
+            father_phone: '',
+            address: '',
+            age: ''
+        });
+        localStorage.removeItem('studentFormData');
     };
     
     const handleRegister = async (e) => {
@@ -63,6 +84,8 @@ export default function NewStudentPage() {
             onSuccess: (data) => {
                 setRegisteredStudent(data.user);
                 toast.success(data.message || 'Student muvaffaqiyatli ro\'yxatdan o\'tdi!');
+                // Clear form after successful registration
+                clearForm();
                 setStep(2);
             },
             onError: (error) => {
@@ -159,31 +182,7 @@ export default function NewStudentPage() {
                 <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
                     {step === 1 ? (
                         <div className="p-6">
-                            {/* General Admin Reminder */}
-                            <div 
-                                className="p-3 rounded-lg mb-4 border-l-4"
-                                style={{ 
-                                    backgroundColor: `${MAIN_COLOR}08`, 
-                                    borderColor: MAIN_COLOR 
-                                }}
-                            >
-                                <div className="flex items-start space-x-3">
-                                    <div className="flex-shrink-0">
-                                        <svg className="w-5 h-5 mt-0.5" style={{ color: MAIN_COLOR }} fill="currentColor" viewBox="0 0 20 20">
-                                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <h4 className="text-sm font-semibold text-gray-800 mb-1">
-                                            Muhim eslatma!
-                                        </h4>
-                                        <p className="text-sm text-gray-600">
-                                            Yaratilgan <span className="font-medium">foydalanuvchi nomi</span> va <span className="font-medium">parolni</span> studentga bering. 
-                                            Student shu ma'lumotlar orqali o'z shaxsiy kabinetiga kiradi.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
+
                             
                             {/* Registration Form */}
                             <form onSubmit={handleRegister} className="space-y-4">
@@ -290,16 +289,52 @@ export default function NewStudentPage() {
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
                                         Parol *
                                     </label>
-                                    <input
-                                        type="password"
-                                        name="password"
-                                        value={formData.password}
-                                        onChange={handleInputChange}
-                                        required
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition-all"
-                                        style={{ focusRingColor: `${MAIN_COLOR}40` }}
-                                        placeholder="Parolni kiriting"
-                                    />
+                                    <div className="relative">
+                                        <input
+                                            type={showPassword ? "text" : "password"}
+                                            name="password"
+                                            value={formData.password}
+                                            onChange={handleInputChange}
+                                            required
+                                            className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition-all"
+                                            style={{ focusRingColor: `${MAIN_COLOR}40` }}
+                                            placeholder="Parolni kiriting"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                                        >
+                                            {showPassword ? (
+                                                <EyeSlashIcon className="w-5 h-5" />
+                                            ) : (
+                                                <EyeIcon className="w-5 h-5" />
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                {/* Important Note */}
+                                <div 
+                                    className="p-4 rounded-lg border-l-4 bg-yellow-50"
+                                    style={{ borderColor: MAIN_COLOR }}
+                                >
+                                    <div className="flex items-start space-x-3">
+                                        <div className="flex-shrink-0">
+                                            <svg className="w-5 h-5 mt-0.5" style={{ color: MAIN_COLOR }} fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h4 className="text-sm font-semibold text-gray-800 mb-1">
+                                                Muhim eslatma!
+                                            </h4>
+                                            <p className="text-sm text-gray-700">
+                                                Yaratilgan <span className="font-medium">foydalanuvchi nomi</span> va <span className="font-medium">parolni</span> studentga bering. 
+                                                Student shu ma'lumotlar orqali o'z shaxsiy kabinetiga kiradi.
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
                                 
                                 <div>
@@ -350,7 +385,16 @@ export default function NewStudentPage() {
                                     />
                                 </div>
                                 
-                                <div className="flex justify-end pt-4">
+                                <div className="flex justify-between items-center pt-4">
+                                    <button
+                                        type="button"
+                                        onClick={clearForm}
+                                        className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                                    >
+                                        <XMarkIcon className="w-4 h-4" />
+                                        <span>Ma'lumotlarni tozalash</span>
+                                    </button>
+                                    
                                     <button 
                                         type="submit" 
                                         disabled={registerMutation.isLoading}
@@ -397,68 +441,27 @@ export default function NewStudentPage() {
                             
                             {/* Group Selection */}
                             <div className="space-y-4">
-                                {/* Group Filter */}
+                                {/* Filters */}
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Guruh turi
-                                    </label>
-                                    <div className="flex space-x-2 mb-3">
-                                        <button
-                                            type="button"
-                                            onClick={() => setGroupFilter('all')}
-                                            className={`px-3 py-1 rounded-full text-sm font-medium transition-all ${
-                                                groupFilter === 'all'
-                                                    ? 'text-white'
-                                                    : 'text-gray-600 bg-gray-100 hover:bg-gray-200'
-                                            }`}
-                                            style={{
-                                                backgroundColor: groupFilter === 'all' ? MAIN_COLOR : undefined
-                                            }}
+                                    {/* Subject Filter */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Fan bo'yicha filter
+                                        </label>
+                                        <select
+                                            value={subjectFilter}
+                                            onChange={(e) => setSubjectFilter(e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition-all"
+                                            style={{ focusRingColor: `${MAIN_COLOR}40` }}
+                                            disabled={subjectsLoading}
                                         >
-                                            Barcha guruhlar
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setGroupFilter('active')}
-                                            className={`px-3 py-1 rounded-full text-sm font-medium transition-all ${
-                                                groupFilter === 'active'
-                                                    ? 'text-white'
-                                                    : 'text-gray-600 bg-gray-100 hover:bg-gray-200'
-                                            }`}
-                                            style={{
-                                                backgroundColor: groupFilter === 'active' ? MAIN_COLOR : undefined
-                                            }}
-                                        >
-                                            Faol guruhlar
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setGroupFilter('blocked')}
-                                            className={`px-3 py-1 rounded-full text-sm font-medium transition-all ${
-                                                groupFilter === 'blocked'
-                                                    ? 'text-white'
-                                                    : 'text-gray-600 bg-gray-100 hover:bg-gray-200'
-                                            }`}
-                                            style={{
-                                                backgroundColor: groupFilter === 'blocked' ? MAIN_COLOR : undefined
-                                            }}
-                                        >
-                                            Bloklangan guruhlar
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setGroupFilter('draft')}
-                                            className={`px-3 py-1 rounded-full text-sm font-medium transition-all ${
-                                                groupFilter === 'draft'
-                                                    ? 'text-white'
-                                                    : 'text-gray-600 bg-gray-100 hover:bg-gray-200'
-                                            }`}
-                                            style={{
-                                                backgroundColor: groupFilter === 'draft' ? MAIN_COLOR : undefined
-                                            }}
-                                        >
-                                            Darsi hali boshlanmagan
-                                        </button>
+                                            <option value="">Barcha fanlar</option>
+                                            {subjectsData?.subjects?.map((subject) => (
+                                                <option key={subject.id} value={subject.id}>
+                                                    {subject.name}
+                                                </option>
+                                            ))}
+                                        </select>
                                     </div>
                                 </div>
                                 
@@ -477,10 +480,10 @@ export default function NewStudentPage() {
                                         <option value="">Guruh tanlash (ixtiyoriy)</option>
                                         {groupsData?.groups
                                             ?.filter(group => {
-                                                if (groupFilter === 'all') return true;
-                                                if (groupFilter === 'active') return group.status === 'active';
-                                                if (groupFilter === 'blocked') return group.status === 'blocked';
-                                                if (groupFilter === 'draft') return group.status === 'draft';
+                                                // Filter by subject
+                                                if (subjectFilter && group.subject_id != subjectFilter) {
+                                                    return false;
+                                                }
                                                 return true;
                                             })
                                             ?.map((group) => (
