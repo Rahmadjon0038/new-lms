@@ -14,16 +14,17 @@ import Modal from "@mui/material/Modal";
 import { useCreateGroup } from "../../hooks/groups";
 import { useGetNotify } from "../../hooks/notify";
 import TeacherSelect from "../teacher/Select";
+import SubjectsSelect from "../SubjectsSelect";
 
 const MAIN_COLOR = "#A60E07";
 
 const WEEK_DAYS = [
-  { id: "Dush", label: "Dush" },
-  { id: "Sesh", label: "Sesh" },
-  { id: "Chor", label: "Chor" },
-  { id: "Pay", label: "Pay" },
-  { id: "Jum", label: "Jum" },
-  { id: "Shan", label: "Shan" },
+  { id: "Dushanba", label: "Dushanba" },
+  { id: "Seshanba", label: "Seshanba" },
+  { id: "Chorshanba", label: "Chorshanba" },
+  { id: "Payshanba", label: "Payshanba" },
+  { id: "Juma", label: "Juma" },
+  { id: "Shanba", label: "Shanba" },
 ];
 
 const modalStyle = {
@@ -50,25 +51,29 @@ export default function AdminNewGroupModal({ children }) {
   const [isOpen, setIsOpen] = useState(false);
 
   const [groupData, setGroupData] = useState({
+    subject_id: "",
     name: "",
     teacher_id: "",
-    selectedDays: [], // Tanlangan kunlar arrayi
-    startTime: "09:00",
-    endTime: "11:00",
-    start_date: null, // Dars boshlanish sanasi (ixtiyoriy)
+    selectedDays: [],
+    startTime: "18:00",
+    endTime: "20:00",
+    start_date: "",
     price: "",
   });
+  const isSubjectSelected = !!groupData.subject_id;
 
   const handleOpen = () => setIsOpen(true);
 
   const handleClose = () => {
     setGroupData({
+      subject_id: "",
       name: "",
       teacher_id: "",
       selectedDays: [],
-      startTime: "09:00",
-      endTime: "11:00",
-      start_date: null,
+      startTime: "18:00",
+      endTime: "20:00",
+      start_date: "",
+      price: "",
     });
     setIsOpen(false);
   };
@@ -99,18 +104,20 @@ export default function AdminNewGroupModal({ children }) {
   const handleCreateGroup = (e) => {
     e.preventDefault();
 
-    // Backend kutayotgan format
+    // Backend kutayotgan format (sizning berilgan struktura bo'yicha)
     const groupdata = {
       name: groupData.name,
+      subject_id: groupData.subject_id ? Number(groupData.subject_id) : null,
       teacher_id: groupData.teacher_id ? Number(groupData.teacher_id) : null,
-      price: groupData.price ? Number(groupData.price) : null,
+      start_date: groupData.start_date ? groupData.start_date : null,
       schedule: {
         days: groupData.selectedDays, // Array formatida: ["Dush", "Chor", "Jum"]
         time: `${groupData.startTime}-${groupData.endTime}`
       },
-      start_date: groupData.start_date ? groupData.start_date : null,
+      price: groupData.price ? Number(groupData.price) : null,
+      status: "draft" // default status
     };
-    console.log(groupData)
+    console.log(groupdata)
 
     createGroupMutation.mutate({
       groupdata,
@@ -145,7 +152,21 @@ export default function AdminNewGroupModal({ children }) {
             </h3>
 
             <form className="space-y-5" onSubmit={handleCreateGroup}>
-              {/* 1. Guruh Nomi */}
+              {/* 1. Fan tanlash */}
+              <div>
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+                  Fan *
+                </label>
+                <SubjectsSelect
+                  value={groupData.subject_id}
+                  onChange={(subjectId) => setGroupData(prev => ({ ...prev, subject_id: subjectId }))}
+                  placeholder="Fanni tanlang"
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none text-sm font-semibold"
+                  showAll={false}
+                />
+              </div>
+
+              {/* 2. Guruh Nomi */}
               <div>
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Guruh Nomi *</label>
                 <input
@@ -159,25 +180,25 @@ export default function AdminNewGroupModal({ children }) {
                 />
               </div>
 
-              {/* Narxi (Yuqorida ko'rsatiladi) */}
+              {/* 3. Narxi */}
               <div>
-                <label className="text-[10px] font-bold  uppercase tracking-widest block mb-1">Guruh narxi (so‘m) *</label>
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Guruh narxi (so'm) *</label>
                 <input
                   type="number"
                   name="price"
                   value={groupData.price}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none"
-                  placeholder="Masalan: 300000"
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none text-sm font-semibold"
+                  placeholder="Masalan: 1000000"
                   min="0"
                   required
                 />
               </div>
 
-              {/* 3. O'qituvchi */}
+              {/* 4. O'qituvchi */}
               <div>
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1 flex items-center">
-                  <UserIcon className="h-3 w-3 mr-1" /> O'qituvchi
+                  <UserIcon className="h-3 w-3 mr-1" /> O'qituvchi *
                 </label>
 
                <TeacherSelect
@@ -188,7 +209,7 @@ export default function AdminNewGroupModal({ children }) {
               </div>
 
 
-              {/* 4. Hafta kunlari (Tugmachalar) */}
+              {/* 5. Hafta kunlari (Tugmachalar) */}
               <div>
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Dars Kunlari *</label>
                 <div className="flex flex-wrap gap-2">
@@ -211,7 +232,7 @@ export default function AdminNewGroupModal({ children }) {
                 </div>
               </div>
 
-              {/* 5. Vaqt */}
+              {/* 6. Vaqt */}
               <div className="flex gap-4">
                 <div className="flex-1">
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Boshlanish</label>
@@ -235,9 +256,9 @@ export default function AdminNewGroupModal({ children }) {
                 </div>
               </div>
 
-              {/* Dars boshlanish sanasi (ixtiyoriy) */}
+              {/* 7. Dars boshlanish sanasi */}
               <div>
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Dars boshlanish sanasi (ixtiyoriy)</label>
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Dars boshlanish sanasi</label>
                 <input
                   type="date"
                   name="start_date"
@@ -253,7 +274,8 @@ export default function AdminNewGroupModal({ children }) {
 
               <button
                 type="submit"
-                className="w-full py-4 mt-2 rounded-xl text-sm font-black text-white transition-all shadow-lg uppercase tracking-widest hover:opacity-90 active:scale-95 bg-[#A60E07]"
+                disabled={!groupData.subject_id || !groupData.name || !groupData.teacher_id || groupData.selectedDays.length === 0 || !groupData.price}
+                className="w-full py-4 mt-2 rounded-xl text-sm font-black text-white transition-all shadow-lg uppercase tracking-widest hover:opacity-90 active:scale-95 bg-[#A60E07] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Guruhni Yaratish
               </button>

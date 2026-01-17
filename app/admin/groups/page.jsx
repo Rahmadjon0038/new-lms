@@ -7,7 +7,6 @@ import {
     CalendarDaysIcon,
     ArrowRightIcon,
     PencilSquareIcon,
-    DocumentDuplicateIcon,
     CheckIcon,
     ArchiveBoxXMarkIcon,
     LockClosedIcon,
@@ -17,11 +16,12 @@ import {
 import { FiFilter } from 'react-icons/fi';
 import Link from "next/link";
 import AdminUpdateGroupModal from "../../../components/admistrator/AdminUpdateGroup";
-import { useUpdateGroup } from "../../../hooks/groups";
+import { useChangeGroupStatus } from "../../../hooks/groups";
 import AdminNewGroupModal from "../../../components/admistrator/CreateGroup";
 import { usegetAllgroups } from "../../../hooks/groups";
 import { Clock } from "lucide-react";
 import TeacherSelect from "../../../components/teacher/Select";
+import SubjectsSelect from "../../../components/SubjectsSelect";
 
 // --- Tasdiqlash Modali Komponenti ---
 const ConfirmToggleModal = ({ isOpen, onClose, onConfirm, isClosing, isLoading }) => {
@@ -61,14 +61,7 @@ const ConfirmToggleModal = ({ isOpen, onClose, onConfirm, isClosing, isLoading }
 };
 
 const GroupCard = ({ group, onToggleGroupStatus, onStartClass, updateGroupLoading = false }) => {
-    const [isCopied, setIsCopied] = useState(false);
-    console.log(group)
-
-    const handleCopy = () => {
-        navigator.clipboard.writeText(group.unique_code);
-        setIsCopied(true);
-        setTimeout(() => setIsCopied(false), 2000);
-    };
+    console.log(group);
 
     const scheduleDays = group.schedule?.days?.join(", ") || "Belgilanmagan";
     const timeInfo = group.schedule?.time ? ` (${group.schedule.time})` : "";
@@ -79,14 +72,14 @@ const GroupCard = ({ group, onToggleGroupStatus, onStartClass, updateGroupLoadin
 
     // Updated status logic to include draft
     const getStatusInfo = () => {
-        if (group.status === 'draft' || group.is_active === null) {
+        if (group.status === 'draft' || group.class_status === 'not_started') {
             return {
                 borderColor: "border-yellow-400",
                 statusTextColor: "text-yellow-700",
                 statusIcon: <CalendarIcon className="h-6 w-6 mr-2 text-yellow-500" />,
                 statusText: "Darsi boshlanmagan"
             };
-        } else if (group.is_active) {
+        } else if (group.status === 'active') {
             return {
                 borderColor: "border-[#A60E07]",
                 statusTextColor: "text-gray-800",
@@ -104,35 +97,22 @@ const GroupCard = ({ group, onToggleGroupStatus, onStartClass, updateGroupLoadin
     };
 
     const { borderColor, statusTextColor, statusIcon, statusText } = getStatusInfo();
-    const isDraft = group.status === 'draft' || group.is_active === null;
+    const isDraft = group.status === 'draft' || group.class_status === 'not_started';
 
     return (
         <div className={`flex flex-col justify-between bg-white p-6 rounded-xl shadow-lg border-t-4 ${borderColor} transition duration-150 hover:shadow-xl`}>
             <div className="mb-4">
-                <b>Id: {group.id} </b>
                 <h3 className={`text-xl font-bold ${statusTextColor} flex items-center mb-2`}>
                     {statusIcon}
                     {group.name}
-                    {(group.status === 'draft' || group.is_active === null) && <span className="ml-2 text-sm font-medium text-yellow-600">(Darsi boshlanmagan)</span>}
-                    {group.is_active === false && <span className="ml-2 text-sm font-medium text-gray-400">(Yopilgan)</span>}
+                    {isDraft && <span className="ml-2 text-sm font-medium text-yellow-600">(Darsi boshlanmagan)</span>}
+                    {group.status === 'blocked' && <span className="ml-2 text-sm font-medium text-gray-400">(Yopilgan)</span>}
                 </h3>
 
                 {/* Narxi yuqorida, ko'zga tashlanadigan */}
                 <div className="flex items-center gap-2 mb-3">
-                    <span className="text-2xl font-extrabold text-[#A60E07]">{group.price ? group.price + ' so‘m' : 'Narxi belgilanmagan'}</span>
+                    <span className="text-2xl font-extrabold text-[#A60E07]">{group.price ? parseFloat(group.price).toLocaleString() + ' so\'m' : 'Narxi belgilanmagan'}</span>
                     <span className="text-lg">💵</span>
-                </div>
-
-                <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-gray-200 mb-4">
-                    <span className="text-sm font-semibold text-gray-700">
-                        Kod: <span className="font-mono text-[#A60E07] ml-1">{group.unique_code}</span>
-                    </span>
-                    <button
-                        onClick={handleCopy}
-                        className={`p-1 rounded transition duration-150 ${isCopied ? "bg-green-100 text-green-600" : "bg-red-50 text-[#A60E07] hover:bg-red-100"}`}
-                    >
-                        {isCopied ? <CheckIcon className="h-4 w-4" /> : <DocumentDuplicateIcon className="h-4 w-4" />}
-                    </button>
                 </div>
 
                 <div className="space-y-2 text-sm text-gray-700">
@@ -152,6 +132,12 @@ const GroupCard = ({ group, onToggleGroupStatus, onStartClass, updateGroupLoadin
                         <PencilSquareIcon className="h-4 w-4 mr-2 text-gray-400" />
                         O'qituvchi: <span className="ml-1 font-bold text-gray-800">{group.teacher_name || "Tayinlanmagan"}</span>
                     </p>
+                    {group.subject_name && (
+                        <p className="flex ">
+                            <BookOpenIcon className="h-4 w-4 mr-2 text-gray-400" />
+                            Fan: <span className="ml-1 font-bold text-gray-800">{group.subject_name}</span>
+                        </p>
+                    )}
                     <p className="flex ">
                         <CalendarIcon className="h-4 w-4 mr-2 text-gray-400" />
                         Dars boshlanish sanasi: <span className="ml-1 font-semibold text-gray-600">{startDate}</span>
@@ -174,11 +160,11 @@ const GroupCard = ({ group, onToggleGroupStatus, onStartClass, updateGroupLoadin
                     <Link
                         href={`/admin/groups/${group.id}`}
                         className={`flex-1 flex items-center justify-center py-2.5 rounded-lg font-semibold text-white transition duration-150 shadow-md h-full 
-                            ${group.is_active ? 'bg-[#A60E07] hover:opacity-90' : 'bg-gray-400 cursor-not-allowed'}`}
-                        onClick={(e) => !group.is_active && e.preventDefault()}
+                            ${group.status === 'active' ? 'bg-[#A60E07] hover:opacity-90' : 'bg-gray-400 cursor-not-allowed'}`}
+                        onClick={(e) => group.status !== 'active' && e.preventDefault()}
                     >
                         <ArrowRightIcon className="h-5 w-5 mr-2" />
-                        {group.is_active ? "Guruhga Kirish" : "Ma'lumotlar"}
+                        {group.status === 'active' ? "Guruhga Kirish" : "Ma'lumotlar"}
                     </Link>
                 )}
 
@@ -190,11 +176,13 @@ const GroupCard = ({ group, onToggleGroupStatus, onStartClass, updateGroupLoadin
 
                 {!isDraft && (
                     <button
-                        onClick={() => onToggleGroupStatus(group.id, !group.is_active)}
-                        className={`p-2.5 rounded-lg text-white transition duration-150 shadow-md h-full ${group.is_active ? 'bg-orange-600 hover:bg-orange-700' : 'bg-[#A60E07] hover:opacity-90'}`}
+                        onClick={() => onToggleGroupStatus(group.id, group.status === 'active' ? 'blocked' : 'active')}
+                        className={`p-2.5 rounded-lg text-white transition duration-150 shadow-md h-full ${
+                            group.status === 'active' ? 'bg-orange-600 hover:bg-orange-700' : 'bg-[#A60E07] hover:opacity-90'
+                        }`}
                         disabled={updateGroupLoading}
                     >
-                        {group.is_active ? <LockClosedIcon className="h-5 w-5" /> : <CheckIcon className="h-5 w-5" />}
+                        {group.status === 'active' ? <LockClosedIcon className="h-5 w-5" /> : <CheckIcon className="h-5 w-5" />}
                     </button>
                 )}
             </div>
@@ -204,6 +192,7 @@ const GroupCard = ({ group, onToggleGroupStatus, onStartClass, updateGroupLoadin
 
 function AdminGroupsPage() {
     const [selectedTeacher, setSelectedTeacher] = useState('all');
+    const [selectedSubject, setSelectedSubject] = useState('all');
     const [currentTab, setCurrentTab] = useState('active');
 
     // --- Modal State ---
@@ -211,59 +200,38 @@ function AdminGroupsPage() {
 
     // Updated to handle draft status and exclude draft from active
     const getIsActiveFilter = () => {
-        if (currentTab === 'active') return true;
-        if (currentTab === 'closed') return false;
+        if (currentTab === 'active') return 'active';
+        if (currentTab === 'closed') return 'blocked';
         if (currentTab === 'draft') return 'draft';
         return undefined;
     };
 
-    const { data: backendData, isLoading, error } = usegetAllgroups(getIsActiveFilter(), selectedTeacher);
+    const { data: backendData, isLoading, error } = usegetAllgroups(getIsActiveFilter(), selectedTeacher, selectedSubject);
     
-    // Filter out draft groups from active tab on frontend as well
+    // Filter groups based on current tab
     const filteredGroups = useMemo(() => {
         const groups = backendData?.groups || [];
         
-        if (currentTab === 'active') {
-            // Only show groups that are active AND not draft
-            return groups.filter(group => 
-                group.is_active === true && 
-                group.status !== 'draft' && 
-                group.status !== null
-            );
-        } else if (currentTab === 'draft') {
-            // Only show draft groups
-            return groups.filter(group => 
-                group.status === 'draft' || 
-                group.is_active === null
-            );
-        } else if (currentTab === 'closed') {
-            // Only show closed groups (not draft, not active)
-            return groups.filter(group => 
-                group.is_active === false && 
-                group.status !== 'draft'
-            );
-        }
-        
+        // Backend already filters by status, so we just return the groups
+        // Additional frontend filtering can be done here if needed
         return groups;
-    }, [backendData?.groups, currentTab]);
-    const updateGroupMutation = useUpdateGroup();
+    }, [backendData?.groups]);
+
+    const changeGroupStatusMutation = useChangeGroupStatus();
 
     const groups = filteredGroups;
 
     // Darsni boshlash funksiyasi (draft -> active)
     const handleStartClass = (groupId) => {
-        updateGroupMutation.mutate({
+        changeGroupStatusMutation.mutate({
             id: groupId,
-            groupdata: { 
-                is_active: true,
-                status: 'active',
-                start_date: new Date().toISOString()
-            },
+            status: 'active'
+        }, {
             onSuccess: () => {
-                // Success handled by react-query invalidation
-            },
-            onError: (err) => {
-                alert("Darsni boshlashda xatolik: " + (err?.message || ""));
+                // Draft tabdan Active tabga o'tish
+                if (currentTab === 'draft') {
+                    setCurrentTab('active');
+                }
             }
         });
     };
@@ -275,17 +243,21 @@ function AdminGroupsPage() {
 
     // Haqiqiy update funksiyasi
     const handleConfirmToggle = () => {
-        updateGroupMutation.mutate({
+        const targetStatus = confirmModal.newStatus;
+        changeGroupStatusMutation.mutate({
             id: confirmModal.groupId,
-            groupdata: { is_active: confirmModal.newStatus },
+            status: targetStatus
+        }, {
             onSuccess: () => {
-                setConfirmModal({ isOpen: false, groupId: null, newStatus: null });
-            },
-            onError: (err) => {
-                alert("Guruhni yangilashda xatolik: " + (err?.message || ""));
-                setConfirmModal({ isOpen: false, groupId: null, newStatus: null });
+                // Status o'zgarganda mos tabga o'tish
+                if (targetStatus === 'blocked' && currentTab !== 'closed') {
+                    setCurrentTab('closed');
+                } else if (targetStatus === 'active' && currentTab !== 'active') {
+                    setCurrentTab('active');
+                }
             }
         });
+        setConfirmModal({ isOpen: false, groupId: null, newStatus: null });
     };
 
     if (isLoading) return <div className="p-10 text-center font-bold text-[#A60E07] text-xl animate-pulse">Guruhlar yuklanmoqda...</div>;
@@ -326,6 +298,13 @@ function AdminGroupsPage() {
                             onChange={setSelectedTeacher}
                         />
                     </div>
+                    <div className="min-w-[200px]">
+                        <SubjectsSelect
+                            value={selectedSubject}
+                            onChange={setSelectedSubject}
+                            placeholder="Fanni tanlang"
+                        />
+                    </div>
                 </div>
 
                 <AdminNewGroupModal>
@@ -342,7 +321,7 @@ function AdminGroupsPage() {
                         group={group}
                         onToggleGroupStatus={handleOpenConfirm}
                         onStartClass={handleStartClass}
-                        updateGroupLoading={updateGroupMutation.isLoading}
+                        updateGroupLoading={changeGroupStatusMutation.isLoading}
                     />
                 ))}
             </div>
@@ -352,8 +331,8 @@ function AdminGroupsPage() {
                 isOpen={confirmModal.isOpen}
                 onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
                 onConfirm={handleConfirmToggle}
-                isClosing={confirmModal.newStatus === false}
-                isLoading={updateGroupMutation.isLoading}
+                isClosing={confirmModal.newStatus === 'blocked'}
+                isLoading={changeGroupStatusMutation.isLoading}
             />
 
             {groups.length === 0 && (

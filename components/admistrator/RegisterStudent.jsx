@@ -29,7 +29,7 @@ export default function RegisterStudent({ children }) {
     
     const [selectedGroup, setSelectedGroup] = useState('');
     
-    const { data: groupsData, isLoading: groupsLoading } = usegetAllgroups(true);
+    const { data: groupsData, isLoading: groupsLoading } = usegetAllgroups();
     const registerMutation = useRegisterStudent();
     const joinGroupMutation = useJoinStudentToGroup();
     
@@ -292,11 +292,15 @@ export default function RegisterStudent({ children }) {
                                             disabled={groupsLoading}
                                         >
                                             <option value="">Guruh tanlash (ixtiyoriy)</option>
-                                            {groupsData?.groups?.map((group) => (
-                                                <option key={group.id} value={group.id}>
-                                                    {group.name} - {group.teacher_name || 'O\'qituvchisiz'} - {Number(group.price).toLocaleString()} so'm
-                                                </option>
-                                            ))}
+                                            {groupsData?.groups?.filter(group => group.status !== 'blocked').map((group) => {
+                                                const classStatus = group.class_status === 'started' ? 'Dars boshlangan' : 'Dars boshlanmagan';
+                                                const statusIndicator = group.status === 'draft' ? ' (Draft)' : '';
+                                                return (
+                                                    <option key={group.id} value={group.id}>
+                                                        {group.name} - {group.teacher_name || 'O\'qituvchisiz'} - {Number(group.price).toLocaleString()} so'm - {classStatus}{statusIndicator}
+                                                    </option>
+                                                );
+                                            })}
                                         </select>
                                         {groupsLoading && (
                                             <p className="text-sm text-gray-500 mt-1">Guruhlar yuklanmoqda...</p>

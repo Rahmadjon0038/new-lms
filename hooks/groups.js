@@ -1,3 +1,6 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { instance } from './api';
+
 // ----------- update group -----------------
 const updateGroup = async ({ id, groupdata }) => {
     const response = await instance.patch(`/api/groups/${id}`, groupdata);
@@ -22,19 +25,45 @@ export const useUpdateGroup = () => {
     });
     return updateGroupMutation;
 }
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { instance } from "./api";
 
-// -------------- I am getting prifile information ----------
-const getAllgroups = async (is_active, teacher_id) => {
+// ----------- change group status -----------------
+const changeGroupStatus = async ({ id, status }) => {
+    const response = await instance.patch(`/api/groups/${id}/status`, { status });
+    return response.data;
+}
+
+export const useChangeGroupStatus = () => {
+    const quericlient = useQueryClient();
+    const changeStatusMutation = useMutation({
+        mutationFn: changeGroupStatus,
+        onSuccess: (data, vars) => {
+            quericlient.invalidateQueries(['groups']);
+            if (vars.onSuccess) {
+                vars.onSuccess(data);
+            }
+        },
+        onError: (err, vars) => {
+            if (vars.onError) {
+                vars.onError(err);
+            }
+        }
+    });
+    return changeStatusMutation;
+}
+
+// -------------- Get all groups information ----------
+const getAllgroups = async (status, teacher_id, subject_id) => {
     let url = '/api/groups';
     const params = new URLSearchParams();
     
-    if (typeof is_active === 'boolean') {
-        params.append('is_active', is_active);
+    if (status && status !== 'all') {
+        params.append('status', status);
     }
     if (teacher_id && teacher_id !== 'all') {
         params.append('teacher_id', teacher_id);
+    }
+    if (subject_id && subject_id !== 'all') {
+        params.append('subject_id', subject_id);
     }
     
     if (params.toString()) {
@@ -45,10 +74,10 @@ const getAllgroups = async (is_active, teacher_id) => {
     return response.data;
 }
 
-export const usegetAllgroups = (is_active, teacher_id) => {
+export const usegetAllgroups = (status, teacher_id, subject_id) => {
     const { data, isLoading, error } = useQuery({
-        queryKey: ['groups', is_active, teacher_id],
-        queryFn: () => getAllgroups(is_active, teacher_id),
+        queryKey: ['groups', status, teacher_id, subject_id],
+        queryFn: () => getAllgroups(status, teacher_id, subject_id),
     });
     return { data, isLoading, error };
 }

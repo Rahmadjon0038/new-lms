@@ -42,7 +42,7 @@ export default function NewStudentPage() {
     const [showPassword, setShowPassword] = useState(true); // Default: show password
     const [subjectFilter, setSubjectFilter] = useState(''); // Filter by subject
     
-    const { data: groupsData, isLoading: groupsLoading } = usegetAllgroups(true);
+    const { data: groupsData, isLoading: groupsLoading } = usegetAllgroups();
     const { data: subjectsData, isLoading: subjectsLoading } = useGetAllSubjects();
     const registerMutation = useRegisterStudent();
     const joinGroupMutation = useJoinStudentToGroup();
@@ -484,15 +484,21 @@ export default function NewStudentPage() {
                                                 if (subjectFilter && group.subject_id != subjectFilter) {
                                                     return false;
                                                 }
+                                                // Filter out blocked groups
+                                                if (group.status === 'blocked') {
+                                                    return false;
+                                                }
                                                 return true;
                                             })
-                                            ?.map((group) => (
-                                            <option key={group.id} value={group.id}>
-                                                {group.name} - {group.teacher_name || 'O\'qituvchisiz'} - {Number(group.price).toLocaleString()} so'm
-                                                {group.status === 'blocked' && ' (Bloklangan)'}
-                                                {group.status === 'draft' && ' (Darsi boshlanmagan)'}
-                                            </option>
-                                        ))}
+                                            ?.map((group) => {
+                                                const classStatus = group.class_status === 'started' ? 'Dars boshlangan' : 'Dars boshlanmagan';
+                                                const statusIndicator = group.status === 'draft' ? ' (Draft)' : '';
+                                                return (
+                                                    <option key={group.id} value={group.id}>
+                                                        {group.name} - {group.teacher_name || 'O\'qituvchisiz'} - {Number(group.price).toLocaleString()} so'm - {classStatus}{statusIndicator}
+                                                    </option>
+                                                );
+                                            })}
                                     </select>
                                     {groupsLoading && (
                                         <p className="text-sm text-gray-500 mt-1">Guruhlar yuklanmoqda...</p>

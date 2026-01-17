@@ -13,16 +13,17 @@ import Modal from "@mui/material/Modal";
 import { useUpdateGroup } from "../../hooks/groups";
 import { useGetNotify } from "../../hooks/notify";
 import TeacherSelect from "../teacher/Select";
+import SubjectsSelect from "../SubjectsSelect";
 
 const MAIN_COLOR = "#A60E07";
 
 const WEEK_DAYS = [
-  { id: "Dushanba", short: "Dush" },
-  { id: "Seshanba", short: "Sesh" },
-  { id: "Chorshanba", short: "Chor" },
-  { id: "Payshanba", short: "Pay" },
-  { id: "Juma", short: "Jum" },
-  { id: "Shanba", short: "Shan" },
+  { id: "Dushanba", short: "Dush", label: "Dushanba" },
+  { id: "Seshanba", short: "Sesh", label: "Seshanba" },
+  { id: "Chorshanba", short: "Chor", label: "Chorshanba" },
+  { id: "Payshanba", short: "Pay", label: "Payshanba" },
+  { id: "Juma", short: "Jum", label: "Juma" },
+  { id: "Shanba", short: "Shan", label: "Shanba" },
 ];
 
 const modalStyle = {
@@ -48,6 +49,7 @@ export default function AdminUpdateGroupModal({ children, initialData }) {
 
   const [groupData, setGroupData] = useState({
     name: "",
+    subject_id: "",
     teacher_id: "",
     start_date: "2025-01-10",
     price: "",
@@ -72,6 +74,7 @@ export default function AdminUpdateGroupModal({ children, initialData }) {
       }
       setGroupData({
         name: initialData.name || "",
+        subject_id: initialData.subject_id ? String(initialData.subject_id) : "",
         teacher_id: initialData.teacher_id ? String(initialData.teacher_id) : "",
         start_date: startDateValue,
         price: initialData.price ? String(initialData.price) : "",
@@ -121,8 +124,10 @@ export default function AdminUpdateGroupModal({ children, initialData }) {
     e.preventDefault();
 
     const finalData = {
-      teacher_id: groupData.teacher_id ? Number(groupData.teacher_id) : 1,
+      is_active: true,
+      teacher_id: groupData.teacher_id ? Number(groupData.teacher_id) : null,
       name: groupData.name,
+      subject_id: groupData.subject_id ? Number(groupData.subject_id) : null,
       price: groupData.price ? Number(groupData.price) : null,
       schedule: {
         days: groupData.schedule.days,
@@ -169,6 +174,20 @@ export default function AdminUpdateGroupModal({ children, initialData }) {
             </h3>
 
             <form className="space-y-4" onSubmit={handleUpdate}>
+              {/* Fan tanlash */}
+              <div>
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+                  Fan *
+                </label>
+                <SubjectsSelect
+                  value={groupData.subject_id}
+                  onChange={(subjectId) => setGroupData(prev => ({ ...prev, subject_id: subjectId }))}
+                  placeholder="Fanni tanlang"
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-[#A60E07] text-sm font-semibold"
+                  showAll={false}
+                />
+              </div>
+
               {/* Guruh Nomi */}
               <div>
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Guruh Nomi *</label>
@@ -185,7 +204,7 @@ export default function AdminUpdateGroupModal({ children, initialData }) {
               {/* O'qituvchi */}
               <div>
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1 flex items-center">
-                  <UserIcon className="h-3 w-3 mr-1" /> O'qituvchi
+                  <UserIcon className="h-3 w-3 mr-1" /> O'qituvchi (ixtiyoriy)
                 </label>
                 <TeacherSelect
                   value={groupData.teacher_id}
@@ -241,7 +260,7 @@ export default function AdminUpdateGroupModal({ children, initialData }) {
                           ? "bg-[#A60E07] text-white border-[#A60E07] shadow-md shadow-red-900/20"
                           : "bg-gray-50 text-gray-500 border-gray-200 hover:border-[#A60E07]"}`}
                       >
-                        {day.id}
+                        {day.label}
                       </button>
                     );
                   })}
@@ -272,7 +291,8 @@ export default function AdminUpdateGroupModal({ children, initialData }) {
 
               <button
                 type="submit"
-                className="w-full py-3.5 mt-2 rounded-xl text-sm font-bold text-white transition-all shadow-lg uppercase tracking-widest hover:opacity-90 active:scale-95"
+                disabled={!groupData.subject_id || !groupData.name}
+                className="w-full py-3.5 mt-2 rounded-xl text-sm font-bold text-white transition-all shadow-lg uppercase tracking-widest hover:opacity-90 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ backgroundColor: MAIN_COLOR }}
               >
                 Saqlash

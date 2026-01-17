@@ -1,5 +1,5 @@
 'use client'
-import React, { useState } from 'react';
+import React from 'react';
 import { useParams } from 'next/navigation';
 import { 
     UsersIcon, 
@@ -8,8 +8,6 @@ import {
     CurrencyDollarIcon, 
     CalendarDaysIcon, 
     PhoneIcon,
-    DocumentDuplicateIcon,
-    CheckIcon,
     BookOpenIcon,
     ArchiveBoxXMarkIcon
 } from '@heroicons/react/24/outline';
@@ -18,19 +16,8 @@ import { useGetGroupById } from '../../../../hooks/groups';
 const GroupDetailPage = () => {
     const params = useParams();
     const groupId = params.id;
-    const [copied, setCopied] = useState(false);
 
     const { data: groupData, isLoading, error } = useGetGroupById(groupId);
-
-    const copyToClipboard = async (text) => {
-        try {
-            await navigator.clipboard.writeText(text);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        } catch (err) {
-            console.error('Failed to copy: ', err);
-        }
-    };
 
     if (isLoading) return <div className="p-8 text-center">Yuklanmoqda...</div>;
 
@@ -83,30 +70,23 @@ const GroupDetailPage = () => {
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                             <div>
                                 <h2 className="text-2xl font-bold text-gray-800 flex items-center mb-3">
-                                    {group.is_active ? (
+                                    {group.status === 'active' ? (
                                         <BookOpenIcon className="h-7 w-7 mr-3 text-[#A60E07]" />
                                     ) : (
                                         <ArchiveBoxXMarkIcon className="h-7 w-7 mr-3 text-gray-500" />
                                     )}
                                     {group.name}
-                                    {!group.is_active && (
+                                    {group.status === 'draft' && (
+                                        <span className="ml-3 text-sm font-medium text-yellow-600 px-2 py-1 bg-yellow-100 rounded-lg">
+                                            Darsi boshlanmagan
+                                        </span>
+                                    )}
+                                    {group.status === 'blocked' && (
                                         <span className="ml-3 text-sm font-medium text-gray-400 px-2 py-1 bg-gray-100 rounded-lg">
                                             Yopilgan
                                         </span>
                                     )}
                                 </h2>
-                                <div className="flex items-center gap-3">
-                                    <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-semibold bg-gray-50 text-gray-700 border border-gray-200">
-                                        Kod: <span className="ml-1 font-mono text-[#A60E07]">{group.unique_code}</span>
-                                    </span>
-                                    <button
-                                        onClick={() => copyToClipboard(group.unique_code)}
-                                        className="p-2 rounded-lg bg-[#A60E07] hover:opacity-90 text-white transition duration-200 flex items-center shadow-md"
-                                        title="Kodni nusxalash"
-                                    >
-                                        {copied ? <CheckIcon className="h-4 w-4" /> : <DocumentDuplicateIcon className="h-4 w-4" />}
-                                    </button>
-                                </div>
                             </div>
                             <div className="text-right">
                                 <div className="text-3xl font-extrabold text-[#A60E07] mb-1">
@@ -135,6 +115,21 @@ const GroupDetailPage = () => {
                                             {group.teacher_phone}
                                         </div>
                                     )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Fan */}
+                        <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                            <div className="flex items-center space-x-3">
+                                <div className="flex-shrink-0">
+                                    <BookOpenIcon className="h-6 w-6 text-green-500" />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Fan</p>
+                                    <p className="text-sm font-semibold text-gray-800">
+                                        {group.subject_name || 'Belgilanmagan'}
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -178,9 +173,12 @@ const GroupDetailPage = () => {
                                 <div>
                                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Holat</p>
                                     <span className={`inline-flex px-2 py-1 text-xs font-bold rounded-lg ${
-                                        group.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                        group.status === 'active' ? 'bg-green-100 text-green-800' : 
+                                        group.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
+                                        'bg-red-100 text-red-800'
                                     }`}>
-                                        {group.is_active ? 'Faol' : 'Nofaol'}
+                                        {group.status === 'active' ? 'Faol' : 
+                                         group.status === 'draft' ? 'Darsi boshlanmagan' : 'Yopilgan'}
                                     </span>
                                 </div>
                             </div>

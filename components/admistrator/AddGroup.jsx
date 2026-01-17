@@ -11,7 +11,7 @@ const AddGroup = ({ children, student, onSuccess }) => {
     const [selectedGroupId, setSelectedGroupId] = useState('');
     const [actionType, setActionType] = useState('join'); // 'join', 'change', 'remove'
 
-    const { data: groupsData, isLoading: groupsLoading } = usegetAllgroups(true);
+    const { data: groupsData, isLoading: groupsLoading } = usegetAllgroups();
     const joinStudentMutation = useJoinStudentToGroup();
     const changeGroupMutation = useChangeStudentGroup();
     const removeStudentMutation = useRemoveStudentFromGroup();
@@ -123,9 +123,9 @@ const AddGroup = ({ children, student, onSuccess }) => {
 
     return (
         <>
-            <button onClick={() => setIsModalOpen(true)}>
+            <div onClick={() => setIsModalOpen(true)}>
                 {children}
-            </button>
+            </div>
 
             {/* Modal */}
             {isModalOpen && (
@@ -244,11 +244,15 @@ const AddGroup = ({ children, student, onSuccess }) => {
                                         required
                                     >
                                         <option value="">Guruhni tanlang...</option>
-                                        {groupsData?.groups?.map((group) => (
-                                            <option key={group.id} value={group.id}>
-                                                {group.name} - {group.teacher_name || 'O\'qituvchisiz'} - {Number(group.price).toLocaleString()} so'm
-                                            </option>
-                                        ))}
+                                        {groupsData?.groups?.filter(group => group.status !== 'blocked').map((group) => {
+                                            const classStatus = group.class_status === 'started' ? 'Dars boshlanadi' : 'Dars boshlanmagan';
+                                            const statusIndicator = group.status === 'draft' ? ' (Draft)' : '';
+                                            return (
+                                                <option key={group.id} value={group.id}>
+                                                    {group.name} - {group.teacher_name || 'O\'qituvchisiz'} - {Number(group.price).toLocaleString()} so'm - {classStatus}{statusIndicator}
+                                                </option>
+                                            );
+                                        })}
                                     </select>
                                     {groupsLoading && (
                                         <p className="text-sm text-gray-500 mt-1">Guruhlar yuklanmoqda...</p>

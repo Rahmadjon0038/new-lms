@@ -2,239 +2,369 @@
 
 import React, { useState } from "react";
 import {
-  XMarkIcon,
-  UserIcon,
-  AcademicCapIcon,
-  ArrowUpOnSquareIcon,
-  BookOpenIcon, // Fan uchun ikonka
-  UsersIcon, // Tanlangan foydalanuvchi uchun ikonka
+    XMarkIcon,
+    UserIcon,
+    PhoneIcon,
+    ClockIcon,
+    CalendarDaysIcon,
+    AcademicCapIcon,
+    BriefcaseIcon,
 } from "@heroicons/react/24/outline";
 
-// Material-UI importlari (Sizning uslubingizga mos bo'lishi uchun saqlanadi)
 import Box from "@mui/material/Box";
 import Modal from "@mui/material/Modal";
+import { useRegisterTeacher } from "../../hooks/teacher";
+import { useGetNotify } from "../../hooks/notify";
+import SubjectsSelect from "../SubjectsSelect";
 
-// --- MOCK DATA: Tizimdagi Barcha Potentsial Foydalanuvchilar ---
-// Bu ro'yxatdan kimni o'qituvchi qilishni tanlaymiz
-const allUsers = [
-  { id: "u1", name: "Alisher Vohidov (ID: 101)", role: "Operator" },
-  { id: "u2", name: "Diyora Saidova (ID: 102)", role: "Menejer" },
-  { id: "u3", name: "Sanjar Karimxo'jayev (ID: 103)", role: "Talaba" },
-  { id: "u4", name: "Lola Rahmatullayeva (ID: 104)", role: "Talaba" },
-  { id: "u5", name: "Behruz Anvarov (ID: 105)", role: "Talaba" },
-];
+const MAIN_COLOR = "#A60E07";
 
-// --- MUI Style Objekti (o'zgarishsiz) ---
 const modalStyle = {
-  position: "absolute",
-  top: "50%",
-  left: "50%",
-  transform: "translate(-50%, -50%)",
-  width: 650, // Modal hajmini biroz kattalashtirdik
-  bgcolor: "background.paper",
-  borderRadius: "12px",
-  boxShadow: 24,
-  p: 4, // Padding oshirildi
-  outline: "none",
-  maxHeight: "90vh",
-  overflowY: "auto",
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: "translate(-50%, -50%)",
+    width: "95%",
+    maxWidth: "700px",
+    bgcolor: "background.paper",
+    borderRadius: "20px",
+    boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1)",
+    p: { xs: 3, sm: 4 },
+    outline: "none",
+    border: "none",
+    maxHeight: "90vh",
+    overflowY: "auto",
 };
 
-// --- Yordamchi Komponent: Qidiruvli Selectni Simulyatsiya qilish ---
-const SearchableSelect = ({ options, value, onChange, label, icon: Icon }) => {
-  const [searchText, setSearchText] = useState("");
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+export default function AddTeacherModal({ children, onClose }) {
+    const notify = useGetNotify();
+    const registerTeacherMutation = useRegisterTeacher();
+    const [isOpen, setIsOpen] = useState(false);
 
-  // Qidiruv natijalari
-  const filteredOptions = options.filter((option) =>
-    option.name.toLowerCase().includes(searchText.toLowerCase())
-  );
+    const [formData, setFormData] = useState({
+        name: "",
+        surname: "",
+        username: "",
+        password: "",
+        phone: "",
+        phone2: "",
+        subject_id: "",
+        startDate: "",
+        certificate: "",
+        age: "",
+        has_experience: false,
+        experience_years: "",
+        experience_place: "",
+        available_times: "",
+        work_days_hours: "",
+    });
 
-  // Tanlangan optionning nomini topish
-  const selectedName =
-    options.find((opt) => opt.id === value)?.name || "Tanlanmagan";
+    const handleOpen = () => setIsOpen(true);
+    const handleClose = () => {
+        setIsOpen(false);
+        setFormData({
+            name: "",
+            surname: "",
+            username: "",
+            password: "",
+            phone: "",
+            phone2: "",
+            subject_id: "",
+            startDate: "",
+            certificate: "",
+            age: "",
+            has_experience: false,
+            experience_years: "",
+            experience_place: "",
+            available_times: "",
+            work_days_hours: "",
+        });
+        if (onClose) onClose();
+    };
 
-  return (
-    <div className="flex flex-col relative">
-      <label className="text-sm font-medium text-gray-600 mb-1 flex items-center">
-        <Icon className="h-4 w-4 mr-1 text-gray-500" /> {label}
-      </label>
+    const handleChange = (e) => {
+        const { name, value, type, checked } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: type === 'checkbox' ? checked : value
+        }));
+    };
 
-      {/* Input va Tanlangan Qiymat */}
-      <div
-        className="relative border border-gray-300 rounded-lg bg-white shadow-sm cursor-pointer"
-        onClick={() => setIsDropdownOpen((prev) => !prev)}
-      >
-        <input
-          type="text"
-          placeholder={selectedName}
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-          onFocus={() => setIsDropdownOpen(true)}
-          className="w-full px-4 py-2 border-none rounded-lg text-gray-800 focus:ring-0"
-        />
-      </div>
+    const handleSubjectChange = (value) => {
+        setFormData(prev => ({
+            ...prev,
+            subject_id: value === 'all' || value === '' ? '' : parseInt(value)
+        }));
+    };
 
-      {/* Dropdown Ro'yxati */}
-      {isDropdownOpen && (
-        <div className="absolute z-10 w-full mt-12 bg-white border border-gray-300 rounded-lg shadow-xl max-h-60 overflow-y-auto">
-          {filteredOptions.length > 0 ? (
-            filteredOptions.map((option) => (
-              <div
-                key={option.id}
-                className="px-4 py-2 text-gray-800 hover:bg-blue-50 cursor-pointer text-sm"
-                onClick={() => {
-                  onChange(option.id);
-                  setIsDropdownOpen(false);
-                  setSearchText(option.name); // Inputda tanlangan ism turishi uchun
-                }}
-              >
-                {option.name}{" "}
-                <span className="text-gray-400">({option.role})</span>
-              </div>
-            ))
-          ) : (
-            <div className="px-4 py-2 text-gray-500 text-sm italic">
-              Natija topilmadi.
-            </div>
-          )}
-        </div>
-      )}
-      {/* Tanlangan nomi ekranda yashirincha turishi */}
-      <input type="hidden" value={value} readOnly />
-    </div>
-  );
-};
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        
+        // Validation
+        if (!formData.name || !formData.surname || !formData.username || 
+            !formData.password || !formData.phone || !formData.subject_id ||
+            !formData.startDate || !formData.age) {
+            notify("Iltimos, barcha majburiy maydonlarni to'ldiring", "error");
+            return;
+        }
 
-// --- ASOSIY KOMPONENT: O'qituvchi Qo'shish Modali ---
-export default function AddTeacherModal({ isOpen, handleClose, children }) {
-  // Forma ma'lumotlari holati
-  const [formData, setFormData] = useState({
-    userId: "", // SearchableSelect orqali tanlanadi
-    subjects: "", // O'qitadigan fanlar (vergul bilan ajratilgan)
-  });
+        const submitData = {
+            ...formData,
+            age: parseInt(formData.age),
+            subject_id: parseInt(formData.subject_id),
+            experience_years: formData.experience_years ? parseInt(formData.experience_years) : 0,
+        };
 
-  // Xatolik holati
-  const [error, setError] = useState("");
+        registerTeacherMutation.mutate(submitData, {
+            onSuccess: () => {
+                notify("O'qituvchi muvaffaqiyatli qo'shildi", "success");
+                handleClose();
+            },
+            onError: (error) => {
+                notify("Xatolik yuz berdi: " + (error?.response?.data?.message || error.message), "error");
+            }
+        });
+    };
 
-  // Select va Input qiymatlari o'zgarganda
-  const handleSelectChange = (userId) => {
-    setFormData((prev) => ({ ...prev, userId }));
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  // SAQLASH / QO'SHISH FUNKSIYASI
-  const handleAddTeacher = () => {
-    setError(""); // Avvalgi xatolarni tozalash
-
-    if (!formData.userId || !formData.subjects.trim()) {
-      setError(
-        "Iltimos, foydalanuvchini tanlang va o'qitish fanlarini kiriting."
-      );
-      return;
-    }
-
-    const selectedUser = allUsers.find((u) => u.id === formData.userId);
-
-    console.log("-----------------------------------------");
-    console.log("✅ Yangi O'qituvchi Qo'shildi:");
-    console.log(
-      `Tanlangan Foydalanuvchi: ${selectedUser ? selectedUser.name : "Xato"}`
-    );
-    console.log(
-      `O'qitadigan Fanlar: ${formData.subjects
-        .split(",")
-        .map((s) => s.trim())
-        .join(", ")}`
-    );
-    console.log("-----------------------------------------");
-
-    // Formani tozalash va modalni yopish
-    setFormData({ userId: "", subjects: "" });
-    handleClose();
-  };
-
-  return (
-    <Modal
-      open={isOpen}
-      onClose={handleClose}
-      aria-labelledby="add-teacher-modal-title"
-    >
-      <Box sx={modalStyle}>
-        {/* Modal Kontent Bloki */}
-        <div className="relative">
-          {/* Yopish tugmasi */}
-          <button
-            onClick={handleClose}
-            className="absolute top-0 right-0 text-gray-400 hover:text-red-600 transition duration-150 p-1 rounded-full hover:bg-gray-100"
-            title="Yopish"
-          >
-            <XMarkIcon className="h-6 w-6" />
-          </button>
-
-          {/* Modal Sarlavhasi */}
-          <h3
-            id="add-teacher-modal-title"
-            className="text-2xl font-bold text-gray-900 mb-6 border-b pb-3 flex items-center"
-          >
-            <AcademicCapIcon className="h-7 w-7 mr-3 text-green-600" />
-            Yangi O'qituvchi Qo'shish
-          </h3>
-
-          {/* Forma kontenti */}
-          <form className="space-y-6">
-            {/* 1. QIDIRUVLI FOYDALANUVCHI TANLASH (YANGI) */}
-            <SearchableSelect
-              options={allUsers}
-              value={formData.userId}
-              onChange={handleSelectChange}
-              label="Tizimdan Foydalanuvchini Tanlang"
-              icon={UsersIcon}
-            />
-
-            {/* 2. O'QITADIGAN FANLAR (INPUT) */}
-            <div className="flex flex-col">
-              <label
-                htmlFor="subjects"
-                className="text-sm font-medium text-gray-600 mb-1 flex items-center"
-              >
-                <BookOpenIcon className="h-4 w-4 mr-1 text-gray-500" />{" "}
-                O'qitadigan Fanlar (Vergul bilan ajrating)
-              </label>
-              <input
-                type="text"
-                id="subjects"
-                name="subjects"
-                value={formData.subjects}
-                onChange={handleInputChange}
-                placeholder="Misol: Web Dasturlash, Python, UX/UI"
-                className={`px-4 py-2 border rounded-lg w-full text-gray-800 focus:ring-blue-500 focus:border-blue-500 transition duration-150 border-gray-300`}
-              />
+    return (
+        <>
+            <div onClick={handleOpen}>
+                {children}
             </div>
 
-            {/* Xatolik xabari */}
-            {error && (
-              <div className="bg-red-50 border border-red-300 text-red-700 px-3 py-2 rounded-lg text-sm">
-                {error}
-              </div>
-            )}
+            <Modal open={isOpen} onClose={handleClose}>
+                <Box sx={modalStyle}>
+                    <div className="flex items-center justify-between mb-6">
+                        <h2 className="text-2xl font-bold text-gray-800 flex items-center">
+                            <UserIcon className="h-8 w-8 mr-3" style={{ color: MAIN_COLOR }} />
+                            Yangi O'qituvchi Qo'shish
+                        </h2>
+                        <button
+                            onClick={handleClose}
+                            className="p-2 hover:bg-gray-100 rounded-full transition duration-200"
+                        >
+                            <XMarkIcon className="h-6 w-6 text-gray-400" />
+                        </button>
+                    </div>
 
-            {/* Qo'shish Tugmasi */}
-            <button
-              type="button"
-              onClick={handleAddTeacher}
-              className="w-full flex items-center justify-center px-4 py-3 mt-6 rounded-lg text-base font-semibold text-white bg-green-600 hover:bg-green-700 transition duration-200 shadow-lg"
-            >
-              <ArrowUpOnSquareIcon className="h-5 w-5 mr-2" />
-              O'qituvchi Sifatida Qo'shish
-            </button>
-          </form>
-        </div>
-      </Box>
-    </Modal>
-  );
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        {/* Shaxsiy ma'lumotlar */}
+                        <div className="bg-gray-50 p-4 rounded-xl">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                <UserIcon className="h-5 w-5 mr-2" style={{ color: MAIN_COLOR }} />
+                                Shaxsiy Ma'lumotlar
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <input
+                                    type="text"
+                                    name="name"
+                                    placeholder="Ism *"
+                                    value={formData.name}
+                                    onChange={handleChange}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                    required
+                                />
+                                <input
+                                    type="text"
+                                    name="surname"
+                                    placeholder="Familiya *"
+                                    value={formData.surname}
+                                    onChange={handleChange}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                    required
+                                />
+                                <input
+                                    type="number"
+                                    name="age"
+                                    placeholder="Yoshi *"
+                                    value={formData.age}
+                                    onChange={handleChange}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                    required
+                                />
+                                <div className="relative">
+                                    <input
+                                        type="date"
+                                        name="startDate"
+                                        value={formData.startDate}
+                                        onChange={handleChange}
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                        required
+                                    />
+                                    <label className="absolute -top-2 left-3 bg-white px-1 text-xs font-medium text-gray-600">
+                                        Ish boshlanish sanasi *
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Hisobga kirish ma'lumotlari */}
+                        <div className="bg-blue-50 p-4 rounded-xl">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                <AcademicCapIcon className="h-5 w-5 mr-2" style={{ color: MAIN_COLOR }} />
+                                Hisobga Kirish Ma'lumotlari
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <input
+                                    type="text"
+                                    name="username"
+                                    placeholder="Foydalanuvchi nomi *"
+                                    value={formData.username}
+                                    onChange={handleChange}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                    required
+                                />
+                                <input
+                                    type="password"
+                                    name="password"
+                                    placeholder="Parol *"
+                                    value={formData.password}
+                                    onChange={handleChange}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        {/* Aloqa ma'lumotlari */}
+                        <div className="bg-green-50 p-4 rounded-xl">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                <PhoneIcon className="h-5 w-5 mr-2" style={{ color: MAIN_COLOR }} />
+                                Aloqa Ma'lumotlari
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <input
+                                    type="tel"
+                                    name="phone"
+                                    placeholder="Telefon raqami *"
+                                    value={formData.phone}
+                                    onChange={handleChange}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                    required
+                                />
+                                <input
+                                    type="tel"
+                                    name="phone2"
+                                    placeholder="Ikkinchi telefon raqami"
+                                    value={formData.phone2}
+                                    onChange={handleChange}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                />
+                            </div>
+                        </div>
+
+                        {/* O'quv ma'lumotlari */}
+                        <div className="bg-yellow-50 p-4 rounded-xl">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                <AcademicCapIcon className="h-5 w-5 mr-2" style={{ color: MAIN_COLOR }} />
+                                O'quv Ma'lumotlari
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <SubjectsSelect
+                                    value={formData.subject_id}
+                                    onChange={handleSubjectChange}
+                                    placeholder="Fanni tanlang *"
+                                    showAll={false}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                />
+                                <input
+                                    type="text"
+                                    name="certificate"
+                                    placeholder="Sertifikat/Diplom"
+                                    value={formData.certificate}
+                                    onChange={handleChange}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Ish tajribasi */}
+                        <div className="bg-purple-50 p-4 rounded-xl">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                <BriefcaseIcon className="h-5 w-5 mr-2" style={{ color: MAIN_COLOR }} />
+                                Ish Tajribasi
+                            </h3>
+                            <div className="mb-4">
+                                <label className="flex items-center space-x-2">
+                                    <input
+                                        type="checkbox"
+                                        name="has_experience"
+                                        checked={formData.has_experience}
+                                        onChange={handleChange}
+                                        className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                                    />
+                                    <span className="text-sm font-medium text-gray-700">Ish tajribasi bor</span>
+                                </label>
+                            </div>
+                            {formData.has_experience && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <input
+                                        type="number"
+                                        name="experience_years"
+                                        placeholder="Tajriba yillari"
+                                        value={formData.experience_years}
+                                        onChange={handleChange}
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                    />
+                                    <input
+                                        type="text"
+                                        name="experience_place"
+                                        placeholder="Ish joyi"
+                                        value={formData.experience_place}
+                                        onChange={handleChange}
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                    />
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Ish vaqti */}
+                        <div className="bg-indigo-50 p-4 rounded-xl">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                <ClockIcon className="h-5 w-5 mr-2" style={{ color: MAIN_COLOR }} />
+                                Ish Vaqti
+                            </h3>
+                            <div className="grid grid-cols-1 gap-4">
+                                <input
+                                    type="text"
+                                    name="available_times"
+                                    placeholder="Mavjud vaqtlar (masalan: 09:00-18:00)"
+                                    value={formData.available_times}
+                                    onChange={handleChange}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                />
+                                <textarea
+                                    name="work_days_hours"
+                                    placeholder="Ish kunlari va soatlari (masalan: Dushanba-Juma: 09:00-18:00)"
+                                    value={formData.work_days_hours}
+                                    onChange={handleChange}
+                                    rows={3}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Tugmalar */}
+                        <div className="flex gap-4 pt-4">
+                            <button
+                                type="button"
+                                onClick={handleClose}
+                                className="flex-1 py-3 rounded-lg font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition duration-150"
+                            >
+                                Bekor qilish
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={registerTeacherMutation.isLoading}
+                                className="flex-1 py-3 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition duration-150 disabled:opacity-50"
+                                style={{ backgroundColor: MAIN_COLOR }}
+                            >
+                                {registerTeacherMutation.isLoading ? "Qo'shilmoqda..." : "O'qituvchi Qo'shish"}
+                            </button>
+                        </div>
+                    </form>
+                </Box>
+            </Modal>
+        </>
+    );
 }
