@@ -6,7 +6,7 @@ import { useJoinStudentToGroup } from '../../hooks/students';
 import { useChangeStudentGroup, useRemoveStudentFromGroup } from '../../hooks/groups';
 import { toast } from 'react-hot-toast';
 
-const AddGroup = ({ children, student, onSuccess }) => {
+const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedGroupId, setSelectedGroupId] = useState('');
     const [actionType, setActionType] = useState('join'); // 'join', 'change', 'remove'
@@ -20,9 +20,15 @@ const AddGroup = ({ children, student, onSuccess }) => {
     React.useEffect(() => {
         if (isModalOpen) {
             const hasGroup = student?.group_name && student.group_name !== 'Guruh biriktirilmagan';
-            setActionType(hasGroup ? 'change' : 'join');
+            if (isInGroup) {
+                // Agar guruh ichida bo'lsa, faqat change yoki remove
+                setActionType(hasGroup ? 'change' : 'remove');
+            } else {
+                // Agar guruh ichida bo'lmasa, odatiy holat
+                setActionType(hasGroup ? 'change' : 'join');
+            }
         }
-    }, [isModalOpen, student]);
+    }, [isModalOpen, student, isInGroup]);
 
     // Mutation result'larni kuzatish
     React.useEffect(() => {
@@ -178,20 +184,22 @@ const AddGroup = ({ children, student, onSuccess }) => {
                         <div className="mb-6">
                             <h4 className="text-sm font-medium text-gray-700 mb-3">Amalni tanlang:</h4>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                {/* Join Group */}
-                                <button
-                                    type="button"
-                                    onClick={() => handleActionTypeChange('join')}
-                                    disabled={isLoading}
-                                    className={`p-4 rounded-lg border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${actionType === 'join'
-                                            ? 'border-green-500 bg-green-50 text-green-700'
-                                            : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-                                        }`}
-                                >
-                                    <UserGroupIcon className="h-6 w-6 mx-auto mb-2" />
-                                    <p className="text-sm font-medium">Guruhga Qo'shish</p>
-                                    <p className="text-xs opacity-75">Yangi guruhga biriktirish</p>
-                                </button>
+                                {/* Join Group - faqat guruh ichida bo'lmasa ko'rsatish */}
+                                {!isInGroup && (
+                                    <button
+                                        type="button"
+                                        onClick={() => handleActionTypeChange('join')}
+                                        disabled={isLoading}
+                                        className={`p-4 rounded-lg border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${actionType === 'join'
+                                                ? 'border-green-500 bg-green-50 text-green-700'
+                                                : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                                            }`}
+                                    >
+                                        <UserGroupIcon className="h-6 w-6 mx-auto mb-2" />
+                                        <p className="text-sm font-medium">Guruhga Qo'shish</p>
+                                        <p className="text-xs opacity-75">Yangi guruhga biriktirish</p>
+                                    </button>
+                                )}
 
                                 {/* Change Group */}
                                 {hasGroup && (

@@ -70,7 +70,7 @@ const GroupCard = ({ group, onToggleGroupStatus, onStartClass, updateGroupLoadin
         ? new Date(group.start_date).toLocaleDateString('uz-UZ')
         : "Belgilanmagan";
 
-    // Updated status logic to include draft
+    // Updated status logic to include class_status
     const getStatusInfo = () => {
         if (group.status === 'draft' || group.class_status === 'not_started') {
             return {
@@ -79,7 +79,7 @@ const GroupCard = ({ group, onToggleGroupStatus, onStartClass, updateGroupLoadin
                 statusIcon: <CalendarIcon className="h-6 w-6 mr-2 text-yellow-500" />,
                 statusText: "Darsi boshlanmagan"
             };
-        } else if (group.status === 'active') {
+        } else if (group.status === 'active' && group.class_status === 'started') {
             return {
                 borderColor: "border-[#A60E07]",
                 statusTextColor: "text-gray-800",
@@ -107,12 +107,15 @@ const GroupCard = ({ group, onToggleGroupStatus, onStartClass, updateGroupLoadin
                     {group.name}
                     {isDraft && <span className="ml-2 text-sm font-medium text-yellow-600">(Darsi boshlanmagan)</span>}
                     {group.status === 'blocked' && <span className="ml-2 text-sm font-medium text-gray-400">(Yopilgan)</span>}
+                    {/* Talabalar soni */}
+                    <span className="ml-auto text-sm bg-blue-100 text-blue-700 px-2 py-1 rounded-md font-medium">
+                        {group.student_count} talaba
+                    </span>
                 </h3>
 
                 {/* Narxi yuqorida, ko'zga tashlanadigan */}
                 <div className="flex items-center gap-2 mb-3">
                     <span className="text-2xl font-extrabold text-[#A60E07]">{group.price ? parseFloat(group.price).toLocaleString() + ' so\'m' : 'Narxi belgilanmagan'}</span>
-                    <span className="text-lg">💵</span>
                 </div>
 
                 <div className="space-y-2 text-sm text-gray-700">
@@ -307,7 +310,7 @@ function AdminGroupsPage() {
                     </div>
                 </div>
 
-                <AdminNewGroupModal>
+                <AdminNewGroupModal onSuccess={() => setCurrentTab('draft')}>
                     <button className="flex items-center px-4 py-2.5 rounded-lg text-white bg-[#A60E07] hover:opacity-90 transition text-sm font-bold shadow-md">
                         <PlusCircleIcon className="h-5 w-5 mr-1" /> Yangi Guruh Ochish
                     </button>

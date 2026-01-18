@@ -44,7 +44,7 @@ const modalStyle = {
   overflowY: "auto",
 };
 
-export default function AdminNewGroupModal({ children }) {
+export default function AdminNewGroupModal({ children, onSuccess }) {
   const notify = useGetNotify();
   // ------------ crate group hook ---------
   const createGroupMutation = useCreateGroup()
@@ -124,13 +124,17 @@ export default function AdminNewGroupModal({ children }) {
       onSuccess: (data) => {
         console.log(data)
         if(data.success){
-        notify('ok','Guruh muvaffaqiyatli yaratildi')
+        notify('ok','Gurux yaratildi')
+        // Parent component'dagi onSuccess callback'ni chaqirish
+        if (onSuccess) {
+          onSuccess(data);
+        }
         }
         setIsOpen(false);
       },
       onError: (err) => {
         console.log(err)
-        notify('err','Guruh yaratishda xatolik')
+        notify('err',err.response.data.message)
       }
     })
   };
@@ -198,12 +202,13 @@ export default function AdminNewGroupModal({ children }) {
               {/* 4. O'qituvchi */}
               <div>
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1 flex items-center">
-                  <UserIcon className="h-3 w-3 mr-1" /> O'qituvchi *
+                  <UserIcon className="h-3 w-3 mr-1" /> O'qituvchi
                 </label>
 
                <TeacherSelect
                  value={groupData.teacher_id}
                  onChange={(teacherId) => setGroupData(prev => ({ ...prev, teacher_id: teacherId }))}
+                 showAll={false}
                />
 
               </div>
@@ -235,24 +240,72 @@ export default function AdminNewGroupModal({ children }) {
               {/* 6. Vaqt */}
               <div className="flex gap-4">
                 <div className="flex-1">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Boshlanish</label>
-                  <input
-                    type="text"
-                    name="startTime"
-                    value={groupData.startTime}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none text-sm font-semibold"
-                  />
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Boshlanish *</label>
+                  <div className="flex gap-1">
+                    <select
+                      value={groupData.startTime.split(':')[0] || '08'}
+                      onChange={(e) => {
+                        const hour = e.target.value;
+                        const minute = groupData.startTime.split(':')[1] || '00';
+                        setGroupData(prev => ({ ...prev, startTime: `${hour}:${minute}` }));
+                      }}
+                      className="flex-1 px-2 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-[#A60E07] text-sm font-semibold"
+                      required
+                    >
+                      {Array.from({length: 24}, (_, i) => i.toString().padStart(2, '0')).map(hour => (
+                        <option key={hour} value={hour}>{hour}</option>
+                      ))}
+                    </select>
+                    <span className="py-2.5 px-1 text-gray-400">:</span>
+                    <select
+                      value={groupData.startTime.split(':')[1] || '00'}
+                      onChange={(e) => {
+                        const hour = groupData.startTime.split(':')[0] || '08';
+                        const minute = e.target.value;
+                        setGroupData(prev => ({ ...prev, startTime: `${hour}:${minute}` }));
+                      }}
+                      className="flex-1 px-2 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-[#A60E07] text-sm font-semibold"
+                      required
+                    >
+                      {['00', '15', '30', '45'].map(minute => (
+                        <option key={minute} value={minute}>{minute}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
                 <div className="flex-1">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Tugash</label>
-                  <input
-                    type="text"
-                    name="endTime"
-                    value={groupData.endTime}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none text-sm font-semibold"
-                  />
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Tugash *</label>
+                  <div className="flex gap-1">
+                    <select
+                      value={groupData.endTime.split(':')[0] || '10'}
+                      onChange={(e) => {
+                        const hour = e.target.value;
+                        const minute = groupData.endTime.split(':')[1] || '00';
+                        setGroupData(prev => ({ ...prev, endTime: `${hour}:${minute}` }));
+                      }}
+                      className="flex-1 px-2 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-[#A60E07] text-sm font-semibold"
+                      required
+                    >
+                      {Array.from({length: 24}, (_, i) => i.toString().padStart(2, '0')).map(hour => (
+                        <option key={hour} value={hour}>{hour}</option>
+                      ))}
+                    </select>
+                    <span className="py-2.5 px-1 text-gray-400">:</span>
+                    <select
+                      value={groupData.endTime.split(':')[1] || '00'}
+                      onChange={(e) => {
+                        const hour = groupData.endTime.split(':')[0] || '10';
+                        const minute = e.target.value;
+                        setGroupData(prev => ({ ...prev, endTime: `${hour}:${minute}` }));
+                      }}
+                      className="flex-1 px-2 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-[#A60E07] text-sm font-semibold"
+                      required
+                    >
+                      {['00', '15', '30', '45'].map(minute => (
+                        <option key={minute} value={minute}>{minute}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
 
@@ -274,7 +327,7 @@ export default function AdminNewGroupModal({ children }) {
 
               <button
                 type="submit"
-                disabled={!groupData.subject_id || !groupData.name || !groupData.teacher_id || groupData.selectedDays.length === 0 || !groupData.price}
+                disabled={!groupData.subject_id || !groupData.name || groupData.selectedDays.length === 0 || !groupData.price || !groupData.startTime || !groupData.endTime}
                 className="w-full py-4 mt-2 rounded-xl text-sm font-black text-white transition-all shadow-lg uppercase tracking-widest hover:opacity-90 active:scale-95 bg-[#A60E07] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Guruhni Yaratish

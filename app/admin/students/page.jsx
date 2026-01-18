@@ -2,19 +2,17 @@
 import React, { useState, useMemo, useCallback, memo, useEffect } from 'react';
 import { FiEdit, FiSave, FiX, FiUserPlus, FiSearch } from 'react-icons/fi';
 import { TrashIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
+import { 
+  User, Phone, MapPin, Calendar, GraduationCap, 
+  CheckCircle, XCircle, Clock, BookOpen, Users,
+  Home, UserCheck, AlertCircle, PlayCircle, PauseCircle, MoreVertical
+} from 'lucide-react';
 import Link from 'next/link';
 import { useGetAllStudents } from '../../../hooks/students';
+import { usegetTeachers } from '../../../hooks/teacher';
+import { useGetAllSubjects } from '../../../hooks/subjects';
+import { usegetAllgroups } from '../../../hooks/groups';
 import AddGroup from '../../../components/admistrator/AddGroup';
-
-const months = [
-    { value: 'all', label: "Barcha Oylar" }, { value: '12', label: "Dekabr" }, { value: '11', label: "Noyabr" },
-    { value: '01', label: "Yanvar" }, { value: '02', label: "Fevral" }, { value: '03', label: "Mart" },
-];
-
-const groupFilters = [
-    { value: 'all', label: "Barcha Guruhlar" },
-    { value: 'NoGroup', label: "Guruhlanmaganlar" },
-];
 
 // --- Tahrirlash Holatida Input Komponenti ---
 const EditableCellComponent = ({ name, value, onChange, type = 'text', placeholder = '' }) => (
@@ -31,12 +29,31 @@ const EditableCellComponent = ({ name, value, onChange, type = 'text', placehold
 const EditableCell = memo(EditableCellComponent);
 
 const StudentsPage = () => {
-    // Backenddan ma'lumotlarni olish
-    const { data: backendData, isLoading, error, refetch } = useGetAllStudents();
-
+    // Filter state'lari
     const [searchTerm, setSearchTerm] = useState('');
-    const [selectedMonth, setSelectedMonth] = useState('all');
+    const [selectedTeacher, setSelectedTeacher] = useState('all');
     const [selectedGroup, setSelectedGroup] = useState('all');
+    const [selectedSubject, setSelectedSubject] = useState('all');
+    const [selectedStatus, setSelectedStatus] = useState('all');
+    const [showUnassigned, setShowUnassigned] = useState(false);
+    const [dropdownOpen, setDropdownOpen] = useState(null); // Dropdown state
+    
+    // Filter options uchun data
+    const { data: teachersData } = usegetTeachers();
+    const { data: subjectsData } = useGetAllSubjects();
+    const { data: groupsData } = usegetAllgroups();
+    
+    // Filterlarni backend uchun tayyorlash
+    const filters = {
+        teacher_id: selectedTeacher,
+        group_id: selectedGroup,
+        subject_id: selectedSubject,
+        status: selectedStatus,
+        unassigned: showUnassigned ? 'true' : undefined
+    };
+
+    // Backenddan ma'lumotlarni olish
+    const { data: backendData, isLoading, error, refetch } = useGetAllStudents(filters);
 
     // Backenddan kelgan ma'lumotlarni boshqarish uchun lokal state
     const [students, setStudents] = useState([]);
@@ -50,18 +67,22 @@ const StudentsPage = () => {
         }
     }, [backendData]);
 
-    // --- MANTIQLAR (Filter va Qidiruv) ---
+    // Dropdown yopish uchun click outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (!event.target.closest('.relative')) {
+                setDropdownOpen(null);
+            }
+        };
+        
+        document.addEventListener('click', handleClickOutside);
+        return () => document.removeEventListener('click', handleClickOutside);
+    }, []);
+
+    // --- Faqat local qidiruv (backend filter backend'da amalga oshiriladi) ---
     const filteredStudents = useMemo(() => {
         let currentList = students || [];
 
-        if (selectedMonth !== 'all') {
-            currentList = currentList.filter(student => student.registration_date?.substring(5, 7) === selectedMonth);
-        }
-        if (selectedGroup === 'NoGroup') {
-            currentList = currentList.filter(student => !student.group_name);
-        } else if (selectedGroup !== 'all') {
-            currentList = currentList.filter(student => student.group_name === selectedGroup);
-        }
         if (searchTerm) {
             const lowerCaseSearch = searchTerm.toLowerCase();
             currentList = currentList.filter(student =>
@@ -71,7 +92,7 @@ const StudentsPage = () => {
             );
         }
         return currentList;
-    }, [selectedMonth, selectedGroup, searchTerm, students]);
+    }, [searchTerm, students]);
 
     const handleEditChange = useCallback((e) => {
         const { name, value, type } = e.target;
@@ -89,7 +110,12 @@ const StudentsPage = () => {
             group_name: student.group_name || '',
             phone: student.phone,
             phone2: student.phone2,
+            father_name: student.father_name || '',
+            father_phone: student.father_phone || '',
+            address: student.address || '',
+            age: student.age || '',
             status: student.status,
+            course_status: student.course_status,
         });
     };
 
@@ -99,6 +125,16 @@ const StudentsPage = () => {
 
     const handleModalSuccess = () => {
         refetch(); // Ma'lumotlarni qayta yuklash
+    };
+
+    // Barcha filterlarni tozalash
+    const clearAllFilters = () => {
+        setSelectedTeacher('all');
+        setSelectedGroup('all');
+        setSelectedSubject('all');
+        setSelectedStatus('all');
+        setShowUnassigned(false);
+        setSearchTerm('');
     };
 
     const handleSave = (uniqueId) => {
@@ -113,7 +149,12 @@ const StudentsPage = () => {
                         group_name: String(editData.group_name).trim() || 'Guruh biriktirilmagan',
                         phone: String(editData.phone).trim(),
                         phone2: String(editData.phone2).trim(),
-                        status: editData.status
+                        father_name: String(editData.father_name).trim(),
+                        father_phone: String(editData.father_phone).trim(),
+                        address: String(editData.address).trim(),
+                        age: editData.age,
+                        status: editData.status,
+                        course_status: editData.course_status
                     }
                     : s
             )
@@ -140,31 +181,97 @@ const StudentsPage = () => {
             <h1 className="text-3xl font-bold mb-6 text-gray-800">🎓 Talabalar Ro'yxati (Admin)</h1>
 
             <div className="flex flex-wrap items-center gap-4 mb-6 p-4 bg-white rounded-lg shadow-md">
+                {/* Qidiruv */}
                 <div className="flex items-center flex-grow min-w-[300px] border border-gray-300 rounded-lg bg-gray-50 p-2 focus-within:border-[#A60E07]">
                     <FiSearch className="text-gray-400 mr-2" size={20} />
                     <input
                         type="text"
-                        placeholder="Ism, guruh yoki telefon bo'yicha qidiruv..."
+                        placeholder="Ism, telefon bo'yicha qidiruv..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="border-none p-1 flex-grow outline-none bg-transparent text-sm"
                     />
                 </div>
+
+                {/* Guruhlanmaganlar tugmasi */}
+                <button
+                    onClick={() => setShowUnassigned(!showUnassigned)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition duration-200 ${
+                        showUnassigned 
+                            ? 'bg-orange-500 text-white hover:bg-orange-600' 
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                >
+                    <Users className="inline h-4 w-4 mr-1" />
+                    {showUnassigned ? 'Hammasi' : 'Guruhlanmaganlar'}
+                </button>
+
+                {/* Teacher filter */}
+                <select
+                    value={selectedTeacher}
+                    onChange={(e) => setSelectedTeacher(e.target.value)}
+                    className="p-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:border-[#A60E07] min-w-[180px]"
+                >
+                    <option value="all">Barcha o'qituvchilar</option>
+                    {teachersData?.teachers?.map(teacher => (
+                        <option key={teacher.id} value={teacher.id}>
+                            {teacher.name} {teacher.surname}
+                        </option>
+                    ))}
+                </select>
+
+                {/* Group filter */}
                 <select
                     value={selectedGroup}
                     onChange={(e) => setSelectedGroup(e.target.value)}
-                    className="p-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:border-[#A60E07]"
+                    className="p-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:border-[#A60E07] min-w-[150px]"
                 >
-                    {groupFilters.map(group => (<option key={group.value} value={group.value}>{group.label}</option>))}
-                </select>
-                <select
-                    value={selectedMonth}
-                    onChange={(e) => setSelectedMonth(e.target.value)}
-                    className="p-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:border-[#A60E07]"
-                >
-                    {months.map(month => (<option key={month.value} value={month.value}>{month.label}</option>))}
+                    <option value="all">Barcha guruhlar</option>
+                    {groupsData?.groups?.map(group => (
+                        <option key={group.id} value={group.id}>
+                            {group.name}
+                        </option>
+                    ))}
                 </select>
 
+                {/* Subject filter */}
+                <select
+                    value={selectedSubject}
+                    onChange={(e) => setSelectedSubject(e.target.value)}
+                    className="p-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:border-[#A60E07] min-w-[150px]"
+                >
+                    <option value="all">Barcha fanlar</option>
+                    {subjectsData?.subjects?.map(subject => (
+                        <option key={subject.id} value={subject.id}>
+                            {subject.name}
+                        </option>
+                    ))}
+                </select>
+
+                {/* Status filter */}
+                <select
+                    value={selectedStatus}
+                    onChange={(e) => setSelectedStatus(e.target.value)}
+                    className="p-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:border-[#A60E07] min-w-[140px]"
+                >
+                    <option value="all">Barcha holatlar</option>
+                    <option value="active">Faol</option>
+                    <option value="inactive">Nofaol</option>
+                    <option value="blocked">Bloklangan</option>
+                </select>
+
+                {/* Clear filters button */}
+                {(selectedTeacher !== 'all' || selectedGroup !== 'all' || selectedSubject !== 'all' || selectedStatus !== 'all' || showUnassigned || searchTerm) && (
+                    <button
+                        onClick={clearAllFilters}
+                        className="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                    >
+                        <XCircle className="inline h-4 w-4 mr-1" />
+                        Tozalash
+                    </button>
+                )}
+
+                {/* Yangi talaba tugmasi */}
                 <Link href="/admin/students/new">
                     <button
                         className="flex items-center gap-1 bg-[#A60E07] hover:opacity-90 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 text-sm shadow-md">
@@ -172,47 +279,87 @@ const StudentsPage = () => {
                         Yangi Talaba
                     </button>
                 </Link>
-
             </div>
 
-            <div className="bg-white rounded-lg shadow-lg overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+            <div className="bg-white rounded-lg shadow-lg overflow-x-auto border border-gray-300">
+                <table className="min-w-full divide-y divide-gray-300 border-collapse">
+                    <thead className="bg-gradient-to-r from-gray-100 to-gray-200 border-b-2 border-gray-400">
                         <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[180px]">Ism / Telefon</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[220px]">Guruh / O'qituvchi</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ro'yxatdan sana</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Holat</th>
-                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[150px]">Amallar</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider min-w-[220px] border-r border-gray-300 bg-gradient-to-b from-gray-100 to-gray-200">Student ma'lumotlari</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider min-w-[250px] border-r border-gray-300 bg-gradient-to-b from-gray-100 to-gray-200">Guruh / Kurs ma'lumotlari</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider border-r border-gray-300 bg-gradient-to-b from-gray-100 to-gray-200">Ro'yxatdan sana</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider border-r border-gray-300 bg-gradient-to-b from-gray-100 to-gray-200">Talaba holati</th>
+                            <th className="px-4 py-3 text-center text-xs font-semibold text-gray-800 uppercase tracking-wider w-[150px] bg-gradient-to-b from-gray-100 to-gray-200">Amallar</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-gray-300">
                         {filteredStudents.length > 0 ? (
                             filteredStudents.map((student, index) => {
                                 const rowKey = `${student.id}-${index}`;
                                 const isEditing = editingId === rowKey;
+                                const isNotInGroup = !student.group_name || student.group_name === 'Guruh biriktirilmagan';
 
                                 return (
-                                    <tr key={rowKey} className={`${isEditing ? 'bg-red-50' : (index % 2 === 0 ? 'bg-white' : 'bg-gray-50')} hover:bg-gray-100 transition duration-150`}>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
+                                    <tr key={rowKey} className={`${
+                                        isEditing ? 'bg-blue-50 border-l-4 border-blue-400' : 
+                                        isNotInGroup ? 'bg-orange-50 border-l-4 border-orange-300' :
+                                        (index % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50 hover:bg-gray-100')
+                                    } transition duration-150 border-b border-gray-200`}>
+                                        <td className="px-4 py-3 border-r border-gray-200 text-sm">
                                             {isEditing ? (
                                                 <div className="flex flex-col gap-1">
                                                     <EditableCell name="name" value={editData.name} onChange={handleEditChange} placeholder="Ism" />
                                                     <EditableCell name="surname" value={editData.surname} onChange={handleEditChange} placeholder="Familiya" />
-                                                    <EditableCell name="phone" value={editData.phone} onChange={handleEditChange} placeholder="Telefon 1" />
-                                                    <EditableCell name="phone2" value={editData.phone2} onChange={handleEditChange} placeholder="Telefon 2" />
+                                                    <EditableCell name="phone" value={editData.phone} onChange={handleEditChange} placeholder="Telefon" />
+                                                    <EditableCell name="phone2" value={editData.phone2} onChange={handleEditChange} placeholder="Qo'shimcha telefon" />
+                                                    <EditableCell name="father_name" value={editData.father_name} onChange={handleEditChange} placeholder="Otasining ismi" />
+                                                    <EditableCell name="father_phone" value={editData.father_phone} onChange={handleEditChange} placeholder="Otasining telefoni" />
+                                                    <EditableCell name="address" value={editData.address} onChange={handleEditChange} placeholder="Manzil" />
+                                                    <EditableCell name="age" type="number" value={editData.age} onChange={handleEditChange} placeholder="Yoshi" />
                                                 </div>
                                             ) : (
                                                 <div>
-                                                    <span className='mr-2 text-xl font-bold  text-red-500'> {student.id}</span>
-                                                    <span className="font-semibold text-gray-900">{student.name} {student.surname}</span>
-                                                    <div className="text-xs text-gray-500 mt-0.5">{student.phone}</div>
-                                                    <div className="text-xs text-gray-500 mt-0.5">{student.phone2}</div>
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <span className='text-lg font-bold text-red-500'>#{student.id}</span>
+                                                        <User className="h-4 w-4 text-blue-500" />
+                                                        <span className="font-semibold text-gray-900">{student.name} {student.surname}</span>
+                                                    </div>
+                                                    
+                                                    <div className="space-y-1">
+                                                        <div className="flex items-center gap-1 text-xs text-gray-600">
+                                                            <Phone className="h-3 w-3 text-green-500" />
+                                                            <span>{student.phone}</span>
+                                                        </div>
+                                                        
+                                                        {student.phone2 && (
+                                                            <div className="flex items-center gap-1 text-xs text-gray-600">
+                                                                <Phone className="h-3 w-3 text-green-400" />
+                                                                <span>{student.phone2}</span>
+                                                            </div>
+                                                        )}
+                                                        
+                                                        <div className="flex items-center gap-1 text-xs text-gray-600">
+                                                            <User className="h-3 w-3 text-purple-500" />
+                                                            <span><strong>Otasi / Onasi / yaqini:</strong> {student.father_name} ({student.father_phone})</span>
+                                                        </div>
+                                                        
+                                                        <div className="flex items-center gap-1 text-xs text-gray-600">
+                                                            <Calendar className="h-3 w-3 text-orange-500" />
+                                                            <span><strong>Yoshi:</strong> {student.age}</span>
+                                                        </div>
+                                                        
+                                                        {student.address && (
+                                                            <div className="flex items-start gap-1 text-xs text-gray-600">
+                                                                <Home className="h-3 w-3 text-indigo-500 mt-0.5" />
+                                                                <span className="break-words" title={student.address}><strong>Manzil:</strong> {student.address}</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             )}
                                         </td>
 
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
+                                        <td className="px-4 py-3 border-r border-gray-200 text-sm">
                                             {isEditing ? (
                                                 <div className="flex flex-col">
                                                     <EditableCell name="group_name" value={editData.group_name} onChange={handleEditChange} placeholder="Guruh nomi..." />
@@ -232,68 +379,170 @@ const StudentsPage = () => {
                                                         </AddGroup>
                                                     </div>
                                                     {student.group_name && student.group_name !== 'Guruh biriktirilmagan' && (
-                                                        <div className="text-xs text-gray-500 mt-0.5">
-                                                            <span className="font-medium">O'qituvchi:</span> {student.teacher_name?.trim() || 'Aniqlanmagan'}
+                                                        <div className="space-y-1.5 mt-2">
+                                                            <div className="flex items-center gap-1 text-xs">
+                                                                <GraduationCap className="h-3 w-3 text-blue-600" />
+                                                                <span className="font-medium text-gray-700">O'qituvchi:</span>
+                                                                <span className="text-gray-900">{student.teacher_name?.trim() || 'Aniqlanmagan'}</span>
+                                                            </div>
+                                                            
+                                                            <div className="flex items-center gap-1 text-xs">
+                                                                <BookOpen className="h-3 w-3 text-green-600" />
+                                                                <span className="font-medium text-gray-700">Fan:</span>
+                                                                <span className="text-gray-900">{student.subject_name}</span>
+                                                            </div>
+                                                            
+                                                            <div className="flex items-center gap-2 text-xs">
+                                                                <Calendar className="h-3 w-3 text-purple-600" />
+                                                                <span className="font-medium text-gray-700">Boshlangan:</span>
+                                                                <span className="text-gray-900">{student.course_start_date ? new Date(student.course_start_date).toLocaleDateString() : 'Noma\'lum'}</span>
+                                                            </div>
+                                                            
+                                                            <div className="flex items-center gap-1">
+                                                                {student.course_status === 'in_progress' && <PlayCircle className="h-3 w-3 text-blue-500" />}
+                                                                {student.course_status === 'completed' && <CheckCircle className="h-3 w-3 text-green-500" />}
+                                                                {student.course_status === 'paused' && <PauseCircle className="h-3 w-3 text-yellow-500" />}
+                                                                <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${
+                                                                    student.course_status === 'in_progress' ? 'bg-blue-100 text-blue-700' : 
+                                                                    student.course_status === 'completed' ? 'bg-green-100 text-green-700' : 
+                                                                    'bg-yellow-100 text-yellow-700'
+                                                                }`}>
+                                                                    {student.course_status === 'in_progress' ? 'Davom etmoqda' : 
+                                                                     student.course_status === 'completed' ? 'Yakunlangan' : 
+                                                                     student.course_status === 'paused' ? 'To\'xtatilgan' : student.course_status}
+                                                                </span>
+                                                            </div>
                                                         </div>
                                                     )}
                                                 </div>
                                             )}
                                         </td>
 
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                        <td className="px-4 py-3 border-r border-gray-200 text-sm">
                                             {isEditing ? (
                                                 <EditableCell name="registration_date" type="date" value={editData.registration_date} onChange={handleEditChange} />
                                             ) : (student.registration_date?.split('T')[0])}
                                         </td>
 
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                        <td className="px-4 py-3 border-r border-gray-200 text-sm">
                                             {isEditing ? (
-                                                <select
-                                                    name="status"
-                                                    value={editData.status}
-                                                    onChange={handleEditChange}
-                                                    className="p-2 border border-[#A60E07] rounded w-full text-sm outline-none transition duration-200 focus:ring-1 focus:ring-[#A60E07]"
-                                                >
-                                                    <option value="active">Faol</option>
-                                                    <option value="inactive">Nofaol</option>
-                                                    <option value="graduated">Bitirgan</option>
-                                                </select>
+                                                <div className="flex flex-col gap-2">
+                                                    <select
+                                                        name="status"
+                                                        value={editData.status}
+                                                        onChange={handleEditChange}
+                                                        className="p-2 border border-[#A60E07] rounded w-full text-sm outline-none transition duration-200 focus:ring-1 focus:ring-[#A60E07]"
+                                                    >
+                                                        <option value="active">✅ Faol talaba</option>
+                                                        <option value="inactive">❌ Nofaol talaba</option>
+                                                        <option value="graduated">🎓 O'qishni tugatgan</option>
+                                                    </select>
+                                                    <select
+                                                        name="course_status"
+                                                        value={editData.course_status}
+                                                        onChange={handleEditChange}
+                                                        className="p-2 border border-[#A60E07] rounded w-full text-sm outline-none transition duration-200 focus:ring-1 focus:ring-[#A60E07]"
+                                                    >
+                                                        <option value="in_progress">🔄 Kurs davom etmoqda</option>
+                                                        <option value="completed">✅ Kurs yakunlangan</option>
+                                                        <option value="paused">⏸️ Kurs to'xtatilgan</option>
+                                                    </select>
+                                                </div>
                                             ) : (
-                                                <div className="flex flex-col">
-                                                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${student.status === 'active' ? 'bg-green-100 text-green-800' :
-                                                        student.status === 'inactive' ? 'bg-red-100 text-red-800' :
-                                                            'bg-blue-100 text-blue-800'
-                                                        }`}>
-                                                        {student.status === 'active' ? 'Faol' :
-                                                            student.status === 'inactive' ? 'Nofaol' : 'Bitirgan'}
-                                                    </span>
+                                                <div className="space-y-2">
+                                                    {/* Talaba umumiy holati */}
+                                                    <div className="flex items-center gap-1">
+                                                        {student.status === 'active' && <UserCheck className="h-4 w-4 text-green-600" />}
+                                                        {student.status === 'inactive' && <XCircle className="h-4 w-4 text-red-600" />}
+                                                        {student.status === 'graduated' && <GraduationCap className="h-4 w-4 text-blue-600" />}
+                                                        
+                                                        <div className="flex items-center gap-1">
+                                                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                                                student.status === 'active' ? 'bg-green-100 text-green-800' : 
+                                                                student.status === 'inactive' ? 'bg-red-100 text-red-800' : 
+                                                                'bg-blue-100 text-blue-800'
+                                                            }`}>
+                                                                {student.status === 'active' ? 'Faol talaba' : 
+                                                                 student.status === 'inactive' ? 'Nofaol talaba' : 
+                                                                 'O\'qishni tugatgan'}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    
                                                 </div>
                                             )}
                                         </td>
 
-                                        <td className="px-6 py-4 whitespace-nowrap text-center">
-                                            <div className="flex justify-center items-center gap-2">
-                                                {isEditing ? (
-                                                    <>
-                                                        <button onClick={() => handleSave(rowKey)} className="p-2 rounded-lg bg-[#A60E07] hover:opacity-90 text-white transition duration-200"><FiSave size={16} /></button>
-                                                        <button onClick={handleCancel} className="p-2 rounded-lg bg-gray-500 hover:bg-gray-600 text-white transition duration-200"><FiX size={16} /></button>
-                                                    </>
-                                                ) : (
-                                                    <button onClick={() => handleEditClick(student, index)} className="p-2 rounded-lg bg-[#A60E07] hover:opacity-90 text-white transition duration-200"><FiEdit size={16} /></button>
-                                                )}
-                                                <Link href={`/admin/students/${student.id}`} className="p-2 rounded-lg bg-gray-600 hover:bg-gray-700 text-white transition duration-200">
-                                                    <InformationCircleIcon className="h-4 w-4" />
-                                                </Link>
-                                                <button onClick={() => handleDeleteStudent(student.id, index)} className="p-2 rounded-lg bg-gray-400 hover:bg-gray-500 text-white transition duration-200">
-                                                    <TrashIcon className="h-4 w-4" />
-                                                </button>
-                                            </div>
+                                        <td className="px-4 py-3 text-center">
+                                            {isEditing ? (
+                                                <div className="flex justify-center items-center gap-1">
+                                                    <button onClick={() => handleSave(rowKey)} className="p-1.5 rounded text-white bg-green-600 hover:bg-green-700 transition-all duration-150 shadow-sm border border-green-700 hover:shadow-md transform hover:scale-105"><FiSave size={12} /></button>
+                                                    <button onClick={handleCancel} className="p-1.5 rounded text-white bg-gray-500 hover:bg-gray-600 transition-all duration-150 shadow-sm border border-gray-600 hover:shadow-md transform hover:scale-105"><FiX size={12} /></button>
+                                                </div>
+                                            ) : (
+                                                <div className="relative">
+                                                    <button 
+                                                        onClick={() => setDropdownOpen(dropdownOpen === rowKey ? null : rowKey)}
+                                                        className="p-2 rounded text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition-all duration-150"
+                                                    >
+                                                        <MoreVertical size={16} />
+                                                    </button>
+                                                    
+                                                    {dropdownOpen === rowKey && (
+                                                        <div className="absolute right-0 top-8 z-10 w-48 bg-white rounded-md shadow-lg border border-gray-200 py-1">
+                                                            <button 
+                                                                onClick={() => {
+                                                                    handleEditClick(student, index);
+                                                                    setDropdownOpen(null);
+                                                                }}
+                                                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                                                            >
+                                                                <FiEdit size={14} className="text-blue-600" />
+                                                                Tahrirlash
+                                                            </button>
+                                                            
+                                                            <Link 
+                                                                href={`/admin/students/${student.id}`}
+                                                                onClick={() => setDropdownOpen(null)}
+                                                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                                                            >
+                                                                <InformationCircleIcon className="h-4 w-4 text-indigo-600" />
+                                                                Batafsil ko'rish
+                                                            </Link>
+                                                            
+                                                            <button 
+                                                                onClick={() => {
+                                                                    handleDeleteStudent(student.id, index);
+                                                                    setDropdownOpen(null);
+                                                                }}
+                                                                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                                                            >
+                                                                <TrashIcon className="h-4 w-4 text-red-600" />
+                                                                O'chirish
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
                                         </td>
                                     </tr>
                                 );
                             })
                         ) : (
-                            <tr><td colSpan="5" className="px-6 py-10 text-center text-gray-500">😕 Talaba topilmadi.</td></tr>
+                            <tr className="bg-white">
+                                <td colSpan="5" className="px-4 py-12 text-center text-gray-500 border-b border-gray-200">
+                                    <div className="flex flex-col items-center gap-4">
+                                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                                            <User className="h-8 w-8 text-gray-400" />
+                                        </div>
+                                        <div className="text-lg font-medium">Talaba topilmadi</div>
+                                        <p className="text-sm text-gray-400 max-w-md text-center">
+                                            Qidiruv shartlaringizga mos talaba mavjud emas. Filterlarni o'zgartirib ko'ring.
+                                        </p>
+                                    </div>
+                                </td>
+                            </tr>
                         )}
                     </tbody>
                 </table>

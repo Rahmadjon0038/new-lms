@@ -19,6 +19,9 @@ const getAllstudent = async (filters = {}) => {
     if (filters.status && filters.status !== 'all') {
         params.append('status', filters.status);
     }
+    if (filters.unassigned === 'true') {
+        params.append('unassigned', 'true');
+    }
     
     if (params.toString()) {
         url += `?${params.toString()}`;

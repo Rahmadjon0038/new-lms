@@ -149,8 +149,7 @@ export default function AdminUpdateGroupModal({ children, initialData }) {
         handleClose();
       },
       onError: (err) => {
-        console.error("Xatolik:", err);
-        notify('err',`Guruhni yangilab bo'lmadi`)
+        notify('err',err?.response?.data?.message)
       }
     });
   };
@@ -209,6 +208,7 @@ export default function AdminUpdateGroupModal({ children, initialData }) {
                 <TeacherSelect
                   value={groupData.teacher_id}
                   onChange={(teacherId) => setGroupData(prev => ({ ...prev, teacher_id: teacherId }))}
+                  showAll={false}
                 />
               </div>
 
@@ -270,28 +270,78 @@ export default function AdminUpdateGroupModal({ children, initialData }) {
               {/* Vaqt */}
               <div className="flex gap-4">
                 <div className="flex-1">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1 text-gray-400">Boshlanish</label>
-                  <input
-                    type="text"
-                    value={startTime}
-                    onChange={(e) => handleTimeUpdate("start", e.target.value)}
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-[#A60E07] text-sm font-semibold"
-                  />
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1 text-gray-400">Boshlanish *</label>
+                  <div className="flex gap-1">
+                    <select
+                      value={startTime.split(':')[0] || '08'}
+                      onChange={(e) => {
+                        const hour = e.target.value;
+                        const minute = startTime.split(':')[1] || '00';
+                        handleTimeUpdate("start", `${hour}:${minute}`);
+                      }}
+                      className="flex-1 px-2 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-[#A60E07] text-sm font-semibold"
+                      required
+                    >
+                      {Array.from({length: 24}, (_, i) => i.toString().padStart(2, '0')).map(hour => (
+                        <option key={hour} value={hour}>{hour}</option>
+                      ))}
+                    </select>
+                    <span className="py-2.5 px-1 text-gray-400">:</span>
+                    <select
+                      value={startTime.split(':')[1] || '00'}
+                      onChange={(e) => {
+                        const hour = startTime.split(':')[0] || '08';
+                        const minute = e.target.value;
+                        handleTimeUpdate("start", `${hour}:${minute}`);
+                      }}
+                      className="flex-1 px-2 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-[#A60E07] text-sm font-semibold"
+                      required
+                    >
+                      {['00', '15', '30', '45'].map(minute => (
+                        <option key={minute} value={minute}>{minute}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
                 <div className="flex-1">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1 text-gray-400">Tugash</label>
-                  <input
-                    type="text"
-                    value={endTime}
-                    onChange={(e) => handleTimeUpdate("end", e.target.value)}
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-[#A60E07] text-sm font-semibold"
-                  />
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1 text-gray-400">Tugash *</label>
+                  <div className="flex gap-1">
+                    <select
+                      value={endTime.split(':')[0] || '10'}
+                      onChange={(e) => {
+                        const hour = e.target.value;
+                        const minute = endTime.split(':')[1] || '00';
+                        handleTimeUpdate("end", `${hour}:${minute}`);
+                      }}
+                      className="flex-1 px-2 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-[#A60E07] text-sm font-semibold"
+                      required
+                    >
+                      {Array.from({length: 24}, (_, i) => i.toString().padStart(2, '0')).map(hour => (
+                        <option key={hour} value={hour}>{hour}</option>
+                      ))}
+                    </select>
+                    <span className="py-2.5 px-1 text-gray-400">:</span>
+                    <select
+                      value={endTime.split(':')[1] || '00'}
+                      onChange={(e) => {
+                        const hour = endTime.split(':')[0] || '10';
+                        const minute = e.target.value;
+                        handleTimeUpdate("end", `${hour}:${minute}`);
+                      }}
+                      className="flex-1 px-2 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-[#A60E07] text-sm font-semibold"
+                      required
+                    >
+                      {['00', '15', '30', '45'].map(minute => (
+                        <option key={minute} value={minute}>{minute}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
 
               <button
                 type="submit"
-                disabled={!groupData.subject_id || !groupData.name}
+                disabled={!groupData.subject_id || !groupData.name || !startTime || !endTime || groupData.schedule.days.length === 0}
                 className="w-full py-3.5 mt-2 rounded-xl text-sm font-bold text-white transition-all shadow-lg uppercase tracking-widest hover:opacity-90 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ backgroundColor: MAIN_COLOR }}
               >

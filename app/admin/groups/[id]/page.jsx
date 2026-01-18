@@ -1,6 +1,8 @@
 'use client'
-import React from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useParams } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
+import { FiEdit, FiSave, FiX } from 'react-icons/fi';
 import { 
     UsersIcon, 
     ClockIcon, 
@@ -9,15 +11,91 @@ import {
     CalendarDaysIcon, 
     PhoneIcon,
     BookOpenIcon,
-    ArchiveBoxXMarkIcon
+    ArchiveBoxXMarkIcon,
+    TrashIcon,
+    InformationCircleIcon
 } from '@heroicons/react/24/outline';
+import { 
+    User, Phone, MapPin, Calendar, GraduationCap, 
+    CheckCircle, XCircle, Clock, BookOpen, Users,
+    Home, UserCheck, AlertCircle, PlayCircle, PauseCircle, MoreVertical
+} from 'lucide-react';
+import Link from 'next/link';
 import { useGetGroupById } from '../../../../hooks/groups';
+import AddGroup from '../../../../components/admistrator/AddGroup';
+
+// --- Tahrirlash Holatida Input Komponenti ---
+const EditableCell = ({ name, value, onChange, type = 'text', placeholder = '' }) => (
+    <input
+        className="p-2 border border-[#A60E07] rounded w-full text-sm outline-none mb-1 transition duration-200 focus:ring-1 focus:ring-[#A60E07]"
+        type={type}
+        name={name}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+    />
+);
 
 const GroupDetailPage = () => {
     const params = useParams();
     const groupId = params.id;
+    const queryClient = useQueryClient();
+
+    // Editing states
+    const [editingId, setEditingId] = useState(null);
+    const [editData, setEditData] = useState({});
+    const [students, setStudents] = useState([]);
 
     const { data: groupData, isLoading, error } = useGetGroupById(groupId);
+
+    // Ma'lumotlar kelganda students state ni yangilash
+    useEffect(() => {
+        if (groupData?.students) {
+            setStudents(groupData.students);
+        }
+    }, [groupData]);
+
+    // Editing funksiyalari
+    const handleEditChange = useCallback((e) => {
+        const { name, value, type } = e.target;
+        const newValue = type === 'number' && value !== '' ? value : value;
+        setEditData(prev => ({ ...prev, [name]: newValue }));
+    }, []);
+
+    const handleEditClick = (student, index) => {
+        setEditingId(`${student.id}-${index}`);
+        setEditData({
+            name: student.name,
+            surname: student.surname,
+            phone: student.phone,
+            phone2: student.phone2,
+            father_name: student.father_name || '',
+            father_phone: student.father_phone || '',
+            address: student.address || '',
+            age: student.age || '',
+            status: student.status || 'active',
+            course_status: student.course_status,
+        });
+    };
+
+    const handleSave = (uniqueId) => {
+        // Bu yerda backend API chaqirilishi kerak
+        console.log('Saving student:', uniqueId, editData);
+        setEditingId(null);
+        setEditData({});
+    };
+
+    const handleCancel = () => {
+        setEditingId(null);
+        setEditData({});
+    };
+
+    const handleDeleteStudent = (studentId) => {
+        if (window.confirm('Talabani guruhdan chiqarishga ishonchingiz komilmi?')) {
+            // Bu yerda backend API chaqirilishi kerak
+            console.log('Removing student from group:', studentId);
+        }
+    };
 
     if (isLoading) return <div className="p-8 text-center">Yuklanmoqda...</div>;
 
@@ -35,7 +113,6 @@ const GroupDetailPage = () => {
     );
 
     const group = groupData.group;
-    const students = groupData.students || [];
 
     const formatDate = (dateString) => {
         return new Date(dateString).toLocaleDateString('uz-UZ', {
@@ -57,7 +134,7 @@ const GroupDetailPage = () => {
 
     return (
         <div className="min-h-full p-8 bg-gray-50">
-            <div className="max-w-7xl mx-auto">
+            <div className="">
                 {/* Header */}
                 <div className="mb-8">
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">Guruh Tafsilotlari</h1>
@@ -228,83 +305,210 @@ const GroupDetailPage = () => {
                         </div>
                     </div>
 
-                    <div className="overflow-x-auto">
-                        {students.length > 0 ? (
-                            <table className="min-w-full">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                                            Talaba Ma'lumotlari
-                                        </th>
-                                        <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                                            Telefon Raqamlari
-                                        </th>
-                                        <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                                            Holat
-                                        </th>
-                                        <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                                            Qo'shilgan Sana
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-100">
-                                    {students.map((student, index) => (
-                                        <tr key={student.id} className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-red-50 transition duration-150`}>
-                                            <td className="px-6 py-4">
-                                                <div>
-                                                    <div className="text-sm font-bold text-gray-800">
-                                                        {student.name} {student.surname}
-                                                    </div>
-                                                    <div className="text-xs font-medium text-gray-400">
-                                                        ID: #{student.id}
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="space-y-1">
-                                                    <div className="text-sm font-semibold text-gray-700 flex items-center">
-                                                        <PhoneIcon className="h-4 w-4 mr-2 text-gray-400" />
-                                                        {student.phone}
-                                                    </div>
-                                                    {student.phone2 && (
-                                                        <div className="text-sm font-medium text-gray-500 flex items-center">
-                                                            <PhoneIcon className="h-4 w-4 mr-2 text-gray-400" />
-                                                            {student.phone2}
+                    <div className="bg-white rounded-lg shadow-lg overflow-x-auto border border-gray-300">
+                        <table className="min-w-full divide-y divide-gray-300 border-collapse">
+                            <thead className="bg-gradient-to-r from-gray-100 to-gray-200 border-b-2 border-gray-400">
+                                <tr>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider min-w-[220px] border-r border-gray-300 bg-gradient-to-b from-gray-100 to-gray-200">Student ma'lumotlari</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider border-r border-gray-300 bg-gradient-to-b from-gray-100 to-gray-200">Ro'yxatdan sana</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider border-r border-gray-300 bg-gradient-to-b from-gray-100 to-gray-200">Kurs holati</th>
+                                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-800 uppercase tracking-wider w-[150px] bg-gradient-to-b from-gray-100 to-gray-200">Amallar</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-300">
+                                {students.length > 0 ? (
+                                    students.map((student, index) => {
+                                        const rowKey = `${student.id}-${index}`;
+                                        const isEditing = editingId === rowKey;
+
+                                        return (
+                                            <tr key={rowKey} className={`${
+                                                isEditing ? 'bg-blue-50 border-l-4 border-blue-400' : 
+                                                (index % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50 hover:bg-gray-100')
+                                            } transition duration-150 border-b border-gray-200`}>
+                                                <td className="px-4 py-3 border-r border-gray-200 text-sm">
+                                                    {isEditing ? (
+                                                        <div className="flex flex-col gap-1">
+                                                            <EditableCell name="name" value={editData.name} onChange={handleEditChange} placeholder="Ism" />
+                                                            <EditableCell name="surname" value={editData.surname} onChange={handleEditChange} placeholder="Familiya" />
+                                                            <EditableCell name="phone" value={editData.phone} onChange={handleEditChange} placeholder="Telefon" />
+                                                            <EditableCell name="phone2" value={editData.phone2} onChange={handleEditChange} placeholder="Qo'shimcha telefon" />
+                                                            <EditableCell name="father_name" value={editData.father_name} onChange={handleEditChange} placeholder="Otasining ismi" />
+                                                            <EditableCell name="father_phone" value={editData.father_phone} onChange={handleEditChange} placeholder="Otasining telefoni" />
+                                                            <EditableCell name="address" value={editData.address} onChange={handleEditChange} placeholder="Manzil" />
+                                                            <EditableCell name="age" type="number" value={editData.age} onChange={handleEditChange} placeholder="Yoshi" />
+                                                        </div>
+                                                    ) : (
+                                                        <div>
+                                                            <div className="flex items-center gap-2 mb-2">
+                                                                <span className='text-lg font-bold text-red-500'>#{student.id}</span>
+                                                                <AddGroup 
+                                                                    student={student} 
+                                                                    isInGroup={true}
+                                                                    onSuccess={() => {
+                                                                        queryClient.invalidateQueries(['group', groupId]);
+                                                                    }}
+                                                                >
+                                                                    <span className="text-base font-bold text-gray-800 hover:text-blue-600 transition-colors cursor-pointer">
+                                                                        {student.name} {student.surname}
+                                                                    </span>
+                                                                </AddGroup>
+                                                                <UserCheck className="h-4 w-4 text-green-600" />
+                                                            </div>
+                                                            
+                                                            <div className="space-y-1.5">
+                                                                <div className="flex items-center gap-1 text-xs text-gray-600">
+                                                                    <Phone className="h-3 w-3 text-blue-500" />
+                                                                    <span><strong>Asosiy:</strong> {student.phone}</span>
+                                                                </div>
+                                                                
+                                                                {student.phone2 && (
+                                                                    <div className="flex items-center gap-1 text-xs text-gray-600">
+                                                                        <Phone className="h-3 w-3 text-green-400" />
+                                                                        <span><strong>Qo'shimcha:</strong> {student.phone2}</span>
+                                                                    </div>
+                                                                )}
+                                                                
+                                                                <div className="flex items-center gap-1 text-xs text-gray-600">
+                                                                    <User className="h-3 w-3 text-purple-500" />
+                                                                    <span><strong>Otasi:</strong> {student.father_name} ({student.father_phone})</span>
+                                                                </div>
+                                                                
+                                                                <div className="flex items-center gap-1 text-xs text-gray-600">
+                                                                    <Calendar className="h-3 w-3 text-orange-500" />
+                                                                    <span><strong>Yoshi:</strong> {student.age}</span>
+                                                                </div>
+                                                                
+                                                                {student.address && (
+                                                                    <div className="flex items-start gap-1 text-xs text-gray-600">
+                                                                        <Home className="h-3 w-3 text-indigo-500 mt-0.5" />
+                                                                        <span className="break-words" title={student.address}><strong>Manzil:</strong> {student.address}</span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                     )}
+                                                </td>
+
+                                                <td className="px-4 py-3 border-r border-gray-200 text-sm">
+                                                    {isEditing ? (
+                                                        <EditableCell name="registration_date" type="date" value={editData.registration_date} onChange={handleEditChange} />
+                                                    ) : (
+                                                        <div className="space-y-1">
+                                                            <div className="text-sm font-medium text-gray-800">
+                                                                {formatDateTime(student.registration_date)}
+                                                            </div>
+                                                            <div className="text-xs text-gray-500">
+                                                                <strong>Guruhga qo'shilgan:</strong> {formatDateTime(student.joined_at)}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </td>
+
+                                                <td className="px-4 py-3 border-r border-gray-200 text-sm">
+                                                    {isEditing ? (
+                                                        <select
+                                                            name="course_status"
+                                                            value={editData.course_status}
+                                                            onChange={handleEditChange}
+                                                            className="p-2 border border-[#A60E07] rounded w-full text-sm outline-none transition duration-200 focus:ring-1 focus:ring-[#A60E07]"
+                                                        >
+                                                            <option value="in_progress">🔄 Kurs davom etmoqda</option>
+                                                            <option value="completed">✅ Kurs yakunlangan</option>
+                                                            <option value="paused">⏸️ Kurs to'xtatilgan</option>
+                                                        </select>
+                                                    ) : (
+                                                        <div className="space-y-2">
+                                                            <div className="flex items-center gap-1">
+                                                                {student.course_status === 'in_progress' && <PlayCircle className="h-4 w-4 text-blue-500" />}
+                                                                {student.course_status === 'completed' && <CheckCircle className="h-4 w-4 text-green-500" />}
+                                                                {student.course_status === 'paused' && <PauseCircle className="h-4 w-4 text-yellow-500" />}
+                                                                <span className={`px-2 py-1 text-xs rounded-full font-medium ${
+                                                                    student.course_status === 'in_progress' ? 'bg-blue-100 text-blue-700' : 
+                                                                    student.course_status === 'completed' ? 'bg-green-100 text-green-700' : 
+                                                                    'bg-yellow-100 text-yellow-700'
+                                                                }`}>
+                                                                    {student.course_status === 'in_progress' ? 'Davom etmoqda' : 
+                                                                     student.course_status === 'completed' ? 'Yakunlangan' : 
+                                                                     'To\'xtatilgan'}
+                                                                </span>
+                                                            </div>
+                                                            <AddGroup 
+                                                                student={student} 
+                                                                isInGroup={true}
+                                                                onSuccess={() => {
+                                                                    queryClient.invalidateQueries(['group', groupId]);
+                                                                }}
+                                                            >
+                                                                <button className="w-full px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
+                                                                    Guruh holatini o'zgartirish
+                                                                </button>
+                                                            </AddGroup>
+                                                        </div>
+                                                    )}
+                                                </td>
+
+                                                <td className="px-4 py-3 text-center">
+                                                    {isEditing ? (
+                                                        <div className="flex justify-center items-center gap-1">
+                                                            <button onClick={() => handleSave(rowKey)} className="p-1.5 rounded text-white bg-green-600 hover:bg-green-700 transition-all duration-150 shadow-sm border border-green-700 hover:shadow-md transform hover:scale-105"><FiSave size={12} /></button>
+                                                            <button onClick={handleCancel} className="p-1.5 rounded text-white bg-gray-500 hover:bg-gray-600 transition-all duration-150 shadow-sm border border-gray-600 hover:shadow-md transform hover:scale-105"><FiX size={12} /></button>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex justify-center items-center gap-1">
+                                                            <button 
+                                                                onClick={() => handleEditClick(student, index)}
+                                                                className="p-1.5 rounded text-white bg-blue-600 hover:bg-blue-700 transition-all duration-150 shadow-sm border border-blue-700 hover:shadow-md transform hover:scale-105"
+                                                                title="Tahrirlash"
+                                                            >
+                                                                <FiEdit size={12} />
+                                                            </button>
+                                                            
+                                                            <Link href={`/admin/students/${student.id}`} 
+                                                                className="p-1.5 rounded text-white bg-indigo-600 hover:bg-indigo-700 transition-all duration-150 shadow-sm border border-indigo-700 hover:shadow-md transform hover:scale-105"
+                                                                title="Batafsil ko'rish"
+                                                            >
+                                                                <InformationCircleIcon className="h-3 w-3" />
+                                                            </Link>
+                                                            
+                                                            <AddGroup 
+                                                                student={student} 
+                                                                isInGroup={true}
+                                                                onSuccess={() => {
+                                                                    queryClient.invalidateQueries(['group', groupId]);
+                                                                }}
+                                                            >
+                                                                <button 
+                                                                    className="p-1.5 rounded text-white bg-red-600 hover:bg-red-700 transition-all duration-150 shadow-sm border border-red-700 hover:shadow-md transform hover:scale-105"
+                                                                    title="Guruh boshqaruvi"
+                                                                >
+                                                                    <TrashIcon className="h-3 w-3" />
+                                                                </button>
+                                                            </AddGroup>
+                                                        </div>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
+                                ) : (
+                                    <tr className="bg-white">
+                                        <td colSpan="4" className="px-4 py-12 text-center text-gray-500 border-b border-gray-200">
+                                            <div className="flex flex-col items-center gap-4">
+                                                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                                                    <User className="h-8 w-8 text-gray-400" />
                                                 </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className={`inline-flex px-3 py-1 text-xs font-bold rounded-lg ${
-                                                    student.status === 'active' ? 'bg-green-100 text-green-800' :
-                                                    student.status === 'inactive' ? 'bg-red-100 text-red-800' :
-                                                    'bg-blue-100 text-blue-800'
-                                                }`}>
-                                                    {student.status === 'active' ? 'Faol' : 
-                                                     student.status === 'inactive' ? 'Nofaol' : 'Bitirgan'}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="text-sm font-medium text-gray-600">
-                                                    {formatDateTime(student.joined_at)}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        ) : (
-                            <div className="p-12 text-center">
-                                <div className="mx-auto h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                                    <UsersIcon className="h-8 w-8 text-gray-400" />
-                                </div>
-                                <h3 className="text-lg font-bold text-gray-800 mb-2">Talabalar yo'q</h3>
-                                <p className="text-sm text-gray-500 max-w-md mx-auto">
-                                    Bu guruhda hali hech qanday talaba ro'yxatdan o'tmagan. 
-                                    Talabalar guruh kodidan foydalanib qo'shilishlari mumkin.
-                                </p>
-                            </div>
-                        )}
+                                                <div className="text-lg font-medium">Talabalar yo'q</div>
+                                                <p className="text-sm text-gray-400 max-w-md text-center">
+                                                    Bu guruhda hali hech qanday talaba ro'yxatdan o'tmagan. 
+                                                    Talabalar guruh kodidan foydalanib qo'shilishlari mumkin.
+                                                </p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>

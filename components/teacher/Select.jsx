@@ -2,8 +2,9 @@
 
 import { usegetTeachers } from "../../hooks/teacher"
 
-const TeacherSelect = ({ value, onChange }) => {
-    const { data, isLoading, error } = usegetTeachers()
+const TeacherSelect = ({ value, onChange, showAll = true }) => {
+    // Faqat active teacher'larni olish
+    const { data, isLoading, error } = usegetTeachers('all', 'active')
     
     if (isLoading) {
         return (
@@ -28,6 +29,8 @@ const TeacherSelect = ({ value, onChange }) => {
     }
     
     const teachers = data?.teachers || []
+    // Faqat active status'dagi teacher'larni filter qilish
+    const activeTeachers = teachers.filter(teacher => teacher.status === 'active')
     
     return (
         <select
@@ -36,10 +39,10 @@ const TeacherSelect = ({ value, onChange }) => {
             className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none text-sm font-semibold bg-white"
         >
             <option value="">O'qituvchini tanlang</option>
-            <option value="all">Barcha O'qituvchilar</option>
-            {teachers.map((teacher) => (
+            {showAll && <option value="all">Barcha O'qituvchilar</option>}
+            {activeTeachers.map((teacher) => (
                 <option key={teacher.id} value={teacher.id}>
-                    {teacher.name} {teacher.surname} {teacher.subject !== "Belgilanmagan" ? `- ${teacher.subject}` : ""}
+                    {teacher.name} {teacher.surname} - {teacher.subjects_list}
                 </option>
             ))}
         </select>

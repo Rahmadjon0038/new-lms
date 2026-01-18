@@ -9,6 +9,7 @@ import {
     CalendarDaysIcon,
     AcademicCapIcon,
     BriefcaseIcon,
+    TagIcon,
     CheckIcon,
 } from "@heroicons/react/24/outline";
 
@@ -17,30 +18,34 @@ import Modal from "@mui/material/Modal";
 import { useRegisterTeacher } from "../../hooks/teacher";
 import { useGetNotify } from "../../hooks/notify";
 import SubjectsSelect from "../SubjectsSelect";
-import { useGetAllSubjects } from "../../hooks/subjects";
+import { usegetSubjects } from "../../hooks/subjects";
 
 const MAIN_COLOR = "#A60E07";
 
 // Fanlar tanlash komponenti
-const SubjectSelectionSection = ({ formData, onSubjectChange, onChange }) => {
-    const { data: subjectsData } = useGetAllSubjects();
+const SubjectSelectionSection = ({ formData, onSubjectChange, onPrimarySubjectChange, onChange }) => {
+    const { data: subjectsData } = usegetSubjects();
     const subjects = subjectsData?.subjects || [];
-
-    const selectedSubjects = subjects.filter(subject =>
+    
+    const selectedSubjects = subjects.filter(subject => 
         formData.subject_ids.includes(subject.id)
     );
-
+    
+    const primarySubject = subjects.find(subject => 
+        subject.id === parseInt(formData.primary_subject_id)
+    );
+    
     const removeSubject = (subjectId) => {
         onSubjectChange(subjectId); // Bu funksiya toggle vazifasini bajaradi
     };
-
+    
     return (
         <div className="bg-yellow-50 p-4 rounded-xl">
             <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                 <AcademicCapIcon className="h-5 w-5 mr-2" style={{ color: MAIN_COLOR }} />
                 O'quv Ma'lumotlari
             </h3>
-
+            
             {/* Fan tanlash */}
             <div className="mb-4">
                 <label className="text-sm font-medium text-gray-700 block mb-2">
@@ -54,7 +59,7 @@ const SubjectSelectionSection = ({ formData, onSubjectChange, onChange }) => {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
                 />
             </div>
-
+            
             {/* Tanlangan fanlar */}
             {selectedSubjects.length > 0 && (
                 <div className="mb-4">
@@ -63,7 +68,7 @@ const SubjectSelectionSection = ({ formData, onSubjectChange, onChange }) => {
                     </label>
                     <div className="flex flex-wrap gap-2">
                         {selectedSubjects.map(subject => (
-                            <span
+                            <span 
                                 key={subject.id}
                                 className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"
                             >
@@ -80,7 +85,34 @@ const SubjectSelectionSection = ({ formData, onSubjectChange, onChange }) => {
                     </div>
                 </div>
             )}
-
+            
+            {/* Asosiy fan tanlash */}
+            {selectedSubjects.length > 0 && (
+                <div className="mb-4">
+                    <label className="text-sm font-medium text-gray-700 block mb-2">
+                        Asosiy fanni tanlang *
+                    </label>
+                    <select
+                        value={formData.primary_subject_id}
+                        onChange={(e) => onPrimarySubjectChange(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    >
+                        <option value="">Asosiy fanni tanlang</option>
+                        {selectedSubjects.map(subject => (
+                            <option key={subject.id} value={subject.id}>
+                                {subject.name}
+                            </option>
+                        ))}
+                    </select>
+                    {primarySubject && (
+                        <div className="mt-2 text-sm text-green-600 flex items-center">
+                            <CheckIcon className="h-4 w-4 mr-1" />
+                            Asosiy fan: {primarySubject.name}
+                        </div>
+                    )}
+                </div>
+            )}
+            
             {/* Sertifikat */}
             <div>
                 <input
@@ -126,6 +158,7 @@ export default function AddTeacherModal({ children, onClose }) {
         phone: "",
         phone2: "",
         subject_ids: [],
+        primary_subject_id: "",
         startDate: "",
         certificate: "",
         age: "",
@@ -147,6 +180,7 @@ export default function AddTeacherModal({ children, onClose }) {
             phone: "",
             phone2: "",
             subject_ids: [],
+            primary_subject_id: "",
             startDate: "",
             certificate: "",
             age: "",
@@ -169,36 +203,47 @@ export default function AddTeacherModal({ children, onClose }) {
 
     const handleSubjectChange = (value) => {
         if (value === 'all' || value === '') return;
-
+        
         const subjectId = parseInt(value);
         setFormData(prev => {
             const isAlreadySelected = prev.subject_ids.includes(subjectId);
-
+            
             if (isAlreadySelected) {
                 // Agar tanlangan bo'lsa, o'chirib tashlash
                 const newSubjectIds = prev.subject_ids.filter(id => id !== subjectId);
                 return {
                     ...prev,
-                    subject_ids: newSubjectIds
+                    subject_ids: newSubjectIds,
+                    primary_subject_id: prev.primary_subject_id === subjectId ? 
+                        (newSubjectIds.length > 0 ? newSubjectIds[0].toString() : "") : 
+                        prev.primary_subject_id
                 };
             } else {
                 // Yangi fan qo'shish
                 const newSubjectIds = [...prev.subject_ids, subjectId];
                 return {
                     ...prev,
-                    subject_ids: newSubjectIds
+                    subject_ids: newSubjectIds,
+                    primary_subject_id: prev.primary_subject_id === "" ? subjectId.toString() : prev.primary_subject_id
                 };
             }
         });
     };
 
+    const handlePrimarySubjectChange = (value) => {
+        setFormData(prev => ({
+            ...prev,
+            primary_subject_id: value === 'all' || value === '' ? '' : value
+        }));
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
-
+        
         // Validation
-        if (!formData.name || !formData.surname || !formData.username ||
+        if (!formData.name || !formData.surname || !formData.username || 
             !formData.password || !formData.phone || formData.subject_ids.length === 0 ||
-            !formData.startDate || !formData.age) {
+            !formData.primary_subject_id || !formData.startDate || !formData.age) {
             notify("Iltimos, barcha majburiy maydonlarni to'ldiring", "error");
             return;
         }
@@ -207,18 +252,20 @@ export default function AddTeacherModal({ children, onClose }) {
             ...formData,
             age: parseInt(formData.age),
             subject_ids: formData.subject_ids,
+            primary_subject_id: parseInt(formData.primary_subject_id),
             experience_years: formData.experience_years ? parseInt(formData.experience_years) : 0,
         };
-
-        console.log("Submitting data:", submitData);
+        
+        // subject_id fieldini olib tashlash
+        delete submitData.subject_id;
 
         registerTeacherMutation.mutate(submitData, {
-            onSuccess: (data) => {
-                notify('ok', data?.message || "O'qituvchi muvaffaqiyatli qo'shildi",);
+            onSuccess: () => {
+                notify("O'qituvchi muvaffaqiyatli qo'shildi", "success");
                 handleClose();
             },
             onError: (error) => {
-                notify("err" + error?.response?.data?.message);
+                notify("Xatolik yuz berdi: " + (error?.response?.data?.message || error.message), "error");
             }
         });
     };
@@ -351,9 +398,10 @@ export default function AddTeacherModal({ children, onClose }) {
                         </div>
 
                         {/* O'quv ma'lumotlari */}
-                        <SubjectSelectionSection
+                        <SubjectSelectionSection 
                             formData={formData}
                             onSubjectChange={handleSubjectChange}
+                            onPrimarySubjectChange={handlePrimarySubjectChange}
                             onChange={handleChange}
                         />
 
