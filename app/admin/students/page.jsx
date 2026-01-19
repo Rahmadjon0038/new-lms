@@ -121,7 +121,7 @@ const StudentsPage = () => {
             father_phone: student.father_phone || '',
             address: student.address || '',
             age: student.age || '',
-            status: student.status,
+            status: student.student_status,
             course_status: student.course_status,
         });
     };
@@ -401,54 +401,99 @@ const StudentsPage = () => {
                                                 </div>
                                             ) : (
                                                 <div className="flex flex-col gap-1">
+                                                    {/* Guruh nomi va tahrirlash tugmasi */}
                                                     <div className="flex items-center gap-2">
-                                                        {student.group_name && student.group_name !== 'Guruh biriktirilmagan' ? (
-                                                            <span className="font-bold text-[#A60E07] text-sm">{student.group_name}</span>
+                                                        {student.group_id && student.group_name && student.group_name !== 'Guruh biriktirilmagan' ? (
+                                                            <Link href={`/admin/groups/${student.group_id}`} className="font-bold text-[#A60E07] text-sm hover:underline">
+                                                                {student.group_name}
+                                                            </Link>
                                                         ) : (
-                                                            <span className="italic text-gray-400 text-xs">Guruhlanmagan</span>
+                                                            <div className="flex items-center gap-1.5 bg-orange-50 px-2 py-1 rounded-lg border border-orange-200">
+                                                                <AlertCircle className="h-3 w-3 text-orange-500" />
+                                                                <span className="text-xs text-orange-700 font-medium">Guruhga biriktirilmagan</span>
+                                                            </div>
                                                         )}
                                                         <AddGroup student={student} onSuccess={handleModalSuccess}>
-                                                            <div className={`p-1.5 rounded-lg text-white transition duration-200 flex-shrink-0 cursor-pointer ${student.group_name && student.group_name !== 'Guruh biriktirilmagan' ? 'bg-orange-500 hover:bg-orange-600' : 'bg-[#A60E07] hover:opacity-90'}`}>
-                                                                {student.group_name && student.group_name !== 'Guruh biriktirilmagan' ? <FiEdit size={14} /> : <FiUserPlus size={14} />}
+                                                            <div className={`p-1.5 rounded-lg text-white transition duration-200 flex-shrink-0 cursor-pointer ${student.group_id ? 'bg-blue-500 hover:bg-blue-600' : 'bg-[#A60E07] hover:opacity-90'}`}>
+                                                                {student.group_id ? <FiEdit size={14} /> : <FiUserPlus size={14} />}
                                                             </div>
                                                         </AddGroup>
                                                     </div>
-                                                    {student.group_name && student.group_name !== 'Guruh biriktirilmagan' && (
+                                                    
+                                                    {/* Guruhga biriktirilgan studentlar uchun ma'lumotlar */}
+                                                    {student.group_id && student.group_name !== 'Guruh biriktirilmagan' ? (
                                                         <div className="space-y-1.5 mt-2">
                                                             <div className="flex items-center gap-1 text-xs">
                                                                 <GraduationCap className="h-3 w-3 text-blue-600" />
                                                                 <span className="font-medium text-gray-700">O'qituvchi:</span>
-                                                                <span className="text-gray-900">{student.teacher_name?.trim() || 'Aniqlanmagan'}</span>
+                                                                <span className="text-gray-900">{student.teacher_name?.trim() || 'Tayinlanmagan'}</span>
                                                             </div>
                                                             
                                                             <div className="flex items-center gap-1 text-xs">
                                                                 <BookOpen className="h-3 w-3 text-green-600" />
                                                                 <span className="font-medium text-gray-700">Fan:</span>
-                                                                <span className="text-gray-900">{student.subject_name}</span>
+                                                                <span className="text-gray-900">{student.subject_name || 'Belgilanmagan'}</span>
                                                             </div>
                                                             
-                                                            <div className="flex items-center gap-2 text-xs">
-                                                                <Calendar className="h-3 w-3 text-purple-600" />
-                                                                <span className="font-medium text-gray-700">Boshlangan:</span>
-                                                                <span className="text-gray-900">{student.course_start_date ? new Date(student.course_start_date).toLocaleDateString() : 'Noma\'lum'}</span>
+                                                            {student.group_joined_at && (
+                                                                <div className="flex items-center gap-1 text-xs">
+                                                                    <Calendar className="h-3 w-3 text-purple-600" />
+                                                                    <span className="font-medium text-gray-700">Guruhga qo'shilgan:</span>
+                                                                    <span className="text-gray-900">{new Date(student.group_joined_at).toLocaleDateString()}</span>
+                                                                </div>
+                                                            )}
+                                                            
+                                                            {/* Guruh va dars holatlari */}
+                                                            <div className="flex items-center gap-1 mt-2">
+                                                                {(() => {
+                                                                    // Guruh holati tekshiruvi
+                                                                    if (student.group_status === 'blocked') {
+                                                                        return (
+                                                                            <>
+                                                                                <ShieldBan className="h-3 w-3 text-red-500" />
+                                                                                <span className="px-2 py-0.5 text-xs rounded-full font-medium bg-red-100 text-red-700">
+                                                                                    Guruh bloklangan
+                                                                                </span>
+                                                                            </>
+                                                                        );
+                                                                    }
+                                                                    
+                                                                    if (student.group_status === 'draft' || student.group_class_status === 'not_started') {
+                                                                        return (
+                                                                            <>
+                                                                                <AlertCircle className="h-3 w-3 text-orange-500" />
+                                                                                <span className="px-2 py-0.5 text-xs rounded-full font-medium bg-orange-100 text-orange-700">
+                                                                                    Dars hali boshlanmagan
+                                                                                </span>
+                                                                            </>
+                                                                        );
+                                                                    }
+                                                                    
+                                                                    // Dars boshlangan
+                                                                    if (student.group_class_status === 'started') {
+                                                                        return (
+                                                                            <>
+                                                                                <PlayCircle className="h-3 w-3 text-blue-500" />
+                                                                                <span className="px-2 py-0.5 text-xs rounded-full font-medium bg-blue-100 text-blue-700">
+                                                                                    Darslar davom etmoqda
+                                                                                </span>
+                                                                            </>
+                                                                        );
+                                                                    }
+                                                                    
+                                                                    return null;
+                                                                })()}
                                                             </div>
                                                             
-                                                            <div className="flex items-center gap-1">
-                                                                {student.course_status === 'in_progress' && <PlayCircle className="h-3 w-3 text-blue-500" />}
-                                                                {student.course_status === 'completed' && <CheckCircle className="h-3 w-3 text-green-500" />}
-                                                                {student.course_status === 'paused' && <PauseCircle className="h-3 w-3 text-yellow-500" />}
-                                                                <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${
-                                                                    student.course_status === 'in_progress' ? 'bg-blue-100 text-blue-700' : 
-                                                                    student.course_status === 'completed' ? 'bg-green-100 text-green-700' : 
-                                                                    'bg-yellow-100 text-yellow-700'
-                                                                }`}>
-                                                                    {student.course_status === 'in_progress' ? 'Davom etmoqda' : 
-                                                                     student.course_status === 'completed' ? 'Yakunlangan' : 
-                                                                     student.course_status === 'paused' ? 'To\'xtatilgan' : student.course_status}
-                                                                </span>
-                                                            </div>
+                                                            {/* Dars boshlangan sana */}
+                                                            {student.class_start_date && (
+                                                                <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
+                                                                    <Clock className="h-3 w-3" />
+                                                                    <span>Dars boshlangan: {new Date(student.class_start_date).toLocaleDateString()}</span>
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                    )}
+                                                    ) : null}
                                                 </div>
                                             )}
                                         </td>
@@ -481,14 +526,14 @@ const StudentsPage = () => {
                                                     <div className="relative">
                                                         <button 
                                                             onClick={() => setStatusDropdownOpen(statusDropdownOpen === student.id ? null : student.id)}
-                                                            className={`flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-full cursor-pointer hover:opacity-80 transition-all ${getStatusInfo(student.status).color}`}
+                                                            className={`flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-full cursor-pointer hover:opacity-80 transition-all ${getStatusInfo(student.student_status).color}`}
                                                         >
-                                                            {React.createElement(getStatusInfo(student.status).icon, { 
-                                                                className: `h-3 w-3 ${getStatusInfo(student.status).iconColor}` 
+                                                            {React.createElement(getStatusInfo(student.student_status).icon, { 
+                                                                className: `h-3 w-3 ${getStatusInfo(student.student_status).iconColor}` 
                                                             })}
                                                             
-                                                            <span>{getStatusInfo(student.status).label}</span>
-                                                            <Settings className={`h-3 w-3 ${getStatusInfo(student.status).iconColor}`} />
+                                                            <span>{getStatusInfo(student.student_status).label}</span>
+                                                            <Settings className={`h-3 w-3 ${getStatusInfo(student.student_status).iconColor}`} />
                                                         </button>
                                                         
                                                         {/* Status o'zgartirish dropdown menu */}
@@ -502,12 +547,12 @@ const StudentsPage = () => {
                                                                             onClick={() => handleStatusChange(student.id, statusOption.value)}
                                                                             disabled={updateStatusMutation.isLoading}
                                                                             className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2 transition-colors ${
-                                                                                student.status === statusOption.value ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                                                                                student.student_status === statusOption.value ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
                                                                             } ${updateStatusMutation.isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                                         >
                                                                             <Icon className={`h-4 w-4 ${statusOption.color}`} />
                                                                             {statusOption.label}
-                                                                            {student.status === statusOption.value && (
+                                                                            {student.student_status === statusOption.value && (
                                                                                 <CheckCircle className="h-3 w-3 text-blue-600 ml-auto" />
                                                                             )}
                                                                         </button>
@@ -516,13 +561,6 @@ const StudentsPage = () => {
                                                             </div>
                                                         )}
                                                     </div>
-                                                    
-                                                    {/* Course status information only (no visual badge) */}
-                                                    {student.course_start_date && (
-                                                        <div className="text-xs text-gray-500 mt-1">
-                                                            <span>Boshlangan: {new Date(student.course_start_date).toLocaleDateString()}</span>
-                                                        </div>
-                                                    )}
                                                 </div>
                                             )}
                                         </td>

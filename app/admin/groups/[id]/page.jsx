@@ -2,26 +2,30 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
-import { FiEdit, FiSave, FiX } from 'react-icons/fi';
+import { FiEdit} from 'react-icons/fi';
 import { 
     UsersIcon, 
     ClockIcon, 
     UserIcon, 
-    CurrencyDollarIcon, 
     CalendarDaysIcon, 
     PhoneIcon,
     BookOpenIcon,
     ArchiveBoxXMarkIcon,
     TrashIcon,
-    InformationCircleIcon
+    InformationCircleIcon,
+   
 } from '@heroicons/react/24/outline';
 import { 
-    User, Phone, MapPin, Calendar, GraduationCap, 
-    CheckCircle, XCircle, Clock, BookOpen, Users,
-    Home, UserCheck, AlertCircle, PlayCircle, PauseCircle, MoreVertical
+    User, Phone, Calendar,  
+    CheckCircle,
+    Home,
+    Settings,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useGetGroupById } from '../../../../hooks/groups';
+import { useUpdateStudentStatus } from '../../../../hooks/students';
+import { useGetNotify } from '../../../../hooks/notify';
+import { getAllStatusOptions, getStatusInfo } from '../../../../utils/studentStatus';
 import AddGroup from '../../../../components/admistrator/AddGroup';
 
 // --- Tahrirlash Holatida Input Komponenti ---
@@ -40,13 +44,16 @@ const GroupDetailPage = () => {
     const params = useParams();
     const groupId = params.id;
     const queryClient = useQueryClient();
+    const notify = useGetNotify();
 
     // Editing states
     const [editingId, setEditingId] = useState(null);
     const [editData, setEditData] = useState({});
     const [students, setStudents] = useState([]);
+    const [statusDropdownOpen, setStatusDropdownOpen] = useState(null);
 
     const { data: groupData, isLoading, error } = useGetGroupById(groupId);
+    const updateStatusMutation = useUpdateStudentStatus();
 
     // Ma'lumotlar kelganda students state ni yangilash
     useEffect(() => {
@@ -73,7 +80,7 @@ const GroupDetailPage = () => {
             father_phone: student.father_phone || '',
             address: student.address || '',
             age: student.age || '',
-            status: student.status || 'active',
+            status: student.student_status || 'active',
             course_status: student.course_status,
         });
     };
@@ -94,6 +101,28 @@ const GroupDetailPage = () => {
         if (window.confirm('Talabani guruhdan chiqarishga ishonchingiz komilmi?')) {
             // Bu yerda backend API chaqirilishi kerak
             console.log('Removing student from group:', studentId);
+        }
+    };
+
+    // Status o'zgartirish function
+    const handleStatusChange = async (studentId, newStatus) => {
+        try {
+            await updateStatusMutation.mutateAsync({
+                id: studentId,
+                status: newStatus,
+                onSuccess: () => {
+                    notify('ok', 'Talaba holati muvaffaqiyatli o\'zgartirildi');
+                    queryClient.invalidateQueries(['group', groupId]);
+                    setStatusDropdownOpen(null);
+                },
+                onError: (error) => {
+                    const errorMessage = error?.response?.data?.message || 'Status o\'zgartirishda xatolik yuz berdi';
+                    notify('err', errorMessage);
+                }
+            });
+        } catch (error) {
+            const errorMessage = error?.response?.data?.message || 'Nomalum xatolik yuz berdi';
+            notify('err', errorMessage);
         }
     };
 
@@ -153,11 +182,7 @@ const GroupDetailPage = () => {
                                         <ArchiveBoxXMarkIcon className="h-7 w-7 mr-3 text-gray-500" />
                                     )}
                                     {group.name}
-                                    {group.status === 'draft' && (
-                                        <span className="ml-3 text-sm font-medium text-yellow-600 px-2 py-1 bg-yellow-100 rounded-lg">
-                                            Darsi boshlanmagan
-                                        </span>
-                                    )}
+                                    
                                     {group.status === 'blocked' && (
                                         <span className="ml-3 text-sm font-medium text-gray-400 px-2 py-1 bg-gray-100 rounded-lg">
                                             Yopilgan
@@ -220,7 +245,7 @@ const GroupDetailPage = () => {
                                 <div>
                                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Boshlanish sanasi</p>
                                     <p className="text-sm font-semibold text-gray-800">
-                                        {formatDate(group.start_date)}
+                                        {group.start_date ? formatDate(group.start_date) : 'Belgilanmagan'}
                                     </p>
                                 </div>
                             </div>
@@ -292,7 +317,7 @@ const GroupDetailPage = () => {
                 </div>
 
                 {/* Talabalar Ro'yxati */}
-                <div className="bg-white rounded-xl shadow-lg border border-gray-100">
+                <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
                     <div className="px-6 py-5 border-b border-gray-100">
                         <div className="flex items-center justify-between">
                             <h3 className="text-xl font-bold text-gray-800 flex items-center uppercase tracking-tight">
@@ -305,134 +330,84 @@ const GroupDetailPage = () => {
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-lg shadow-lg overflow-x-auto border border-gray-300">
-                        <table className="min-w-full divide-y divide-gray-300 border-collapse">
-                            <thead className="bg-gradient-to-r from-gray-100 to-gray-200 border-b-2 border-gray-400">
-                                <tr>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider min-w-[220px] border-r border-gray-300 bg-gradient-to-b from-gray-100 to-gray-200">Student ma'lumotlari</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider border-r border-gray-300 bg-gradient-to-b from-gray-100 to-gray-200">Ro'yxatdan sana</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider border-r border-gray-300 bg-gradient-to-b from-gray-100 to-gray-200">Kurs holati</th>
-                                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-800 uppercase tracking-wider w-[150px] bg-gradient-to-b from-gray-100 to-gray-200">Amallar</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-300">
-                                {students.length > 0 ? (
-                                    students.map((student, index) => {
+                    {students.length > 0 ? (
+                        <div className="overflow-x-auto">
+                            <table className="w-full border-collapse">
+                                <thead className="bg-gray-100">
+                                    <tr>
+                                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b-2 border-gray-200">
+                                            Student Ma'lumotlari
+                                        </th>
+                                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b-2 border-gray-200">
+                                            Guruhga Qo'shilgan
+                                        </th>
+                                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b-2 border-gray-200">
+                                            Ro'yxatdan Sana
+                                        </th>
+                                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b-2 border-gray-200">
+                                            Talaba Holati
+                                        </th>
+                                        <th className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border-b-2 border-gray-200">
+                                            Amallar
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white">
+                                    {students.map((student, index) => {
                                         const rowKey = `${student.id}-${index}`;
                                         const isEditing = editingId === rowKey;
-
+                                        
                                         return (
-                                            <tr key={rowKey} className={`${
-                                                isEditing ? 'bg-blue-50 border-l-4 border-blue-400' : 
-                                                (index % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50 hover:bg-gray-100')
-                                            } transition duration-150 border-b border-gray-200`}>
-                                                <td className="px-4 py-3 border-r border-gray-200 text-sm">
-                                                    {isEditing ? (
-                                                        <div className="flex flex-col gap-1">
-                                                            <EditableCell name="name" value={editData.name} onChange={handleEditChange} placeholder="Ism" />
-                                                            <EditableCell name="surname" value={editData.surname} onChange={handleEditChange} placeholder="Familiya" />
-                                                            <EditableCell name="phone" value={editData.phone} onChange={handleEditChange} placeholder="Telefon" />
-                                                            <EditableCell name="phone2" value={editData.phone2} onChange={handleEditChange} placeholder="Qo'shimcha telefon" />
-                                                            <EditableCell name="father_name" value={editData.father_name} onChange={handleEditChange} placeholder="Otasining ismi" />
-                                                            <EditableCell name="father_phone" value={editData.father_phone} onChange={handleEditChange} placeholder="Otasining telefoni" />
-                                                            <EditableCell name="address" value={editData.address} onChange={handleEditChange} placeholder="Manzil" />
-                                                            <EditableCell name="age" type="number" value={editData.age} onChange={handleEditChange} placeholder="Yoshi" />
+                                            <tr key={rowKey} className="hover:bg-gray-50 transition-colors border-b border-gray-200">
+                                                {/* STUDENT MA'LUMOTLARI */}
+                                                <td className="px-4 py-3 border-r border-gray-200">
+                                                    <div>
+                                                        <div className="flex items-center gap-2 mb-2">
+                                                            <span className='text-lg font-bold text-red-500'>#{student.id}</span>
+                                                            <User className="h-4 w-4 text-blue-500" />
+                                                            <span className="font-semibold text-gray-900">{student.name} {student.surname}</span>
                                                         </div>
-                                                    ) : (
-                                                        <div>
-                                                            <div className="flex items-center gap-2 mb-2">
-                                                                <span className='text-lg font-bold text-red-500'>#{student.id}</span>
-                                                                <AddGroup 
-                                                                    student={student} 
-                                                                    isInGroup={true}
-                                                                    onSuccess={() => {
-                                                                        queryClient.invalidateQueries(['group', groupId]);
-                                                                    }}
-                                                                >
-                                                                    <span className="text-base font-bold text-gray-800 hover:text-blue-600 transition-colors cursor-pointer">
-                                                                        {student.name} {student.surname}
-                                                                    </span>
-                                                                </AddGroup>
-                                                                <UserCheck className="h-4 w-4 text-green-600" />
+                                                        
+                                                        <div className="space-y-1">
+                                                            <div className="flex items-center gap-1 text-xs text-gray-600">
+                                                                <Phone className="h-3 w-3 text-green-500" />
+                                                                <span>{student.phone}</span>
                                                             </div>
                                                             
-                                                            <div className="space-y-1.5">
+                                                            {student.phone2 && (
                                                                 <div className="flex items-center gap-1 text-xs text-gray-600">
-                                                                    <Phone className="h-3 w-3 text-blue-500" />
-                                                                    <span><strong>Asosiy:</strong> {student.phone}</span>
+                                                                    <Phone className="h-3 w-3 text-green-400" />
+                                                                    <span>{student.phone2}</span>
                                                                 </div>
-                                                                
-                                                                {student.phone2 && (
-                                                                    <div className="flex items-center gap-1 text-xs text-gray-600">
-                                                                        <Phone className="h-3 w-3 text-green-400" />
-                                                                        <span><strong>Qo'shimcha:</strong> {student.phone2}</span>
-                                                                    </div>
-                                                                )}
-                                                                
-                                                                <div className="flex items-center gap-1 text-xs text-gray-600">
-                                                                    <User className="h-3 w-3 text-purple-500" />
-                                                                    <span><strong>Otasi:</strong> {student.father_name} ({student.father_phone})</span>
-                                                                </div>
-                                                                
-                                                                <div className="flex items-center gap-1 text-xs text-gray-600">
-                                                                    <Calendar className="h-3 w-3 text-orange-500" />
-                                                                    <span><strong>Yoshi:</strong> {student.age}</span>
-                                                                </div>
-                                                                
-                                                                {student.address && (
-                                                                    <div className="flex items-start gap-1 text-xs text-gray-600">
-                                                                        <Home className="h-3 w-3 text-indigo-500 mt-0.5" />
-                                                                        <span className="break-words" title={student.address}><strong>Manzil:</strong> {student.address}</span>
-                                                                    </div>
-                                                                )}
+                                                            )}
+                                                            
+                                                            <div className="flex items-center gap-1 text-xs text-gray-600">
+                                                                <User className="h-3 w-3 text-purple-500" />
+                                                                <span><strong>Otasi / Onasi / yaqini:</strong> {student.father_name} ({student.father_phone})</span>
                                                             </div>
+                                                            
+                                                            <div className="flex items-center gap-1 text-xs text-gray-600">
+                                                                <Calendar className="h-3 w-3 text-orange-500" />
+                                                                <span><strong>Yoshi:</strong> {student.age}</span>
+                                                            </div>
+                                                            
+                                                            {student.address && (
+                                                                <div className="flex items-start gap-1 text-xs text-gray-600">
+                                                                    <Home className="h-3 w-3 text-indigo-500 mt-0.5" />
+                                                                    <span className="break-words" title={student.address}><strong>Manzil:</strong> {student.address}</span>
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                    )}
+                                                    </div>
                                                 </td>
 
+                                                {/* GURUHGA QO'SHILGAN SANA */}
                                                 <td className="px-4 py-3 border-r border-gray-200 text-sm">
-                                                    {isEditing ? (
-                                                        <EditableCell name="registration_date" type="date" value={editData.registration_date} onChange={handleEditChange} />
-                                                    ) : (
-                                                        <div className="space-y-1">
-                                                            <div className="text-sm font-medium text-gray-800">
-                                                                {formatDateTime(student.registration_date)}
-                                                            </div>
-                                                            <div className="text-xs text-gray-500">
-                                                                <strong>Guruhga qo'shilgan:</strong> {formatDateTime(student.joined_at)}
-                                                            </div>
+                                                    <div className="space-y-2">
+                                                        <div className="flex items-center gap-1 text-xs">
+                                                            <span className="text-gray-900">{new Date(student.joined_at).toLocaleDateString('uz-UZ')}</span>
                                                         </div>
-                                                    )}
-                                                </td>
-
-                                                <td className="px-4 py-3 border-r border-gray-200 text-sm">
-                                                    {isEditing ? (
-                                                        <select
-                                                            name="course_status"
-                                                            value={editData.course_status}
-                                                            onChange={handleEditChange}
-                                                            className="p-2 border border-[#A60E07] rounded w-full text-sm outline-none transition duration-200 focus:ring-1 focus:ring-[#A60E07]"
-                                                        >
-                                                            <option value="in_progress">🔄 Kurs davom etmoqda</option>
-                                                            <option value="completed">✅ Kurs yakunlangan</option>
-                                                            <option value="paused">⏸️ Kurs to'xtatilgan</option>
-                                                        </select>
-                                                    ) : (
-                                                        <div className="space-y-2">
-                                                            <div className="flex items-center gap-1">
-                                                                {student.course_status === 'in_progress' && <PlayCircle className="h-4 w-4 text-blue-500" />}
-                                                                {student.course_status === 'completed' && <CheckCircle className="h-4 w-4 text-green-500" />}
-                                                                {student.course_status === 'paused' && <PauseCircle className="h-4 w-4 text-yellow-500" />}
-                                                                <span className={`px-2 py-1 text-xs rounded-full font-medium ${
-                                                                    student.course_status === 'in_progress' ? 'bg-blue-100 text-blue-700' : 
-                                                                    student.course_status === 'completed' ? 'bg-green-100 text-green-700' : 
-                                                                    'bg-yellow-100 text-yellow-700'
-                                                                }`}>
-                                                                    {student.course_status === 'in_progress' ? 'Davom etmoqda' : 
-                                                                     student.course_status === 'completed' ? 'Yakunlangan' : 
-                                                                     'To\'xtatilgan'}
-                                                                </span>
-                                                            </div>
+                                                        {group.status === 'draft' && (
                                                             <AddGroup 
                                                                 student={student} 
                                                                 isInGroup={true}
@@ -440,76 +415,109 @@ const GroupDetailPage = () => {
                                                                     queryClient.invalidateQueries(['group', groupId]);
                                                                 }}
                                                             >
-                                                                <button className="w-full px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
-                                                                    Guruh holatini o'zgartirish
+                                                                <button className="px-3 py-1 text-xs rounded-lg text-white bg-green-600 hover:bg-green-700 transition-all shadow-sm flex items-center gap-1">
+                                                                    <BookOpenIcon className="h-3 w-3" />
+                                                                    Darsni boshlash
                                                                 </button>
                                                             </AddGroup>
-                                                        </div>
-                                                    )}
+                                                        )}
+                                                    </div>
                                                 </td>
 
-                                                <td className="px-4 py-3 text-center">
-                                                    {isEditing ? (
-                                                        <div className="flex justify-center items-center gap-1">
-                                                            <button onClick={() => handleSave(rowKey)} className="p-1.5 rounded text-white bg-green-600 hover:bg-green-700 transition-all duration-150 shadow-sm border border-green-700 hover:shadow-md transform hover:scale-105"><FiSave size={12} /></button>
-                                                            <button onClick={handleCancel} className="p-1.5 rounded text-white bg-gray-500 hover:bg-gray-600 transition-all duration-150 shadow-sm border border-gray-600 hover:shadow-md transform hover:scale-105"><FiX size={12} /></button>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="flex justify-center items-center gap-1">
+                                                {/* RO'YXATDAN SANA */}
+                                                <td className="px-4 py-3 border-r border-gray-200 text-sm">
+                                                    {student.registration_date?.split('T')[0]}
+                                                </td>
+
+                                                {/* TALABA HOLATI */}
+                                                <td className="px-4 py-3 border-r border-gray-200 text-sm">
+                                                    <div className="space-y-2">
+                                                        <div className="relative">
                                                             <button 
-                                                                onClick={() => handleEditClick(student, index)}
-                                                                className="p-1.5 rounded text-white bg-blue-600 hover:bg-blue-700 transition-all duration-150 shadow-sm border border-blue-700 hover:shadow-md transform hover:scale-105"
-                                                                title="Tahrirlash"
+                                                                onClick={() => setStatusDropdownOpen(statusDropdownOpen === student.id ? null : student.id)}
+                                                                className={`flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-full cursor-pointer hover:opacity-80 transition-all ${getStatusInfo(student.student_status).color}`}
                                                             >
-                                                                <FiEdit size={12} />
+                                                                {React.createElement(getStatusInfo(student.student_status).icon, { 
+                                                                    className: `h-3 w-3 ${getStatusInfo(student.student_status).iconColor}` 
+                                                                })}
+                                                                
+                                                                <span>{getStatusInfo(student.student_status).label}</span>
+                                                                <Settings className={`h-3 w-3 ${getStatusInfo(student.student_status).iconColor}`} />
                                                             </button>
                                                             
-                                                            <Link href={`/admin/students/${student.id}`} 
-                                                                className="p-1.5 rounded text-white bg-indigo-600 hover:bg-indigo-700 transition-all duration-150 shadow-sm border border-indigo-700 hover:shadow-md transform hover:scale-105"
-                                                                title="Batafsil ko'rish"
-                                                            >
-                                                                <InformationCircleIcon className="h-3 w-3" />
-                                                            </Link>
-                                                            
-                                                            <AddGroup 
-                                                                student={student} 
-                                                                isInGroup={true}
-                                                                onSuccess={() => {
-                                                                    queryClient.invalidateQueries(['group', groupId]);
-                                                                }}
-                                                            >
-                                                                <button 
-                                                                    className="p-1.5 rounded text-white bg-red-600 hover:bg-red-700 transition-all duration-150 shadow-sm border border-red-700 hover:shadow-md transform hover:scale-105"
-                                                                    title="Guruh boshqaruvi"
-                                                                >
-                                                                    <TrashIcon className="h-3 w-3" />
-                                                                </button>
-                                                            </AddGroup>
+                                                            {statusDropdownOpen === student.id && (
+                                                                <div className="absolute left-0 top-8 z-20 w-48 bg-white rounded-md shadow-lg border border-gray-200 py-1">
+                                                                    {getAllStatusOptions().map((statusOption) => {
+                                                                        const Icon = statusOption.icon;
+                                                                        return (
+                                                                            <button
+                                                                                key={statusOption.value}
+                                                                                onClick={() => handleStatusChange(student.id, statusOption.value)}
+                                                                                disabled={updateStatusMutation.isLoading}
+                                                                                className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2 transition-colors ${
+                                                                                    student.student_status === statusOption.value ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                                                                                } ${updateStatusMutation.isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                                            >
+                                                                                <Icon className={`h-4 w-4 ${statusOption.color}`} />
+                                                                                {statusOption.label}
+                                                                                {student.student_status === statusOption.value && (
+                                                                                    <CheckCircle className="h-3 w-3 text-blue-600 ml-auto" />
+                                                                                )}
+                                                                            </button>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                    )}
+                                                    </div>
+                                                </td>
+
+                                                {/* AMALLAR */}
+                                                <td className="px-4 py-3 text-center">
+                                                    <div className="flex justify-center items-center gap-1">
+                                                        <button 
+                                                            onClick={() => handleEditClick(student, index)}
+                                                            className="p-1.5 rounded text-white bg-blue-600 hover:bg-blue-700 transition-all duration-150 shadow-sm"
+                                                            title="Tahrirlash"
+                                                        >
+                                                            <FiEdit size={12} />
+                                                        </button>
+                                                        
+                                                        <Link 
+                                                            href={`/admin/students/${student.id}`}
+                                                            className="p-1.5 rounded text-white bg-indigo-600 hover:bg-indigo-700 transition-all duration-150 shadow-sm"
+                                                            title="Batafsil ko'rish"
+                                                        >
+                                                            <InformationCircleIcon className="h-3 w-3" />
+                                                        </Link>
+                                                        
+                                                        <button 
+                                                            onClick={() => handleDeleteStudent(student.id)}
+                                                            className="p-1.5 rounded text-white bg-red-600 hover:bg-red-700 transition-all duration-150 shadow-sm"
+                                                            title="O'chirish"
+                                                        >
+                                                            <TrashIcon className="h-3 w-3" />
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         );
-                                    })
-                                ) : (
-                                    <tr className="bg-white">
-                                        <td colSpan="4" className="px-4 py-12 text-center text-gray-500 border-b border-gray-200">
-                                            <div className="flex flex-col items-center gap-4">
-                                                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
-                                                    <User className="h-8 w-8 text-gray-400" />
-                                                </div>
-                                                <div className="text-lg font-medium">Talabalar yo'q</div>
-                                                <p className="text-sm text-gray-400 max-w-md text-center">
-                                                    Bu guruhda hali hech qanday talaba ro'yxatdan o'tmagan. 
-                                                    Talabalar guruh kodidan foydalanib qo'shilishlari mumkin.
-                                                </p>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center gap-4 py-12">
+                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                                <User className="h-8 w-8 text-gray-400" />
+                            </div>
+                            <div className="text-lg font-medium text-gray-500">Talabalar yo'q</div>
+                            <p className="text-sm text-gray-400 max-w-md text-center">
+                                Bu guruhda hali hech qanday talaba ro'yxatdan o'tmagan. 
+                                Talabalar guruh kodidan foydalanib qo'shilishlari mumkin.
+                            </p>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

@@ -149,26 +149,24 @@ const GroupCard = ({ group, onToggleGroupStatus, onStartClass, updateGroupLoadin
             </div>
 
             <div className="mt-4 flex space-x-3 items-stretch">
-                {isDraft ? (
-                    // Draft guruh uchun darsni boshlash tugmasi
+                <Link
+                    href={`/admin/groups/${group.id}`}
+                    className={`flex-1 flex items-center justify-center py-2.5 rounded-lg font-semibold text-white transition duration-150 shadow-md h-full 
+                        ${group.status === 'blocked' ? 'bg-gray-400 hover:bg-gray-500' : 'bg-[#A60E07] hover:opacity-90'}`}
+                >
+                    <ArrowRightIcon className="h-5 w-5 mr-2" />
+                    Guruhga Kirish
+                </Link>
+
+                {isDraft && (
                     <button
                         onClick={() => onStartClass(group.id)}
-                        className="flex-1 flex items-center justify-center py-2.5 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-700 transition duration-150 shadow-md h-full"
+                        className="flex items-center justify-center px-4 py-2.5 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-700 transition duration-150 shadow-md h-full"
                         disabled={updateGroupLoading}
                     >
                         <PlayIcon className="h-5 w-5 mr-2" />
                         Darsni Boshlash
                     </button>
-                ) : (
-                    <Link
-                        href={`/admin/groups/${group.id}`}
-                        className={`flex-1 flex items-center justify-center py-2.5 rounded-lg font-semibold text-white transition duration-150 shadow-md h-full 
-                            ${group.status === 'active' ? 'bg-[#A60E07] hover:opacity-90' : 'bg-gray-400 cursor-not-allowed'}`}
-                        onClick={(e) => group.status !== 'active' && e.preventDefault()}
-                    >
-                        <ArrowRightIcon className="h-5 w-5 mr-2" />
-                        {group.status === 'active' ? "Guruhga Kirish" : "Ma'lumotlar"}
-                    </Link>
                 )}
 
                 <AdminUpdateGroupModal initialData={group}>

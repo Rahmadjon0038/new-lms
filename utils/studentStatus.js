@@ -51,9 +51,9 @@ export const getStatusInfo = (status) => {
 };
 
 export const getAllStatusOptions = () => [
-  { value: 'active', label: 'Faol', icon: UserCheck, color: 'text-green-600' },
-  { value: 'inactive', label: 'Nofaol', icon: XCircle, color: 'text-red-600' },
-  { value: 'blocked', label: 'Bloklangan', icon: ShieldBan, color: 'text-gray-600' },
-  { value: 'graduated', label: 'Bitirgan', icon: Award, color: 'text-purple-600' },
-  { value: 'dropped_out', label: 'Tark etgan', icon: UserX, color: 'text-orange-600' }
+  { value: 'active', label: 'Faol', icon: UserCheck, iconColor: 'text-green-600' },
+  { value: 'inactive', label: 'Nofaol', icon: XCircle, iconColor: 'text-red-600' },
+  { value: 'blocked', label: 'Bloklangan', icon: ShieldBan, iconColor: 'text-gray-600' },
+  { value: 'graduated', label: 'Bitirgan', icon: Award, iconColor: 'text-purple-600' },
+  { value: 'dropped_out', label: 'Tark etgan', icon: UserX, iconColor: 'text-orange-600' }
 ];
