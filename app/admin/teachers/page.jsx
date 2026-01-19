@@ -27,7 +27,7 @@ import {
   usePutTeacherOnLeave,
   useTerminateTeacher,
   useReactivateTeacher,
-  useUpdateTeacherFull
+  useUpdateTeacher
 } from "../../../hooks/teacher";
 import { useGetNotify } from "../../../hooks/notify";
 import { useGetAllSubjects } from "../../../hooks/subjects";
@@ -53,8 +53,9 @@ const modalStyle = {
 
 const editModalStyle = {
   ...modalStyle,
-  maxWidth: "600px",
-  maxHeight: "90vh",
+  maxWidth: "800px",
+  width: "95%",
+  maxHeight: "95vh",
   overflowY: "auto"
 };
 
@@ -119,8 +120,6 @@ const EditTeacherModal = ({ isOpen, onClose, teacher, onUpdate, isLoading }) => 
   const [formData, setFormData] = useState({
     name: "",
     surname: "",
-    username: "",
-    password: "",
     phone: "",
     phone2: "",
     subject_ids: [],
@@ -137,37 +136,80 @@ const EditTeacherModal = ({ isOpen, onClose, teacher, onUpdate, isLoading }) => 
 
   React.useEffect(() => {
     if (teacher && isOpen) {
+      console.log("=== TEACHER EDIT MODAL OPENED ===");
+      console.log("Teacher data:", teacher);
+      
+      // subjects arraydan subject_ids ni extract qilish
+      let subjectIds = [];
+      if (Array.isArray(teacher.subjects)) {
+        subjectIds = teacher.subjects.map(s => s.id);
+        console.log("Extracted subject_ids from subjects:", subjectIds);
+      } else if (Array.isArray(teacher.subject_ids)) {
+        subjectIds = teacher.subject_ids;
+      } else if (Array.isArray(teacher.subjectIds)) {
+        subjectIds = teacher.subjectIds;
+      }
+      
+      console.log("Final subject_ids:", subjectIds);
+      
       setFormData({
         name: teacher.name || "",
         surname: teacher.surname || "",
-        username: teacher.username || "",
-        password: teacher.password || "",
         phone: teacher.phone || "",
         phone2: teacher.phone2 || "",
-        subject_ids: teacher.subject_ids || [],
+        subject_ids: subjectIds,
         certificate: teacher.certificate || "",
         age: teacher.age || 0,
-        has_experience: teacher.has_experience || false,
-        experience_years: teacher.experience_years || 0,
-        experience_place: teacher.experience_place || "",
-        available_times: teacher.available_times || "",
-        work_days_hours: teacher.work_days_hours || "",
+        has_experience: teacher.hasExperience || false,
+        experience_years: teacher.experienceYears || 0,
+        experience_place: teacher.experiencePlace || "",
+        available_times: teacher.availableTimes || "",
+        work_days_hours: teacher.workDaysHours || "",
+      });
+    } else if (!isOpen) {
+      // Modal yopilganda formData ni tozalash
+      setFormData({
+        name: "",
+        surname: "",
+        phone: "",
+        phone2: "",
+        subject_ids: [],
+        certificate: "",
+        age: 0,
+        has_experience: false,
+        experience_years: 0,
+        experience_place: "",
+        available_times: "",
+        work_days_hours: "",
       });
     }
-  }, [teacher, isOpen]);
+  }, [teacher, isOpen, subjects]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : (type === 'number' ? parseInt(value) || 0 : value) }));
   };
 
-  const handleSubjectChange = (selectedIds) => {
-    setFormData(prev => ({ ...prev, subject_ids: selectedIds }));
-  };
-
   const handleSubmit = (e) => {
     e.preventDefault();
-    onUpdate(teacher.id, formData);
+    
+    // Prepare data for API
+    const submitData = {
+      name: formData.name.trim(),
+      surname: formData.surname.trim(),
+      phone: formData.phone.trim(),
+      phone2: formData.phone2.trim(),
+      subject_ids: formData.subject_ids,
+      certificate: formData.certificate.trim(),
+      age: parseInt(formData.age) || 0,
+      has_experience: formData.has_experience,
+      experience_years: parseInt(formData.experience_years) || 0,
+      experience_place: formData.experience_place.trim(),
+      available_times: formData.available_times.trim(),
+      work_days_hours: formData.work_days_hours.trim()
+    };
+
+    onUpdate(teacher.id, submitData);
   };
 
   if (!isOpen || !teacher) return null;
@@ -188,197 +230,255 @@ const EditTeacherModal = ({ isOpen, onClose, teacher, onUpdate, isLoading }) => 
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 max-h-[500px] overflow-y-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Ism *</label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A60E07] focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Familiya *</label>
-              <input
-                type="text"
-                name="surname"
-                value={formData.surname}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A60E07] focus:border-transparent"
-              />
-            </div>
-          </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="max-h-[75vh] overflow-y-auto px-2">
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Ism</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A60E07] focus:border-transparent"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Familiya</label>
+                  <input
+                    type="text"
+                    name="surname"
+                    value={formData.surname}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A60E07] focus:border-transparent"
+                    required
+                  />
+                </div>
+              </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Username *</label>
-              <input
-                type="text"
-                name="username"
-                value={formData.username}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A60E07] focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Parol</label>
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A60E07] focus:border-transparent"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Telefon raqami *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Telefon raqami</label>
               <input
                 type="tel"
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A60E07] focus:border-transparent"
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A60E07] focus:border-transparent"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Qo'shimcha telefon</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Qo'shimcha telefon</label>
               <input
                 type="tel"
                 name="phone2"
                 value={formData.phone2}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A60E07] focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A60E07] focus:border-transparent"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Yoshi</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Yoshi</label>
               <input
                 type="number"
                 name="age"
                 value={formData.age}
                 onChange={handleChange}
                 min="0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A60E07] focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A60E07] focus:border-transparent"
+                required
               />
             </div>
-            <div>
-              <label className="flex items-center space-x-2 mt-6">
+            <div className="flex items-center justify-center">
+              <label className="flex items-center space-x-3">
                 <input
                   type="checkbox"
                   name="has_experience"
                   checked={formData.has_experience}
                   onChange={handleChange}
-                  className="rounded border-gray-300 text-[#A60E07] focus:ring-[#A60E07]"
+                  className="w-5 h-5 rounded border-gray-300 text-[#A60E07] focus:ring-[#A60E07]"
                 />
-                <span className="text-sm font-medium text-gray-700">Tajriba bor</span>
+                <span className="text-sm font-medium text-gray-700">Tajribasi bor</span>
               </label>
             </div>
           </div>
 
           {formData.has_experience && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tajriba yillari</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Tajriba yillari</label>
                 <input
                   type="number"
                   name="experience_years"
                   value={formData.experience_years}
                   onChange={handleChange}
                   min="0"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A60E07] focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A60E07] focus:border-transparent"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tajriba joyi</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Tajriba joyi</label>
                 <input
                   type="text"
                   name="experience_place"
                   value={formData.experience_place}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A60E07] focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A60E07] focus:border-transparent"
                 />
               </div>
             </div>
           )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Fanlar *</label>
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border-2 border-blue-200">
+            <label className="block text-sm font-semibold text-gray-800 mb-3 flex items-center">
+              <AcademicCapIcon className="h-5 w-5 mr-2 text-blue-600" />
+              Fanlar
+            </label>
             {subjectsLoading ? (
-              <div className="text-sm text-gray-500">Fanlar yuklanmoqda...</div>
+              <div className="text-sm text-gray-500 text-center py-4">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                Fanlar yuklanmoqda...
+              </div>
             ) : (
-              <SubjectsSelect
-                value={formData.subject_ids}
-                onChange={handleSubjectChange}
-                subjects={subjects}
-                multiple={true}
-                placeholder="Fanlarni tanlang"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A60E07] focus:border-transparent"
-              />
+              <div className="space-y-4">
+                {/* Fan tanlash dropdown */}
+                <select
+                  onChange={(e) => {
+                    const subjectId = parseInt(e.target.value);
+                    if (subjectId && !formData.subject_ids.includes(subjectId)) {
+                      console.log("Fan qo'shilmoqda:", subjectId);
+                      setFormData(prev => ({
+                        ...prev,
+                        subject_ids: [...prev.subject_ids, subjectId]
+                      }));
+                    }
+                    e.target.value = ""; // Reset dropdown
+                  }}
+                  className="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                >
+                  <option value="">+ Fan qo'shish uchun tanlang</option>
+                  {subjects?.subjects?.filter(subject => 
+                    !formData.subject_ids.includes(subject.id)
+                  ).map(subject => (
+                    <option key={subject.id} value={subject.id}>
+                      {subject.name}
+                    </option>
+                  ))}
+                </select>
+
+                {/* Tanlangan fanlar */}
+                {formData.subject_ids && formData.subject_ids.length > 0 ? (
+                  <div className="bg-white rounded-lg p-4 border-2 border-blue-200">
+                    <p className="text-xs font-medium text-gray-600 mb-3">Tanlangan fanlar ({formData.subject_ids.length}):</p>
+                    <div className="flex flex-wrap gap-3">
+                      {formData.subject_ids.map(subjectId => {
+                        const subject = subjects?.subjects?.find(s => s.id === subjectId);
+                        if (!subject) {
+                          console.log("Fan topilmadi:", subjectId);
+                          return null;
+                        }
+                        return (
+                          <span
+                            key={subjectId}
+                            className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-md hover:shadow-lg transition-all"
+                          >
+                            {subject.name}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                console.log("Fan o'chirilmoqda:", subjectId);
+                                setFormData(prev => ({
+                                  ...prev,
+                                  subject_ids: prev.subject_ids.filter(id => id !== subjectId)
+                                }));
+                              }}
+                              className="ml-3 w-5 h-5 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+                              title="Olib tashlash"
+                            >
+                              <XMarkIcon className="h-4 w-4" />
+                            </button>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-lg p-4 border-2 border-dashed border-blue-200 text-center">
+                    <AcademicCapIcon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-500">Hali fan tanlanmagan</p>
+                  </div>
+                )}
+              </div>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Sertifikat</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Sertifikat</label>
             <textarea
               name="certificate"
               value={formData.certificate}
               onChange={handleChange}
-              rows={2}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A60E07] focus:border-transparent"
+              rows={3}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A60E07] focus:border-transparent resize-none"
+              placeholder="Sertifikat ma'lumotlarini kiriting..."
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Mavjud vaqtlar</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Mavjud vaqtlar</label>
             <input
               type="text"
               name="available_times"
               value={formData.available_times}
               onChange={handleChange}
               placeholder="Masalan: 09:00-18:00"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A60E07] focus:border-transparent"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A60E07] focus:border-transparent"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Ish kunlari va soatlari</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Ish kunlari va soatlari</label>
             <textarea
               name="work_days_hours"
               value={formData.work_days_hours}
               onChange={handleChange}
               rows={3}
               placeholder="Masalan: Dushanba-Juma: 09:00-18:00"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A60E07] focus:border-transparent"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A60E07] focus:border-transparent resize-none"
             />
           </div>
+            </div>
+          </div>
 
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-4 pt-6 border-t border-gray-200 sticky bottom-0 bg-white">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2.5 rounded-lg font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition"
+              className="flex-1 py-3 px-4 rounded-xl font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
             >
               Bekor qilish
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="flex-1 py-2.5 rounded-lg font-medium text-white bg-[#A60E07] hover:opacity-90 transition disabled:opacity-50"
+              className="flex-1 py-3 px-4 rounded-xl font-semibold text-white bg-gradient-to-r from-[#A60E07] to-[#d61109] hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
             >
-              {isLoading ? "Saqlanmoqda..." : "Saqlash"}
+              {isLoading ? (
+                <span className="flex items-center justify-center">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Saqlanmoqda...
+                </span>
+              ) : "Saqlash"}
             </button>
           </div>
         </form>
@@ -644,7 +744,7 @@ export default function TeachersPage() {
   const putOnLeaveMutation = usePutTeacherOnLeave();
   const terminateMutation = useTerminateTeacher();
   const reactivateMutation = useReactivateTeacher();
-  const updateTeacherMutation = useUpdateTeacherFull();
+  const updateTeacherMutation = useUpdateTeacher();
 
   const teachers = teachersData?.teachers || [];
 

@@ -5,13 +5,16 @@ import { TrashIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 import { 
   User, Phone, MapPin, Calendar, GraduationCap, 
   CheckCircle, XCircle, Clock, BookOpen, Users,
-  Home, UserCheck, AlertCircle, PlayCircle, PauseCircle, MoreVertical
+  Home, UserCheck, AlertCircle, PlayCircle, PauseCircle, MoreVertical,
+  Shield, ShieldBan, Award, UserX, Settings
 } from 'lucide-react';
 import Link from 'next/link';
-import { useGetAllStudents } from '../../../hooks/students';
+import { useGetAllStudents, useUpdateStudentStatus } from '../../../hooks/students';
 import { usegetTeachers } from '../../../hooks/teacher';
 import { useGetAllSubjects } from '../../../hooks/subjects';
 import { usegetAllgroups } from '../../../hooks/groups';
+import { useGetNotify } from '../../../hooks/notify';
+import { getAllStatusOptions, getStatusInfo } from '../../../utils/studentStatus';
 import AddGroup from '../../../components/admistrator/AddGroup';
 
 // --- Tahrirlash Holatida Input Komponenti ---
@@ -36,7 +39,7 @@ const StudentsPage = () => {
     const [selectedSubject, setSelectedSubject] = useState('all');
     const [selectedStatus, setSelectedStatus] = useState('all');
     const [showUnassigned, setShowUnassigned] = useState(false);
-    const [dropdownOpen, setDropdownOpen] = useState(null); // Dropdown state
+    const [statusDropdownOpen, setStatusDropdownOpen] = useState(null); // Status dropdown state
     
     // Filter options uchun data
     const { data: teachersData } = usegetTeachers();
@@ -54,6 +57,10 @@ const StudentsPage = () => {
 
     // Backenddan ma'lumotlarni olish
     const { data: backendData, isLoading, error, refetch } = useGetAllStudents(filters);
+    
+    // Student status o'zgartirish hook
+    const updateStatusMutation = useUpdateStudentStatus();
+    const notify = useGetNotify();
 
     // Backenddan kelgan ma'lumotlarni boshqarish uchun lokal state
     const [students, setStudents] = useState([]);
@@ -71,7 +78,7 @@ const StudentsPage = () => {
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (!event.target.closest('.relative')) {
-                setDropdownOpen(null);
+                setStatusDropdownOpen(null);
             }
         };
         
@@ -125,6 +132,32 @@ const StudentsPage = () => {
 
     const handleModalSuccess = () => {
         refetch(); // Ma'lumotlarni qayta yuklash
+    };
+    
+    // Status o'zgartirish function
+    const handleStatusChange = async (studentId, newStatus) => {
+        const loadingToast = notify('load');
+        try {
+            await updateStatusMutation.mutateAsync({
+                id: studentId,
+                status: newStatus,
+                onSuccess: () => {
+                    notify('dismiss');
+                    notify('ok', 'Talaba holati muvaffaqiyatli o\'zgartirildi');
+                    refetch();
+                    setStatusDropdownOpen(null);
+                },
+                onError: (error) => {
+                    notify('dismiss');
+                    const errorMessage = error?.response?.data?.message || 'Status o\'zgartirishda xatolik yuz berdi';
+                    notify('err', errorMessage);
+                }
+            });
+        } catch (error) {
+            notify('dismiss');
+            const errorMessage = error?.response?.data?.message || 'Nomalum xatolik yuz berdi';
+            notify('err', errorMessage);
+        }
     };
 
     // Barcha filterlarni tozalash
@@ -255,9 +288,11 @@ const StudentsPage = () => {
                     className="p-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:border-[#A60E07] min-w-[140px]"
                 >
                     <option value="all">Barcha holatlar</option>
-                    <option value="active">Faol</option>
-                    <option value="inactive">Nofaol</option>
-                    <option value="blocked">Bloklangan</option>
+                    <option value="active">✅ Faol</option>
+                    <option value="inactive">❌ Nofaol</option>
+                    <option value="blocked">🚫 Bloklangan</option>
+                    <option value="graduated">🎓 Bitirgan</option>
+                    <option value="dropped_out">🚪 Tark etgan</option>
                 </select>
 
                 {/* Clear filters button */}
@@ -433,43 +468,61 @@ const StudentsPage = () => {
                                                         onChange={handleEditChange}
                                                         className="p-2 border border-[#A60E07] rounded w-full text-sm outline-none transition duration-200 focus:ring-1 focus:ring-[#A60E07]"
                                                     >
-                                                        <option value="active">✅ Faol talaba</option>
-                                                        <option value="inactive">❌ Nofaol talaba</option>
-                                                        <option value="graduated">🎓 O'qishni tugatgan</option>
-                                                    </select>
-                                                    <select
-                                                        name="course_status"
-                                                        value={editData.course_status}
-                                                        onChange={handleEditChange}
-                                                        className="p-2 border border-[#A60E07] rounded w-full text-sm outline-none transition duration-200 focus:ring-1 focus:ring-[#A60E07]"
-                                                    >
-                                                        <option value="in_progress">🔄 Kurs davom etmoqda</option>
-                                                        <option value="completed">✅ Kurs yakunlangan</option>
-                                                        <option value="paused">⏸️ Kurs to'xtatilgan</option>
+                                                        <option value="active">✅ Faol</option>
+                                                        <option value="inactive">❌ Nofaol</option>
+                                                        <option value="blocked">🚫 Bloklangan</option>
+                                                        <option value="graduated">🎓 Bitirgan</option>
+                                                        <option value="dropped_out">🚪 Tark etgan</option>
                                                     </select>
                                                 </div>
                                             ) : (
                                                 <div className="space-y-2">
-                                                    {/* Talaba umumiy holati */}
-                                                    <div className="flex items-center gap-1">
-                                                        {student.status === 'active' && <UserCheck className="h-4 w-4 text-green-600" />}
-                                                        {student.status === 'inactive' && <XCircle className="h-4 w-4 text-red-600" />}
-                                                        {student.status === 'graduated' && <GraduationCap className="h-4 w-4 text-blue-600" />}
+                                                    {/* Status o'zgartirish dropdown */}
+                                                    <div className="relative">
+                                                        <button 
+                                                            onClick={() => setStatusDropdownOpen(statusDropdownOpen === student.id ? null : student.id)}
+                                                            className={`flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-full cursor-pointer hover:opacity-80 transition-all ${getStatusInfo(student.status).color}`}
+                                                        >
+                                                            {React.createElement(getStatusInfo(student.status).icon, { 
+                                                                className: `h-3 w-3 ${getStatusInfo(student.status).iconColor}` 
+                                                            })}
+                                                            
+                                                            <span>{getStatusInfo(student.status).label}</span>
+                                                            <Settings className={`h-3 w-3 ${getStatusInfo(student.status).iconColor}`} />
+                                                        </button>
                                                         
-                                                        <div className="flex items-center gap-1">
-                                                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                                                student.status === 'active' ? 'bg-green-100 text-green-800' : 
-                                                                student.status === 'inactive' ? 'bg-red-100 text-red-800' : 
-                                                                'bg-blue-100 text-blue-800'
-                                                            }`}>
-                                                                {student.status === 'active' ? 'Faol talaba' : 
-                                                                 student.status === 'inactive' ? 'Nofaol talaba' : 
-                                                                 'O\'qishni tugatgan'}
-                                                            </span>
-                                                        </div>
+                                                        {/* Status o'zgartirish dropdown menu */}
+                                                        {statusDropdownOpen === student.id && (
+                                                            <div className="absolute left-0 top-8 z-20 w-48 bg-white rounded-md shadow-lg border border-gray-200 py-1">
+                                                                {getAllStatusOptions().map((statusOption) => {
+                                                                    const Icon = statusOption.icon;
+                                                                    return (
+                                                                        <button
+                                                                            key={statusOption.value}
+                                                                            onClick={() => handleStatusChange(student.id, statusOption.value)}
+                                                                            disabled={updateStatusMutation.isLoading}
+                                                                            className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2 transition-colors ${
+                                                                                student.status === statusOption.value ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                                                                            } ${updateStatusMutation.isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                                        >
+                                                                            <Icon className={`h-4 w-4 ${statusOption.color}`} />
+                                                                            {statusOption.label}
+                                                                            {student.status === statusOption.value && (
+                                                                                <CheckCircle className="h-3 w-3 text-blue-600 ml-auto" />
+                                                                            )}
+                                                                        </button>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                     
-                                                    
+                                                    {/* Course status information only (no visual badge) */}
+                                                    {student.course_start_date && (
+                                                        <div className="text-xs text-gray-500 mt-1">
+                                                            <span>Boshlangan: {new Date(student.course_start_date).toLocaleDateString()}</span>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
                                         </td>
@@ -481,48 +534,30 @@ const StudentsPage = () => {
                                                     <button onClick={handleCancel} className="p-1.5 rounded text-white bg-gray-500 hover:bg-gray-600 transition-all duration-150 shadow-sm border border-gray-600 hover:shadow-md transform hover:scale-105"><FiX size={12} /></button>
                                                 </div>
                                             ) : (
-                                                <div className="relative">
+                                                <div className="flex justify-center items-center gap-1">
                                                     <button 
-                                                        onClick={() => setDropdownOpen(dropdownOpen === rowKey ? null : rowKey)}
-                                                        className="p-2 rounded text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition-all duration-150"
+                                                        onClick={() => handleEditClick(student, index)}
+                                                        className="p-1.5 rounded text-white bg-blue-600 hover:bg-blue-700 transition-all duration-150 shadow-sm"
+                                                        title="Tahrirlash"
                                                     >
-                                                        <MoreVertical size={16} />
+                                                        <FiEdit size={12} />
                                                     </button>
                                                     
-                                                    {dropdownOpen === rowKey && (
-                                                        <div className="absolute right-0 top-8 z-10 w-48 bg-white rounded-md shadow-lg border border-gray-200 py-1">
-                                                            <button 
-                                                                onClick={() => {
-                                                                    handleEditClick(student, index);
-                                                                    setDropdownOpen(null);
-                                                                }}
-                                                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
-                                                            >
-                                                                <FiEdit size={14} className="text-blue-600" />
-                                                                Tahrirlash
-                                                            </button>
-                                                            
-                                                            <Link 
-                                                                href={`/admin/students/${student.id}`}
-                                                                onClick={() => setDropdownOpen(null)}
-                                                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
-                                                            >
-                                                                <InformationCircleIcon className="h-4 w-4 text-indigo-600" />
-                                                                Batafsil ko'rish
-                                                            </Link>
-                                                            
-                                                            <button 
-                                                                onClick={() => {
-                                                                    handleDeleteStudent(student.id, index);
-                                                                    setDropdownOpen(null);
-                                                                }}
-                                                                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-                                                            >
-                                                                <TrashIcon className="h-4 w-4 text-red-600" />
-                                                                O'chirish
-                                                            </button>
-                                                        </div>
-                                                    )}
+                                                    <Link 
+                                                        href={`/admin/students/${student.id}`}
+                                                        className="p-1.5 rounded text-white bg-indigo-600 hover:bg-indigo-700 transition-all duration-150 shadow-sm"
+                                                        title="Batafsil ko'rish"
+                                                    >
+                                                        <InformationCircleIcon className="h-3 w-3" />
+                                                    </Link>
+                                                    
+                                                    <button 
+                                                        onClick={() => handleDeleteStudent(student.id, index)}
+                                                        className="p-1.5 rounded text-white bg-red-600 hover:bg-red-700 transition-all duration-150 shadow-sm"
+                                                        title="O'chirish"
+                                                    >
+                                                        <TrashIcon className="h-3 w-3" />
+                                                    </button>
                                                 </div>
                                             )}
                                         </td>

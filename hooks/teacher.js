@@ -78,7 +78,7 @@ export const useDeleteTeacher = () => {
 
 // -------------- Update teacher information ----------
 const updateTeacher = async ({ teacherId, teacherData }) => {
-    const response = await instance.patch(`/api/users/teachers/${teacherId}`, teacherData);
+    const response = await instance.patch(`/api/users/teachers/${teacherId}/update`, teacherData);
     return response.data;
 }
 
@@ -86,54 +86,6 @@ export const useUpdateTeacher = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: updateTeacher,
-        onSuccess: (data, vars) => {
-            queryClient.invalidateQueries(['teachers']);
-            if (vars.onSuccess) {
-                vars.onSuccess(data);
-            }
-        },
-        onError: (err, vars) => {
-            if (vars.onError) {
-                vars.onError(err);
-            }
-        }
-    });
-}
-
-// -------------- Add subject to teacher ----------
-const addSubjectToTeacher = async ({ teacherId, subjectData }) => {
-    const response = await instance.post(`/api/users/teachers/${teacherId}/subjects`, subjectData);
-    return response.data;
-}
-
-export const useAddSubjectToTeacher = () => {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: addSubjectToTeacher,
-        onSuccess: (data, vars) => {
-            queryClient.invalidateQueries(['teachers']);
-            if (vars.onSuccess) {
-                vars.onSuccess(data);
-            }
-        },
-        onError: (err, vars) => {
-            if (vars.onError) {
-                vars.onError(err);
-            }
-        }
-    });
-}
-
-// -------------- Remove subject from teacher ----------
-const removeSubjectFromTeacher = async ({ teacherId, subjectId }) => {
-    const response = await instance.delete(`/api/users/teachers/${teacherId}/subjects/${subjectId}`);
-    return response.data;
-}
-
-export const useRemoveSubjectFromTeacher = () => {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: removeSubjectFromTeacher,
         onSuccess: (data, vars) => {
             queryClient.invalidateQueries(['teachers']);
             if (vars.onSuccess) {
@@ -206,30 +158,6 @@ export const useReactivateTeacher = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: reactivateTeacher,
-        onSuccess: (data, vars) => {
-            queryClient.invalidateQueries(['teachers']);
-            if (vars.onSuccess) {
-                vars.onSuccess(data);
-            }
-        },
-        onError: (err, vars) => {
-            if (vars.onError) {
-                vars.onError(err);
-            }
-        }
-    });
-}
-
-// -------------- Update teacher full information ----------
-const updateTeacherFull = async ({ teacherId, teacherData }) => {
-    const response = await instance.put(`/api/users/teachers/${teacherId}`, teacherData);
-    return response.data;
-}
-
-export const useUpdateTeacherFull = () => {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: updateTeacherFull,
         onSuccess: (data, vars) => {
             queryClient.invalidateQueries(['teachers']);
             if (vars.onSuccess) {
