@@ -6,7 +6,7 @@ import {
   User, Phone, MapPin, Calendar, GraduationCap, 
   CheckCircle, XCircle, Clock, BookOpen, Users,
   Home, UserCheck, AlertCircle, PlayCircle, PauseCircle, MoreVertical,
-  Shield, ShieldBan, Award, UserX, Settings
+  Shield, ShieldBan, Award, UserX, Settings, Building2
 } from 'lucide-react';
 import Link from 'next/link';
 import { useGetAllStudents, useUpdateStudentStatus } from '../../../hooks/students';
@@ -433,6 +433,20 @@ const StudentsPage = () => {
                                                                 <BookOpen className="h-3 w-3 text-green-600" />
                                                                 <span className="font-medium text-gray-700">Fan:</span>
                                                                 <span className="text-gray-900">{student.subject_name || 'Belgilanmagan'}</span>
+                                                            </div>
+                                                            
+                                                            <div className="flex items-center gap-1 text-xs">
+                                                                <Building2 className="h-3 w-3 text-amber-600" />
+                                                                <span className="font-medium text-gray-700">Xona:</span>
+                                                                {student.room_number ? (
+                                                                    <span className="text-gray-900">
+                                                                        {student.room_number}
+                                                                        {student.room_capacity && ` (${student.room_capacity} o'rinlik)`}
+                                                                        {student.has_projector && <span className="text-green-600 text-xs"> • Proyektor ✓</span>}
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="text-gray-500 italic">Xonasi hali belgilanmagan</span>
+                                                                )}
                                                             </div>
                                                             
                                                             {student.group_joined_at && (

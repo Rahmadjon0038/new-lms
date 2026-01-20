@@ -19,7 +19,7 @@ import AdminUpdateGroupModal from "../../../components/admistrator/AdminUpdateGr
 import { useChangeGroupStatus } from "../../../hooks/groups";
 import AdminNewGroupModal from "../../../components/admistrator/CreateGroup";
 import { usegetAllgroups } from "../../../hooks/groups";
-import { Clock } from "lucide-react";
+import { Clock, Building2 } from "lucide-react";
 import TeacherSelect from "../../../components/teacher/Select";
 import SubjectsSelect from "../../../components/SubjectsSelect";
 
@@ -141,6 +141,20 @@ const GroupCard = ({ group, onToggleGroupStatus, onStartClass, updateGroupLoadin
                             Fan: <span className="ml-1 font-bold text-gray-800">{group.subject_name}</span>
                         </p>
                     )}
+                    <p className="flex ">
+                        <Building2 className="h-4 w-4 mr-2 text-gray-400" />
+                        Xona: <span className="ml-1 font-bold text-gray-800">
+                            {group.room_number ? (
+                                <>
+                                    {group.room_number}
+                                    {group.room_capacity && ` (${group.room_capacity} o'rinlik)`}
+                                    {group.has_projector && <span className="ml-1 text-green-600 text-xs">• Proyektor ✓</span>}
+                                </>
+                            ) : (
+                                <span className="text-gray-500">Xona belgilanmagan</span>
+                            )}
+                        </span>
+                    </p>
                     <p className="flex ">
                         <CalendarIcon className="h-4 w-4 mr-2 text-gray-400" />
                         Dars boshlanish sanasi: <span className="ml-1 font-semibold text-gray-600">{startDate}</span>

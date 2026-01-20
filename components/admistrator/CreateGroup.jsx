@@ -15,6 +15,7 @@ import { useCreateGroup } from "../../hooks/groups";
 import { useGetNotify } from "../../hooks/notify";
 import TeacherSelect from "../teacher/Select";
 import SubjectsSelect from "../SubjectsSelect";
+import RoomsSelect from "./RoomsSelect";
 
 const MAIN_COLOR = "#A60E07";
 
@@ -54,6 +55,7 @@ export default function AdminNewGroupModal({ children, onSuccess }) {
     subject_id: "",
     name: "",
     teacher_id: "",
+    room_id: "",
     selectedDays: [],
     startTime: "18:00",
     endTime: "20:00",
@@ -69,6 +71,7 @@ export default function AdminNewGroupModal({ children, onSuccess }) {
       subject_id: "",
       name: "",
       teacher_id: "",
+      room_id: "",
       selectedDays: [],
       startTime: "18:00",
       endTime: "20:00",
@@ -109,6 +112,7 @@ export default function AdminNewGroupModal({ children, onSuccess }) {
       name: groupData.name,
       subject_id: groupData.subject_id ? Number(groupData.subject_id) : null,
       teacher_id: groupData.teacher_id ? Number(groupData.teacher_id) : null,
+      room_id: groupData.room_id ? Number(groupData.room_id) : null,
       start_date: groupData.start_date ? groupData.start_date : null,
       schedule: {
         days: groupData.selectedDays, // Array formatida: ["Dush", "Chor", "Jum"]
@@ -211,6 +215,18 @@ export default function AdminNewGroupModal({ children, onSuccess }) {
                  showAll={false}
                />
 
+              </div>
+
+              {/* 4.5 Xona */}
+              <div>
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1 flex items-center">
+                  🏛️ Xona
+                </label>
+                <RoomsSelect
+                  value={groupData.room_id ? Number(groupData.room_id) : ""}
+                  onChange={(roomId) => setGroupData(prev => ({ ...prev, room_id: String(roomId) }))}
+                  placeholder="Xona tanlang"
+                />
               </div>
 
 

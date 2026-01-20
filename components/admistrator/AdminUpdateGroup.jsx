@@ -14,6 +14,7 @@ import { useUpdateGroup } from "../../hooks/groups";
 import { useGetNotify } from "../../hooks/notify";
 import TeacherSelect from "../teacher/Select";
 import SubjectsSelect from "../SubjectsSelect";
+import RoomsSelect from "./RoomsSelect";
 
 const MAIN_COLOR = "#A60E07";
 
@@ -51,6 +52,7 @@ export default function AdminUpdateGroupModal({ children, initialData }) {
     name: "",
     subject_id: "",
     teacher_id: "",
+    room_id: "",
     start_date: "2025-01-10",
     price: "",
     schedule: {
@@ -76,6 +78,7 @@ export default function AdminUpdateGroupModal({ children, initialData }) {
         name: initialData.name || "",
         subject_id: initialData.subject_id ? String(initialData.subject_id) : "",
         teacher_id: initialData.teacher_id ? String(initialData.teacher_id) : "",
+        room_id: initialData.room_id ? String(initialData.room_id) : "",
         start_date: startDateValue,
         price: initialData.price ? String(initialData.price) : "",
         schedule: {
@@ -127,6 +130,7 @@ export default function AdminUpdateGroupModal({ children, initialData }) {
       is_active: true,
       teacher_id: groupData.teacher_id ? Number(groupData.teacher_id) : null,
       name: groupData.name,
+      room_id: groupData.room_id ? Number(groupData.room_id) : null,
       subject_id: groupData.subject_id ? Number(groupData.subject_id) : null,
       price: groupData.price ? Number(groupData.price) : null,
       schedule: {
@@ -209,6 +213,18 @@ export default function AdminUpdateGroupModal({ children, initialData }) {
                   value={groupData.teacher_id}
                   onChange={(teacherId) => setGroupData(prev => ({ ...prev, teacher_id: teacherId }))}
                   showAll={false}
+                />
+              </div>
+
+              {/* Xona */}
+              <div>
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1 flex items-center">
+                  🏛️ Xona (ixtiyoriy)
+                </label>
+                <RoomsSelect
+                  value={groupData.room_id ? Number(groupData.room_id) : ""}
+                  onChange={(roomId) => setGroupData(prev => ({ ...prev, room_id: String(roomId) }))}
+                  placeholder="Xona tanlang"
                 />
               </div>
 

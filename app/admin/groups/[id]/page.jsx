@@ -20,6 +20,7 @@ import {
     CheckCircle,
     Home,
     Settings,
+    Building2,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useGetGroupById } from '../../../../hooks/groups';
@@ -282,6 +283,33 @@ const GroupDetailPage = () => {
                                         {group.status === 'active' ? 'Faol' : 
                                          group.status === 'draft' ? 'Darsi boshlanmagan' : 'Yopilgan'}
                                     </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Xona */}
+                        <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                            <div className="flex items-center space-x-3">
+                                <div className="flex-shrink-0">
+                                    <Building2 className="h-6 w-6 text-amber-500" />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Xona</p>
+                                    {group.room_number ? (
+                                        <>
+                                            <p className="text-sm font-semibold text-gray-800">
+                                                Xona {group.room_number}
+                                            </p>
+                                            {group.room_capacity && (
+                                                <p className="text-xs text-gray-600 mt-0.5">
+                                                    {group.room_capacity} o'rinlik
+                                                    {group.has_projector && <span className="text-green-600"> • Proyektor ✓</span>}
+                                                </p>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <p className="text-sm text-gray-500">Xona belgilanmagan</p>
+                                    )}
                                 </div>
                             </div>
                         </div>

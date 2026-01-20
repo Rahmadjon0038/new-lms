@@ -11,6 +11,7 @@ import {
   AcademicCapIcon, // Fanlar uchun
   ClipboardDocumentListIcon, // Davomat uchun
   WalletIcon, // To'lovlar uchun
+  BuildingLibraryIcon, // Xonalar
 } from "@heroicons/react/24/outline";
 
 // Asosiy rang konstantasi
@@ -42,6 +43,11 @@ const sidebarItems = [
     name: "Guruhlar",
     icon: BookOpenIcon,
     href: "/admin/groups",
+  },
+  {
+    name: "Xonalar",
+    icon: BuildingLibraryIcon,
+    href: "/admin/rooms",
   },
   {
     name: "Davomat",
