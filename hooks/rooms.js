@@ -65,3 +65,18 @@ export const useUpdateRoom = () => {
     });
     return updateRoomMutation;
 }
+
+// ----------- Get room schedule -----------------
+const getRoomSchedule = async (id) => {
+    const response = await instance.get(`/api/rooms/${id}/schedule`);
+    return response.data;
+}
+
+export const useGetRoomSchedule = (id) => {
+    const { data, isLoading, error } = useQuery({
+        queryKey: ['room-schedule', id],
+        queryFn: () => getRoomSchedule(id),
+        enabled: !!id,
+    });
+    return { data, isLoading, error };
+}

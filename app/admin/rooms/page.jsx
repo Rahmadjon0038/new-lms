@@ -6,9 +6,12 @@ import {
     PencilSquareIcon,
     XMarkIcon,
     CheckIcon,
+    CalendarDaysIcon,
+    ClockIcon,
+    UsersIcon,
 } from '@heroicons/react/24/outline';
-import { Building2, Sofa, Zap } from 'lucide-react';
-import { useGetAllRooms, useCreateRoom, useDeleteRoom, useUpdateRoom } from '../../../hooks/rooms';
+import { Building2, Sofa, Zap, Calendar } from 'lucide-react';
+import { useGetAllRooms, useCreateRoom, useDeleteRoom, useUpdateRoom, useGetRoomSchedule } from '../../../hooks/rooms';
 import { useGetNotify } from '../../../hooks/notify';
 
 const MAIN_COLOR = "#A60E07";
@@ -45,7 +48,7 @@ const AddRoomModal = ({ isOpen, onClose, onSubmit, isLoading }) => {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-            <div className="bg-white p-6 rounded-2xl shadow-2xl max-w-md w-full">
+            <div className="bg-white p-6 rounded-2xl shadow-2xl w-full">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-xl font-bold text-gray-800">Yangi Xona Qo'shish</h3>
                     <button
@@ -138,8 +141,108 @@ const AddRoomModal = ({ isOpen, onClose, onSubmit, isLoading }) => {
     );
 };
 
+// Dars jadvali modali
+const ScheduleModal = ({ isOpen, onClose, roomId }) => {
+    const { data: scheduleData, isLoading } = useGetRoomSchedule(roomId);
+
+    if (!isOpen) return null;
+
+    const room = scheduleData?.room;
+    const groups = scheduleData?.groups || [];
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+            <div className="bg-white p-6 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="flex justify-between items-center mb-6">
+                    <div>
+                        <h3 className="text-2xl font-bold text-gray-800">
+                            Xona {room?.room_number} - Dars Jadvali
+                        </h3>
+                        <p className="text-sm text-gray-600 mt-1">
+                            {scheduleData?.groups_count || 0} ta guruh
+                        </p>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="p-1 hover:bg-gray-100 rounded-lg transition"
+                    >
+                        <XMarkIcon className="h-6 w-6 text-gray-600" />
+                    </button>
+                </div>
+
+                {isLoading ? (
+                    <div className="text-center py-12">
+                        <div className="inline-block animate-spin">
+                            <div className="h-8 w-8 border-4 rounded-full" style={{ borderColor: MAIN_COLOR, borderTopColor: 'transparent' }}></div>
+                        </div>
+                        <p className="text-gray-600 mt-4">Yuklanmoqda...</p>
+                    </div>
+                ) : groups.length === 0 ? (
+                    <div className="text-center py-12">
+                        <CalendarDaysIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                        <p className="text-gray-600">Bu xonada hozircha darslar yo'q</p>
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        {groups.map((group) => (
+                            <div 
+                                key={group.id} 
+                                className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:shadow-md transition"
+                            >
+                                <div className="flex items-start justify-between mb-3">
+                                    <div>
+                                        <h4 className="text-lg font-bold text-gray-900 mb-1">
+                                            {group.name}
+                                        </h4>
+                                        <p className="text-sm text-gray-600">
+                                            {group.subject_name}
+                                        </p>
+                                    </div>
+                                    <span className="text-lg font-bold" style={{ color: MAIN_COLOR }}>
+                                        {parseFloat(group.price).toLocaleString()} so'm
+                                    </span>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                                    <div className="flex items-center gap-2 text-sm">
+                                        <UsersIcon className="h-4 w-4 text-blue-500" />
+                                        <span className="text-gray-700">
+                                            <strong>O'qituvchi:</strong> {group.teacher_name}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-sm">
+                                        <UsersIcon className="h-4 w-4 text-green-500" />
+                                        <span className="text-gray-700">
+                                            <strong>Talabalar:</strong> {group.student_count} ta
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-4 text-sm bg-white p-3 rounded-lg">
+                                    <div className="flex items-center gap-2">
+                                        <CalendarDaysIcon className="h-4 w-4" style={{ color: MAIN_COLOR }} />
+                                        <span className="font-medium text-gray-700">
+                                            {group.schedule?.days?.join(', ')}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <ClockIcon className="h-4 w-4" style={{ color: MAIN_COLOR }} />
+                                        <span className="font-medium text-gray-700">
+                                            {group.schedule?.time}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
 // Xona kartasi komponenti
-const RoomCard = ({ room, onDelete, onEdit }) => {
+const RoomCard = ({ room, onDelete, onEdit, onViewSchedule }) => {
     const handleDeleteClick = () => {
         if (window.confirm(`Xona ${room.room_number} ni o'chirishni xohlaysizmi?`)) {
             onDelete(room.id);
@@ -187,17 +290,28 @@ const RoomCard = ({ room, onDelete, onEdit }) => {
                 <p className="text-sm text-gray-600 mb-3">{room.description}</p>
             )}
 
-            <div className="flex items-center gap-4 text-sm">
-                <div className="flex items-center gap-1">
-                    <Sofa className="h-4 w-4 text-gray-500" />
-                    <span className="text-gray-700 font-medium">{room.capacity} o'rinlik</span>
-                </div>
-                {room.has_projector && (
-                    <div className="flex items-center gap-1 text-green-600 font-medium">
-                        <Zap className="h-4 w-4" />
-                        Proyektor
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4 text-sm">
+                    <div className="flex items-center gap-1">
+                        <Sofa className="h-4 w-4 text-gray-500" />
+                        <span className="text-gray-700 font-medium">{room.capacity} o'rinlik</span>
                     </div>
-                )}
+                    {room.has_projector && (
+                        <div className="flex items-center gap-1 text-green-600 font-medium">
+                            <Zap className="h-4 w-4" />
+                            Proyektor
+                        </div>
+                    )}
+                </div>
+                
+                <button
+                    onClick={onViewSchedule}
+                    className="px-3 py-1.5 text-xs font-bold rounded-lg transition text-white hover:opacity-90"
+                    style={{ backgroundColor: MAIN_COLOR }}
+                >
+                    <CalendarDaysIcon className="h-4 w-4 inline mr-1" />
+                    Dars jadvali
+                </button>
             </div>
         </div>
     );
@@ -205,12 +319,19 @@ const RoomCard = ({ room, onDelete, onEdit }) => {
 
 const RoomsPage = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+    const [selectedRoomId, setSelectedRoomId] = useState(null);
     const { data: roomsData, isLoading, refetch } = useGetAllRooms();
     const createRoomMutation = useCreateRoom();
     const deleteRoomMutation = useDeleteRoom();
     const notify = useGetNotify();
 
     const rooms = roomsData?.rooms || [];
+
+    const handleViewSchedule = (roomId) => {
+        setSelectedRoomId(roomId);
+        setScheduleModalOpen(true);
+    };
 
     const handleAddRoom = async (formData) => {
         notify('load');
@@ -251,7 +372,7 @@ const RoomsPage = () => {
 
     return (
         <div className="p-6 bg-gray-50 min-h-screen">
-            <div className="max-w-7xl mx-auto">
+            <div className="">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-8">
                     <div>
@@ -274,6 +395,16 @@ const RoomsPage = () => {
                     onClose={() => setIsModalOpen(false)}
                     onSubmit={handleAddRoom}
                     isLoading={createRoomMutation.isPending}
+                />
+
+                {/* Schedule Modal */}
+                <ScheduleModal
+                    isOpen={scheduleModalOpen}
+                    onClose={() => {
+                        setScheduleModalOpen(false);
+                        setSelectedRoomId(null);
+                    }}
+                    roomId={selectedRoomId}
                 />
 
                 {/* Rooms Grid */}
@@ -304,6 +435,7 @@ const RoomsPage = () => {
                                 room={room}
                                 onDelete={handleDeleteRoom}
                                 onEdit={() => console.log('Edit room', room)}
+                                onViewSchedule={() => handleViewSchedule(room.id)}
                             />
                         ))}
                     </div>
