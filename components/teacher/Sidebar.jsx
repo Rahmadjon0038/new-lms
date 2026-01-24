@@ -6,6 +6,7 @@ import Link from "next/link";
 import {
   Squares2X2Icon,
   BookOpenIcon,
+  ClipboardDocumentListIcon, // Davomat uchun
   ChartBarIcon,
   BriefcaseIcon,
   UserGroupIcon, // Guruhdoshlar o'rniga guruh uchun yanada mos
@@ -22,6 +23,11 @@ const TeacherSidebarItems = [
     name: "Mening Guruhlarim",
     icon: BookOpenIcon,
     href: "/teacher/my-groups",
+  },
+  {
+    name: "Davomat",
+    icon: ClipboardDocumentListIcon,
+    href: "/teacher/attendance",
   },
   // {
   //   name: "Davomat Jurnali", // Kiritish uchun mosroq nom

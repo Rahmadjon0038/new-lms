@@ -31,7 +31,8 @@ function AdminDashboard() {
   const filters = { unassigned: 'true' };
   const { data: backendData, isLoading, refetch } = useGetAllStudents(filters);
   
-  const unassignedStudents = backendData || [];
+  // Yangi API response structureni handle qilish
+  const unassignedStudents = backendData?.success ? (backendData.students || []) : [];
   
   const handleModalSuccess = () => {
     refetch();
@@ -88,7 +89,8 @@ function AdminDashboard() {
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {unassignedStudents.map((student) => {
-                  const statusInfo = getStatusInfo(student.student_status);
+                  // Guruhga qo'shilmagan talabalar uchun student_status ishlatiladi
+                  const statusInfo = getStatusInfo(student.student_status || 'active');
                   return (
                     <tr key={student.id} className="hover:bg-orange-50 transition">
                       <td className="px-4 py-3 text-sm">

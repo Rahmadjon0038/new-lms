@@ -62,12 +62,26 @@ const ConfirmToggleModal = ({ isOpen, onClose, onConfirm, isClosing, isLoading }
 
 const GroupCard = ({ group, onToggleGroupStatus, onStartClass, updateGroupLoading = false }) => {
     console.log(group);
+    
+    const [showStudentDetails, setShowStudentDetails] = useState(false);
+
+    // Dropdown ni yopish uchun outside click
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (showStudentDetails && !event.target.closest('.student-dropdown')) {
+                setShowStudentDetails(false);
+            }
+        };
+        
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [showStudentDetails]);
 
     const scheduleDays = group.schedule?.days?.join(", ") || "Belgilanmagan";
     const timeInfo = group.schedule?.time ? ` (${group.schedule.time})` : "";
 
-    const startDate = group.start_date
-        ? new Date(group.start_date).toLocaleDateString('uz-UZ')
+    const startDate = group.class_start_date
+        ? new Date(group.class_start_date).toLocaleDateString('uz-UZ')
         : "Belgilanmagan";
 
     // Updated status logic to include class_status
@@ -86,12 +100,19 @@ const GroupCard = ({ group, onToggleGroupStatus, onStartClass, updateGroupLoadin
                 statusIcon: <BookOpenIcon className="h-6 w-6 mr-2 text-[#A60E07]" />,
                 statusText: "Aktiv"
             };
-        } else {
+        } else if (group.status === 'blocked') {
             return {
                 borderColor: "border-gray-400",
                 statusTextColor: "text-gray-500",
                 statusIcon: <ArchiveBoxXMarkIcon className="h-6 w-6 mr-2 text-gray-500" />,
                 statusText: "Yopilgan"
+            };
+        } else {
+            return {
+                borderColor: "border-blue-400",
+                statusTextColor: "text-blue-700",
+                statusIcon: <CheckIcon className="h-6 w-6 mr-2 text-blue-500" />,
+                statusText: "Faol"
             };
         }
     };
@@ -107,10 +128,66 @@ const GroupCard = ({ group, onToggleGroupStatus, onStartClass, updateGroupLoadin
                     {group.name}
                     {isDraft && <span className="ml-2 text-sm font-medium text-yellow-600">(Darsi boshlanmagan)</span>}
                     {group.status === 'blocked' && <span className="ml-2 text-sm font-medium text-gray-400">(Yopilgan)</span>}
-                    {/* Talabalar soni */}
-                    <span className="ml-auto text-sm bg-blue-100 text-blue-700 px-2 py-1 rounded-md font-medium">
-                        {group.student_count} talaba
-                    </span>
+                    {/* Talabalar soni - dropdown ko'rinishida */}
+                    <div className="relative ml-auto student-dropdown">
+                        <div 
+                            onClick={() => setShowStudentDetails(!showStudentDetails)}
+                            className="cursor-pointer flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-1 rounded-md text-xs font-medium hover:bg-blue-200 transition-colors"
+                        >
+                            <UsersIcon className="h-3 w-3" />
+                            <span>{group.total_students_count || 0}</span>
+                            <svg 
+                                className={`h-3 w-3 transition-transform ${showStudentDetails ? 'rotate-180' : ''}`} 
+                                fill="none" 
+                                stroke="currentColor" 
+                                viewBox="0 0 24 24"
+                            >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </div>
+                        
+                        {/* Dropdown menu */}
+                        {showStudentDetails && (
+                            <div className="absolute right-0 top-full mt-1 z-20 bg-white rounded-md shadow-lg border border-gray-200 py-1.5 min-w-[160px]">
+                                <div className="px-2 py-1 text-xs font-medium text-gray-500 uppercase tracking-wide border-b border-gray-100 mb-1">
+                                    Holat
+                                </div>
+                                
+                                <div className="space-y-0.5 px-1">
+                                    <div className="flex items-center justify-between px-2 py-1 rounded hover:bg-green-50 transition-colors">
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                                            <span className="text-xs font-medium text-green-700">Faol</span>
+                                        </div>
+                                        <span className="text-xs font-bold text-green-800">{group.active_students_count || 0}</span>
+                                    </div>
+                                    
+                                    <div className="flex items-center justify-between px-2 py-1 rounded hover:bg-orange-50 transition-colors">
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="w-1.5 h-1.5 bg-orange-500 rounded-full"></div>
+                                            <span className="text-xs font-medium text-orange-700">To'xtatilgan</span>
+                                        </div>
+                                        <span className="text-xs font-bold text-orange-800">{group.stopped_students_count || 0}</span>
+                                    </div>
+                                    
+                                    <div className="flex items-center justify-between px-2 py-1 rounded hover:bg-purple-50 transition-colors">
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
+                                            <span className="text-xs font-medium text-purple-700">Bitirgan</span>
+                                        </div>
+                                        <span className="text-xs font-bold text-purple-800">{group.finished_students_count || 0}</span>
+                                    </div>
+                                </div>
+                                
+                                <div className="border-t border-gray-100 mt-1.5 pt-1.5 px-2">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs font-semibold text-gray-700">Jami:</span>
+                                        <span className="text-xs font-bold text-blue-700">{group.total_students_count || 0}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </h3>
 
                 {/* Narxi yuqorida, ko'zga tashlanadigan */}
@@ -225,12 +302,17 @@ function AdminGroupsPage() {
     
     // Filter groups based on current tab
     const filteredGroups = useMemo(() => {
-        const groups = backendData?.groups || [];
+        // Yangi API formatni handle qilish
+        if (!backendData?.success || !backendData.groups) {
+            return [];
+        }
         
-        // Backend already filters by status, so we just return the groups
-        // Additional frontend filtering can be done here if needed
+        const groups = backendData.groups;
+        
+        // Backend allaqachon status bo'yicha filter qiladi, lekin
+        // additional frontend filtering qilish mumkin
         return groups;
-    }, [backendData?.groups]);
+    }, [backendData]);
 
     const changeGroupStatusMutation = useChangeGroupStatus();
 
@@ -287,7 +369,7 @@ function AdminGroupsPage() {
     return (
         <div className="min-h-full p-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-1">Guruhlarni Boshqarish Paneli</h1>
-            <p className="text-lg text-gray-500 mb-6">Jami {groups.length} ta guruh mavjud</p>
+            <p className="text-lg text-gray-500 mb-6">Jami {backendData?.success ? backendData.count || 0 : 0} ta guruh mavjud</p>
 
             <div className="flex border-b border-gray-200 mb-6">
                 <button onClick={() => setCurrentTab('active')} className={tabClass('active')}>

@@ -84,8 +84,8 @@ export const useJoinStudentToGroup = () => {
 }
 
 // -------------- Update student status ----------
-const updateStudentStatus = async ({ id, status }) => {
-    const response = await instance.patch(`/api/students/${id}/status`, { status });
+const updateStudentStatus = async ({ studentId, groupId, status }) => {
+    const response = await instance.patch(`/api/students/${studentId}/groups/${groupId}/status`, { status });
     return response.data;
 }
 

@@ -6,7 +6,7 @@ const SubjectsSelect = ({
     onChange, 
     placeholder = "Fanni tanlang", 
     className = "",
-    showAll = true,
+    showAll = false,
     disabled = false 
 }) => {
     const { data: subjectsData, isLoading } = useGetAllSubjects();

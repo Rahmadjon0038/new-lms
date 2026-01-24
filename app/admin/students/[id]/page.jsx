@@ -37,10 +37,16 @@ const StudentDetailPage = () => {
 
     // Status o'zgartirish
     const handleStatusChange = async (newStatus) => {
+        if (!student?.group_id) {
+            notify('err', 'Guruh IDsi talab qilinadi.');
+            return;
+        }
+
         const loadingToast = notify('load');
         try {
             await updateStatusMutation.mutateAsync({
-                id: parseInt(studentId),
+                studentId: parseInt(studentId),
+                groupId: student.group_id,
                 status: newStatus,
                 onSuccess: () => {
                     notify('dismiss');
