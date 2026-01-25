@@ -336,7 +336,9 @@ const GroupLessonsPage = () => {
   });
 
   const groupInfo = lessonsData?.data?.group_info;
-  const lessons = lessonsData?.data?.lessons || [];
+  let lessons = lessonsData?.data?.lessons || [];
+  // Show newest lessons first
+  lessons = [...lessons].reverse();
 
   // Handle delete lesson
   const handleDeleteLesson = (lesson) => {
@@ -349,17 +351,13 @@ const GroupLessonsPage = () => {
     }
   };
 
-  // Format date for display
+  // Format date for display (UTC, YYYY MM DD, no timezone shift)
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('uz-UZ', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
+    if (!dateString) return '';
+    // Only take the date part, avoid timezone shift
+    return dateString.slice(0, 10).replace(/-/g, ' ');
   };
-  
-  // Format time for display
+  // Optionally keep time formatter if needed elsewhere
   const formatTime = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleTimeString('uz-UZ', {
@@ -442,7 +440,7 @@ const GroupLessonsPage = () => {
         </div>
 
         {/* Statistics - Compact */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <StatCard 
             title="Jami Darslar" 
             value={totalLessons}
@@ -456,7 +454,7 @@ const GroupLessonsPage = () => {
             color={averageAttendance >= 80 ? 'text-green-600' : 
                    averageAttendance >= 60 ? 'text-orange-600' : 'text-red-600'}
           />
-        </div>
+        </div> */}
 
         {/* Lessons Table */}
         {lessons.length === 0 ? (
@@ -537,9 +535,6 @@ const GroupLessonsPage = () => {
                               <div className="text-sm font-medium text-gray-900">
                                 {formatDate(lesson.lesson_date)}
                               </div>
-                              <div className="text-sm text-gray-500">
-                                {formatTime(lesson.lesson_date)}
-                              </div>
                             </div>
                           </div>
                         </td>
@@ -593,7 +588,19 @@ const GroupLessonsPage = () => {
               </table>
             </div>
           </div>
-        )}        
+
+        )}
+
+        {/* Monthly Attendance Report Button */}
+        <div className="flex justify-end mt-8">
+          <Link
+            href={`/admin/attendance/${groupId}/monthly`}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold shadow hover:bg-blue-700 transition-colors"
+          >
+            Guruhning oylik davomat hisobotini ko'rish
+          </Link>
+        </div>
+
         {/* Create Lesson Modal */}
         <CreateLessonModal 
           isOpen={isCreateModalOpen}
@@ -621,7 +628,8 @@ const GroupLessonsPage = () => {
             date: formatDate(deleteModal.lesson.lesson_date)
           } : null}
           isLoading={deleteLessonMutation.isLoading}
-        />      </div>
+        />
+      </div>
     </div>
   );
 };

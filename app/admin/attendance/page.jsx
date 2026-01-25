@@ -9,13 +9,7 @@ import {
   ChevronRightIcon,
   FunnelIcon,
   XMarkIcon,
-  PlayIcon,
-  PauseIcon,
-  BookOpenIcon,
-  HomeIcon,
 } from "@heroicons/react/24/outline";
-import { FiFilter, FiSearch } from 'react-icons/fi';
-import { Clock, Building2, Users, BookOpen, MapPin, Calendar } from 'lucide-react';
 import Link from "next/link";
 import { useGetAttendanceGroups } from "../../../hooks/attendance";
 import TeacherSelect from "../../../components/teacher/Select";
@@ -36,7 +30,7 @@ const GroupCard = ({ group }) => {
   return (
     <Link
       href={`/admin/attendance/${group.id}`}
-      className="block bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 border-l-4 border-red-600 hover:translate-x-1"
+      className="block bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 border-t-4 border-red-600 hover:translate-x-1"
     >
       <div className="flex justify-between items-start mb-3">
         <div className="flex-1">
@@ -45,12 +39,12 @@ const GroupCard = ({ group }) => {
             {group.name}
           </h3>
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-mono">
+            {/* <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-mono">
               {group.unique_code}
-            </span>
+            </span> */}
             {group.room_number && (
               <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
-                Xona {group.room_number}
+                {group.room_number}-xona
               </span>
             )}
           </div>
@@ -133,7 +127,7 @@ const Attendance = () => {
 
         {/* Filters */}
         <div className="mb-4">
-          <div className="bg-white p-4 rounded-lg shadow-sm border">
+          <div className="bg-white p-4 rounded-lg shadow-sm">
             <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center gap-2">
                 <FunnelIcon className="h-5 w-5 text-gray-500" />
@@ -194,7 +188,7 @@ const Attendance = () => {
           <>
             {/* Statistics Summary */}
             <div className="mb-4">
-              <div className="flex flex-wrap items-center gap-4 bg-white p-3 rounded-lg shadow-sm border">
+              <div className="flex flex-wrap items-center gap-4 bg-white p-3 rounded-lg shadow-sm ">
                 <div className="flex items-center gap-2">
                   <UserGroupIcon className="h-5 w-5 text-red-600" />
                   <span className="text-sm font-medium text-gray-700">
@@ -214,12 +208,12 @@ const Attendance = () => {
                       </span>
                     </div>
                     
-                    <div className="flex items-center gap-2">
+                    {/* <div className="flex items-center gap-2">
                       <CalendarIcon className="h-4 w-4 text-gray-500" />
                       <span className="text-gray-600">
                         Faol guruhlar: <span className="font-bold">{groups.length}</span>
                       </span>
-                    </div>
+                    </div> */}
                     
                     {hasActiveFilters && (
                       <div className="flex items-center gap-1 text-blue-600">
