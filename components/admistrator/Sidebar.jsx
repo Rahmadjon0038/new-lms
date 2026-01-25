@@ -55,9 +55,14 @@ const sidebarItems = [
     href: "/admin/attendance",
   },
   {
-    name: "To'lovlar",
+    name: "Student payment",
     icon: WalletIcon,
-    href: "/admin/payments",
+    href: "/admin/students-payments",
+  },
+  {
+    name: "Teacher payment",
+    icon: WalletIcon,
+    href: "/admin/teachers-payments",
   },
 ];
 

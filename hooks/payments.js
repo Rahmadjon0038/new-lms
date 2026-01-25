@@ -1,0 +1,73 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { instance } from "./api";
+
+// Get payment filters
+const fetchPaymentFilters = async () => {
+  const response = await instance.get('/api/payments/filters');
+  return response.data;
+};
+
+export const usePaymentFilters = (options = {}) => {
+  return useQuery({
+    queryKey: ['payment-filters'],
+    queryFn: fetchPaymentFilters,
+    ...options,
+  });
+};
+
+// Get monthly payments
+const fetchMonthlyPayments = async (filters) => {
+  const params = new URLSearchParams();
+  
+  if (filters.month) params.append('month', filters.month);
+  if (filters.teacher_id) params.append('teacher_id', filters.teacher_id);
+  if (filters.subject_id) params.append('subject_id', filters.subject_id);
+  if (filters.status && filters.status !== 'all') params.append('status', filters.status);
+  
+  const queryString = params.toString();
+  const url = `/api/payments/monthly${queryString ? `?${queryString}` : ''}`;
+  
+  const response = await instance.get(url);
+  return response.data;
+};
+
+export const useMonthlyPayments = (filters, options = {}) => {
+  return useQuery({
+    queryKey: ['monthly-payments', filters],
+    queryFn: () => fetchMonthlyPayments(filters),
+    enabled: !!filters.month,
+    ...options,
+  });
+};
+
+// Apply discount to student
+export const useApplyDiscount = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (discountData) => {
+      const response = await instance.post('/api/payments/discount', discountData);
+      return response.data;
+    },
+    onSuccess: () => {
+      // Invalidate and refetch payments data
+      queryClient.invalidateQueries({ queryKey: ['monthly-payments'] });
+    },
+  });
+};
+
+// Process payment for student
+export const useProcessPayment = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (paymentData) => {
+      const response = await instance.post('/api/payments/pay', paymentData);
+      return response.data;
+    },
+    onSuccess: () => {
+      // Invalidate and refetch payments data
+      queryClient.invalidateQueries({ queryKey: ['monthly-payments'] });
+    },
+  });
+};
