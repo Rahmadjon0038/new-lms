@@ -23,6 +23,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { instance } from "../../../../hooks/api";
+import MonthlyAttendanceInline from "../../../../components/MonthlyAttendanceInline";
 import { toast } from "react-hot-toast";
 
 const MAIN_COLOR = "#A60E07";
@@ -129,109 +130,6 @@ const CreateLessonModal = ({ isOpen, onClose, groupId }) => {
             </button>
           </div>
         </form>
-      </div>
-    </div>
-  );
-};
-
-// Lesson Card Component
-const LessonCard = ({ lesson, groupId }) => {
-  const lessonDate = new Date(lesson.lesson_date);
-  const createdDate = new Date(lesson.created_at);
-  
-  const formatDate = (date) => {
-    return date.toLocaleDateString('uz-UZ', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
-
-  const formatTime = (date) => {
-    return date.toLocaleTimeString('uz-UZ', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  // Calculate attendance percentage
-  const attendancePercentage = lesson.students_count > 0 
-    ? Math.round((lesson.present_count / lesson.students_count) * 100)
-    : 0;
-
-  return (
-    <div className="bg-white p-4 rounded-lg shadow-md border-l-4 hover:shadow-lg transition-all duration-300" 
-         style={{ borderLeftColor: MAIN_COLOR }}>
-      
-      {/* Header */}
-      <div className="flex justify-between items-start mb-3">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-2">
-            <CalendarIcon className="h-5 w-5 text-gray-500" />
-            <h3 className="text-lg font-bold text-gray-800">
-              {formatDate(lessonDate)}
-            </h3>
-            <span className="text-sm text-gray-500">
-              {formatTime(lessonDate)}
-            </span>
-          </div>
-          
-          <div className="text-xs text-gray-500">
-            Yaratilgan: {formatDate(createdDate)} {formatTime(createdDate)}
-          </div>
-        </div>
-        
-        {/* Entry Button */}
-        <Link 
-          href={`/admin/attendance/${groupId}/lesson/${lesson.id}`}
-          className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-white rounded-lg hover:opacity-90 transition-colors"
-          style={{ backgroundColor: MAIN_COLOR }}
-        >
-          <EyeIcon className="h-4 w-4" />
-          Kirish
-        </Link>
-      </div>
-
-      {/* Statistics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="text-center">
-          <div className="text-lg font-bold text-blue-600">{lesson.students_count}</div>
-          <div className="text-xs text-gray-500">Jami talaba</div>
-        </div>
-        
-        <div className="text-center">
-          <div className="text-lg font-bold text-green-600">{lesson.present_count}</div>
-          <div className="text-xs text-gray-500">Kelgan</div>
-        </div>
-        
-        <div className="text-center">
-          <div className="text-lg font-bold text-red-600">{lesson.absent_count}</div>
-          <div className="text-xs text-gray-500">Kelmagan</div>
-        </div>
-        
-        <div className="text-center">
-          <div className="text-lg font-bold text-orange-600">{lesson.late_count}</div>
-          <div className="text-xs text-gray-500">Kech kelgan</div>
-        </div>
-      </div>
-
-      {/* Attendance Bar */}
-      <div className="mt-3 pt-3 border-t border-gray-100">
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-xs font-medium text-gray-600">Davomat:</span>
-          <span className="text-xs font-bold text-gray-800">{attendancePercentage}%</span>
-        </div>
-        
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <div 
-            className="h-2 rounded-full transition-all duration-300"
-            style={{ 
-              width: `${attendancePercentage}%`,
-              backgroundColor: attendancePercentage >= 80 ? '#10B981' : 
-                             attendancePercentage >= 60 ? '#F59E0B' : '#EF4444'
-            }}
-          ></div>
-        </div>
       </div>
     </div>
   );
@@ -588,35 +486,16 @@ const GroupLessonsPage = () => {
               </table>
             </div>
           </div>
-
         )}
 
-        {/* Monthly Attendance Report Button */}
-        <div className="flex justify-end mt-8">
-          <Link
-            href={`/admin/attendance/${groupId}/monthly`}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold shadow hover:bg-blue-700 transition-colors"
-          >
-            Guruhning oylik davomat hisobotini ko'rish
-          </Link>
-        </div>
+        {/* Monthly Attendance Table (inline) */}
+        <MonthlyAttendanceInline groupId={groupId} selectedMonth={selectedMonth} />
 
         {/* Create Lesson Modal */}
         <CreateLessonModal 
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}
           groupId={groupId}
-        />
-        
-        {/* Delete Confirmation Modal */}
-        <DeleteConfirmModal
-          isOpen={deleteModal.isOpen}
-          onClose={() => setDeleteModal({ isOpen: false, lesson: null })}
-          onConfirm={confirmDeleteLesson}
-          lessonInfo={deleteModal.lesson ? {
-            date: formatDate(deleteModal.lesson.lesson_date)
-          } : null}
-          isLoading={deleteLessonMutation.isLoading}
         />
         
         {/* Delete Confirmation Modal */}
