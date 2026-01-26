@@ -17,18 +17,18 @@ function Login() {
   const handleSubmit = (e) => {
     e.preventDefault();
     const logindata = { username, password }
-    addUserMutation.mutate( {
+    addUserMutation.mutate({
       logindata,
       onSuccess: (data) => {
-      navigate.push(data?.user?.role)
-          notify('ok', 'Tizimga kirish mofaqqiyatli');
-          Cookies.set('accessToken', data.accessToken);
-          Cookies.set('refreshToken', data.refreshToken);
-          Cookies.set('role', data.user.role);
+        navigate.push(data?.user?.role)
+        notify('ok', 'Tizimga kirish mofaqqiyatli');
+        Cookies.set('accessToken', data.accessToken);
+        Cookies.set('refreshToken', data.refreshToken);
+        Cookies.set('role', data.user.role);
       },
       onError: (err) => {
         notify('err', err.response?.data?.message || 'Server xatosi');
-        
+
       }
     });
   };
@@ -42,23 +42,23 @@ function Login() {
 
         {/* Logotip qismi */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-24 h-24 mb-4 relative border-2 border-[#A60E07] rounded-full p-2 bg-white">
+          <div className="w-28 h-28 flex items-center justify-center mb-4 relative border-2 border-[#A60E07] rounded-full  bg-white">
             <Image
-              src='/logo.png'
+              src="/logo1.png"
               alt="Logo"
-              width={80}
-              height={80}
-              className="object-contain"
+              width={100}
+              height={100}
             />
+
           </div>
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 tracking-tight">TARAQQIYOT</h2>
-          <p className="text-gray-400 text-[10px] uppercase tracking-[0.2em] mt-1">O'quv Markazi</p>
+          <p className="text-gray-400 text-[10px] uppercase tracking-[0.2em] mt-1">Teaching Center</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Username Input */}
           <div className="space-y-1">
-            <label className="text-xs font-bold text-gray-500 uppercase ml-1">Username</label>
+            <label className="text-xs font-bold text-gray-500 uppercase ml-1">Foydalanuvchi nomi</label>
             <input
               type="text"
               placeholder="Foydalanuvchi nomi"

@@ -1,9 +1,9 @@
-"use client"; // Next.js ishlatsangiz albatta qo'shing
+"use client";
+
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 
 const QueriProvider = ({ children }) => {
-  // QueryClient ni useState ichida yaratish tavsiya etiladi (Next.js uchun muhim)
   const [queryClient] = useState(() => new QueryClient());
 
   return (

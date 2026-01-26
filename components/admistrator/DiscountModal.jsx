@@ -4,16 +4,23 @@ import { XMarkIcon, PercentBadgeIcon, CurrencyDollarIcon } from '@heroicons/reac
 import { useApplyDiscount } from '../../hooks/payments';
 import { toast } from 'react-hot-toast';
 
-const DiscountModal = ({ isOpen, onClose, student }) => {
+const DiscountModal = ({ isOpen, onClose, student, month }) => {
   const [discountData, setDiscountData] = useState({
     discount_type: 'percent',
     discount_value: '',
     months: '',
-    month: new Date().toISOString().slice(0, 7), // Current month YYYY-MM
+    month: month || new Date().toISOString().slice(0, 7), // Use passed month or current
     description: ''
   });
 
   const applyDiscountMutation = useApplyDiscount();
+
+  // Update month when prop changes
+  useEffect(() => {
+    if (month) {
+      setDiscountData(prev => ({ ...prev, month }));
+    }
+  }, [month]);
 
   // Reset form when modal closes
   useEffect(() => {
@@ -22,11 +29,11 @@ const DiscountModal = ({ isOpen, onClose, student }) => {
         discount_type: 'percent',
         discount_value: '',
         months: '',
-        month: new Date().toISOString().slice(0, 7),
+        month: month || new Date().toISOString().slice(0, 7),
         description: ''
       });
     }
-  }, [isOpen]);
+  }, [isOpen, month]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

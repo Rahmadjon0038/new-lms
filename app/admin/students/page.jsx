@@ -2,11 +2,11 @@
 import React, { useState, useMemo, useCallback, memo, useEffect } from 'react';
 import { FiEdit, FiSave, FiX, FiUserPlus, FiSearch } from 'react-icons/fi';
 import { TrashIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
-import { 
-  User, Phone, MapPin, Calendar, GraduationCap, 
-  CheckCircle, XCircle, Clock, BookOpen, Users,
-  Home, UserCheck, AlertCircle, PlayCircle, PauseCircle, MoreVertical,
-  Shield, ShieldBan, Award, UserX, Settings, Building2
+import {
+    User, Phone, MapPin, Calendar, GraduationCap,
+    CheckCircle, XCircle, Clock, BookOpen, Users,
+    Home, UserCheck, AlertCircle, PlayCircle, PauseCircle, MoreVertical,
+    Shield, ShieldBan, Award, UserX, Settings, Building2
 } from 'lucide-react';
 import Link from 'next/link';
 import { useGetAllStudents, useUpdateStudentStatus } from '../../../hooks/students';
@@ -40,24 +40,24 @@ const StudentsPage = () => {
     const [selectedStatus, setSelectedStatus] = useState('all');
     const [showUnassigned, setShowUnassigned] = useState(false);
     const [statusDropdownOpen, setStatusDropdownOpen] = useState(null); // Status dropdown state
-    
+
     // Filter options uchun data
     const { data: teachersData } = usegetTeachers();
     const { data: subjectsData } = useGetAllSubjects();
     const { data: groupsData } = usegetAllgroups();
-    
+
     // Filterlarni backend uchun tayyorlash
     const filters = {
         teacher_id: selectedTeacher,
         group_id: selectedGroup,
         subject_id: selectedSubject,
-        status: selectedStatus,
+        group_status: selectedStatus,
         unassigned: showUnassigned ? 'true' : undefined
     };
 
     // Backenddan ma'lumotlarni olish
     const { data: backendData, isLoading, error, refetch } = useGetAllStudents(filters);
-    
+
     // Student status o'zgartirish hook
     const updateStatusMutation = useUpdateStudentStatus();
     const notify = useGetNotify();
@@ -118,7 +118,7 @@ const StudentsPage = () => {
                 setStatusDropdownOpen(null);
             }
         };
-        
+
         document.addEventListener('click', handleClickOutside);
         return () => document.removeEventListener('click', handleClickOutside);
     }, []);
@@ -170,7 +170,7 @@ const StudentsPage = () => {
     const handleModalSuccess = () => {
         refetch(); // Ma'lumotlarni qayta yuklash
     };
-    
+
     // Status o'zgartirish function
     const handleStatusChange = async (studentId, newStatus, groupId) => {
         if (!groupId) {
@@ -272,11 +272,10 @@ const StudentsPage = () => {
                 {/* Guruhlanmaganlar tugmasi */}
                 <button
                     onClick={() => setShowUnassigned(!showUnassigned)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition duration-200 ${
-                        showUnassigned 
-                            ? 'bg-orange-500 text-white hover:bg-orange-600' 
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition duration-200 ${showUnassigned
+                            ? 'bg-orange-500 text-white hover:bg-orange-600'
                             : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
+                        }`}
                 >
                     <Users className="inline h-4 w-4 mr-1" />
                     {showUnassigned ? 'Hammasi' : 'Guruhlanmaganlar'}
@@ -332,9 +331,9 @@ const StudentsPage = () => {
                         className="w-full p-2 pr-8 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:border-[#A60E07] appearance-none cursor-pointer hover:border-gray-400 transition-colors"
                     >
                         <option value="all">Barcha holatlar</option>
-                        <option value="active">✅ Faol</option>
-                        <option value="stopped">⏸️ To'xtatilgan</option>
-                        <option value="finished">🎓 Bitirgan</option>
+                        <option value="active"> Faol</option>
+                        <option value="stopped">To'xtatilgan</option>
+                        <option value="finished">Bitirgan</option>
                     </select>
                     {/* Dropdown arrow */}
                     <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
@@ -413,11 +412,10 @@ const StudentsPage = () => {
                                 const isNotInGroup = !student.group_name || student.group_name === 'Guruh biriktirilmagan';
 
                                 return (
-                                    <tr key={rowKey} className={`${
-                                        isEditing ? 'bg-blue-50 border-l-4 border-blue-400' : 
-                                        isNotInGroup ? 'bg-orange-50 border-l-4 border-orange-300' :
-                                        (index % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50 hover:bg-gray-100')
-                                    } transition duration-150 border-b border-gray-200`}>
+                                    <tr key={rowKey} className={`${isEditing ? 'bg-blue-50 border-l-4 border-blue-400' :
+                                            isNotInGroup ? 'bg-orange-50 border-l-4 border-orange-300' :
+                                                (index % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50 hover:bg-gray-100')
+                                        } transition duration-150 border-b border-gray-200`}>
                                         <td className="px-4 py-3 border-r border-gray-200 text-sm">
                                             {isEditing ? (
                                                 <div className="flex flex-col gap-1">
@@ -437,30 +435,30 @@ const StudentsPage = () => {
                                                         <User className="h-4 w-4 text-blue-500" />
                                                         <span className="font-semibold text-gray-900">{student.name} {student.surname}</span>
                                                     </div>
-                                                    
+
                                                     <div className="space-y-1">
                                                         <div className="flex items-center gap-1 text-xs text-gray-600">
                                                             <Phone className="h-3 w-3 text-green-500" />
                                                             <span>{student.phone}</span>
                                                         </div>
-                                                        
+
                                                         {student.phone2 && (
                                                             <div className="flex items-center gap-1 text-xs text-gray-600">
                                                                 <Phone className="h-3 w-3 text-green-400" />
                                                                 <span>{student.phone2}</span>
                                                             </div>
                                                         )}
-                                                        
+
                                                         <div className="flex items-center gap-1 text-xs text-gray-600">
                                                             <User className="h-3 w-3 text-purple-500" />
                                                             <span><strong>Otasi / Onasi / yaqini:</strong> {student.father_name} ({student.father_phone})</span>
                                                         </div>
-                                                        
+
                                                         <div className="flex items-center gap-1 text-xs text-gray-600">
                                                             <Calendar className="h-3 w-3 text-orange-500" />
                                                             <span><strong>Yoshi:</strong> {student.age}</span>
                                                         </div>
-                                                        
+
                                                         {student.address && (
                                                             <div className="flex items-start gap-1 text-xs text-gray-600">
                                                                 <Home className="h-3 w-3 text-indigo-500 mt-0.5" />
@@ -468,6 +466,7 @@ const StudentsPage = () => {
                                                             </div>
                                                         )}
                                                     </div>
+
                                                 </div>
                                             )}
                                         </td>
@@ -497,7 +496,7 @@ const StudentsPage = () => {
                                                             </div>
                                                         </AddGroup>
                                                     </div>
-                                                    
+
                                                     {/* Guruhga biriktirilgan studentlar uchun ma'lumotlar */}
                                                     {student.group_id && student.group_name !== 'Guruh biriktirilmagan' ? (
                                                         <div className="space-y-1.5 mt-2">
@@ -506,13 +505,13 @@ const StudentsPage = () => {
                                                                 <span className="font-medium text-gray-700">O'qituvchi:</span>
                                                                 <span className="text-gray-900">{student.teacher_name?.trim() || 'Tayinlanmagan'}</span>
                                                             </div>
-                                                            
+
                                                             <div className="flex items-center gap-1 text-xs">
                                                                 <BookOpen className="h-3 w-3 text-green-600" />
                                                                 <span className="font-medium text-gray-700">Fan:</span>
                                                                 <span className="text-gray-900">{student.subject_name || 'Belgilanmagan'}</span>
                                                             </div>
-                                                            
+
                                                             <div className="flex items-center gap-1 text-xs">
                                                                 <Building2 className="h-3 w-3 text-amber-600" />
                                                                 <span className="font-medium text-gray-700">Xona:</span>
@@ -526,64 +525,99 @@ const StudentsPage = () => {
                                                                     <span className="text-gray-500 italic">Xonasi hali belgilanmagan</span>
                                                                 )}
                                                             </div>
-                                                            
+
                                                             {student.group_joined_at && (
                                                                 <div className="flex items-center gap-1 text-xs">
                                                                     <Calendar className="h-3 w-3 text-purple-600" />
                                                                     <span className="font-medium text-gray-700">Guruhga qo'shilgan:</span>
-                                                                    <span className="text-gray-900">{new Date(student.group_joined_at).toLocaleDateString()}</span>
+                                                                    <span className="text-gray-900">{student.class_start_date?.slice(0, 10)}</span>
                                                                 </div>
                                                             )}
-                                                            
+
+                                                            {/* Dars boshlangan sana */}
+                                                            {student.class_start_date && (
+                                                                <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
+                                                                    <Clock className="h-3 w-3" />
+                                                                    <span>Dars boshlangan: <span>
+                                                                        {student.class_start_date.slice(0, 10)}
+                                                                    </span></span>
+                                                                </div>
+                                                            )}
+
                                                             {/* Guruh va dars holatlari */}
                                                             <div className="flex items-center gap-1 mt-2">
                                                                 {(() => {
-                                                                    // Guruh holati tekshiruvi
-                                                                    if (student.group_status === 'blocked') {
+                                                                    // 1. Guruh bloklangan
+                                                                    if (student.group_admin_status === 'blocked') {
                                                                         return (
                                                                             <>
                                                                                 <ShieldBan className="h-3 w-3 text-red-500" />
                                                                                 <span className="px-2 py-0.5 text-xs rounded-full font-medium bg-red-100 text-red-700">
-                                                                                    Guruh bloklangan
+                                                                                    ❌ Guruh bloklangan
                                                                                 </span>
                                                                             </>
                                                                         );
                                                                     }
-                                                                    
-                                                                    if (student.group_status === 'draft' || student.group_class_status === 'not_started') {
+
+                                                                    // 2. Talaba bu guruhni tugatgan
+                                                                    if (student.group_status === 'finished') {
                                                                         return (
                                                                             <>
-                                                                                <AlertCircle className="h-3 w-3 text-orange-500" />
+                                                                                <Award className="h-3 w-3 text-purple-500" />
+                                                                                <span className="px-2 py-0.5 text-xs rounded-full font-medium bg-purple-100 text-purple-700">
+                                                                                     Guruhni bitirgan                                                                                    {student.group_left_at && (
+                                                                                        <span className="ml-1">
+                                                                                            ({student.group_left_at.slice(0, 10)})
+                                                                                        </span>
+                                                                                    )}                                                                                </span>
+                                                                            </>
+                                                                        );
+                                                                    }
+
+                                                                    // 3. Talaba guruhni to'xtatgan
+                                                                    if (student.group_status === 'stopped') {
+                                                                        return (
+                                                                            <>
+                                                                                <PauseCircle className="h-3 w-3 text-orange-500" />
                                                                                 <span className="px-2 py-0.5 text-xs rounded-full font-medium bg-orange-100 text-orange-700">
-                                                                                    Dars hali boshlanmagan
+                                                                                    Guruhni to'xtatgan
+                                                                                    {student.group_left_at && (
+                                                                                        <span className="ml-1">
+                                                                                            ({student.group_left_at.slice(0, 10)})
+                                                                                        </span>
+                                                                                    )}
                                                                                 </span>
                                                                             </>
                                                                         );
                                                                     }
-                                                                    
-                                                                    // Dars boshlangan
-                                                                    if (student.group_class_status === 'started') {
+
+                                                                    // 4. Dars hali boshlanmagan
+                                                                    if (student.group_class_status === 'not_started') {
                                                                         return (
                                                                             <>
-                                                                                <PlayCircle className="h-3 w-3 text-blue-500" />
-                                                                                <span className="px-2 py-0.5 text-xs rounded-full font-medium bg-blue-100 text-blue-700">
+                                                                                <AlertCircle className="h-3 w-3 text-gray-500" />
+                                                                                <span className="px-2 py-0.5 text-xs rounded-full font-medium bg-gray-100 text-gray-700">
+                                                                                    ⏳ Dars hali boshlanmagan
+                                                                                </span>
+                                                                            </>
+                                                                        );
+                                                                    }
+
+                                                                    // 5. Faol va dars davom etmoqda
+                                                                    if (student.group_status === 'active' && student.group_class_status === 'started') {
+                                                                        return (
+                                                                            <>
+                                                                                <PlayCircle className="h-3 w-3 text-green-500" />
+                                                                                <span className="px-2 py-0.5 text-xs rounded-full font-medium bg-green-100 text-green-700">
                                                                                     Darslar davom etmoqda
                                                                                 </span>
                                                                             </>
                                                                         );
                                                                     }
-                                                                    
+
                                                                     return null;
                                                                 })()}
                                                             </div>
-                                                            
-                                                            {/* Dars boshlangan sana */}
-                                                            {student.class_start_date && (
-                                                                <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
-                                                                    <Clock className="h-3 w-3" />
-                                                                    <span>Dars boshlangan: {new Date(student.class_start_date).toLocaleDateString()}</span>
-                                                                </div>
-                                                            )}
                                                         </div>
                                                     ) : null}
                                                 </div>
@@ -605,9 +639,9 @@ const StudentsPage = () => {
                                                         onChange={handleEditChange}
                                                         className="p-2 border border-[#A60E07] rounded w-full text-sm outline-none transition duration-200 focus:ring-1 focus:ring-[#A60E07]"
                                                     >
-                                                        <option value="active">✅ Faol</option>
-                                                        <option value="stopped">⏸️ To'xtatilgan</option>
-                                                        <option value="finished">🎓 Bitirgan</option>
+                                                        <option value="active"> Faol</option>
+                                                        <option value="stopped"> To'xtatilgan</option>
+                                                        <option value="finished"> Bitirgan</option>
                                                     </select>
                                                 </div>
                                             ) : (
@@ -615,23 +649,22 @@ const StudentsPage = () => {
                                                     {student.group_id ? (
                                                         /* Custom Status select for students with groups */
                                                         <div className="relative">
-                                                            <div 
+                                                            <div
                                                                 onClick={() => setStatusDropdownOpen(statusDropdownOpen === `${student.id}-${student.group_id}` ? null : `${student.id}-${student.group_id}`)}
-                                                                className={`w-full p-2 pr-8 border border-gray-300 rounded-lg text-sm cursor-pointer hover:border-gray-400 transition-colors ${
-                                                                    student.group_status === 'active' ? 'bg-green-50 text-green-800 border-green-300' :
-                                                                    student.group_status === 'stopped' ? 'bg-orange-50 text-orange-800 border-orange-300' :
-                                                                    student.group_status === 'finished' ? 'bg-purple-50 text-purple-800 border-purple-300' :
-                                                                    'bg-gray-50 text-gray-800 border-gray-300'
-                                                                } ${updateStatusMutation.isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                                className={`w-full p-2 pr-8 border border-gray-300 rounded-lg text-sm cursor-pointer hover:border-gray-400 transition-colors ${student.group_status === 'active' ? 'bg-green-50 text-green-800 border-green-300' :
+                                                                        student.group_status === 'stopped' ? 'bg-orange-50 text-orange-800 border-orange-300' :
+                                                                            student.group_status === 'finished' ? 'bg-purple-50 text-purple-800 border-purple-300' :
+                                                                                'bg-gray-50 text-gray-800 border-gray-300'
+                                                                    } ${updateStatusMutation.isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                             >
                                                                 <div className="flex items-center gap-2">
-                                                                    {React.createElement(getStatusInfo(student.group_status).icon, { 
-                                                                        className: `h-4 w-4 ${getStatusInfo(student.group_status).iconColor}` 
+                                                                    {React.createElement(getStatusInfo(student.group_status).icon, {
+                                                                        className: `h-4 w-4 ${getStatusInfo(student.group_status).iconColor}`
                                                                     })}
                                                                     <span className="font-medium">{getStatusInfo(student.group_status).label}</span>
                                                                 </div>
                                                             </div>
-                                                            
+
                                                             {/* Dropdown arrow */}
                                                             <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
                                                                 <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -653,18 +686,17 @@ const StudentsPage = () => {
                                                                                         handleStatusChange(student.id, statusOption.value, student.group_id);
                                                                                     }
                                                                                 }}
-                                                                                className={`w-full text-left px-3 py-2 text-sm cursor-pointer flex items-center gap-2 transition-colors ${
-                                                                                    statusOption.value === 'active' ? 'hover:bg-green-50 text-green-800' :
-                                                                                    statusOption.value === 'stopped' ? 'hover:bg-orange-50 text-orange-800' :
-                                                                                    statusOption.value === 'finished' ? 'hover:bg-purple-50 text-purple-800' :
-                                                                                    'hover:bg-gray-50 text-gray-800'
-                                                                                } ${isSelected ? 
-                                                                                    statusOption.value === 'active' ? 'bg-green-100 text-green-900' :
-                                                                                    statusOption.value === 'stopped' ? 'bg-orange-100 text-orange-900' :
-                                                                                    statusOption.value === 'finished' ? 'bg-purple-100 text-purple-900' :
-                                                                                    'bg-gray-100 text-gray-900' 
-                                                                                    : ''
-                                                                                } ${updateStatusMutation.isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                                                className={`w-full text-left px-3 py-2 text-sm cursor-pointer flex items-center gap-2 transition-colors ${statusOption.value === 'active' ? 'hover:bg-green-50 text-green-800' :
+                                                                                        statusOption.value === 'stopped' ? 'hover:bg-orange-50 text-orange-800' :
+                                                                                            statusOption.value === 'finished' ? 'hover:bg-purple-50 text-purple-800' :
+                                                                                                'hover:bg-gray-50 text-gray-800'
+                                                                                    } ${isSelected ?
+                                                                                        statusOption.value === 'active' ? 'bg-green-100 text-green-900' :
+                                                                                            statusOption.value === 'stopped' ? 'bg-orange-100 text-orange-900' :
+                                                                                                statusOption.value === 'finished' ? 'bg-purple-100 text-purple-900' :
+                                                                                                    'bg-gray-100 text-gray-900'
+                                                                                        : ''
+                                                                                    } ${updateStatusMutation.isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                                             >
                                                                                 <Icon className={`h-4 w-4 ${statusOption.iconColor}`} />
                                                                                 <span className="font-medium">{statusOption.label}</span>
@@ -696,26 +728,17 @@ const StudentsPage = () => {
                                                 </div>
                                             ) : (
                                                 <div className="flex justify-center items-center gap-1">
-                                                    <button 
+                                                    <button
                                                         onClick={() => handleEditClick(student, index)}
                                                         className="p-1.5 rounded text-white bg-blue-600 hover:bg-blue-700 transition-all duration-150 shadow-sm"
                                                         title="Tahrirlash"
                                                     >
                                                         <FiEdit size={12} />
                                                     </button>
-                                                    
-                                                    <Link 
-                                                        href={`/admin/students/${student.id}`}
-                                                        className="p-1.5 rounded text-white bg-indigo-600 hover:bg-indigo-700 transition-all duration-150 shadow-sm"
-                                                        title="Batafsil ko'rish"
-                                                    >
-                                                        <InformationCircleIcon className="h-3 w-3" />
-                                                    </Link>
-                                                    
-                                                    <button 
+                                                    <button
                                                         onClick={() => handleDeleteStudent(student, index)}
                                                         className="p-1.5 rounded text-white bg-red-600 hover:bg-red-700 transition-all duration-150 shadow-sm"
-                                                        title="Guruhdan chiqarish"
+                                                        title="O'chirish"
                                                     >
                                                         <TrashIcon className="h-3 w-3" />
                                                     </button>

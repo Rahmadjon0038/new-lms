@@ -59,11 +59,11 @@ const sidebarItems = [
     icon: WalletIcon,
     href: "/admin/students-payments",
   },
-  {
-    name: "Teacher payment",
-    icon: WalletIcon,
-    href: "/admin/teachers-payments",
-  },
+  // {
+  //   name: "Teacher payment",
+  //   icon: WalletIcon,
+  //   href: "/admin/teachers-payments",
+  // },
 ];
 
 function AdministratorSidebar() {

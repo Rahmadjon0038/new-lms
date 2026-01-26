@@ -1,227 +1,258 @@
+"use client";
 import React from "react";
 import {
   BanknotesIcon,
   ClockIcon,
-  UserIcon,
+  CalendarDaysIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  ReceiptPercentIcon,
 } from "@heroicons/react/24/outline";
-
-// --- Mock Data (Talabaning To'lov Ma'lumotlari) ---
-// Ma'lumotlar eng yangidan eng eskisiga qarab saralangan deb faraz qilamiz
-const mockPaymentData = {
-  totalAmountPaid: 1900000,
-  totalDuration: "4 ta oy",
-  currency: "so'm",
-
-  payments: [
-    // Web Dasturlash (Eng yangi to'lov)
-    {
-      id: 1,
-      month: "December 2024",
-      amount: 500000,
-      paymentDate: "2024-12-01",
-      confirmedBy: "Shahzod (Manager)",
-      subject: "Web Dasturlash (Fullstack)",
-      status: "To'landi",
-    },
-    // Web Dasturlash (Oldingi to'lov)
-    {
-      id: 2,
-      month: "November 2024",
-      amount: 500000,
-      paymentDate: "2024-11-01",
-      confirmedBy: "Shahzod (Manager)",
-      subject: "Web Dasturlash (Fullstack)",
-      status: "To'landi",
-    },
-    // Matematika Asosiy (Eng yangi to'lov)
-    {
-      id: 3,
-      month: "October 2024",
-      amount: 450000,
-      paymentDate: "2024-10-01",
-      confirmedBy: "Alisher (Manager)",
-      subject: "Matematika Asosiy",
-      status: "qarz",
-    },
-    // Matematika Asosiy (Oldingi to'lov)
-    {
-      id: 4,
-      month: "September 2024",
-      amount: 450000,
-      paymentDate: "2024-09-01",
-      confirmedBy: "Alisher (Manager)",
-      subject: "Matematika Asosiy",
-      status: "To'landi",
-    },
-    // Yangi fan qo'shildi (Faqat bitta to'lov)
-    {
-      id: 5,
-      month: "August 2024",
-      amount: 300000,
-      paymentDate: "2024-08-01",
-      confirmedBy: "Dilshod (Manager)",
-      subject: "Ingliz Tili",
-      status: "To'landi",
-    },
-  ],
-};
+import { useStudentPaymentHistory } from "../../../hooks/payments";
+import { usegetProfile } from "../../../hooks/user";
 
 // --- Yordamchi Komponent: Status Belgisi ---
 const StatusBadge = ({ status }) => {
-  const color =
-    status === "To'landi"
-      ? "text-green-700 bg-green-100"
-      : "text-gray-700 bg-red-300";
+  const statusStyles = {
+    paid: { text: "To'langan", className: "text-green-700 bg-green-100" },
+    partial: { text: "Qisman", className: "text-yellow-700 bg-yellow-100" },
+    unpaid: { text: "To'lanmagan", className: "text-red-700 bg-red-100" },
+  };
+
+  const style = statusStyles[status] || statusStyles.unpaid;
 
   return (
-    <span className={`px-3 py-1 text-xs font-semibold rounded-full ${color}`}>
-      {status}
+    <span className={`px-3 py-1 text-xs font-semibold rounded-full ${style.className}`}>
+      {style.text}
     </span>
   );
 };
 
-// --- Funksiya: Har bir fan uchun eng yangi to'lovni aniqlash ---
-const findLatestPaymentsBySubject = (payments) => {
-  const latestBySubject = new Set();
-  const seenSubjects = new Set();
-
-  // payments saralangan (eng yangidan eng eskisiga) deb faraz qilib, iteratsiya qilamiz
-  payments.forEach((payment) => {
-    if (!seenSubjects.has(payment.subject)) {
-      latestBySubject.add(payment.id); // Fan bo'yicha birinchi topilgan (eng yangi) IDni saqlaymiz
-      seenSubjects.add(payment.subject);
-    }
-  });
-
-  return latestBySubject;
+// Oy nomlarini formatlash
+const formatMonth = (monthStr) => {
+  const [year, month] = monthStr.split('-');
+  const monthNames = [
+    "Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun",
+    "Iyul", "Avgust", "Sentabr", "Oktabr", "Noyabr", "Dekabr"
+  ];
+  return `${monthNames[parseInt(month) - 1]} ${year}`;
 };
 
 function StudentPayments() {
-  const { totalAmountPaid, totalDuration, currency, payments } =
-    mockPaymentData;
-  // Har bir fan uchun eng yangi to'lov ID'lari to'plamini topish
-  const latestPaymentIds = findLatestPaymentsBySubject(payments);
+  // Profildan student_id olish
+  const { data: profileData, isLoading: profileLoading } = usegetProfile();
+  const studentId = profileData?.id;
+
+  // To'lov tarixini olish
+  const { data: paymentData, isLoading, error } = useStudentPaymentHistory(studentId);
+
+  const payments = paymentData?.data?.payments || [];
+  const transactions = paymentData?.data?.transactions || [];
+  const student = paymentData?.data?.student || {};
+
+  // Jami to'langan summani hisoblash
+  const totalPaid = payments.reduce((sum, p) => sum + parseFloat(p.paid_amount || 0), 0);
+  const totalRequired = payments.reduce((sum, p) => sum + parseFloat(p.required_amount || 0), 0);
+  const totalDiscount = payments.reduce((sum, p) => sum + parseFloat(p.discount_amount || 0), 0);
+
+  if (profileLoading || isLoading) {
+    return (
+      <div className="min-h-full flex items-center justify-center">
+        <div className="animate-pulse text-[#A60E07] text-xl font-bold">Yuklanmoqda...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-full flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 text-xl font-bold mb-2">❌ Xatolik yuz berdi</div>
+          <p className="text-gray-600">{error.message}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-full">
-      {/* 1. Sarlavha Qismi */}
-      <h1 className="text-3xl font-bold text-gray-900 mb-1">
-        Mening To'lovlarim
-      </h1>
-      <p className="text-gray-500 mb-8">Oylik to'lovlar tarixi</p>
+    <div className="min-h-full bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2 flex items-center">
+          <BanknotesIcon className="h-7 w-7 mr-3 text-[#A60E07]" />
+          Mening To'lovlarim
+        </h1>
+        <p className="text-sm text-gray-500">Oylik to'lovlar tarixi</p>
+      </div>
 
-      {/* 2. Umumiy To'lov Bloki */}
-      <div className="flex items-center bg-white p-6 rounded-xl shadow-lg border  mb-10 border-l-4 border-blue-600">
-        <div className="mr-6">
-          <BanknotesIcon className="h-10 w-10 text-blue-600" />
+      {/* Statistika kartochkalari */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="bg-white rounded-2xl shadow-lg p-5 border-t-4 border-green-500">
+          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Jami To'langan</div>
+          <div className="text-2xl font-extrabold text-green-600">{totalPaid.toLocaleString()} so'm</div>
         </div>
-        <div>
-          <p className="text-sm font-medium text-gray-600">
-            Jami To'langan Summa
-          </p>
-          <span className="text-3xl font-extrabold text-gray-900 block">
-            {totalAmountPaid.toLocaleString()} {currency}
-          </span>
-          <p className="text-sm text-gray-500 mt-1">Davr: {totalDuration}</p>
+        <div className="bg-white rounded-2xl shadow-lg p-5 border-t-4 border-blue-500">
+          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Jami qarzdorlik</div>
+          <div className="text-2xl font-extrabold text-blue-600">{totalRequired.toLocaleString()} so'm</div>
+        </div>
+        <div className="bg-white rounded-2xl shadow-lg p-5 border-t-4 border-purple-500">
+          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Chegirma</div>
+          <div className="text-2xl font-extrabold text-purple-600">{totalDiscount.toLocaleString()} so'm</div>
         </div>
       </div>
 
-      {/* 3. Oylik To'lovlar Jadvali */}
-      <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-x-auto">
-        <h2 className="text-xl font-semibold text-gray-800 p-6 border-b border-gray-100">
-          To'lovlar Tarixi
-        </h2>
+      {/* Oylik To'lovlar Jadvali */}
+      <div className="bg-white rounded-2xl shadow-lg overflow-hidden mb-6">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+          <h2 className="text-xl font-bold text-gray-800 flex items-center">
+            <CalendarDaysIcon className="h-6 w-6 mr-3 text-[#A60E07]" />
+            Oylik To'lovlar
+          </h2>
+        </div>
 
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Oy
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Fan / Guruh
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Tasdiqlovchi
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Summa
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Holat
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-100">
-            {payments.map((payment) => {
-              // Har bir fan bo'yicha eng yangi to'lovligini tekshirish
-              const isLatestForSubject = latestPaymentIds.has(payment.id);
-
-              // Eng yangi to'lov uchun maxsus stil
-              const rowClass = isLatestForSubject
-                ? "bg-blue-50/50 hover:bg-blue-100/70 border-l-4 border-blue-500 transition duration-150"
-                : "hover:bg-gray-50 transition duration-100";
-
-              return (
-                <tr key={payment.id} className={rowClass}>
-                  {/* Oy va Sana */}
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      {payment.month}
-                    </div>
-                    <div className="text-xs text-gray-500 flex items-center mt-0.5">
-                      <ClockIcon className="h-3 w-3 mr-1 text-gray-400" />
-                      {payment.paymentDate}
-                    </div>
-                  </td>
-
-                  {/* Fan / Guruh (Ko'k rangda ajratildi) */}
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-700 font-semibold">
-                    {payment.subject}
-                  </td>
-
-                  {/* Tasdiqlovchi */}
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {payment.confirmedBy}
-                  </td>
-
-                  {/* Summa */}
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-base font-bold text-green-600">
-                    {payment.amount.toLocaleString()} {currency}
-                  </td>
-
-                  {/* Holat */}
-                  <td className="px-6 py-4 whitespace-nowrap text-center">
-                    <StatusBadge status={payment.status} />
-                  </td>
+        {payments.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b border-gray-200">
+                    Oy
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b border-gray-200">
+                    Guruh / Fan
+                  </th>
+                  <th className="px-6 py-4 text-right text-xs font-bold text-gray-600 uppercase tracking-wider border-b border-gray-200">
+                    Kerak
+                  </th>
+                  <th className="px-6 py-4 text-right text-xs font-bold text-gray-600 uppercase tracking-wider border-b border-gray-200">
+                    To'langan
+                  </th>
+                  <th className="px-6 py-4 text-right text-xs font-bold text-gray-600 uppercase tracking-wider border-b border-gray-200">
+                    Chegirma
+                  </th>
+                  <th className="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider border-b border-gray-200">
+                    Holat
+                  </th>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
-
-        {/* Jadval bo'sh bo'lsa */}
-        {payments.length === 0 && (
-          <div className="p-6 text-center text-gray-500">
-            Hozircha to'lovlar tarixi mavjud emas.
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {payments.map((payment, index) => (
+                  <tr key={index} className="hover:bg-red-50 transition-colors duration-150">
+                    <td className="px-6 py-4">
+                      <div className="text-sm font-semibold text-gray-800">
+                        {formatMonth(payment.month)}
+                      </div>
+                      {payment.last_payment_date && (
+                        <div className="text-xs text-gray-500 flex items-center mt-1">
+                          <ClockIcon className="h-3 w-3 mr-1" />
+                          {payment.last_payment_date}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm font-semibold text-blue-700">{payment.group_name}</div>
+                      <div className="text-xs text-gray-500">{payment.subject_name}</div>
+                    </td>
+                    <td className="px-6 py-4 text-right text-sm font-medium text-gray-800">
+                      {parseFloat(payment.required_amount).toLocaleString()} so'm
+                    </td>
+                    <td className="px-6 py-4 text-right text-sm font-bold text-green-600">
+                      {parseFloat(payment.paid_amount).toLocaleString()} so'm
+                    </td>
+                    <td className="px-6 py-4 text-right text-sm font-medium text-purple-600">
+                      {parseFloat(payment.discount_amount).toLocaleString()} so'm
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <StatusBadge status={payment.status} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="p-12 text-center">
+            <BanknotesIcon className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+            <h3 className="text-lg font-bold text-gray-800 mb-2">To'lovlar topilmadi</h3>
+            <p className="text-sm text-gray-500">Hozircha to'lovlar tarixi mavjud emas.</p>
           </div>
         )}
       </div>
+
+      {/* Tranzaksiyalar Jadvali */}
+      {transactions.length > 0 && (
+        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+            <h2 className="text-xl font-bold text-gray-800 flex items-center">
+              <ReceiptPercentIcon className="h-6 w-6 mr-3 text-[#A60E07]" />
+              Tranzaksiyalar Tarixi
+            </h2>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b border-gray-200">
+                    #
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b border-gray-200">
+                    Sana
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b border-gray-200">
+                    Oy
+                  </th>
+                  <th className="px-6 py-4 text-right text-xs font-bold text-gray-600 uppercase tracking-wider border-b border-gray-200">
+                    Summa
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b border-gray-200">
+                    To'lov usuli
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b border-gray-200">
+                    Admin
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b border-gray-200">
+                    Izoh
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {transactions.map((tx, index) => (
+                  <tr key={index} className="hover:bg-green-50 transition-colors duration-150">
+                    <td className="px-6 py-4 text-sm font-bold text-gray-500">
+                      {index + 1}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                      {tx.created_at}
+                    </td>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-800">
+                      {formatMonth(tx.month)}
+                    </td>
+                    <td className="px-6 py-4 text-right text-sm font-bold text-green-600">
+                      +{parseFloat(tx.amount).toLocaleString()} so'm
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                        tx.payment_method === 'Naqd' ? 'bg-green-100 text-green-700' :
+                        tx.payment_method === 'Karta' ? 'bg-blue-100 text-blue-700' :
+                        'bg-gray-100 text-gray-700'
+                      }`}>
+                        {tx.payment_method}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                      {tx.admin_name}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500 max-w-[200px] truncate">
+                      {tx.description || '-'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import React from "react";
 import { useMonthlyAttendance } from "../hooks/attendance-monthly";
-import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/outline";
+import { instance } from "../hooks/api";
 
 const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
   const { data, isLoading, error } = useMonthlyAttendance(groupId, selectedMonth);
@@ -8,6 +8,48 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
   const lessons = data?.data?.lessons || [];
   const attendanceGrid = data?.data?.attendance_grid || [];
   const stats = data?.data?.stats;
+
+  // Excel export handler
+  const handleExport = async () => {
+    if (!groupId || !selectedMonth) {
+      alert('Guruh yoki oy tanlanmagan');
+      return;
+    }
+    
+    try {
+      console.log(`Exporting for Group ID: ${groupId}, Month: ${selectedMonth}`);
+      
+      // Instance orqali to'g'ri API chaqirish
+      const response = await instance.get(`/api/attendance/groups/${groupId}/monthly/export?month=${selectedMonth}`, {
+        responseType: 'blob'
+      });
+      
+      // Excel faylni yuklab olish
+      const blob = new Blob([response.data], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+      
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `davomat_guruh_${groupId}_${selectedMonth}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+    } catch (error) {
+      console.error('Export xatosi:', error);
+      
+      if (error.response?.status === 404) {
+        alert('Export API topilmadi. Backend developer bilan bog\'laning.');
+      } else if (error.response?.status === 500) {
+        alert('Serverda xatolik yuz berdi.');
+      } else {
+        alert(`Export da xatolik: ${error.response?.data?.message || error.message}`);
+      }
+    }
+  };
 
   if (isLoading) return <div className="text-center py-8">Oylik hisobot yuklanmoqda...</div>;
   if (error) return <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">Oylik hisobotda xatolik: {error.message}</div>;
@@ -29,7 +71,12 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
       </div> */}
     <div className="flex  justify-between items-center">
       <h1 className="text-xl" >To'liq oylik davomat Xisoboti</h1>
-      <button className="bg-green-500 active:scale-90 px-3 py-2 rounded-sm text-white">Exelga export qilish</button>
+      <button 
+        onClick={handleExport}
+        className="bg-green-500 active:scale-90 px-3 py-2 rounded-sm text-white hover:bg-green-600 transition-colors"
+      >
+        Exelga export qilish
+      </button>
     </div>
       <div className="overflow-x-auto mt-3 ">
         <table className="min-w-full ">
@@ -56,9 +103,11 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
                   return (
                     <td key={lesson.date} className="px-4 py-2 text-center border border-gray-400">
                       {status === "keldi" ? (
-                        <CheckCircleIcon className="h-5 w-5 text-green-500 inline" title="Keldi" />
+                        <p className="text-green-600">✓</p>
+                        // <CheckCircleIcon className="h-5 w-5 text-green-500 inline" title="Keldi" />
                       ) : status === "kelmadi" ? (
-                        <XCircleIcon className="h-5 w-5 text-red-500 inline" title="Kelmadi" />
+                        <p className="text-red-600">✗</p>
+                        // <XCircleIcon className="h-5 w-5 text-red-500 inline" title="Kelmadi" />
                       ) : status === "bitirgan" ? (
                         <span className="text-purple-600 font-semibold">Bitirgan</span>
                       ) : status === "toxtatgan" ? (

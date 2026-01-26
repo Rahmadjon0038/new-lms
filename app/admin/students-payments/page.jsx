@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
     CalendarIcon,
     UserIcon,
@@ -11,11 +11,16 @@ import {
     PhoneIcon,
     PlusCircleIcon,
     CreditCardIcon,
-    InformationCircleIcon
+    InformationCircleIcon,
+    MagnifyingGlassIcon,
+    EyeIcon,
+    ArrowDownTrayIcon
 } from "@heroicons/react/24/outline";
 import { usePaymentFilters, useMonthlyPayments } from "../../../hooks/payments";
+import { instance } from "../../../hooks/api";
 import DiscountModal from "../../../components/admistrator/DiscountModal";
 import PaymentModal from "../../../components/admistrator/PaymentModal";
+import StudentAttendanceModal from "../../../components/modals/StudentAttendanceModal";
 
 const MAIN_COLOR = "#A60E07";
 
@@ -27,9 +32,11 @@ const StudentPayments = () => {
         status: 'all'
     });
 
+    const [searchTerm, setSearchTerm] = useState('');
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [showDiscountModal, setShowDiscountModal] = useState(false);
+    const [showAttendanceModal, setShowAttendanceModal] = useState(false);
 
     // Fetch filter options
     const { data: filterOptions } = usePaymentFilters();
@@ -39,6 +46,24 @@ const StudentPayments = () => {
 
     const students = paymentsData?.data?.students || [];
     const apiStats = paymentsData?.data?.stats || {};
+
+    // Filter students based on search term
+    const filteredStudents = useMemo(() => {
+        if (!searchTerm.trim()) {
+            return students;
+        }
+        
+        const lowerSearchTerm = searchTerm.toLowerCase().trim();
+        return students.filter(student => {
+            const fullName = `${student.name} ${student.surname}`.toLowerCase();
+            const phone = student.phone?.replace(/\s+/g, '') || '';
+            const searchPhone = lowerSearchTerm.replace(/\s+/g, '');
+            
+            return fullName.includes(lowerSearchTerm) ||
+                   phone.includes(searchPhone) ||
+                   (student.group_name && student.group_name.toLowerCase().includes(lowerSearchTerm));
+        });
+    }, [students, searchTerm]);
 
     // Use backend statistics directly
     const stats = {
@@ -58,6 +83,59 @@ const StudentPayments = () => {
             currency: 'UZS',
             minimumFractionDigits: 0,
         }).format(amount);
+    };
+
+    // Excel export handler
+    const handleExport = async () => {
+        try {
+            // Build query parameters
+            const params = new URLSearchParams({
+                month: filters.month,
+            });
+            
+            if (filters.teacher_id) {
+                params.append('teacher_id', filters.teacher_id);
+            }
+            if (filters.subject_id) {
+                params.append('subject_id', filters.subject_id);
+            }
+            if (filters.status !== 'all') {
+                params.append('status', filters.status);
+            }
+
+            const response = await instance.get(`/api/payments/monthly/export?${params.toString()}`, {
+                responseType: 'blob'
+            });
+
+            // Create blob and download file
+            const blob = new Blob([response.data], {
+                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            });
+            
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `tolovlar_${filters.month}.xlsx`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+            
+        } catch (error) {
+            console.error('Excel export error:', error);
+            
+            let errorMessage = 'Excel faylini yuklab olishda xatolik yuz berdi';
+            
+            if (error.response?.status === 404) {
+                errorMessage = 'Excel export API topilmadi. Iltimos adminga murojaat qiling.';
+            } else if (error.response?.status === 500) {
+                errorMessage = 'Server xatosi. Iltimos keyinroq urinib ko\'ring.';
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+            
+            alert(errorMessage);
+        }
     };
 
     // Get status badge
@@ -103,10 +181,11 @@ const StudentPayments = () => {
             subject_id: '',
             status: 'all'
         });
+        setSearchTerm('');
     };
 
     // Check if any filter is active
-    const hasActiveFilters = filters.teacher_id || filters.subject_id || filters.status !== 'all';
+    const hasActiveFilters = filters.teacher_id || filters.subject_id || filters.status !== 'all' || searchTerm.trim();
 
     // Add "All" option to statuses
     const statusTabs = [
@@ -149,16 +228,27 @@ const StudentPayments = () => {
 
     return (
         <div className="min-h-screen bg-gray-50 p-6">
-            <div className="max-w-7xl mx-auto">
-
+            <div className="px-2">
                 {/* Header */}
-                <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                        Talabalar oylik to'lovlari
-                    </h1>
-                    <p className="text-gray-600">
-                        Talabalarning oylik to'lov ma'lumotlari va statistikasi
-                    </p>
+                <div className="mb-6 flex items-center justify-between">
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                            Talabalar oylik to'lovlari
+                        </h1>
+                        <p className="text-gray-600">
+                            Talabalarning oylik to'lov ma'lumotlari va statistikasi
+                        </p>
+                    </div>
+                    
+                    {/* Excel Export Button */}
+                    <button
+                        onClick={handleExport}
+                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg hover:opacity-90 focus:ring-2 focus:ring-offset-2 transition-colors"
+                        style={{ backgroundColor: MAIN_COLOR, focusRingColor: MAIN_COLOR }}
+                    >
+                        <ArrowDownTrayIcon className="h-4 w-4" />
+                        Excel yuklab olish
+                    </button>
                 </div>
 
                 {/* Filters */}
@@ -187,14 +277,35 @@ const StudentPayments = () => {
                     </div>
 
                     {/* Other Filters */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+
+                        {/* Search Input - First Column */}
+                        <div className="lg:col-span-1">
+                           
+                            <div className="relative">
+                                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                <input
+                                    type="text"
+                                    placeholder="Ism, telefon, guruh..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="w-full pl-9 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition-colors text-sm"
+                                    style={{ focusRingColor: MAIN_COLOR }}
+                                />
+                                {searchTerm && (
+                                    <button
+                                        onClick={() => setSearchTerm('')}
+                                        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors text-xs"
+                                    >
+                                        ✕
+                                    </button>
+                                )}
+                            </div>
+                        </div>
 
                         {/* Month Filter */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                <CalendarIcon className="h-4 w-4 inline mr-1" />
-                                Oy:
-                            </label>
+                            
                             <input
                                 type="month"
                                 value={filters.month}
@@ -206,10 +317,7 @@ const StudentPayments = () => {
 
                         {/* Teacher Filter */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                <UserIcon className="h-4 w-4 inline mr-1" />
-                                O'qituvchi:
-                            </label>
+                            
                             <select
                                 value={filters.teacher_id}
                                 onChange={(e) => handleFilterChange('teacher_id', e.target.value)}
@@ -227,10 +335,7 @@ const StudentPayments = () => {
 
                         {/* Subject Filter */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                <AcademicCapIcon className="h-4 w-4 inline mr-1" />
-                                Fan:
-                            </label>
+                            
                             <select
                                 value={filters.subject_id}
                                 onChange={(e) => handleFilterChange('subject_id', e.target.value)}
@@ -264,16 +369,8 @@ const StudentPayments = () => {
 
                 {/* Statistics Cards - Display Only */}
                 {stats.total_students > 0 && (
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                        <div className="bg-white p-4 rounded-lg shadow-md border-l-4" style={{ borderLeftColor: MAIN_COLOR }}>
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Jami talabalar</p>
-                                    <p className="text-2xl font-bold text-gray-900 mt-1">{stats.total_students}</p>
-                                </div>
-                                <UserIcon className="h-8 w-8 text-gray-400" />
-                            </div>
-                        </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                       
 
                         <div className="bg-white p-4 rounded-lg shadow-md border-l-4 border-green-500">
                             <div className="flex items-center justify-between">
@@ -333,7 +430,7 @@ const StudentPayments = () => {
                     </div>
 
                     <div className="overflow-x-auto">
-                        {students.length > 0 ? (
+                        {filteredStudents.length > 0 ? (
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
                                     <tr>
@@ -350,6 +447,9 @@ const StudentPayments = () => {
                                             To'lov ma'lumotlari
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Admin
+                                        </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Holati
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -358,7 +458,7 @@ const StudentPayments = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {students.map((student, index) => (
+                                    {filteredStudents.map((student, index) => (
                                         <tr key={`${student.student_id}-${student.group_id}-${index}`} className="hover:bg-gray-50">
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                 {index + 1}
@@ -461,7 +561,7 @@ const StudentPayments = () => {
                                                     {parseFloat(student.discount_amount) > 0 && (
                                                         <div className="text-sm flex items-center">
                                                             <span className="text-gray-500">Chegirma:</span>
-                                                            <span className="font-medium text-orange-500 ml-2">{formatCurrency(parseFloat(student.discount_amount))}</span>
+                                                            <span className="font-medium text-orange-500 ml-2">-{formatCurrency(parseFloat(student.discount_amount))}</span>
                                                             {student.discount_description && (
                                                                 <div className="relative group ml-1">
                                                                     <InformationCircleIcon className="h-4 w-4 text-blue-500 cursor-help" />
@@ -473,19 +573,39 @@ const StudentPayments = () => {
                                                             )}
                                                         </div>
                                                     )}
-                                                    <div className="text-sm">
-                                                        <span className="text-gray-500">{parseFloat(student.debt_amount) < 0 ? 'Ortiqcha:' : 'Qarz:'}</span>
-                                                        <span className={`font-medium ml-2 ${parseFloat(student.debt_amount) < 0 ? 'text-blue-600' : 'text-red-600'
-                                                            }`}>
-                                                            {formatCurrency(Math.abs(parseFloat(student.debt_amount)))}
-                                                        </span>
-                                                    </div>
-                                                    {student.last_payment_date && (
-                                                        <div className="text-xs text-gray-400">
-                                                            Oxirgi to'lov: {new Date(student.last_payment_date).toLocaleDateString('uz-UZ')}
+                                                    {parseFloat(student.debt_amount) !== 0 && (
+                                                        <div className="text-sm">
+                                                            <span className="text-gray-500">{parseFloat(student.debt_amount) < 0 ? 'Ortiqcha:' : 'Qarz:'}</span>
+                                                            <span className={`font-medium ml-2 ${parseFloat(student.debt_amount) < 0 ? 'text-blue-600' : 'text-red-600'
+                                                                }`}>
+                                                                {parseFloat(student.debt_amount) < 0 ? '-' : ''}{formatCurrency(Math.abs(parseFloat(student.debt_amount)))}
+                                                            </span>
                                                         </div>
                                                     )}
 
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="space-y-1">
+                                                    {student.last_payment_admin ? (
+                                                        <>
+                                                            <div className="text-sm font-medium text-gray-900">
+                                                                {student.last_payment_admin}
+                                                            </div>
+                                                            <div className="text-xs text-gray-500">
+                                                                {student.last_payment_method}
+                                                            </div>
+                                                            {student.last_payment_date && (
+                                                                <div className="text-xs text-gray-400">
+                                                                    {student.last_payment_date}
+                                                                </div>
+                                                            )}
+                                                        </>
+                                                    ) : (
+                                                        <div className="text-sm text-gray-400">
+                                                            To'lov yo'q
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
@@ -514,6 +634,16 @@ const StudentPayments = () => {
                                                         <PlusCircleIcon className="h-3 w-3" />
                                                         Chegirma
                                                     </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            setSelectedStudent(student);
+                                                            setShowAttendanceModal(true);
+                                                        }}
+                                                        className="inline-flex items-center gap-1 px-3 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors"
+                                                    >
+                                                        <EyeIcon className="h-3 w-3" />
+                                                        Davomat
+                                                    </button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -523,9 +653,14 @@ const StudentPayments = () => {
                         ) : (
                             <div className="text-center py-12">
                                 <CurrencyDollarIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                                <p className="text-gray-500 text-lg">Ma'lumotlar topilmadi</p>
+                                <p className="text-gray-500 text-lg">
+                                    {searchTerm ? 'Qidiruv bo\'yicha natija topilmadi' : 'Ma\'lumotlar topilmadi'}
+                                </p>
                                 <p className="text-gray-400 text-sm">
-                                    Tanlangan filtrlar bo'yicha hech qanday to'lov ma'lumoti yo'q
+                                    {searchTerm 
+                                        ? `"${searchTerm}" qidiruviga mos keladigan talabalar topilmadi`
+                                        : 'Tanlangan filtrlar bo\'yicha hech qanday to\'lov ma\'lumoti yo\'q'
+                                    }
                                 </p>
                             </div>
                         )}
@@ -540,6 +675,7 @@ const StudentPayments = () => {
                         setSelectedStudent(null);
                     }}
                     student={selectedStudent}
+                    month={filters.month}
                 />
 
                 <DiscountModal
@@ -549,6 +685,17 @@ const StudentPayments = () => {
                         setSelectedStudent(null);
                     }}
                     student={selectedStudent}
+                    month={filters.month}
+                />
+
+                <StudentAttendanceModal
+                    isOpen={showAttendanceModal}
+                    onClose={() => {
+                        setShowAttendanceModal(false);
+                        setSelectedStudent(null);
+                    }}
+                    student={selectedStudent}
+                    month={filters.month}
                 />
 
             </div>

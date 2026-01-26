@@ -71,3 +71,18 @@ export const useProcessPayment = () => {
     },
   });
 };
+
+// Get student payment history
+const fetchStudentPaymentHistory = async (studentId) => {
+  const response = await instance.get(`/api/payments/student/${studentId}/history`);
+  return response.data;
+};
+
+export const useStudentPaymentHistory = (studentId, options = {}) => {
+  return useQuery({
+    queryKey: ['student-payment-history', studentId],
+    queryFn: () => fetchStudentPaymentHistory(studentId),
+    enabled: !!studentId,
+    ...options,
+  });
+};

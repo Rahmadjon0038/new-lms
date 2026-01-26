@@ -15,6 +15,9 @@ const getAttendanceGroups = async (filters = {}) => {
     if (filters.subject_id) {
         params.append('subject_id', filters.subject_id);
     }
+    if (filters.status_filter) {
+        params.append('status_filter', filters.status_filter);
+    }
     
     const queryString = params.toString();
     const url = `/api/attendance/groups${queryString ? `?${queryString}` : ''}`;
@@ -45,6 +48,21 @@ export const useCreateTodayLesson = () => {
         onSuccess: () => {
             queryClient.invalidateQueries(['attendance-groups']);
         }
+    });
+}
+
+// 3️⃣ Talabaning oylik davomat hisoboti
+// GET /api/attendance/students/{student_id}/monthly
+const getStudentMonthlyAttendance = async (student_id, month) => {
+    const response = await instance.get(`/api/attendance/students/${student_id}/monthly?month=${month}`);
+    return response.data;
+}
+
+export const useGetStudentMonthlyAttendance = (student_id, month) => {
+    return useQuery({
+        queryKey: ['student-monthly-attendance', student_id, month],
+        queryFn: () => getStudentMonthlyAttendance(student_id, month),
+        enabled: !!(student_id && month), // Only run when both params exist
     });
 }
 

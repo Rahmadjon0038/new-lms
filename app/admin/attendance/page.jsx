@@ -26,11 +26,33 @@ const GroupCard = ({ group }) => {
   const classStartDate = group.class_start_date 
     ? new Date(group.class_start_date).toLocaleDateString('uz-UZ')
     : 'Belgilanmagan';
+    
+  // Status color and text
+  const getStatusInfo = () => {
+    if (group.status === 'blocked') {
+      return {
+        color: 'border-red-600',
+        bgColor: 'bg-red-50',
+        badge: 'bg-red-100 text-red-700',
+        text: 'Bloklangan',
+        icon: '🔒'
+      };
+    }
+    return {
+      color: 'border-green-600',
+      bgColor: 'bg-green-50',
+      badge: '',
+      text: '',
+      icon: ''
+    };
+  };
+  
+  const statusInfo = getStatusInfo();
   
   return (
     <Link
       href={`/admin/attendance/${group.id}`}
-      className="block bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 border-t-4 border-red-600 hover:translate-x-1"
+      className={`block bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 border-t-4 ${statusInfo.color} hover:translate-x-1 ${statusInfo.bgColor}`}
     >
       <div className="flex justify-between items-start mb-3">
         <div className="flex-1">
@@ -39,18 +61,16 @@ const GroupCard = ({ group }) => {
             {group.name}
           </h3>
           <div className="flex items-center gap-2 mb-2">
-            {/* <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-mono">
-              {group.unique_code}
-            </span> */}
-            {group.room_number && (
+            
+            
+          </div>
+          <p className="text-sm text-gray-600 flex items-center gap-2">
+            <AcademicCapIcon className="h-4 w-4 text-gray-400" />
+            {group.subject_name} {group.room_number && (
               <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
                 {group.room_number}-xona
               </span>
             )}
-          </div>
-          <p className="text-sm text-gray-600 flex items-center gap-2">
-            <AcademicCapIcon className="h-4 w-4 text-gray-400" />
-            {group.subject_name}
           </p>
         </div>
         <ChevronRightIcon className="h-5 w-5 text-gray-400" />
@@ -93,23 +113,37 @@ const Attendance = () => {
   // Filter states
   const [selectedTeacher, setSelectedTeacher] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('');
+  const [statusFilter, setStatusFilter] = useState('active'); // yangi: active, blocked
 
   // Attendance API - Backend avtomatik ADMIN/TEACHER rolga qarab guruhlarni qaytaradi
   const { data: attendanceData, isLoading, error } = useGetAttendanceGroups({
     teacher_id: selectedTeacher || undefined,
-    subject_id: selectedSubject || undefined
+    subject_id: selectedSubject || undefined,
+    status_filter: statusFilter
   });
 
   // API response: {success: true, data: [groups...]}
   const groups = attendanceData?.data || [];
 
+  // Xona raqamiga qarab tartiblash
+  const sortedGroups = [...groups].sort((a, b) => {
+    // Xona raqami bo'lmagan guruhlarni oxiriga qo'yish
+    if (!a.room_number && !b.room_number) return 0;
+    if (!a.room_number) return 1;
+    if (!b.room_number) return -1;
+    
+    // Xona raqamlarini raqam sifatida solishtirish
+    return parseInt(a.room_number) - parseInt(b.room_number);
+  });
+
   // Clear all filters
   const clearFilters = () => {
     setSelectedTeacher('');
     setSelectedSubject('');
+    setStatusFilter('active'); // default holatga qaytarish
   };
 
-  const hasActiveFilters = selectedTeacher || selectedSubject;
+  const hasActiveFilters = selectedTeacher || selectedSubject || statusFilter !== 'active';
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -123,6 +157,40 @@ const Attendance = () => {
           <p className="text-sm text-gray-600">
             Guruhlarni tanlang va davomat qiling
           </p>
+        </div>
+
+        {/* Status Tabs */}
+        <div className="mb-6">
+          <div className="bg-white p-1 rounded-lg shadow-sm">
+            <div className="flex gap-1">
+              <button
+                onClick={() => setStatusFilter('active')}
+                className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  statusFilter === 'active'
+                    ? 'bg-green-100 text-green-700 shadow-sm'
+                    : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                <span className="flex items-center justify-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  Faol Guruhlar
+                </span>
+              </button>
+              <button
+                onClick={() => setStatusFilter('blocked')}
+                className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  statusFilter === 'blocked'
+                    ? 'bg-red-100 text-red-700 shadow-sm'
+                    : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                <span className="flex items-center justify-center gap-2">
+                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                  Bloklangan Guruhlar
+                </span>
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Filters */}
@@ -192,41 +260,15 @@ const Attendance = () => {
                 <div className="flex items-center gap-2">
                   <UserGroupIcon className="h-5 w-5 text-red-600" />
                   <span className="text-sm font-medium text-gray-700">
-                    {hasActiveFilters ? 'Filterlangan' : 'Jami'} <span className="font-bold text-red-600">{groups.length}</span> ta guruh
+                    {hasActiveFilters ? 'Filterlangan' : 'Jami'} <span className="font-bold text-red-600">{sortedGroups.length}</span> ta guruh
                   </span>
                 </div>
                 
-                {groups.length > 0 && (
-                  <div className="flex items-center gap-4 text-xs">
-                    <div className="flex items-center gap-2">
-                      <UsersIcon className="h-4 w-4 text-gray-500" />
-                      <span className="text-gray-600">
-                        Jami talabalar: 
-                        <span className="font-bold ml-1">
-                          {groups.reduce((sum, group) => sum + parseInt(group.students_count || 0), 0)}
-                        </span>
-                      </span>
-                    </div>
-                    
-                    {/* <div className="flex items-center gap-2">
-                      <CalendarIcon className="h-4 w-4 text-gray-500" />
-                      <span className="text-gray-600">
-                        Faol guruhlar: <span className="font-bold">{groups.length}</span>
-                      </span>
-                    </div> */}
-                    
-                    {hasActiveFilters && (
-                      <div className="flex items-center gap-1 text-blue-600">
-                        <FunnelIcon className="h-4 w-4" />
-                        <span className="text-xs font-medium">Filterlar faol</span>
-                      </div>
-                    )}
-                  </div>
-                )}
+               
               </div>
             </div>
 
-            {groups.length === 0 ? (
+            {sortedGroups.length === 0 ? (
               <div className="bg-white p-8 rounded-lg shadow-md text-center">
                 <UserGroupIcon className="h-12 w-12 text-gray-300 mx-auto mb-3" />
                 <p className="text-gray-500 text-lg">
@@ -249,7 +291,7 @@ const Attendance = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {groups.map((group) => (
+                {sortedGroups.map((group) => (
                   <GroupCard key={group.id} group={group} />
                 ))}
               </div>

@@ -4,14 +4,22 @@ import { XMarkIcon, CreditCardIcon, BanknotesIcon, DevicePhoneMobileIcon } from 
 import { useProcessPayment } from '../../hooks/payments';
 import { toast } from 'react-hot-toast';
 
-const PaymentModal = ({ isOpen, onClose, student }) => {
+const PaymentModal = ({ isOpen, onClose, student, month }) => {
   const [paymentData, setPaymentData] = useState({
     amount: '',
     payment_method: 'cash',
-    description: ''
+    description: '',
+    month: month || new Date().toISOString().slice(0, 7)
   });
 
   const processPaymentMutation = useProcessPayment();
+
+  // Update month when prop changes
+  useEffect(() => {
+    if (month) {
+      setPaymentData(prev => ({ ...prev, month }));
+    }
+  }, [month]);
 
   // Reset form when modal closes
   useEffect(() => {
@@ -19,10 +27,11 @@ const PaymentModal = ({ isOpen, onClose, student }) => {
       setPaymentData({
         amount: '',
         payment_method: 'cash',
-        description: ''
+        description: '',
+        month: month || new Date().toISOString().slice(0, 7)
       });
     }
-  }, [isOpen]);
+  }, [isOpen, month]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -33,6 +42,7 @@ const PaymentModal = ({ isOpen, onClose, student }) => {
       const payload = {
         student_id: student.student_id,
         amount: Number(paymentData.amount),
+        month: paymentData.month,
         payment_method: paymentData.payment_method,
         description: paymentData.description
       };
@@ -54,10 +64,25 @@ const PaymentModal = ({ isOpen, onClose, student }) => {
   };
 
   const handleChange = (field, value) => {
-    setPaymentData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    if (field === 'amount') {
+      // Remove all non-numeric characters except dots and commas
+      const numericValue = value.replace(/[^\d]/g, '');
+      setPaymentData(prev => ({
+        ...prev,
+        [field]: numericValue
+      }));
+    } else {
+      setPaymentData(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    }
+  };
+
+  // Format amount for display
+  const formatAmountForDisplay = (amount) => {
+    if (!amount) return '';
+    return new Intl.NumberFormat('uz-UZ').format(amount);
   };
 
   const formatCurrency = (amount) => {
@@ -91,7 +116,37 @@ const PaymentModal = ({ isOpen, onClose, student }) => {
           </button>
         </div>
 
-        
+        {/* Student Information */}
+        {student && (
+          <div className="p-6 bg-gray-50 border-b border-gray-200">
+            <div className="space-y-2">
+              <h4 className="text-lg font-medium text-gray-900">
+                {student.name} {student.surname}
+              </h4>
+              <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+              
+                <div className="col-span-2">
+                  <div className="flex items-center justify-between bg-white p-3 rounded-lg border">
+                    <span className="font-medium text-gray-700">Qarzlik miqdori:</span>
+                    <span className="text-lg font-bold text-red-600">
+                      {formatCurrency(Math.abs(parseFloat(student.debt_amount || 0)))}
+                    </span>
+                  </div>
+                </div>
+                {student.required_amount && (
+                  <div className="col-span-2">
+                    <div className="flex items-center justify-between bg-blue-50 p-3 rounded-lg border border-blue-200">
+                      <span className="font-medium text-blue-700">Oylik to'lov miqdori:</span>
+                      <span className="text-lg font-bold text-blue-600">
+                        {formatCurrency(parseFloat(student.required_amount))}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* Payment Amount */}
@@ -99,16 +154,19 @@ const PaymentModal = ({ isOpen, onClose, student }) => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               To'lov miqdori:
             </label>
-            <input
-              type="number"
-              value={paymentData.amount}
-              onChange={(e) => handleChange('amount', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-              placeholder="100000"
-              required
-              min="0"
-              step="1000"
-            />
+            <div className="relative">
+              <input
+                type="text"
+                value={formatAmountForDisplay(paymentData.amount)}
+                onChange={(e) => handleChange('amount', e.target.value)}
+                className="w-full px-3 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                placeholder="100,000"
+                required
+              />
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                <span className="text-gray-500 text-sm">UZS</span>
+              </div>
+            </div>
             <p className="text-xs text-gray-500 mt-1">
               Minimal: 1,000 so'm
             </p>
@@ -155,14 +213,7 @@ const PaymentModal = ({ isOpen, onClose, student }) => {
             />
           </div>
 
-          {/* Payment Preview */}
-          {paymentData.amount && (
-            <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-              <p className="text-sm text-blue-800">
-                <strong>To'lov:</strong> {formatCurrency(Number(paymentData.amount))}
-              </p>
-            </div>
-          )}
+       
 
           {/* Action Buttons */}
           <div className="flex gap-3 pt-4">

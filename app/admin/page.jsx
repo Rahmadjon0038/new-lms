@@ -6,13 +6,14 @@ import {
   PlusIcon,
 } from "@heroicons/react/24/outline";
 import { FiEdit, FiUserPlus } from 'react-icons/fi';
-import { 
+import {
   User, Phone, Calendar, AlertCircle, Home
 } from 'lucide-react';
 import Link from "next/link";
 import { useGetAllStudents } from '../../hooks/students';
 import { getStatusInfo } from '../../utils/studentStatus';
 import AddGroup from '../../components/admistrator/AddGroup';
+import Image from "next/image";
 
 const MAIN_COLOR = "#A60E07";
 
@@ -30,10 +31,10 @@ function AdminDashboard() {
   // Backend dan guruhga qo'shilmagan talabalarni olish
   const filters = { unassigned: 'true' };
   const { data: backendData, isLoading, refetch } = useGetAllStudents(filters);
-  
+
   // Yangi API response structureni handle qilish
   const unassignedStudents = backendData?.success ? (backendData.students || []) : [];
-  
+
   const handleModalSuccess = () => {
     refetch();
   };
@@ -83,7 +84,6 @@ function AdminDashboard() {
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider">Student ma'lumotlari</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider">Ro'yxatdan sana</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider">Talaba holati</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-gray-800 uppercase tracking-wider">Amallar</th>
                 </tr>
               </thead>
@@ -130,20 +130,13 @@ function AdminDashboard() {
                         <div className="flex items-center gap-1 text-gray-700">
                           <Calendar className="h-4 w-4 text-blue-500" />
                           <span className="font-medium">
-                            {student.registration_date 
+                            {student.registration_date
                               ? new Date(student.registration_date).toLocaleDateString('uz-UZ')
                               : 'Belgilanmagan'}
                           </span>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-sm">
-                        <div 
-                          className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg font-semibold text-xs ${statusInfo.bgClass} ${statusInfo.textClass}`}
-                        >
-                          {statusInfo.icon && <statusInfo.icon className="h-4 w-4" />}
-                          <span>{statusInfo.label}</span>
-                        </div>
-                      </td>
+                     
                       <td className="px-4 py-3 text-center">
                         <div className="flex items-center justify-center gap-2">
                           <AddGroup student={student} onSuccess={handleModalSuccess}>
@@ -151,11 +144,7 @@ function AdminDashboard() {
                               <FiUserPlus size={18} />
                             </button>
                           </AddGroup>
-                          <Link href={`/admin/students/${student.id}`}>
-                            <button className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">
-                              <FiEdit size={18} />
-                            </button>
-                          </Link>
+                          
                         </div>
                       </td>
                     </tr>
@@ -172,6 +161,7 @@ function AdminDashboard() {
           <AlertCircle className="h-16 w-16 text-gray-300 mx-auto mb-4" />
           <h3 className="text-xl font-bold text-gray-800 mb-2">Ajoyib!</h3>
           <p className="text-gray-600">Barcha talabalar guruhlarga biriktirilgan</p>
+          
         </div>
       )}
     </div>

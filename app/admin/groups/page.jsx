@@ -324,11 +324,15 @@ function AdminGroupsPage() {
             id: groupId,
             status: 'active'
         }, {
-            onSuccess: () => {
+            onSuccess: (data) => {
+                console.log('Dars muvaffaqiyatli boshlandi:', data);
                 // Draft tabdan Active tabga o'tish
                 if (currentTab === 'draft') {
                     setCurrentTab('active');
                 }
+            },
+            onError: (error) => {
+                console.error('Darsni boshlashda xatolik:', error);
             }
         });
     };
@@ -345,16 +349,24 @@ function AdminGroupsPage() {
             id: confirmModal.groupId,
             status: targetStatus
         }, {
-            onSuccess: () => {
+            onSuccess: (data) => {
+                console.log(data);
                 // Status o'zgarganda mos tabga o'tish
                 if (targetStatus === 'blocked' && currentTab !== 'closed') {
+                    setConfirmModal({ isOpen: false, groupId: null, newStatus: null });
                     setCurrentTab('closed');
                 } else if (targetStatus === 'active' && currentTab !== 'active') {
+                    setConfirmModal({ isOpen: false, groupId: null, newStatus: null });
                     setCurrentTab('active');
+                } else {
+                    setConfirmModal({ isOpen: false, groupId: null, newStatus: null });
                 }
+            },
+            onError: (error) => {
+                console.error('Guruh status o\'zgartirishda xatolik:', error);
+                setConfirmModal({ isOpen: false, groupId: null, newStatus: null });
             }
         });
-        setConfirmModal({ isOpen: false, groupId: null, newStatus: null });
     };
 
     if (isLoading) return <div className="p-10 text-center font-bold text-[#A60E07] text-xl animate-pulse">Guruhlar yuklanmoqda...</div>;

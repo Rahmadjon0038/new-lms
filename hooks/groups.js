@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { instance } from './api';
+import { useGetNotify } from './notify';
 
 // ----------- update group -----------------
 const updateGroup = async ({ id, groupdata }) => {
@@ -34,15 +35,26 @@ const changeGroupStatus = async ({ id, status }) => {
 
 export const useChangeGroupStatus = () => {
     const quericlient = useQueryClient();
+    const notify = useGetNotify();
+    
     const changeStatusMutation = useMutation({
         mutationFn: changeGroupStatus,
         onSuccess: (data, vars) => {
             quericlient.invalidateQueries(['groups']);
+            
+            // Backend xabarini ko'rsatish
+            const message = data.message || 'Guruh holati muvaffaqiyatli o\'zgartirildi';
+            notify('ok', message);
+            
             if (vars.onSuccess) {
                 vars.onSuccess(data);
             }
         },
         onError: (err, vars) => {
+            // Backend error xabarini ko'rsatish
+            const errorMessage = err?.response?.data?.message || 'Guruh holatini o\'zgartirishda xatolik yuz berdi';
+            notify('err', errorMessage);
+            
             if (vars.onError) {
                 vars.onError(err);
             }
@@ -125,7 +137,7 @@ export const useGetGroupById = (id) => {
 
 // ----------- get group view (for students) -----------------
 const getGroupView = async (id) => {
-    const response = await instance.get(`/api/groups/${id}/view`);
+    const response = await instance.get(`/api/students/my-group-info/${id}`);
     return response.data;
 }
 
