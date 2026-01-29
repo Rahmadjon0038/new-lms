@@ -48,7 +48,7 @@ const AddRoomModal = ({ isOpen, onClose, onSubmit, isLoading }) => {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-            <div className="bg-white p-6 rounded-2xl shadow-2xl w-full">
+            <div className="bg-white max-w-2xl p-6 rounded-2xl shadow-2xl w-full">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-xl font-bold text-gray-800">Yangi Xona Qo'shish</h3>
                     <button
@@ -184,7 +184,11 @@ const ScheduleModal = ({ isOpen, onClose, roomId }) => {
                     </div>
                 ) : (
                     <div className="space-y-4">
-                        {groups.map((group) => (
+                        {groups.slice().sort((a, b) => {
+                            const timeA = a.schedule?.time || '';
+                            const timeB = b.schedule?.time || '';
+                            return timeA.localeCompare(timeB);
+                        }).map((group) => (
                             <div 
                                 key={group.id} 
                                 className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:shadow-md transition"

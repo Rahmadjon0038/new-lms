@@ -41,6 +41,7 @@ const PaymentModal = ({ isOpen, onClose, student, month }) => {
     try {
       const payload = {
         student_id: student.student_id,
+        group_id: student.group_id,
         amount: Number(paymentData.amount),
         month: paymentData.month,
         payment_method: paymentData.payment_method,

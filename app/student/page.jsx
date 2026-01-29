@@ -104,6 +104,25 @@ const GroupCard = ({ group }) => {
               </span>
             </div>
           )}
+
+          {groupInfo.schedule && (
+            <div className="flex items-start">
+              <CalendarDaysIcon className="h-5 w-5 mr-3 text-gray-400 mt-0.5" />
+              <div>
+                <span className="font-semibold">Dars jadvali:</span>
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {groupInfo.schedule.days.map((day, index) => (
+                    <span key={index} className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-xs font-medium">
+                      {day}
+                    </span>
+                  ))}
+                  <span className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs font-medium">
+                    {groupInfo.schedule.time}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

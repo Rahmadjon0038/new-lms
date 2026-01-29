@@ -52,16 +52,16 @@ const StudentPayments = () => {
         if (!searchTerm.trim()) {
             return students;
         }
-        
+
         const lowerSearchTerm = searchTerm.toLowerCase().trim();
         return students.filter(student => {
             const fullName = `${student.name} ${student.surname}`.toLowerCase();
             const phone = student.phone?.replace(/\s+/g, '') || '';
             const searchPhone = lowerSearchTerm.replace(/\s+/g, '');
-            
+
             return fullName.includes(lowerSearchTerm) ||
-                   phone.includes(searchPhone) ||
-                   (student.group_name && student.group_name.toLowerCase().includes(lowerSearchTerm));
+                phone.includes(searchPhone) ||
+                (student.group_name && student.group_name.toLowerCase().includes(lowerSearchTerm));
         });
     }, [students, searchTerm]);
 
@@ -92,7 +92,7 @@ const StudentPayments = () => {
             const params = new URLSearchParams({
                 month: filters.month,
             });
-            
+
             if (filters.teacher_id) {
                 params.append('teacher_id', filters.teacher_id);
             }
@@ -111,7 +111,7 @@ const StudentPayments = () => {
             const blob = new Blob([response.data], {
                 type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             });
-            
+
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
@@ -120,12 +120,12 @@ const StudentPayments = () => {
             link.click();
             document.body.removeChild(link);
             window.URL.revokeObjectURL(url);
-            
+
         } catch (error) {
             console.error('Excel export error:', error);
-            
+
             let errorMessage = 'Excel faylini yuklab olishda xatolik yuz berdi';
-            
+
             if (error.response?.status === 404) {
                 errorMessage = 'Excel export API topilmadi. Iltimos adminga murojaat qiling.';
             } else if (error.response?.status === 500) {
@@ -133,7 +133,7 @@ const StudentPayments = () => {
             } else if (error.message) {
                 errorMessage = error.message;
             }
-            
+
             alert(errorMessage);
         }
     };
@@ -239,7 +239,7 @@ const StudentPayments = () => {
                             Talabalarning oylik to'lov ma'lumotlari va statistikasi
                         </p>
                     </div>
-                    
+
                     {/* Excel Export Button */}
                     <button
                         onClick={handleExport}
@@ -265,8 +265,8 @@ const StudentPayments = () => {
                                     key={status.value}
                                     onClick={() => handleFilterChange('status', status.value)}
                                     className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${filters.status === status.value
-                                            ? 'text-white shadow-md'
-                                            : 'text-gray-700 bg-gray-100 hover:bg-gray-200'
+                                        ? 'text-white shadow-md'
+                                        : 'text-gray-700 bg-gray-100 hover:bg-gray-200'
                                         }`}
                                     style={filters.status === status.value ? { backgroundColor: MAIN_COLOR } : {}}
                                 >
@@ -281,7 +281,7 @@ const StudentPayments = () => {
 
                         {/* Search Input - First Column */}
                         <div className="lg:col-span-1">
-                           
+
                             <div className="relative">
                                 <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                                 <input
@@ -305,7 +305,7 @@ const StudentPayments = () => {
 
                         {/* Month Filter */}
                         <div>
-                            
+
                             <input
                                 type="month"
                                 value={filters.month}
@@ -317,7 +317,7 @@ const StudentPayments = () => {
 
                         {/* Teacher Filter */}
                         <div>
-                            
+
                             <select
                                 value={filters.teacher_id}
                                 onChange={(e) => handleFilterChange('teacher_id', e.target.value)}
@@ -335,7 +335,7 @@ const StudentPayments = () => {
 
                         {/* Subject Filter */}
                         <div>
-                            
+
                             <select
                                 value={filters.subject_id}
                                 onChange={(e) => handleFilterChange('subject_id', e.target.value)}
@@ -370,7 +370,7 @@ const StudentPayments = () => {
                 {/* Statistics Cards - Display Only */}
                 {stats.total_students > 0 && (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                       
+
 
                         <div className="bg-white p-4 rounded-lg shadow-md border-l-4 border-green-500">
                             <div className="flex items-center justify-between">
@@ -471,12 +471,12 @@ const StudentPayments = () => {
                                                                 {student.name} {student.surname}
                                                             </div>
                                                             <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${student.student_status === 'active'
-                                                                    ? 'bg-green-100 text-green-800'
-                                                                    : student.student_status === 'finished'
-                                                                        ? 'bg-blue-100 text-blue-800'
-                                                                        : student.student_status === 'stripped'
-                                                                            ? 'bg-red-100 text-red-800'
-                                                                            : 'bg-gray-100 text-gray-800'
+                                                                ? 'bg-green-100 text-green-800'
+                                                                : student.student_status === 'finished'
+                                                                    ? 'bg-blue-100 text-blue-800'
+                                                                    : student.student_status === 'stripped'
+                                                                        ? 'bg-red-100 text-red-800'
+                                                                        : 'bg-gray-100 text-gray-800'
                                                                 }`}>
                                                                 {student.student_status === 'active' ? "Faol" :
                                                                     student.student_status === 'finished' ? "bitirgan" :
@@ -495,15 +495,15 @@ const StudentPayments = () => {
                                                         )}
                                                         <div className="flex gap-1">
                                                             {student.father_name && (
-                                                            <div className="text-xs text-gray-400 mt-1">
-                                                                Otasi: {student.father_name}
-                                                            </div>
-                                                        )}
-                                                        {student.father_phone && (
-                                                            <div className="flex items-center text-xs text-gray-400 mt-1">
-                                                                {student.father_phone}
-                                                            </div>
-                                                        )}
+                                                                <div className="text-xs text-gray-400 mt-1">
+                                                                    Otasi: {student.father_name}
+                                                                </div>
+                                                            )}
+                                                            {student.father_phone && (
+                                                                <div className="flex items-center text-xs text-gray-400 mt-1">
+                                                                    {student.father_phone}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                         {/* <div className="text-xs text-gray-400 mt-1">
                                                             ID: {student.student_id}
@@ -547,17 +547,47 @@ const StudentPayments = () => {
                                                     </div>
                                                     <div className="text-sm">
                                                         <span className="text-gray-500">To'langan:</span>
-                                                        <span className="font-medium text-green-600 ml-2">{formatCurrency(parseFloat(student.paid_amount))}</span>
+                                                        <span className="font-medium text-green-600 ml-2">
+                                                            {formatCurrency(parseFloat(student.paid_amount))}
+                                                        </span>
+
                                                         {student.payment_descriptions && (
                                                             <div className="relative group ml-1 inline-block">
-                                                                <InformationCircleIcon className="h-4 w-4 text-green-500 cursor-help" />
-                                                                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap max-w-xs z-10">
-                                                                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
-                                                                    To'lov tarixi: {student.payment_descriptions}
+                                                                <InformationCircleIcon className="h-4 w-4 text-green-500 cursor-help hover:text-green-600 transition-colors" />
+
+                                                                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 
+                      px-3 py-2 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 
+                      text-white text-xs font-medium
+                      rounded-lg shadow-2xl border border-gray-600
+                      opacity-0 group-hover:opacity-100 
+                      transform scale-95 group-hover:scale-100
+                      transition-all duration-300 ease-in-out
+                      pointer-events-none 
+                      whitespace-normal break-words 
+                      max-w-xs z-50 text-left
+                      before:absolute before:bottom-full before:left-1/2 before:-translate-x-1/2 
+                      before:w-0 before:h-0 before:border-l-4 before:border-r-4 
+                      before:border-b-4 before:border-transparent before:border-b-gray-800">
+
+                                                                    <div className="flex items-center gap-1 mb-1 text-green-300">
+                                                                        <svg className="h-2 w-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                                        </svg>
+                                                                        <span className="font-semibold text-xs uppercase tracking-wide">To'lov tarixi</span>
+                                                                    </div>
+                                                                    
+                                                                    <div className="text-gray-100 leading-snug text-xs">
+                                                                        {student.payment_descriptions.split('\n').map((line, index) => (
+                                                                            <div key={index} className="mb-0.5 last:mb-0">
+                                                                                {line.trim()}
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         )}
                                                     </div>
+
                                                     {parseFloat(student.discount_amount) > 0 && (
                                                         <div className="text-sm flex items-center">
                                                             <span className="text-gray-500">Chegirma:</span>
@@ -657,7 +687,7 @@ const StudentPayments = () => {
                                     {searchTerm ? 'Qidiruv bo\'yicha natija topilmadi' : 'Ma\'lumotlar topilmadi'}
                                 </p>
                                 <p className="text-gray-400 text-sm">
-                                    {searchTerm 
+                                    {searchTerm
                                         ? `"${searchTerm}" qidiruviga mos keladigan talabalar topilmadi`
                                         : 'Tanlangan filtrlar bo\'yicha hech qanday to\'lov ma\'lumoti yo\'q'
                                     }

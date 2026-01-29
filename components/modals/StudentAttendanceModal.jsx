@@ -6,7 +6,8 @@ import { useGetStudentMonthlyAttendance } from '../../hooks/attendance';
 const StudentAttendanceModal = ({ isOpen, onClose, student, month }) => {
     const { data: attendanceData, isLoading, error } = useGetStudentMonthlyAttendance(
         student?.student_id, 
-        month
+        month,
+        student?.group_id
     );
 
     if (!isOpen) return null;

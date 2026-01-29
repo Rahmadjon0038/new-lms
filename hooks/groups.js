@@ -220,3 +220,32 @@ export const useRemoveStudentFromGroup = () => {
     });
     return removeStudentMutation;
 }
+
+// ----------- get teacher's groups -----------------
+const getTeacherGroups = async () => {
+    const response = await instance.get('/api/groups/teacher/my-groups');
+    return response.data;
+}
+
+export const useGetTeacherGroups = () => {
+    const { data, isLoading, error, refetch } = useQuery({
+        queryKey: ['teacher-groups'],
+        queryFn: getTeacherGroups,
+    });
+    return { data, isLoading, error, refetch };
+}
+
+// ----------- get teacher's group by id -----------------
+const getTeacherGroupById = async (id) => {
+    const response = await instance.get(`/api/groups/teacher/my-groups/${id}`);
+    return response.data;
+}
+
+export const useGetTeacherGroupById = (id) => {
+    const { data, isLoading, error, refetch } = useQuery({
+        queryKey: ['teacher-group', id],
+        queryFn: () => getTeacherGroupById(id),
+        enabled: !!id,
+    });
+    return { data, isLoading, error, refetch };
+}

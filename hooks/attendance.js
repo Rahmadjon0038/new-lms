@@ -53,15 +53,20 @@ export const useCreateTodayLesson = () => {
 
 // 3️⃣ Talabaning oylik davomat hisoboti
 // GET /api/attendance/students/{student_id}/monthly
-const getStudentMonthlyAttendance = async (student_id, month) => {
-    const response = await instance.get(`/api/attendance/students/${student_id}/monthly?month=${month}`);
+const getStudentMonthlyAttendance = async (student_id, month, group_id = null) => {
+    const params = new URLSearchParams();
+    params.append('month', month);
+    if (group_id) {
+        params.append('group_id', group_id);
+    }
+    const response = await instance.get(`/api/attendance/students/${student_id}/monthly?${params.toString()}`);
     return response.data;
 }
 
-export const useGetStudentMonthlyAttendance = (student_id, month) => {
+export const useGetStudentMonthlyAttendance = (student_id, month, group_id = null) => {
     return useQuery({
-        queryKey: ['student-monthly-attendance', student_id, month],
-        queryFn: () => getStudentMonthlyAttendance(student_id, month),
+        queryKey: ['student-monthly-attendance', student_id, month, group_id],
+        queryFn: () => getStudentMonthlyAttendance(student_id, month, group_id),
         enabled: !!(student_id && month), // Only run when both params exist
     });
 }

@@ -43,6 +43,7 @@ const DiscountModal = ({ isOpen, onClose, student, month }) => {
     try {
       const payload = {
         student_id: student.student_id,
+        group_id: student.group_id,
         discount_type: discountData.discount_type,
         discount_value: Number(discountData.discount_value),
         month: discountData.month, // YYYY-MM format
@@ -172,7 +173,7 @@ const DiscountModal = ({ isOpen, onClose, student, month }) => {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
               rows="3"
               placeholder="Chegirma berishning sababini yozing..."
-              required
+              
             />
           </div>
 

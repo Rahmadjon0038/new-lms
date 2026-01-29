@@ -365,7 +365,7 @@ const StudentsPage = () => {
             </div>
 
             {/* Statistika bo'limi */}
-            {stats && stats.group_memberships && (
+            {/* {stats && stats.group_memberships && (
                 <div className="bg-white rounded-lg shadow-lg border border-gray-300 p-6 mb-6">
                     <h2 className="text-lg font-semibold text-gray-800 mb-4">📊 Statistika</h2>
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -391,7 +391,7 @@ const StudentsPage = () => {
                         </div>
                     </div>
                 </div>
-            )}
+            )} */}
 
             <div className="bg-white rounded-lg shadow-lg overflow-x-auto border border-gray-300">
                 <table className="min-w-full divide-y divide-gray-300 border-collapse">
@@ -526,13 +526,13 @@ const StudentsPage = () => {
                                                                 )}
                                                             </div>
 
-                                                            {student.group_joined_at && (
+                                                            {/* {student.group_joined_at && (
                                                                 <div className="flex items-center gap-1 text-xs">
                                                                     <Calendar className="h-3 w-3 text-purple-600" />
                                                                     <span className="font-medium text-gray-700">Guruhga qo'shilgan:</span>
                                                                     <span className="text-gray-900">{student.class_start_date?.slice(0, 10)}</span>
                                                                 </div>
-                                                            )}
+                                                            )} */}
 
                                                             {/* Dars boshlangan sana */}
                                                             {student.class_start_date && (

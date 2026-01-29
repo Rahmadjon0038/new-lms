@@ -4,41 +4,34 @@ import React from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
-  Squares2X2Icon,
   BookOpenIcon,
   ClipboardDocumentListIcon, // Davomat uchun
-  ChartBarIcon,
   BriefcaseIcon,
-  UserGroupIcon, // Guruhdoshlar o'rniga guruh uchun yanada mos
 } from "@heroicons/react/24/outline";
 
 // --- O'qituvchi Menyu elementlari ma'lumotlari ---
 const TeacherSidebarItems = [
-  {
-    name: "Dashboard",
-    icon: Squares2X2Icon,
-    href: "/teacher", // O'qituvchining asosiy yo'li (Dashboard)
-  },
+  // {
+  //   name: "Dashboard",
+  //   icon: Squares2X2Icon,
+  //   href: "/teacher", // O'qituvchining asosiy yo'li (Dashboard)
+  // },
   {
     name: "Mening Guruhlarim",
     icon: BookOpenIcon,
-    href: "/teacher/my-groups",
+    href: "/teacher",
   },
   {
     name: "Davomat",
     icon: ClipboardDocumentListIcon,
     href: "/teacher/attendance",
   },
-  // {
-  //   name: "Davomat Jurnali", // Kiritish uchun mosroq nom
-  //   icon: ChartBarIcon,
-  //   href: "/teacher/attendance-journal",
-  // },
-  // {
-  //   name: "Talabalar To'lovlari", // To'lovlar statusini ko'rish uchun
-  //   icon: BriefcaseIcon,
-  //   href: "/teacher/payments-info",
-  // },
+  
+  {
+    name: "Talabalar To'lovlari", // To'lovlar statusini ko'rish uchun
+    icon: BriefcaseIcon,
+    href: "/teacher/payments-info",
+  },
 ];
 
 function TeacherSidebar() {
@@ -50,21 +43,13 @@ function TeacherSidebar() {
     <div className="flex flex-col w-60 min-h-screen bg-white shadow-xl">
       <nav className="flex-1 px-4 py-6 space-y-2">
         {TeacherSidebarItems.map((item) => {
-          // 2. Aktivlikni tekshirish logikasi:
-          // Dashboardni ham, boshqa sahifalarni ham to'g'ri aniqlash uchun:
-          // Agar item.href (masalan, "/teacher") pathname ga to'liq teng bo'lsa
-          // YOKI pathname shu item.href bilan boshlansa va u Dashboard bo'lmasa.
-
           let isActive = pathname === item.href;
-
-          // Dashboard bo'lmagan sahifalar uchun (masalan /teacher/my-groups va /teacher/my-groups/1)
           if (item.href !== "/teacher") {
             isActive = pathname.startsWith(item.href);
           } else {
             // Dashboard (faqat /teacher bo'lsa aktiv)
             isActive = pathname === item.href;
           }
-
           return (
             <Link
               key={item.name}
@@ -73,7 +58,7 @@ function TeacherSidebar() {
                 flex items-center px-3 py-3 rounded-lg text-sm font-medium transition duration-150 ease-in-out
                 ${
                   isActive
-                    ? "bg-blue-600 text-white shadow-md" // Aktiv uslub (Shadow qo'shildi)
+                    ? "bg-[#A70E07] text-white shadow-md" // Aktiv uslub (Shadow qo'shildi)
                     : "text-gray-700 hover:bg-gray-100 hover:text-gray-900" // Noaktiv uslub
                 }
               `}

@@ -8,333 +8,462 @@ import {
   ClockIcon,
   CheckCircleIcon,
   XCircleIcon,
-  ClockIcon as DelayIcon,
+  PlusIcon,
+  EyeIcon,
+  ChevronRightIcon,
+  TrashIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import {
-  useGetMonthlyAttendance,
-  useCreateTodayLesson,
-} from "../../../../hooks/attendance";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { instance } from "../../../../hooks/api";
+import MonthlyAttendanceInline from "../../../../components/MonthlyAttendanceInline";
 import { toast } from "react-hot-toast";
 
-// Oylik davomat jadvali komponenti
-const MonthlyAttendanceTable = ({ groupId, selectedMonth }) => {
-  const { data: monthlyData, isLoading } = useGetMonthlyAttendance(
-    groupId,
-    selectedMonth
+const MAIN_COLOR = "#A60E07";
+
+// API functions
+const getGroupLessons = async (groupId, month) => {
+  const params = new URLSearchParams();
+  if (month) {
+    params.append('month', month);
+  }
+  
+  const queryString = params.toString();
+  const url = `/api/attendance/groups/${groupId}/lessons${queryString ? `?${queryString}` : ''}`;
+  
+  const response = await instance.get(url);
+  return response.data;
+};
+
+// Create lesson API
+const createLesson = async ({ group_id, date }) => {
+  const response = await instance.post('/api/attendance/lessons/create', {
+    group_id,
+    date
+  });
+  return response.data;
+};
+
+// Delete lesson API
+const deleteLesson = async (lessonId) => {
+  const response = await instance.delete(`/api/attendance/lessons/${lessonId}`);
+  return response.data;
+};
+
+// Create Lesson Modal Component
+const CreateLessonModal = ({ isOpen, onClose, groupId }) => {
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toISOString().split('T')[0] // Today's date in YYYY-MM-DD format
   );
-
-  if (isLoading) {
-    return (
-      <div className="text-center py-8">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  const group = monthlyData?.data?.group;
-  const lessons = monthlyData?.data?.lessons || [];
-  const students = monthlyData?.data?.students || [];
-
-  if (lessons.length === 0) {
-    return (
-      <div className="bg-white p-12 rounded-xl shadow-md text-center">
-        <CalendarIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-        <p className="text-gray-500 text-lg">
-          Bu oyda dars kunlari topilmadi
-        </p>
-        <p className="text-gray-400 text-sm mt-2">
-          Bugungi darsni yaratish uchun yuqoridagi tugmani bosing
-        </p>
-      </div>
-    );
-  }
-
-  // Davomat statusini formatlash
-  const getStatusIcon = (status) => {
-    if (status === "keldi" || status === "present") {
-      return <CheckCircleIcon className="h-5 w-5 text-white" />;
-    } else if (status === "kechikdi" || status === "late") {
-      return <DelayIcon className="h-5 w-5 text-white" />;
-    } else if (status === "kelmadi" || status === "absent") {
-      return <XCircleIcon className="h-5 w-5 text-white" />;
+  const queryClient = useQueryClient();
+  
+  const createLessonMutation = useMutation({
+    mutationFn: createLesson,
+    onSuccess: (data) => {
+      toast.success('Dars muvaffaqiyatli yaratildi!');
+      queryClient.invalidateQueries(['group-lessons', groupId]);
+      onClose();
+    },
+    onError: (error) => {
+      const message = error?.response?.data?.message || 'Dars yaratishda xatolik yuz berdi';
+      toast.error(message);
     }
-    return null;
-  };
-
-  const getStatusColor = (status) => {
-    if (status === "keldi" || status === "present") {
-      return "bg-green-500 border-green-600";
-    } else if (status === "kechikdi" || status === "late") {
-      return "bg-yellow-500 border-yellow-600";
-    } else if (status === "kelmadi" || status === "absent") {
-      return "bg-red-500 border-red-600";
+  });
+  
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!selectedDate) {
+      toast.error('Iltimos, sana tanlang');
+      return;
     }
-    return "bg-gray-100 border-gray-300";
+    
+    createLessonMutation.mutate({
+      group_id: parseInt(groupId),
+      date: selectedDate
+    });
   };
-
+  
+  if (!isOpen) return null;
+  
   return (
-    <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-      <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h3 className="text-xl font-bold mb-2">Oylik Davomat Jadvali</h3>
-            <p className="text-blue-100 text-sm">
-              {group?.name || "Guruh"}
-            </p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 bg-opacity-30">
+      <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">Yangi Dars Yaratish</h3>
+        
+        <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Dars sanasi
+            </label>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A60E07] focus:border-transparent"
+              required
+            />
           </div>
-          <div className="text-right">
-            <div className="text-2xl font-bold">{students.length}</div>
-            <div className="text-blue-100 text-sm">Talabalar</div>
+          
+          <div className="flex gap-3 justify-end">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              disabled={createLessonMutation.isLoading}
+            >
+              Bekor qilish
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 text-sm font-medium text-white rounded-lg hover:opacity-90 transition-colors disabled:opacity-50"
+              style={{ backgroundColor: MAIN_COLOR }}
+              disabled={createLessonMutation.isLoading}
+            >
+              {createLessonMutation.isLoading ? 'Yaratilmoqda...' : 'Dars yaratish'}
+            </button>
           </div>
-        </div>
+        </form>
       </div>
-
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-100 border-b-2 border-gray-200">
-            <tr>
-              <th className="sticky left-0 bg-gray-100 z-20 px-6 py-4 text-left text-sm font-semibold text-gray-700 min-w-[250px] border-r border-gray-300">
-                <div className="flex items-center gap-2">
-                  <UsersIcon className="h-5 w-5 text-gray-500" />
-                  Talaba
-                </div>
-              </th>
-              {lessons.map((lesson) => {
-                const date = new Date(lesson.date);
-                return (
-                  <th
-                    key={lesson.id}
-                    className="px-3 py-4 text-center min-w-[100px] border-r border-gray-200"
-                  >
-                    <div className="text-xs font-medium text-gray-500 mb-1">
-                      {date.toLocaleDateString("uz-UZ", { weekday: "short" })}
-                    </div>
-                    <div className="text-lg font-bold text-gray-800">
-                      {date.getDate()}
-                    </div>
-                    <div className="text-xs text-gray-400">
-                      {date.toLocaleDateString("uz-UZ", {
-                        month: "short",
-                      })}
-                    </div>
-                  </th>
-                );
-              })}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {students.map((student, index) => (
-              <tr
-                key={student.student_id}
-                className={`hover:bg-gray-50 transition ${
-                  index % 2 === 0 ? "bg-white" : "bg-gray-25"
-                }`}
-              >
-                <td className="sticky left-0 bg-inherit px-6 py-4 z-10 border-r border-gray-300">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                      {student.name?.charAt(0)}
-                      {student.surname?.charAt(0)}
-                    </div>
-                    <div className="flex-1">
-                      <div className="font-semibold text-gray-900 text-sm">
-                        {student.name} {student.surname}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {student.phone}
-                      </div>
-                    </div>
-                  </div>
-                </td>
-                {lessons.map((lesson) => {
-                  const status = student.attendance?.[lesson.date];
-
-                  return (
-                    <td
-                      key={lesson.id}
-                      className="px-3 py-4 text-center border-r border-gray-200"
-                    >
-                      <Link
-                        href={`/teacher/attendance/${groupId}/lesson/${lesson.id}`}
-                        className={`w-12 h-12 rounded-xl border-2 transition-all duration-200 flex items-center justify-center mx-auto hover:scale-110 ${getStatusColor(
-                          status
-                        )}`}
-                        title={`${lesson.date} - ${status || "Belgilanmagan"}`}
-                      >
-                        {getStatusIcon(status)}
-                      </Link>
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {students.length === 0 && (
-        <div className="text-center py-12">
-          <UsersIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500 text-lg">Talabalar topilmadi</p>
-        </div>
-      )}
     </div>
   );
 };
 
-// Asosiy komponent
+// Delete Lesson Confirmation Modal
+const DeleteConfirmModal = ({ isOpen, onClose, onConfirm, lessonInfo, isLoading }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+      <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">Darsni o'chirish</h3>
+        
+        <p className="text-gray-600 mb-6">
+          <strong>{lessonInfo?.date}</strong> kungi darsni o'chirishni tasdiqlaysizmi?
+          <br />
+          <span className="text-sm text-red-600 mt-2 block">
+            Bu amalni bekor qilib bo'lmaydi!
+          </span>
+        </p>
+        
+        <div className="flex gap-3 justify-end">
+          <button
+            onClick={onClose}
+            disabled={isLoading}
+            className="px-4 py-2 text-gray-600 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50"
+          >
+            Bekor qilish
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={isLoading}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+          >
+            {isLoading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                O'chirilmoqda...
+              </>
+            ) : (
+              <>
+                <TrashIcon className="h-4 w-4" />
+                O'chirish
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Main Component
 const TeacherGroupAttendance = () => {
   const params = useParams();
   const router = useRouter();
+  const queryClient = useQueryClient();
+  
   const groupId = params.id;
-
-  const getCurrentMonth = () => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, "0");
-    return `${year}-${month}`;
-  };
-
-  const getMonthOptions = () => {
-    const months = [];
-    const now = new Date();
-
-    for (let i = 0; i < 12; i++) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const value = `${year}-${month}`;
-
-      const monthNames = [
-        "Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun",
-        "Iyul", "Avgust", "Sentabr", "Oktabr", "Noyabr", "Dekabr",
-      ];
-      const label = `${monthNames[date.getMonth()]} ${year}`;
-
-      months.push({ value, label });
-    }
-
-    return months;
-  };
-
-  const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
-
-  const { data: monthlyData, isLoading, error } = useGetMonthlyAttendance(
-    groupId,
-    selectedMonth
+  
+  // Current month by default
+  const [selectedMonth, setSelectedMonth] = useState(
+    new Date().toISOString().slice(0, 7) // YYYY-MM format
   );
-  const createTodayLessonMutation = useCreateTodayLesson();
+  
+  // Create lesson modal state
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, lesson: null });
 
-  const group = monthlyData?.data?.group;
+  const { data: lessonsData, isLoading, error } = useQuery({
+    queryKey: ['group-lessons', groupId, selectedMonth],
+    queryFn: () => getGroupLessons(groupId, selectedMonth),
+    enabled: !!groupId,
+  });
 
-  const handleCreateTodayLesson = () => {
-    createTodayLessonMutation.mutate(groupId, {
-      onSuccess: (data) => {
-        toast.success(data.message || "Bugungi dars muvaffaqiyatli yaratildi");
-        
-        if (data.lesson_id) {
-          router.push(`/teacher/attendance/${groupId}/lesson/${data.lesson_id}`);
-        }
-      },
-      onError: (error) => {
-        toast.error(
-          error.response?.data?.message || "Dars yaratishda xatolik yuz berdi"
-        );
-      },
-    });
+  // Delete lesson mutation
+  const deleteLessonMutation = useMutation({
+    mutationFn: deleteLesson,
+    onSuccess: (data) => {
+      toast.success('Dars muvaffaqiyatli o\'chirildi!');
+      queryClient.invalidateQueries(['group-lessons', groupId]);
+      setDeleteModal({ isOpen: false, lesson: null });
+    },
+    onError: (error) => {
+      const message = error?.response?.data?.message || 'Darsni o\'chirishda xatolik yuz berdi';
+      toast.error(message);
+    }
+  });
+
+  const groupInfo = lessonsData?.data?.group_info;
+  let lessons = lessonsData?.data?.lessons || [];
+  // Show newest lessons first
+  lessons = [...lessons].reverse();
+
+  // Handle delete lesson
+  const handleDeleteLesson = (lesson) => {
+    setDeleteModal({ isOpen: true, lesson });
   };
 
-  const scheduleDisplay = group?.schedule
-    ? `${group.schedule.days?.join(", ")} - ${group.schedule.time}`
-    : "Jadval belgilanmagan";
+  const confirmDeleteLesson = () => {
+    if (deleteModal.lesson) {
+      deleteLessonMutation.mutate(deleteModal.lesson.id);
+    }
+  };
+
+  // Format date for display (UTC, YYYY MM DD, no timezone shift)
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    // Only take the date part, avoid timezone shift
+    return dateString.slice(0, 10).replace(/-/g, ' ');
+  };
+
+  // Calculate overall statistics
+  const totalLessons = lessons.length;
+  const totalStudentsAttended = lessons.reduce((sum, lesson) => sum + lesson.present_count, 0);
+  const totalStudentsExpected = lessons.reduce((sum, lesson) => sum + lesson.students_count, 0);
+  const averageAttendance = totalStudentsExpected > 0 
+    ? Math.round((totalStudentsAttended / totalStudentsExpected) * 100)
+    : 0;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center py-12">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: MAIN_COLOR }}></div>
+            <p className="text-gray-600 mt-4">Yuklanmoqda...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+            <p className="font-semibold">Xatolik yuz berdi:</p>
+            <p className="text-sm">{error.message || 'API bilan bog\'lanishda xatolik'}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-full mx-auto">
-        <Link
-          href="/teacher/attendance"
-          className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-6 font-medium"
-        >
-          <ArrowLeftIcon className="h-5 w-5" />
-          Orqaga
-        </Link>
-
-        {isLoading && (
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            <p className="text-gray-600 mt-4">Yuklanmoqda...</p>
+      <div className="px-2">
+        
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-6">
+          <button 
+            onClick={() => router.back()}
+            className="p-2 rounded-lg bg-white shadow-md hover:shadow-lg transition-all"
+          >
+            <ArrowLeftIcon className="h-5 w-5 text-gray-600" />
+          </button>
+          
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">
+              {groupInfo?.name || 'Guruh'} - Darslar
+            </h1>
+            <p className="text-sm text-gray-600">
+              Fan: {groupInfo?.subject_name || 'Belgilanmagan'}
+            </p>
           </div>
-        )}
+        </div>
 
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-            Xatolik yuz berdi: {error.message}
-          </div>
-        )}
-
-        {!isLoading && !error && group && (
-          <>
-            <div className="bg-white p-6 rounded-xl shadow-md mb-6">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-                <div className="flex-1">
-                  <h1 className="text-3xl font-bold text-gray-800 mb-2">
-                    {group.name}
-                  </h1>
-                  <div className="flex flex-wrap items-center gap-4 text-gray-600 text-sm">
-                    <div className="flex items-center gap-2">
-                      <AcademicCapIcon className="h-4 w-4" />
-                      <span>{group.subject_name}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <ClockIcon className="h-4 w-4" />
-                      <span>{scheduleDisplay}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="min-w-[200px]">
-                  <select
-                    value={selectedMonth}
-                    onChange={(e) => setSelectedMonth(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    {getMonthOptions().map((month) => (
-                      <option key={month.value} value={month.value}>
-                        {month.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-t border-gray-200 pt-4">
-                <div className="text-sm text-gray-600">
-                  <p className="font-medium mb-1">Bugungi darsni yaratish</p>
-                  <p className="text-xs text-gray-500">
-                    Dars yaratilgandan so'ng talabalar uchun davomat belgilash mumkin bo'ladi
-                  </p>
-                </div>
-                <button
-                  onClick={handleCreateTodayLesson}
-                  disabled={createTodayLessonMutation.isPending}
-                  className="px-6 py-3 rounded-lg font-medium text-white bg-blue-600 hover:bg-blue-700 transition disabled:opacity-50 flex items-center gap-2 shadow-md hover:shadow-lg whitespace-nowrap"
-                >
-                  <CalendarIcon className="h-5 w-5" />
-                  {createTodayLessonMutation.isPending
-                    ? "Yaratilmoqda..."
-                    : "Bugungi Darsni Yaratish"}
-                </button>
-              </div>
+        {/* Month Filter */}
+        <div className="mb-6">
+          <div className="bg-white p-4 rounded-lg shadow-md">
+            <div className="flex items-center gap-4">
+              <CalendarIcon className="h-5 w-5 text-gray-500" />
+              <label className="text-sm font-medium text-gray-700">Oy bo'yicha filter:</label>
+              <input
+                type="month"
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#A60E07] focus:border-transparent"
+              />
             </div>
+          </div>
+        </div>
 
-            <MonthlyAttendanceTable
-              groupId={groupId}
-              selectedMonth={selectedMonth}
-            />
-          </>
+        {/* Lessons Table */}
+        {lessons.length === 0 ? (
+          <div className="bg-white p-12 rounded-lg shadow-md text-center">
+            <CalendarIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500 text-lg">
+              {selectedMonth ? 'Tanlangan oyda darslar topilmadi' : 'Hali darslar yaratilmagan'}
+            </p>
+            <p className="text-gray-400 text-sm mt-2">
+              {selectedMonth ? 'Boshqa oy tanlang yoki yangi dars yarating' : 'Yangi dars yaratish uchun tugmani bosing'}
+            </p>
+            <button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="mt-4 flex items-center gap-2 px-6 py-2 text-sm font-medium text-white rounded-lg hover:opacity-90 transition-colors shadow-md mx-auto"
+              style={{ backgroundColor: MAIN_COLOR }}
+            >
+              <PlusIcon className="h-4 w-4" />
+              Yangi Dars Yaratish
+            </button>
+          </div>
+        ) : (
+          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-800">
+                Darslar ro'yxati ({lessons.length} ta)
+              </h2>
+              
+              <button
+                onClick={() => setIsCreateModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg hover:opacity-90 transition-colors shadow-md"
+                style={{ backgroundColor: MAIN_COLOR }}
+              >
+                <PlusIcon className="h-4 w-4" />
+                Yangi Dars
+              </button>
+            </div>
+            
+            {/* Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      №
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Dars vaqti
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Qatnashganlar
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Kelmaganlar
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Davomat %
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Amallar
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {lessons.map((lesson, index) => {
+                    const attendancePercentage = lesson.students_count > 0 
+                      ? Math.round((lesson.present_count / lesson.students_count) * 100)
+                      : 0;
+                    
+                    return (
+                      <tr key={lesson.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {index + 1}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <CalendarIcon className="h-4 w-4 text-gray-400 mr-2" />
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {formatDate(lesson.lesson_date)}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="text-lg font-bold text-green-600">
+                              {lesson.present_count}
+                            </div>
+                            <div className="text-sm text-gray-500 ml-1">
+                              / {lesson.students_count}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-lg font-bold text-red-600">
+                            {lesson.absent_count || (lesson.students_count - lesson.present_count)}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            attendancePercentage >= 80 ? 'bg-green-100 text-green-800' :
+                            attendancePercentage >= 60 ? 'bg-yellow-100 text-yellow-800' : 
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {attendancePercentage}%
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <div className="flex items-center gap-2 justify-end">
+                            <Link 
+                              href={`/teacher/attendance/${groupId}/lesson/${lesson.id}`}
+                              className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-white rounded-lg hover:opacity-90 transition-colors"
+                              style={{ backgroundColor: MAIN_COLOR }}
+                            >
+                              <EyeIcon className="h-4 w-4" />
+                              Kirish
+                            </Link>
+                            <button
+                              onClick={() => handleDeleteLesson(lesson)}
+                              className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+                            >
+                              <TrashIcon className="h-4 w-4" />
+                              O'chirish
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
         )}
+
+        {/* Monthly Attendance Table (inline) */}
+        <MonthlyAttendanceInline groupId={groupId} selectedMonth={selectedMonth} />
+
+        {/* Create Lesson Modal */}
+        <CreateLessonModal 
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+          groupId={groupId}
+        />
+        
+        {/* Delete Confirmation Modal */}
+        <DeleteConfirmModal
+          isOpen={deleteModal.isOpen}
+          onClose={() => setDeleteModal({ isOpen: false, lesson: null })}
+          onConfirm={confirmDeleteLesson}
+          lessonInfo={deleteModal.lesson ? {
+            date: formatDate(deleteModal.lesson.lesson_date)
+          } : null}
+          isLoading={deleteLessonMutation.isLoading}
+        />
       </div>
     </div>
   );

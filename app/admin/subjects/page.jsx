@@ -349,13 +349,13 @@ export default function SubjectsPage() {
                                 </div>
                                 
                                 <div className="flex items-center space-x-2">
-                                    <button
+                                    {/* <button
                                         onClick={() => handleViewStats(subject)}
                                         className="px-4 py-2 bg-blue-100 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-200 transition"
                                     >
                                         <EyeIcon className="h-4 w-4 mr-1 inline" />
                                         Batafsil
-                                    </button>
+                                    </button> */}
                                     
                                     <button
                                         onClick={() => handleEdit(subject)}

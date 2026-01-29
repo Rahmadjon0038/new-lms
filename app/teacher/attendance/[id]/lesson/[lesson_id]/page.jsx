@@ -4,322 +4,327 @@ import {
   ArrowLeftIcon,
   CheckCircleIcon,
   XCircleIcon,
-  ClockIcon,
   UsersIcon,
-  CalendarIcon,
+  PhoneIcon,
+  UserIcon,
 } from "@heroicons/react/24/outline";
-import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
 import {
-  useGetLessonStudents,
-  useSaveAttendance,
-} from "../../../../../../hooks/attendance";
+  User,
+  Phone,
+} from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { instance } from "../../../../../../hooks/api";
 import { toast } from "react-hot-toast";
 
+const MAIN_COLOR = "#A60E07";
+
+// API functions
+const getLessonStudents = async (lessonId) => {
+  const response = await instance.get(`/api/attendance/lessons/${lessonId}/students`);
+  return response.data;
+};
+
+const saveAttendance = async ({ lesson_id, attendance_data }) => {
+  const response = await instance.post("/api/attendance/mark", {
+    lesson_id,
+    attendance_data
+  });
+  return response.data;
+};
+
+// Attendance Select Component
+const AttendanceSelect = ({ student, currentStatus, onStatusChange, isLoading }) => {
+  const handleChange = (e) => {
+    const newStatus = e.target.value;
+    onStatusChange(student.student_id, newStatus);
+  };
+
+  return (
+    <select
+      value={currentStatus}
+      onChange={handleChange}
+      disabled={isLoading || !student.can_mark_attendance}
+      className={`w-full p-2 rounded border text-sm font-medium ${
+        currentStatus === "keldi" 
+          ? "bg-green-50 border-green-300 text-green-700" 
+          : "bg-red-50 border-red-300 text-red-700"
+      } ${
+        isLoading || !student.can_mark_attendance 
+          ? "opacity-50 cursor-not-allowed" 
+          : "cursor-pointer hover:shadow-sm"
+      }`}
+    >
+      <option value="kelmadi" className="text-red-700">Kelmadi</option>
+      <option value="keldi" className="text-green-700">Keldi</option>
+    </select>
+  );
+};
+
+// Main Component
 const TeacherLessonAttendance = () => {
   const params = useParams();
   const router = useRouter();
+  const queryClient = useQueryClient();
+  
   const groupId = params.id;
   const lessonId = params.lesson_id;
 
   const [attendanceData, setAttendanceData] = useState({});
   const [hasChanges, setHasChanges] = useState(false);
 
-  const { data: lessonData, isLoading, error } = useGetLessonStudents(lessonId);
-  const saveAttendanceMutation = useSaveAttendance();
+  // Fetch lesson students
+  const { data: response, isLoading, error } = useQuery({
+    queryKey: ["lesson-students", lessonId],
+    queryFn: () => getLessonStudents(lessonId),
+    enabled: !!lessonId,
+  });
 
-  const lesson = lessonData?.lesson;
-  const students = lessonData?.students || [];
+  // Safely extract students array from response
+  const students = Array.isArray(response?.data?.students) 
+    ? response.data.students 
+    : Array.isArray(response?.data) 
+    ? response.data 
+    : Array.isArray(response?.students)
+    ? response.students
+    : [];
 
+  // Initialize attendance data
   useEffect(() => {
-    if (students.length > 0 && Object.keys(attendanceData).length === 0) {
+    if (students.length > 0) {
       const initialAttendance = {};
       students.forEach((student) => {
-        initialAttendance[student.student_id] = student.status || "kelmadi";
+        initialAttendance[student.student_id] = student.attendance_status === "keldi" ? "keldi" : "kelmadi";
       });
       setAttendanceData(initialAttendance);
+      setHasChanges(false);
     }
   }, [students]);
 
-  const toggleStatus = (studentId) => {
-    setAttendanceData((prev) => {
-      const currentStatus = prev[studentId] || "kelmadi";
-      let newStatus;
+  // Save attendance mutation
+  const saveAttendanceMutation = useMutation({
+    mutationFn: saveAttendance,
+    onSuccess: () => {
+      toast.success("Davomat saqlandi!");
+      setHasChanges(false);
+      queryClient.invalidateQueries(["lesson-students", lessonId]);
+      queryClient.invalidateQueries(["group-lessons", groupId]);
+    },
+    onError: (error) => {
+      const message = error?.response?.data?.message || "Davomat saqlashda xatolik yuz berdi";
+      toast.error(message);
+    }
+  });
 
-      if (currentStatus === "kelmadi") {
-        newStatus = "keldi";
-      } else if (currentStatus === "keldi") {
-        newStatus = "kechikdi";
-      } else {
-        newStatus = "kelmadi";
-      }
-
-      setHasChanges(true);
-      return { ...prev, [studentId]: newStatus };
-    });
-  };
-
-  const markAllAs = (status) => {
-    const newAttendance = {};
-    students.forEach((student) => {
-      newAttendance[student.student_id] = status;
-    });
-    setAttendanceData(newAttendance);
+  // Handle status change
+  const handleStatusChange = (studentId, newStatus) => {
+    setAttendanceData(prev => ({
+      ...prev,
+      [studentId]: newStatus
+    }));
     setHasChanges(true);
   };
 
+  // Save attendance
   const handleSave = () => {
-    const attendance_array = students.map((student) => ({
-      student_id: student.student_id,
-      status: attendanceData[student.student_id] || "kelmadi",
+    if (!hasChanges) {
+      toast.info("Hech qanday ozgarish yoq");
+      return;
+    }
+
+    const attendance_data = Object.entries(attendanceData).map(([student_id, status]) => ({
+      student_id: parseInt(student_id),
+      status
     }));
 
-    saveAttendanceMutation.mutate(
-      {
-        lesson_id: parseInt(lessonId),
-        attendance_data: attendance_array,
-      },
-      {
-        onSuccess: (data) => {
-          toast.success(data.message || "Davomat muvaffaqiyatli saqlandi");
-          setHasChanges(false);
-          
-          setTimeout(() => {
-            router.push(`/teacher/attendance/${groupId}`);
-          }, 1000);
-        },
-        onError: (error) => {
-          toast.error(
-            error.response?.data?.message || "Davomatni saqlashda xatolik yuz berdi"
-          );
-        },
-      }
+    saveAttendanceMutation.mutate({
+      lesson_id: parseInt(lessonId),
+      attendance_data
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center py-12">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: MAIN_COLOR }}></div>
+            <p className="text-gray-600 mt-4">Yuklanmoqda...</p>
+          </div>
+        </div>
+      </div>
     );
-  };
+  }
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "keldi":
-        return "bg-green-500 hover:bg-green-600 text-white border-green-600";
-      case "kechikdi":
-        return "bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-600";
-      case "kelmadi":
-        return "bg-red-500 hover:bg-red-600 text-white border-red-600";
-      default:
-        return "bg-gray-200 hover:bg-gray-300 text-gray-700 border-gray-300";
-    }
-  };
+  if (error) {
+    console.error("API Error:", error);
+    return (
+      <div className="min-h-screen bg-gray-50 p-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+            <p className="font-semibold">Xatolik yuz berdi:</p>
+            <p className="text-sm">{error.message || "API bilan boglanishda xatolik"}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case "keldi":
-        return <CheckCircleIcon className="h-6 w-6" />;
-      case "kechikdi":
-        return <ClockIcon className="h-6 w-6" />;
-      case "kelmadi":
-        return <XCircleIcon className="h-6 w-6" />;
-      default:
-        return null;
-    }
-  };
-
-  const getStatusText = (status) => {
-    switch (status) {
-      case "keldi":
-        return "Keldi";
-      case "kechikdi":
-        return "Kechikdi";
-      case "kelmadi":
-        return "Kelmadi";
-      default:
-        return "Belgilanmagan";
-    }
-  };
-
-  const statistics = {
-    total: students.length,
-    keldi: Object.values(attendanceData).filter((s) => s === "keldi").length,
-    kelmadi: Object.values(attendanceData).filter((s) => s === "kelmadi").length,
-    kechikdi: Object.values(attendanceData).filter((s) => s === "kechikdi").length,
-  };
+  // Additional safety check
+  if (!response) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-lg">
+            <p className="font-semibold">Malumot topilmadi</p>
+            <p className="text-sm">Server javob qaytarmadi</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-6xl mx-auto">
-        <Link
-          href={`/teacher/attendance/${groupId}`}
-          className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-6 font-medium"
-        >
-          <ArrowLeftIcon className="h-5 w-5" />
-          Guruhga qaytish
-        </Link>
-
-        {isLoading && (
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            <p className="text-gray-600 mt-4">Yuklanmoqda...</p>
+      <div className="px-2">
+        
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-6">
+          <button 
+            onClick={() => router.back()}
+            className="p-2 rounded-lg bg-white shadow-md hover:shadow-lg transition-all"
+          >
+            <ArrowLeftIcon className="h-5 w-5 text-gray-600" />
+          </button>
+          
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">
+              Dars Davomati
+            </h1>
+            <p className="text-sm text-gray-600">
+              Dars ID: {lessonId} • Studentlar: {students.length} ta
+            </p>
           </div>
-        )}
+        </div>
 
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-            Xatolik: {error.message}
+        {/* Students Table */}
+        {students.length === 0 ? (
+          <div className="bg-white p-12 rounded-lg shadow-md text-center">
+            <UsersIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500 text-lg">Talabalar topilmadi</p>
+            <p className="text-gray-400 text-sm mt-2">Bu darsga hali talabalar qoshilmagan</p>
           </div>
-        )}
-
-        {!isLoading && !error && lesson && (
-          <>
-            <div className="bg-white p-6 rounded-xl shadow-md mb-6">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-800 mb-2">
-                    Dars Davomati
-                  </h1>
-                  <div className="flex items-center gap-4 text-gray-600 text-sm">
-                    <div className="flex items-center gap-2">
-                      <CalendarIcon className="h-4 w-4" />
-                      <span>
-                        {new Date(lesson.date).toLocaleDateString("uz-UZ", {
-                          weekday: "long",
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        })}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <UsersIcon className="h-4 w-4" />
-                      <span>{students.length} ta talaba</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-3 text-center">
-                  <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-                    <div className="text-2xl font-bold text-green-700">
-                      {statistics.keldi}
-                    </div>
-                    <div className="text-xs text-green-600">Keldi</div>
-                  </div>
-                  <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-                    <div className="text-2xl font-bold text-yellow-700">
-                      {statistics.kechikdi}
-                    </div>
-                    <div className="text-xs text-yellow-600">Kechikdi</div>
-                  </div>
-                  <div className="bg-red-50 p-3 rounded-lg border border-red-200">
-                    <div className="text-2xl font-bold text-red-700">
-                      {statistics.kelmadi}
-                    </div>
-                    <div className="text-xs text-red-600">Kelmadi</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex gap-3 mt-6 pt-6 border-t border-gray-200">
-                <button
-                  onClick={() => markAllAs("keldi")}
-                  className="flex-1 px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition font-medium text-sm"
-                >
-                  Hammani kelgan qilish
-                </button>
-                <button
-                  onClick={() => markAllAs("kechikdi")}
-                  className="flex-1 px-4 py-2 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 transition font-medium text-sm"
-                >
-                  Hammani kechikkan qilish
-                </button>
-                <button
-                  onClick={() => markAllAs("kelmadi")}
-                  className="flex-1 px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition font-medium text-sm"
-                >
-                  Hammani kelmagan qilish
-                </button>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-md overflow-hidden">
-              <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4">
-                <h2 className="text-lg font-bold">Talabalar Ro'yxati</h2>
-              </div>
-
-              <div className="divide-y divide-gray-200">
-                {students.map((student) => {
-                  const status = attendanceData[student.student_id] || "kelmadi";
-
-                  return (
-                    <div
-                      key={student.student_id}
-                      className="p-4 hover:bg-gray-50 transition"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4 flex-1">
-                          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold">
-                            {student.name?.charAt(0)}
-                            {student.surname?.charAt(0)}
-                          </div>
-                          <div>
-                            <div className="font-semibold text-gray-900">
-                              {student.name} {student.surname}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {student.phone}
-                            </div>
-                          </div>
-                        </div>
-
-                        <button
-                          onClick={() => toggleStatus(student.student_id)}
-                          className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 border-2 flex items-center gap-2 shadow-md hover:shadow-lg ${getStatusColor(
-                            status
-                          )}`}
-                        >
-                          {getStatusIcon(status)}
-                          <span>{getStatusText(status)}</span>
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {students.length === 0 && (
-                <div className="text-center py-12">
-                  <UsersIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500 text-lg">
-                    Bu guruhda talabalar topilmadi
-                  </p>
+        ) : (
+          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-800">
+                Talabalar royxati ({students.length} ta)
+              </h2>
+              
+              {hasChanges && (
+                <div className="text-sm text-orange-600 font-medium">
+                  ⚠️ Saqlanmagan ozgarishlar bor
                 </div>
               )}
             </div>
-
+            
+            {/* Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      №
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Talaba
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Telefon
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Davomat
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {students.map((student, index) => (
+                    <tr key={student.student_id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {index + 1}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-8 w-8">
+                            <div className="h-8 w-8 bg-gray-200 rounded-full flex items-center justify-center">
+                              <User className="h-4 w-4 text-gray-500" />
+                            </div>
+                          </div>
+                          <div className="ml-3">
+                            <div className="text-sm font-medium text-gray-900">
+                              {student.name} {student.surname}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center text-sm text-gray-600">
+                          <Phone className="h-4 w-4 mr-1" />
+                          {student.phone}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          student.group_status === "active" ? "bg-green-100 text-green-800" :
+                          student.group_status === "stopped" ? "bg-orange-100 text-orange-800" :
+                          "bg-gray-100 text-gray-800"
+                        }`}>
+                          {student.group_status_description}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="w-32">
+                          <AttendanceSelect
+                            student={student}
+                            currentStatus={attendanceData[student.student_id] || "kelmadi"}
+                            onStatusChange={handleStatusChange}
+                            isLoading={saveAttendanceMutation.isLoading}
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            
+            {/* Save Button */}
             {hasChanges && (
-              <div className="fixed bottom-6 right-6 flex gap-3">
-                <button
-                  onClick={() => {
-                    router.push(`/teacher/attendance/${groupId}`);
-                  }}
-                  className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition shadow-lg"
-                >
-                  Bekor qilish
-                </button>
+              <div className="mt-6 flex justify-center pb-6">
                 <button
                   onClick={handleSave}
-                  disabled={saveAttendanceMutation.isPending}
-                  className="px-8 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50 shadow-lg flex items-center gap-2"
+                  disabled={saveAttendanceMutation.isLoading}
+                  className="flex items-center gap-2 px-8 py-3 font-medium text-white rounded-lg hover:opacity-90 transition-colors disabled:opacity-50 shadow-md"
+                  style={{ backgroundColor: MAIN_COLOR }}
                 >
-                  {saveAttendanceMutation.isPending ? (
+                  {saveAttendanceMutation.isLoading ? (
                     <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                       Saqlanmoqda...
                     </>
                   ) : (
-                    "Davomatni Saqlash"
+                    <>
+                      <CheckCircleIcon className="h-5 w-5" />
+                      Ozgarishlarni saqlash
+                    </>
                   )}
                 </button>
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
     </div>

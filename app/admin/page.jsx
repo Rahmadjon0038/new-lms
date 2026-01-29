@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import Link from "next/link";
 import { useGetAllStudents } from '../../hooks/students';
+import { useGetDashboardStats } from '../../hooks/dashboard';
 import { getStatusInfo } from '../../utils/studentStatus';
 import AddGroup from '../../components/admistrator/AddGroup';
 import Image from "next/image";
@@ -18,45 +19,54 @@ import Image from "next/image";
 const MAIN_COLOR = "#A60E07";
 
 const StatCard = ({ title, value, icon: Icon }) => (
-  <div className="bg-white p-6 rounded-xl shadow-lg border-b-4" style={{ borderColor: MAIN_COLOR }}>
-    <div className="flex items-center justify-between">
-      <span className="text-sm font-medium text-gray-500">{title}</span>
-      <Icon className="h-6 w-6 text-gray-400" />
+  <div className="bg-white p-3 rounded-lg shadow border border-gray-200 flex items-center gap-3 hover:shadow-md transition group">
+    <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-[#A60E07]/10 to-[#A60E07]/5 group-hover:scale-105 transition-transform">
+      <Icon className="h-5 w-5 text-[#A60E07]" />
     </div>
-    <p className="text-4xl font-extrabold text-gray-900 mt-2">{value}</p>
+    <div className="flex flex-col flex-1 min-w-0">
+      <span className="text-xs font-semibold text-gray-500 truncate">{title}</span>
+      <span className="text-xl font-bold text-gray-900 truncate">{value}</span>
+    </div>
   </div>
 );
 
-function AdminDashboard() {
-  // Backend dan guruhga qo'shilmagan talabalarni olish
-  const filters = { unassigned: 'true' };
-  const { data: backendData, isLoading, refetch } = useGetAllStudents(filters);
 
-  // Yangi API response structureni handle qilish
+function AdminDashboard() {
+  // Guruhga qo'shilmagan talabalar uchun eski hook
+  const filters = { unassigned: 'true' };
+  const { data: backendData, isLoading: isLoadingUnassigned, refetch } = useGetAllStudents(filters);
   const unassignedStudents = backendData?.success ? (backendData.students || []) : [];
+
+  // Dashboard statistikasi uchun yangi hook
+  const { data: statsData, isLoading: isLoadingStats } = useGetDashboardStats();
+  const summary = statsData?.data?.summary;
 
   const handleModalSuccess = () => {
     refetch();
   };
 
-  if (isLoading) return <div className="p-8 text-center">Yuklanmoqda...</div>;
+  if (isLoadingUnassigned || isLoadingStats) return <div className="p-8 text-center">Yuklanmoqda...</div>;
 
   return (
-    <div className="p-4 md:p-8 mx-auto font-sans bg-gray-50 min-h-screen">
-      <div className="flex justify-between items-start mb-8">
+    <div className="p-2 md:p-6 mx-auto font-sans bg-gradient-to-br from-gray-50 to-white min-h-screen">
+      <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-1">Dashboard</h1>
-          <p className="text-lg text-gray-500">Markazning umumiy ko'rsatkichlari</p>
+          <h1 className="text-3xl font-extrabold text-[#A60E07] mb-1 tracking-tight drop-shadow-sm">Dashboard</h1>
+          <p className="text-base text-gray-500">Markazning umumiy ko'rsatkichlari</p>
         </div>
-        <Link href={'/admin/students/new'} className="flex items-center gap-2 px-5 py-3 text-white font-medium rounded-lg shadow-md transition hover:opacity-90" style={{ backgroundColor: MAIN_COLOR }}>
-          <PlusIcon className="h-6 w-6" /> Yangi talaba qo'shish
+        <Link href={'/admin/students/new'} className="flex items-center gap-2 px-4 py-2 text-white font-semibold rounded-lg shadow transition hover:opacity-90 bg-[#A60E07]">
+          <PlusIcon className="h-5 w-5" /> Yangi talaba qo'shish
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-        <StatCard title="Guruhga qo'shilmaganlar" value={unassignedStudents.length} icon={UsersIcon} />
-        <StatCard title="Jami Guruhlar" value="-" icon={BookOpenIcon} />
-        <StatCard title="Jami Talabalar" value="-" icon={UsersIcon} />
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 mb-10">
+        <StatCard title="Bugungi to'lovlar soni" value={summary?.today_payments?.count ?? '-'} icon={UsersIcon} />
+        <StatCard title="Bugungi to'lovlar summasi" value={summary?.today_payments?.amount ? summary.today_payments.amount.toLocaleString() + ' so\'m' : '-'} icon={BookOpenIcon} />
+        <StatCard title="Bugun qo'shilgan talabalar" value={summary?.new_students?.today ?? '-'} icon={UsersIcon} />
+        <StatCard title="Kecha qo'shilgan talabalar" value={summary?.new_students?.yesterday ?? '-'} icon={UsersIcon} />
+        <StatCard title="Qarzdor talabalar" value={summary?.debtor_students ?? '-'} icon={UsersIcon} />
+        <StatCard title="Faol guruhlar" value={summary?.active_groups ?? '-'} icon={BookOpenIcon} />
+        <StatCard title="Faol o'qituvchilar" value={summary?.active_teachers ?? '-'} icon={UsersIcon} />
       </div>
 
       {/* Guruhga qo'shilmagan talabalar */}

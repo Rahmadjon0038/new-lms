@@ -20,14 +20,20 @@ const MAIN_COLOR = "#A60E07";
 // Menyu elementlari ma'lumotlari
 const sidebarItems = [
   {
-    name: "Dashboard",
+    name: "Bosh sahifa",
     icon: Squares2X2Icon,
     href: "/admin",
   },
+ 
   {
-    name: "O'qituvchilar",
-    icon: UserGroupIcon,
-    href: "/admin/teachers",
+    name: "Davomat",
+    icon: ClipboardDocumentListIcon,
+    href: "/admin/attendance",
+  },
+  {
+    name: "Oylik to'lovlar",
+    icon: WalletIcon,
+    href: "/admin/students-payments",
   },
   {
     name: "Talabalar",
@@ -35,30 +41,28 @@ const sidebarItems = [
     href: "/admin/students",
   },
   {
+    name: "Guruhlar",
+    icon: BookOpenIcon,
+    href: "/admin/groups",
+  },
+  {
     name: "Fanlar",
     icon: AcademicCapIcon,
     href: "/admin/subjects",
   },
-  {
-    name: "Guruhlar",
-    icon: BookOpenIcon,
-    href: "/admin/groups",
+  
+   {
+    name: "O'qituvchilar",
+    icon: UserGroupIcon,
+    href: "/admin/teachers",
   },
   {
     name: "Xonalar",
     icon: BuildingLibraryIcon,
     href: "/admin/rooms",
   },
-  {
-    name: "Davomat",
-    icon: ClipboardDocumentListIcon,
-    href: "/admin/attendance",
-  },
-  {
-    name: "Student payment",
-    icon: WalletIcon,
-    href: "/admin/students-payments",
-  },
+  
+  
   // {
   //   name: "Teacher payment",
   //   icon: WalletIcon,
