@@ -28,25 +28,25 @@ const GroupCard = ({ group }) => {
   return (
     <Link
       href={`/teacher/attendance/${group.id}`}
-      className="block bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 border-t-4 hover:translate-x-1"
+      className="block bg-white p-3 sm:p-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 border-t-4 hover:translate-x-1"
       style={{ borderTopColor: MAIN_COLOR }}
     >
-      <div className="flex justify-between items-start mb-3">
-        <div className="flex-1">
-          <h3 className="text-lg font-bold text-gray-800 mb-1 flex items-center gap-2">
-            <UserGroupIcon className="h-5 w-5" style={{ color: MAIN_COLOR }} />
-            {group.name}
+      <div className="flex justify-between items-start mb-2 sm:mb-3">
+        <div className="flex-1 min-w-0">
+          <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-1 flex items-center gap-1.5 sm:gap-2">
+            <UserGroupIcon className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" style={{ color: MAIN_COLOR }} />
+            <span className="truncate">{group.name}</span>
           </h3>
-          <p className="text-sm text-gray-600 flex items-center gap-2">
-            <AcademicCapIcon className="h-4 w-4 text-gray-400" />
-            {group.subject_name} {group.room_number && (
-              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
+          <p className="text-xs sm:text-sm text-gray-600 flex items-center gap-1.5 sm:gap-2">
+            <AcademicCapIcon className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400 shrink-0" />
+            <span className="truncate">{group.subject_name}</span> {group.room_number && (
+              <span className="text-xs bg-blue-100 text-blue-700 px-1.5 sm:px-2 py-0.5 rounded shrink-0">
                 {group.room_number}-xona
               </span>
             )}
           </p>
         </div>
-        <ChevronRightIcon className="h-5 w-5 text-gray-400" />
+        <ChevronRightIcon className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 shrink-0" />
       </div>
 
       <div className="space-y-2 text-sm text-gray-700">
@@ -92,15 +92,15 @@ const TeacherAttendance = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="px-2">
+    <div className="min-h-screen bg-gray-50  sm:p-2 md:p-0">
+      <div className="px-1 sm:px-0">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-2">
-            <CalendarIcon className="h-6 w-6" style={{ color: MAIN_COLOR }} />
+        <div className="mb-4 sm:mb-6">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 flex items-center gap-2">
+            <CalendarIcon className="h-5 w-5 sm:h-6 sm:w-6" style={{ color: MAIN_COLOR }} />
             Davomat Tizimi
           </h1>
-          <p className="text-sm text-gray-600">
+          <p className="text-xs sm:text-sm text-gray-600">
             Guruhlaringizni tanlang va davomat qiling
           </p>
         </div>
@@ -143,7 +143,7 @@ const TeacherAttendance = () => {
                 <p className="text-gray-400 text-sm mt-1">Sizga biriktirilgan guruhlar yo'q</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-5">
                 {sortedGroups.map((group) => (
                   <GroupCard key={group.id} group={group} />
                 ))}

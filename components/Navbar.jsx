@@ -13,7 +13,6 @@ import { usegetProfile } from "../hooks/user";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
 
-// Rol uchun rangni aniqlash
 const getRoleColor = (role = "") => {
   const normalizedRole = role.toLowerCase();
   if (normalizedRole.includes("teacher") || normalizedRole.includes("o'qituvchi")) {
@@ -30,72 +29,83 @@ const getRoleColor = (role = "") => {
 
 function Navbar() {
   const { data: user, isLoading } = usegetProfile();
-  const navigate = useRouter()
+  const navigate = useRouter();
 
   const handleLogout = () => {
     Cookies.remove('accessToken');
     Cookies.remove('refreshToken');
     Cookies.remove('role');
-    navigate.push('/')
+    navigate.push('/');
   };
 
+  // Faqat ismni olish (mobil uchun qisqaroq ko'rinish)
+  const firstName = user?.name || "";
   const fullName = user ? `${user.name} ${user.surname}` : "";
   const userRole = user?.role || "Foydalanuvchi";
   const roleColorClass = getRoleColor(userRole);
 
   return (
     <header 
-      className="w-full shadow-xl border-b sticky top-0 z-10" 
+      className="w-full shadow-lg border-b z-[100]" 
       style={{ backgroundColor: '#A60E07', borderColor: 'rgba(255,255,255,0.1)' }}>
-      <div className="flex justify-between items-center h-16 px-4 md:px-8">
-        {/* 1. Logotip har doim ko'rinadi */}
+      
+      <div className="flex justify-between items-center h-16 px-4 md:px-8 max-w-[1600px] mx-auto">
+        
+        {/* 1. Logotip - mobil ekranlarda shrifti biroz kichrayadi */}
         <Link
           href="/"
-          className="text-2xl font-black text-white tracking-tighter transition duration-200 hover:opacity-90"
+          className="text-xl md:text-2xl font-black text-white tracking-tighter transition duration-200 hover:opacity-90 shrink-0"
         >
           TARAQQIYOT
         </Link>
 
         {/* 2. O'ng tomon */}
-        <div className="flex items-center space-x-4 md:space-x-6 text-white">
+        <div className="flex items-center space-x-2 md:space-x-6 text-white min-w-0">
           
           {isLoading ? (
-            /* Kichik aylana Loader */
-            <div className="flex items-center space-x-2 p-2">
+            <div className="flex items-center p-2">
               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-              <span className="text-sm text-white/70 hidden md:inline">Yuklanmoqda...</span>
             </div>
           ) : (
             <ProfileModal>
               <div
-                className="group flex items-center space-x-3 p-2 rounded-xl transition duration-200 cursor-pointer hover:bg-white/10"
+                className="group flex items-center space-x-2 md:space-x-3 p-1.5 md:p-2 rounded-xl transition duration-200 cursor-pointer hover:bg-white/10 min-w-0"
                 title="Profil ma'lumotlarini ko'rish"
               >
-                <div className="bg-white/20 p-1.5 rounded-full border border-white/30">
+                {/* Profil ikonkasi - mobilda doim ko'rinadi */}
+                <div className="bg-white/20 p-1.5 rounded-full border border-white/30 shrink-0">
                    <UserIcon className="h-5 w-5 text-white" aria-hidden="true" />
                 </div>
 
-                <div className="flex flex-col items-start leading-tight">
-                  <span className="text-sm md:text-base font-bold text-white">{fullName}</span>
+                {/* Foydalanuvchi ma'lumotlari */}
+                <div className="flex flex-col items-start leading-tight min-w-0">
+                  {/* Mobilda faqat ism, kattaroq ekranda to'liq ism-sharif */}
+                  <span className="text-sm md:text-base font-bold text-white truncate w-full max-w-[80px] md:max-w-[200px]">
+                    <span className="md:hidden">{firstName}</span>
+                    <span className="hidden md:inline">{fullName}</span>
+                  </span>
+                  
+                  {/* Rol belgisi - mobilda juda kichik va ixcham */}
                   <div
-                    className={`flex items-center px-2 py-0.5 mt-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter ${roleColorClass}`}
+                    className={`flex items-center px-1.5 py-0.5 mt-0.5 rounded-full text-[8px] md:text-[9px] font-black uppercase tracking-tighter shrink-0 ${roleColorClass}`}
                   >
-                    <AcademicCapIcon className="h-3 w-3 mr-1" />
+                    <AcademicCapIcon className="h-2.5 w-2.5 mr-1" />
                     {userRole}
                   </div>
                 </div>
 
-                <ChevronDownIcon className="h-4 w-4 text-white/70 transition duration-300 group-hover:rotate-180" />
+                <ChevronDownIcon className="h-3 w-3 md:h-4 md:w-4 text-white/70 transition duration-300 group-hover:rotate-180 shrink-0" />
               </div>
             </ProfileModal>
           )}
 
-          <div className="h-8 w-[1px] bg-white/20 mx-1" />
+          {/* Ajratuvchi chiziq */}
+          <div className="h-6 md:h-8 w-[1px] bg-white/20 mx-1 shrink-0" />
 
-          {/* Chiqish tugmasi har doim ko'rinadi */}
+          {/* Chiqish tugmasi */}
           <button
             onClick={handleLogout}
-            className="flex items-center px-3 py-2 rounded-lg text-sm font-bold transition duration-200 text-white hover:bg-black/20"
+            className="flex items-center justify-center p-2 md:px-3 md:py-2 rounded-lg text-sm font-bold transition duration-200 text-white hover:bg-black/20 shrink-0"
             title="Tizimdan chiqish"
           >
             <ArrowRightEndOnRectangleIcon

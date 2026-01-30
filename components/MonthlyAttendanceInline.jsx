@@ -51,12 +51,12 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
     }
   };
 
-  if (isLoading) return <div className="text-center py-8">Oylik hisobot yuklanmoqda...</div>;
-  if (error) return <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">Oylik hisobotda xatolik: {error.message}</div>;
+  if (isLoading) return <div className="text-center py-6 sm:py-8 text-sm sm:text-base">Oylik hisobot yuklanmoqda...</div>;
+  if (error) return <div className="bg-red-50 border border-red-200 text-red-700 px-3 sm:px-4 py-2 sm:py-3 rounded-lg text-xs sm:text-sm">Oylik hisobotda xatolik: {error.message}</div>;
   if (!lessons.length || !attendanceGrid.length) return null;
 
   return (
-    <div className="bg-white rounded-lg  overflow-x-auto mt-12 p-4 ">
+    <div className="bg-white rounded-lg overflow-x-auto mt-6 sm:mt-8 md:mt-12 p-3 sm:p-4 md:p-6">
         
       {/* <div className="mb-4">
         <div className="text-lg font-bold text-gray-800">{group?.name}</div>
@@ -69,51 +69,52 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
           <div className="text-sm text-gray-600">Dars vaqti: {group.schedule.days?.join(', ')} {group.schedule.time}</div>
         )}
       </div> */}
-    <div className="flex  justify-between items-center">
-      <h1 className="text-xl" >To'liq oylik davomat Xisoboti</h1>
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
+      <h1 className="text-base sm:text-lg md:text-xl font-semibold text-gray-800">To'liq oylik davomat Xisoboti</h1>
       <button 
         onClick={handleExport}
-        className="bg-green-500 active:scale-90 px-3 py-2 rounded-sm text-white hover:bg-green-600 transition-colors"
+        className="bg-green-500 active:scale-90 px-3 sm:px-4 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium text-white hover:bg-green-600 transition-colors shadow-md whitespace-nowrap w-full sm:w-auto"
       >
-        Exelga export qilish
+        <span className="hidden sm:inline">Exelga export qilish</span>
+        <span className="sm:hidden">Export</span>
       </button>
     </div>
-      <div className="overflow-x-auto mt-3 ">
-        <table className="min-w-full ">
+      <div className="overflow-x-auto mt-3 sm:mt-4 -mx-3 sm:mx-0">
+        <table className="min-w-full">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-4 py-2 text-xs font-semibold text-gray-700 text-left border border-gray-400">#</th>
-              <th className="px-4 py-2 text-xs font-semibold text-gray-700 text-left border border-gray-400">Talaba</th>
-              <th className="px-4 py-2 text-xs font-semibold text-gray-700 text-center border border-gray-400">Holati</th>
+              <th className="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold text-gray-700 text-left border border-gray-400">#</th>
+              <th className="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold text-gray-700 text-left border border-gray-400 whitespace-nowrap">Talaba</th>
+              <th className="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold text-gray-700 text-center border border-gray-400 whitespace-nowrap">Holati</th>
               {lessons.map(lesson => (
-                <th key={lesson.id} className="px-4 py-2 text-xs font-semibold text-gray-700 text-center bg-gray-50 sticky top-0 z-10 border border-gray-400">{lesson.date.replace(/-/g, ' ')}</th>
+                <th key={lesson.id} className="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-[9px] sm:text-[10px] md:text-xs font-semibold text-gray-700 text-center bg-gray-50 sticky top-0 z-10 border border-gray-400 whitespace-nowrap min-w-[60px] sm:min-w-[80px]">{lesson.date.replace(/-/g, ' ')}</th>
               ))}
             </tr>
           </thead>
           <tbody className="bg-white">
             {attendanceGrid.map((student, idx) => (
               <tr key={student.student_id} className="hover:bg-gray-50">
-                <td className="px-4 py-2 text-xs text-gray-600 border border-gray-400">{idx + 1}</td>
-                <td className="px-4 py-2 text-xs font-medium text-gray-900 whitespace-nowrap border border-gray-400">
+                <td className="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs text-gray-600 border border-gray-400">{idx + 1}</td>
+                <td className="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-medium text-gray-900 whitespace-nowrap border border-gray-400">
                   {student.name} {student.surname}
                 </td>
-                <td className="px-4 py-2 text-xs text-center border border-gray-400">{student.group_status_description}</td>
+                <td className="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-[9px] sm:text-[10px] md:text-xs text-center border border-gray-400">{student.group_status_description}</td>
                 {lessons.map(lesson => {
                   const status = student.attendance[lesson.date];
                   return (
-                    <td key={lesson.date} className="px-4 py-2 text-center border border-gray-400">
+                    <td key={lesson.date} className="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-center border border-gray-400">
                       {status === "keldi" ? (
-                        <p className="text-green-600">✓</p>
+                        <p className="text-green-600 text-sm sm:text-base font-bold">✓</p>
                         // <CheckCircleIcon className="h-5 w-5 text-green-500 inline" title="Keldi" />
                       ) : status === "kelmadi" ? (
-                        <p className="text-red-600">✗</p>
+                        <p className="text-red-600 text-sm sm:text-base font-bold">✗</p>
                         // <XCircleIcon className="h-5 w-5 text-red-500 inline" title="Kelmadi" />
                       ) : status === "bitirgan" ? (
-                        <span className="text-purple-600 font-semibold">Bitirgan</span>
+                        <span className="text-purple-600 font-semibold text-[9px] sm:text-[10px] md:text-xs">Bitirgan</span>
                       ) : status === "toxtatgan" ? (
-                        <span className="text-orange-600 font-semibold">to'xtagan</span>
+                        <span className="text-orange-600 font-semibold text-[9px] sm:text-[10px] md:text-xs">to'xtagan</span>
                       ) : (
-                        <span className="text-gray-400">-</span>
+                        <span className="text-gray-400 text-xs sm:text-sm">-</span>
                       )}
                     </td>
                   );

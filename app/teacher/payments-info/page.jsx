@@ -134,28 +134,28 @@ const TeacherPaymentsInfo = () => {
     return (
         <div className="min-h-full">
             {/* Header */}
-            <div className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            <div className="mb-4 sm:mb-6">
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
                     Talabalar to'lovlari
                 </h1>
-                <p className="text-gray-600">
+                <p className="text-sm sm:text-base text-gray-600">
                     O'quvchilaringizning oylik to'lov ma'lumotlari
                 </p>
             </div>
 
             {/* Filters */}
-            <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+            <div className="bg-white p-3 sm:p-4 md:p-6 rounded-lg shadow-md mb-4 sm:mb-6">
                 {/* Status Filter Buttons */}
-                <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                <div className="mb-4 sm:mb-6">
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2 sm:mb-3">
                         To'lov holati:
                     </label>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-1 sm:gap-2">
                         {statusTabs.map((status) => (
                             <button
                                 key={status.value}
                                 onClick={() => handleFilterChange('status', status.value)}
-                                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${filters.status === status.value
+                                className={`px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-lg transition-colors ${filters.status === status.value
                                         ? 'text-white shadow-md'
                                         : 'text-gray-700 bg-gray-100 hover:bg-gray-200'
                                     }`}
@@ -168,17 +168,17 @@ const TeacherPaymentsInfo = () => {
                 </div>
 
                 {/* Other Filters */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
                     {/* Search Input */}
                     <div>
                         <div className="relative">
-                            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-gray-400" />
                             <input
                                 type="text"
                                 placeholder="Ism, telefon, guruh..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-9 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition-colors text-sm"
+                                className="w-full pl-8 sm:pl-9 pr-6 sm:pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition-colors text-xs sm:text-sm"
                             />
                             {searchTerm && (
                                 <button
@@ -197,7 +197,7 @@ const TeacherPaymentsInfo = () => {
                             type="month"
                             value={filters.month}
                             onChange={(e) => handleFilterChange('month', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent text-xs sm:text-sm"
                         />
                     </div>
                 </div>
@@ -205,44 +205,44 @@ const TeacherPaymentsInfo = () => {
 
             {/* Statistics Cards */}
             {stats.total_students > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                    <div className="bg-white p-4 rounded-lg shadow-md border-l-4" style={{ borderColor: MAIN_COLOR }}>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
+                    <div className="bg-white p-2 sm:p-3 md:p-4 rounded-lg shadow-md border-l-4" style={{ borderColor: MAIN_COLOR }}>
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Jami talabalar</p>
-                                <p className="text-2xl font-bold mt-1" style={{ color: MAIN_COLOR }}>{stats.total_students}</p>
+                                <p className="text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide">Jami talabalar</p>
+                                <p className="text-lg sm:text-xl md:text-2xl font-bold mt-1" style={{ color: MAIN_COLOR }}>{stats.total_students}</p>
                             </div>
-                            <UsersIcon className="h-8 w-8 text-gray-400" />
+                            <UsersIcon className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400" />
                         </div>
                     </div>
 
-                    <div className="bg-white p-4 rounded-lg shadow-md border-l-4 border-green-500">
+                    <div className="bg-white p-2 sm:p-3 md:p-4 rounded-lg shadow-md border-l-4 border-green-500">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">To'liq to'laganlar</p>
-                                <p className="text-2xl font-bold text-green-600 mt-1">{stats.paid}</p>
+                                <p className="text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide">To'liq to'laganlar</p>
+                                <p className="text-lg sm:text-xl md:text-2xl font-bold text-green-600 mt-1">{stats.paid}</p>
                             </div>
-                            <CheckCircleIcon className="h-8 w-8 text-green-400" />
+                            <CheckCircleIcon className="h-6 w-6 sm:h-8 sm:w-8 text-green-400" />
                         </div>
                     </div>
 
-                    <div className="bg-white p-4 rounded-lg shadow-md border-l-4 border-yellow-500">
+                    <div className="bg-white p-2 sm:p-3 md:p-4 rounded-lg shadow-md border-l-4 border-yellow-500">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Qisman to'laganlar</p>
-                                <p className="text-2xl font-bold text-yellow-600 mt-1">{stats.partial}</p>
+                                <p className="text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide">Qisman to'laganlar</p>
+                                <p className="text-lg sm:text-xl md:text-2xl font-bold text-yellow-600 mt-1">{stats.partial}</p>
                             </div>
-                            <ClockIcon className="h-8 w-8 text-yellow-400" />
+                            <ClockIcon className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-400" />
                         </div>
                     </div>
 
-                    <div className="bg-white p-4 rounded-lg shadow-md border-l-4 border-red-500">
+                    <div className="bg-white p-2 sm:p-3 md:p-4 rounded-lg shadow-md border-l-4 border-red-500">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">To'lamaganlar</p>
-                                <p className="text-2xl font-bold text-red-600 mt-1">{stats.unpaid}</p>
+                                <p className="text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide">To'lamaganlar</p>
+                                <p className="text-lg sm:text-xl md:text-2xl font-bold text-red-600 mt-1">{stats.unpaid}</p>
                             </div>
-                            <XCircleIcon className="h-8 w-8 text-red-400" />
+                            <XCircleIcon className="h-6 w-6 sm:h-8 sm:w-8 text-red-400" />
                         </div>
                     </div>
                 </div>
@@ -250,8 +250,8 @@ const TeacherPaymentsInfo = () => {
 
             {/* Results Table */}
             <div className="bg-white rounded-lg shadow-md">
-                <div className="px-6 py-4 border-b border-gray-200">
-                    <h2 className="text-lg font-semibold text-gray-800">
+                <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b border-gray-200">
+                    <h2 className="text-base sm:text-lg font-semibold text-gray-800">
                         To'lov ma'lumotlari ({filteredStudents.length} ta)
                     </h2>
                 </div>
@@ -261,19 +261,19 @@ const TeacherPaymentsInfo = () => {
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         #
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Talaba
+                                    <th className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Talaba ma'lumotlari
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Guruh
+                                    <th className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
+                                        Guruh / Fan
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         To'lov ma'lumotlari
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Holati
                                     </th>
                                 </tr>
@@ -281,22 +281,17 @@ const TeacherPaymentsInfo = () => {
                             <tbody className="bg-white divide-y divide-gray-200">
                                 {filteredStudents.map((student, index) => (
                                     <tr key={`${student.student_id}-${student.group_id}-${index}`} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">
                                             {index + 1}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex items-center">
-                                                <div className="h-10 w-10 rounded-full flex items-center justify-center mr-3" style={{ backgroundColor: MAIN_COLOR }}>
-                                                    <span className="text-white font-bold text-sm">
-                                                        {student.name?.charAt(0)}{student.surname?.charAt(0)}
-                                                    </span>
-                                                </div>
-                                                <div>
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-sm font-medium text-gray-900">
+                                        <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-4">
+                                            <div className="flex items-start space-x-2 sm:space-x-3">
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="flex items-center gap-1 sm:gap-2 mb-1">
+                                                        <div className="text-xs sm:text-sm font-medium text-gray-900 truncate">
                                                             {student.name} {student.surname}
-                                                        </span>
-                                                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                                                        </div>
+                                                        <span className={`inline-flex items-center px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium ${
                                                             student.student_status === 'active'
                                                                 ? 'bg-green-100 text-green-800'
                                                                 : student.student_status === 'finished'
@@ -310,56 +305,74 @@ const TeacherPaymentsInfo = () => {
                                                              student.student_status === 'stopped' ? "To'xtatgan" : student.student_status}
                                                         </span>
                                                     </div>
-                                                    <div className="flex items-center text-xs text-gray-500 mt-1">
-                                                        <PhoneIcon className="h-3 w-3 mr-1" />
-                                                        <a href={`tel:${student.phone}`} className="hover:underline">
+                                                    <div className="flex items-center text-xs sm:text-sm text-gray-500 mt-1">
+                                                        <PhoneIcon className="h-3 w-3 mr-1 flex-shrink-0" />
+                                                        <a href={`tel:${student.phone}`} className="hover:underline truncate">
                                                             {student.phone}
                                                         </a>
                                                     </div>
-                                                    {student.father_phone && (
-                                                        <div className="flex items-center text-xs text-gray-400 mt-1">
-                                                            <PhoneIcon className="h-3 w-3 mr-1" />
-                                                            <a href={`tel:${student.father_phone}`} className="hover:underline">
-                                                                {student.father_phone} (ota-ona)
-                                                            </a>
+                                                    {student.phone2 && (
+                                                        <div className="flex items-center text-[10px] sm:text-xs text-gray-400 mt-1">
+                                                            <PhoneIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1 flex-shrink-0" />
+                                                            <span className="truncate">{student.phone2} (ikkinchi)</span>
                                                         </div>
                                                     )}
+                                                    {student.father_name && (
+                                                        <div className="text-[10px] sm:text-xs text-gray-400 mt-1 truncate">
+                                                            Otasi: {student.father_name}
+                                                            {student.father_phone && ` - ${student.father_phone}`}
+                                                        </div>
+                                                    )}
+                                                    {student.leave_date && (
+                                                        <div className="text-[10px] sm:text-xs text-red-500 mt-1">
+                                                            Ketgan: {new Date(student.leave_date).toLocaleDateString('uz-UZ')}
+                                                        </div>
+                                                    )}
+                                                    <div className="sm:hidden text-[10px] text-gray-500 mt-1 truncate">
+                                                        {student.group_name} - {student.subject_name}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm font-medium text-gray-900">
-                                                {student.group_name}
-                                            </div>
-                                            <div className="text-xs text-gray-500">
-                                                {student.subject_name}
+                                        <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-4 hidden sm:table-cell">
+                                            <div>
+                                                <div className="text-xs sm:text-sm font-medium text-gray-900 mb-1">
+                                                    {student.group_name}
+                                                </div>
+                                                <div className="text-xs sm:text-sm text-gray-500">
+                                                    {student.subject_name}
+                                                </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="space-y-1">
-                                                <div className="text-sm">
+                                        <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-4 whitespace-nowrap">
+                                            <div className="space-y-0.5 sm:space-y-1">
+                                                <div className="text-xs sm:text-sm">
+                                                    <span className="text-gray-500">Asl narx:</span>
+                                                    <span className="font-medium ml-1 sm:ml-2">{formatCurrency(parseFloat(student.original_price))}</span>
+                                                </div>
+                                                <div className="text-xs sm:text-sm">
                                                     <span className="text-gray-500">Kerak:</span>
-                                                    <span className="font-medium ml-2">{formatCurrency(parseFloat(student.required_amount))}</span>
+                                                    <span className="font-medium ml-1 sm:ml-2">{formatCurrency(parseFloat(student.required_amount))}</span>
                                                 </div>
-                                                <div className="text-sm">
+                                                <div className="text-xs sm:text-sm">
                                                     <span className="text-gray-500">To'langan:</span>
-                                                    <span className="font-medium text-green-600 ml-2">{formatCurrency(parseFloat(student.paid_amount))}</span>
+                                                    <span className="font-medium text-green-600 ml-1 sm:ml-2">{formatCurrency(parseFloat(student.paid_amount))}</span>
                                                 </div>
                                                 {parseFloat(student.discount_amount) > 0 && (
-                                                    <div className="text-sm">
+                                                    <div className="text-xs sm:text-sm">
                                                         <span className="text-gray-500">Chegirma:</span>
-                                                        <span className="font-medium text-orange-500 ml-2">-{formatCurrency(parseFloat(student.discount_amount))}</span>
+                                                        <span className="font-medium text-orange-500 ml-1 sm:ml-2">-{formatCurrency(parseFloat(student.discount_amount))}</span>
                                                     </div>
                                                 )}
                                                 {parseFloat(student.debt_amount) > 0 && (
-                                                    <div className="text-sm">
+                                                    <div className="text-xs sm:text-sm">
                                                         <span className="text-gray-500">Qarz:</span>
-                                                        <span className="font-medium text-red-600 ml-2">{formatCurrency(parseFloat(student.debt_amount))}</span>
+                                                        <span className="font-medium text-red-600 ml-1 sm:ml-2">{formatCurrency(parseFloat(student.debt_amount))}</span>
                                                     </div>
                                                 )}
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
+                                        <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-4 whitespace-nowrap">
                                             {getStatusBadge(student.payment_status)}
                                         </td>
                                     </tr>

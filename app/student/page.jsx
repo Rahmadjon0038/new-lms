@@ -36,54 +36,54 @@ const GroupCard = ({ group }) => {
 
   return (
     <div 
-      className="flex flex-col bg-white p-6 rounded-2xl shadow-xl transition-all duration-300 hover:shadow-2xl hover:translate-y-[-2px] border-t-4"
+      className="flex flex-col bg-white p-4 sm:p-5 md:p-6 rounded-xl sm:rounded-2xl shadow-xl transition-all duration-300 hover:shadow-2xl hover:translate-y-[-2px] border-t-4"
       style={{ borderTopColor: '#A60E07' }}
     >
       <div className="flex-grow">
-        <div className="flex justify-between items-start mb-4">
-          <h3 className="text-xl font-bold text-gray-800 leading-tight">
-            <span className="mr-2" style={{ color: '#A60E07' }}>
-              <BookOpenIcon className="h-6 w-6 inline" />
+        <div className="flex justify-between items-start mb-3 sm:mb-4 gap-2">
+          <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-800 leading-tight">
+            <span className="mr-1.5 sm:mr-2" style={{ color: '#A60E07' }}>
+              <BookOpenIcon className="h-5 w-5 sm:h-6 sm:w-6 inline" />
             </span>
             {groupInfo.name}
           </h3>
           <span
-            className={`px-3 py-1 text-xs font-bold rounded-full uppercase tracking-wider ${statusDisplay.className}`}
+            className={`px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-bold rounded-full uppercase tracking-wider flex-shrink-0 ${statusDisplay.className}`}
           >
             {statusDisplay.text}
           </span>
         </div>
 
-        <div className="space-y-3 text-sm text-gray-700 mt-5 mb-8">
+        <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-gray-700 mt-4 sm:mt-5 mb-6 sm:mb-8">
           <div className="flex items-center">
-            <CalendarDaysIcon className="h-5 w-5 mr-3 text-gray-400" />
+            <CalendarDaysIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 text-gray-400 flex-shrink-0" />
             <span className="font-semibold">O'qituvchi:</span>{" "}
-            <span className="ml-1 text-gray-800">{teacherInfo.name || 'Tayinlanmagan'}</span>
+            <span className="ml-1 text-gray-800 truncate">{teacherInfo.name || 'Tayinlanmagan'}</span>
           </div>
 
           <div className="flex items-center">
-            <BookOpenIcon className="h-5 w-5 mr-3 text-gray-400" />
+            <BookOpenIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 text-gray-400 flex-shrink-0" />
             <span className="font-semibold">Fan:</span>{" "}
-            <span className="ml-1 text-gray-800">{subjectInfo.name || 'Belgilanmagan'}</span>
+            <span className="ml-1 text-gray-800 truncate">{subjectInfo.name || 'Belgilanmagan'}</span>
           </div>
 
           {teacherInfo.phone && (
             <div className="flex items-center">
-              <PhoneIcon className="h-5 w-5 mr-3 text-gray-400" />
+              <PhoneIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 text-gray-400 flex-shrink-0" />
               <span className="font-semibold">Telefon:</span>{" "}
               <span className="ml-1 text-gray-800">{teacherInfo.phone}</span>
             </div>
           )}
 
           <div className="flex items-center">
-            <UsersIcon className="h-5 w-5 mr-3 text-gray-400" />
+            <UsersIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 text-gray-400 flex-shrink-0" />
             <span className="font-semibold">Talabalar:</span>{" "}
             <span className="ml-1 text-gray-800">{groupInfo.total_students} ta</span>
           </div>
 
           {roomInfo?.room_number && (
             <div className="flex items-center">
-              <UsersIcon className="h-5 w-5 mr-3 text-gray-400" />
+              <UsersIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 text-gray-400 flex-shrink-0" />
               <span className="font-semibold">Xona raqami:</span>{" "}
               <span className="ml-1 text-gray-800">{roomInfo.room_number}</span>
             </div>
@@ -91,9 +91,9 @@ const GroupCard = ({ group }) => {
 
           {groupInfo.class_status && (
             <div className="flex items-center">
-              <ClockIcon className="h-5 w-5 mr-3 text-gray-400" />
+              <ClockIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 text-gray-400 flex-shrink-0" />
               <span className="font-semibold">Dars holati:</span>{" "}
-              <span className={`ml-1 text-xs px-2 py-1 rounded ${
+              <span className={`ml-1 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded ${
                 groupInfo.class_status === 'started' ? 'bg-blue-100 text-blue-800' :
                 groupInfo.class_status === 'not_started' ? 'bg-yellow-100 text-yellow-800' :
                 'bg-gray-100 text-gray-800'
@@ -107,16 +107,16 @@ const GroupCard = ({ group }) => {
 
           {groupInfo.schedule && (
             <div className="flex items-start">
-              <CalendarDaysIcon className="h-5 w-5 mr-3 text-gray-400 mt-0.5" />
-              <div>
+              <CalendarDaysIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 text-gray-400 mt-0.5 flex-shrink-0" />
+              <div className="min-w-0 flex-1">
                 <span className="font-semibold">Dars jadvali:</span>
                 <div className="mt-1 flex flex-wrap gap-1">
                   {groupInfo.schedule.days.map((day, index) => (
-                    <span key={index} className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-xs font-medium">
+                    <span key={index} className="px-1.5 sm:px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-[10px] sm:text-xs font-medium">
                       {day}
                     </span>
                   ))}
-                  <span className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs font-medium">
+                  <span className="px-1.5 sm:px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-[10px] sm:text-xs font-medium">
                     {groupInfo.schedule.time}
                   </span>
                 </div>
@@ -126,10 +126,10 @@ const GroupCard = ({ group }) => {
         </div>
       </div>
 
-      <div className="flex-none space-y-3  border-t border-gray-100">
+      <div className="flex-none space-y-2 sm:space-y-3 border-t border-gray-100 pt-3 sm:pt-4">
         <Link
           href={`/student/groups/${groupInfo.id}`}
-          className="block text-center w-full text-white py-2.5 rounded-xl font-bold transition duration-150 ease-in-out text-base shadow-md hover:opacity-90 active:scale-[0.98]"
+          className="block text-center w-full text-white py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-bold transition duration-150 ease-in-out text-sm sm:text-base shadow-md hover:opacity-90 active:scale-[0.98]"
           style={{ backgroundColor: '#A60E07' }}
         >
           Guruhni ko'rish
@@ -137,8 +137,8 @@ const GroupCard = ({ group }) => {
 
         <div className="grid grid-cols-1 gap-2 text-xs">
           <div className="bg-gray-50 rounded-lg p-2">
-            <div className="text-gray-500 mb-1">Qo'shilgan:</div>
-            <div className="font-medium text-gray-800">
+            <div className="text-gray-500 mb-1 text-[10px] sm:text-xs">Qo'shilgan:</div>
+            <div className="font-medium text-gray-800 text-xs sm:text-sm">
               {myStatus.join_date}
             </div>
           </div>
@@ -212,28 +212,28 @@ function StudetGroup() {
 
   return (
     <div className="min-h-full">
-      <h1 className="text-3xl font-extrabold text-gray-900 mb-1">
+      <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-gray-900 mb-1">
         Mening Guruhlarim
       </h1>
-      <p className="text-base text-gray-500 mb-8">
+      <p className="text-xs sm:text-sm md:text-base text-gray-500 mb-4 sm:mb-6 md:mb-8">
         Siz ro'yxatdan o'tgan barcha faol va tugatilgan guruhlar.
       </p>
 
      
 
       {/* Guruhlar ro'yxati */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 items-stretch">
         {groups.map((group) => (
           <GroupCard key={group.group_id} group={group} />
         ))}
       </div>
 
       {groups.length === 0 && (
-        <div className="text-center py-12 rounded-2xl shadow-inner mt-8 border-t-2" style={{ backgroundColor: '#FDF2F2', borderColor: '#F8D7DA' }}>
-          <p className="text-lg font-bold" style={{ color: '#A60E07' }}>
+        <div className="text-center py-8 sm:py-12 rounded-xl sm:rounded-2xl shadow-inner mt-6 sm:mt-8 border-t-2" style={{ backgroundColor: '#FDF2F2', borderColor: '#F8D7DA' }}>
+          <p className="text-base sm:text-lg font-bold" style={{ color: '#A60E07' }}>
             Siz hali birorta guruhga a'zo emassiz.
           </p>
-          <p className="text-sm text-gray-500 mt-2">
+          <p className="text-xs sm:text-sm text-gray-500 mt-2">
             Yuqoridagi maydonga kodni kiritib, yangi guruhga qo'shiling.
           </p>
         </div>

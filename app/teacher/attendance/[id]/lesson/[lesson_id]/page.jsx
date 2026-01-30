@@ -45,7 +45,7 @@ const AttendanceSelect = ({ student, currentStatus, onStatusChange, isLoading })
       value={currentStatus}
       onChange={handleChange}
       disabled={isLoading || !student.can_mark_attendance}
-      className={`w-full p-2 rounded border text-sm font-medium ${
+      className={`w-full p-1.5 sm:p-2 rounded border text-xs sm:text-sm font-medium ${
         currentStatus === "keldi" 
           ? "bg-green-50 border-green-300 text-green-700" 
           : "bg-red-50 border-red-300 text-red-700"
@@ -185,23 +185,23 @@ const TeacherLessonAttendance = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="px-2">
+    <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6">
+      <div className="px-1 sm:px-2">
         
         {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex items-center gap-2 sm:gap-4 mb-4 sm:mb-6">
           <button 
             onClick={() => router.back()}
-            className="p-2 rounded-lg bg-white shadow-md hover:shadow-lg transition-all"
+            className="p-1.5 sm:p-2 rounded-lg bg-white shadow-md hover:shadow-lg transition-all"
           >
-            <ArrowLeftIcon className="h-5 w-5 text-gray-600" />
+            <ArrowLeftIcon className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
           </button>
           
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold text-gray-900 mb-1">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-1 truncate">
               Dars Davomati
             </h1>
-            <p className="text-sm text-gray-600">
+            <p className="text-xs sm:text-sm text-gray-600">
               Dars ID: {lessonId} • Studentlar: {students.length} ta
             </p>
           </div>
@@ -216,13 +216,13 @@ const TeacherLessonAttendance = () => {
           </div>
         ) : (
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-800">
+            <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-800">
                 Talabalar royxati ({students.length} ta)
               </h2>
               
               {hasChanges && (
-                <div className="text-sm text-orange-600 font-medium">
+                <div className="text-xs sm:text-sm text-orange-600 font-medium">
                   ⚠️ Saqlanmagan ozgarishlar bor
                 </div>
               )}
@@ -233,19 +233,19 @@ const TeacherLessonAttendance = () => {
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                       №
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Talaba
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
                       Telefon
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Davomat
                     </th>
                   </tr>
@@ -253,31 +253,35 @@ const TeacherLessonAttendance = () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {students.map((student, index) => (
                     <tr key={student.student_id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">
                         {index + 1}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="flex-shrink-0 h-8 w-8">
-                            <div className="h-8 w-8 bg-gray-200 rounded-full flex items-center justify-center">
-                              <User className="h-4 w-4 text-gray-500" />
+                          <div className="flex-shrink-0 h-6 w-6 sm:h-8 sm:w-8">
+                            <div className="h-6 w-6 sm:h-8 sm:w-8 bg-gray-200 rounded-full flex items-center justify-center">
+                              <User className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500" />
                             </div>
                           </div>
-                          <div className="ml-3">
-                            <div className="text-sm font-medium text-gray-900">
+                          <div className="ml-2 sm:ml-3 min-w-0 flex-1">
+                            <div className="text-xs sm:text-sm font-medium text-gray-900 truncate">
                               {student.name} {student.surname}
+                            </div>
+                            <div className="sm:hidden text-[10px] text-gray-500 flex items-center mt-0.5">
+                              <Phone className="h-2 w-2 mr-1" />
+                              {student.phone}
                             </div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center text-sm text-gray-600">
-                          <Phone className="h-4 w-4 mr-1" />
+                      <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 whitespace-nowrap hidden sm:table-cell">
+                        <div className="flex items-center text-xs sm:text-sm text-gray-600">
+                          <Phone className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                           {student.phone}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                      <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 whitespace-nowrap hidden md:table-cell">
+                        <span className={`inline-flex px-2 py-1 text-[10px] sm:text-xs font-semibold rounded-full ${
                           student.group_status === "active" ? "bg-green-100 text-green-800" :
                           student.group_status === "stopped" ? "bg-orange-100 text-orange-800" :
                           "bg-gray-100 text-gray-800"
@@ -285,8 +289,8 @@ const TeacherLessonAttendance = () => {
                           {student.group_status_description}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="w-32">
+                      <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 whitespace-nowrap">
+                        <div className="w-24 sm:w-32">
                           <AttendanceSelect
                             student={student}
                             currentStatus={attendanceData[student.student_id] || "kelmadi"}
@@ -303,22 +307,24 @@ const TeacherLessonAttendance = () => {
             
             {/* Save Button */}
             {hasChanges && (
-              <div className="mt-6 flex justify-center pb-6">
+              <div className="mt-4 sm:mt-6 flex justify-center pb-4 sm:pb-6">
                 <button
                   onClick={handleSave}
                   disabled={saveAttendanceMutation.isLoading}
-                  className="flex items-center gap-2 px-8 py-3 font-medium text-white rounded-lg hover:opacity-90 transition-colors disabled:opacity-50 shadow-md"
+                  className="flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 lg:px-8 py-2 sm:py-3 font-medium text-white rounded-lg hover:opacity-90 transition-colors disabled:opacity-50 shadow-md text-sm sm:text-base"
                   style={{ backgroundColor: MAIN_COLOR }}
                 >
                   {saveAttendanceMutation.isLoading ? (
                     <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Saqlanmoqda...
+                      <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span className="hidden sm:inline">Saqlanmoqda...</span>
+                      <span className="sm:hidden">...</span>
                     </>
                   ) : (
                     <>
-                      <CheckCircleIcon className="h-5 w-5" />
-                      Ozgarishlarni saqlash
+                      <CheckCircleIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                      <span className="hidden sm:inline">Ozgarishlarni saqlash</span>
+                      <span className="sm:hidden">Saqlash</span>
                     </>
                   )}
                 </button>

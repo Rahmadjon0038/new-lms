@@ -37,6 +37,29 @@ const StudentPayments = () => {
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [showDiscountModal, setShowDiscountModal] = useState(false);
     const [showAttendanceModal, setShowAttendanceModal] = useState(false);
+    const [showPaymentHistoryModal, setShowPaymentHistoryModal] = useState(false);
+    const [paymentHistory, setPaymentHistory] = useState([]);
+    const [paymentHistoryLoading, setPaymentHistoryLoading] = useState(false);
+
+    // Fetch payment history for a student
+    const fetchPaymentHistory = async (groupId, studentId) => {
+        if (!groupId || !studentId) return;
+        
+        setPaymentHistoryLoading(true);
+        try {
+            const response = await instance.get(`/api/payments/my/history?group_id=${groupId}&student_id=${studentId}&limit=20`);
+            if (response.data.success) {
+                setPaymentHistory(response.data.data.payments || []);
+            } else {
+                setPaymentHistory([]);
+            }
+        } catch (error) {
+            console.error('Payment history fetch error:', error);
+            setPaymentHistory([]);
+        } finally {
+            setPaymentHistoryLoading(false);
+        }
+    };
 
     // Fetch filter options
     const { data: filterOptions } = usePaymentFilters();
@@ -552,39 +575,17 @@ const StudentPayments = () => {
                                                         </span>
 
                                                         {student.payment_descriptions && (
-                                                            <div className="relative group ml-1 inline-block">
-                                                                <InformationCircleIcon className="h-4 w-4 text-green-500 cursor-help hover:text-green-600 transition-colors" />
-
-                                                                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 
-                      px-3 py-2 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 
-                      text-white text-xs font-medium
-                      rounded-lg shadow-2xl border border-gray-600
-                      opacity-0 group-hover:opacity-100 
-                      transform scale-95 group-hover:scale-100
-                      transition-all duration-300 ease-in-out
-                      pointer-events-none 
-                      whitespace-normal break-words 
-                      max-w-xs z-50 text-left
-                      before:absolute before:bottom-full before:left-1/2 before:-translate-x-1/2 
-                      before:w-0 before:h-0 before:border-l-4 before:border-r-4 
-                      before:border-b-4 before:border-transparent before:border-b-gray-800">
-
-                                                                    <div className="flex items-center gap-1 mb-1 text-green-300">
-                                                                        <svg className="h-2 w-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                                        </svg>
-                                                                        <span className="font-semibold text-xs uppercase tracking-wide">To'lov tarixi</span>
-                                                                    </div>
-                                                                    
-                                                                    <div className="text-gray-100 leading-snug text-xs">
-                                                                        {student.payment_descriptions.split('\n').map((line, index) => (
-                                                                            <div key={index} className="mb-0.5 last:mb-0">
-                                                                                {line.trim()}
-                                                                            </div>
-                                                                        ))}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
+                                                            <button
+                                                            onClick={async () => {
+                                                                setSelectedStudent(student);
+                                                                setShowPaymentHistoryModal(true);
+                                                                await fetchPaymentHistory(student.group_id, student.student_id);
+                                                                }}
+                                                                className="ml-1 inline-flex items-center justify-center w-5 h-5 bg-green-100 hover:bg-green-200 rounded-full transition-colors group"
+                                                                title="To'lov tarixini ko'rish"
+                                                            >
+                                                                <InformationCircleIcon className="h-3 w-3 text-green-600 group-hover:text-green-700" />
+                                                            </button>
                                                         )}
                                                     </div>
 
@@ -727,6 +728,175 @@ const StudentPayments = () => {
                     student={selectedStudent}
                     month={filters.month}
                 />
+
+                {/* Payment History Modal */}
+                {showPaymentHistoryModal && selectedStudent && (
+                    <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center z-50 p-4">
+                        <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[85vh] overflow-hidden">
+                            {/* Header */}
+                            <div className="px-4 py-3 border-b border-gray-200" style={{ backgroundColor: `${MAIN_COLOR}10` }}>
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                                            <CreditCardIcon className="h-4 w-4" style={{ color: MAIN_COLOR }} />
+                                            To'lov tarixi
+                                        </h3>
+                                        <p className="text-xs text-gray-600 mt-0.5">
+                                            {selectedStudent.name} {selectedStudent.surname}
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            setShowPaymentHistoryModal(false);
+                                            setSelectedStudent(null);
+                                        }}
+                                        className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100"
+                                    >
+                                        <XCircleIcon className="h-5 w-5" />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Content */}
+                            <div className="p-4 overflow-y-auto max-h-[calc(85vh-120px)]">
+                                {paymentHistoryLoading ? (
+                                    <div className="text-center py-6">
+                                        <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2" style={{ borderColor: MAIN_COLOR }}></div>
+                                        <p className="text-gray-600 mt-2 text-sm">Yuklanmoqda...</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {paymentHistory && paymentHistory.length > 0 ? (
+                                            paymentHistory.map((payment, index) => {
+                                                const paymentDate = new Date(payment.payment_date);
+                                                const formattedDate = paymentDate.toLocaleDateString('uz-UZ', {
+                                                    year: 'numeric',
+                                                    month: '2-digit',
+                                                    day: '2-digit',
+                                                    hour: '2-digit',
+                                                    minute: '2-digit'
+                                                }).replace(/M/g, '');
+                                                
+                                                const paymentMethodLabels = {
+                                                    'cash': 'Naqd',
+                                                    'card': 'Karta',
+                                                    'transfer': 'O\'tkazma',
+                                                    'other': 'Boshqa'
+                                                };
+                                                
+                                                return (
+                                                    <div key={payment.id} className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-3 border border-green-200 hover:border-green-300 transition-all duration-200 hover:shadow-sm">
+                                                        <div className="flex items-start justify-between">
+                                                            <div className="flex-1">
+                                                                {/* Payment Amount and ID */}
+                                                                <div className="flex items-center gap-2 mb-2">
+                                                                    <div className="flex items-center justify-center w-7 h-7 rounded-full" style={{ backgroundColor: `${MAIN_COLOR}20` }}>
+                                                                        <CurrencyDollarIcon className="h-4 w-4" style={{ color: MAIN_COLOR }} />
+                                                                    </div>
+                                                                    <div>
+                                                                        <div className="text-lg font-bold" style={{ color: MAIN_COLOR }}>
+                                                                            {formatCurrency(parseFloat(payment.amount))}
+                                                                        </div>
+                                                                        <div className="text-xs text-gray-500">
+                                                                            #{payment.id}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                
+                                                                {/* Compact Info Grid */}
+                                                                <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                                                                    <div className="flex items-center gap-1">
+                                                                        <CalendarIcon className="h-3 w-3 text-gray-400" />
+                                                                        <span className="text-gray-600">{formattedDate}</span>
+                                                                    </div>
+                                                                    
+                                                                    <div className="flex items-center gap-1">
+                                                                        <CreditCardIcon className="h-3 w-3 text-blue-500" />
+                                                                        <span className="text-gray-600">
+                                                                            {paymentMethodLabels[payment.payment_method] || payment.payment_method}
+                                                                        </span>
+                                                                    </div>
+                                                                    
+                                                                    <div className="flex items-center gap-1 col-span-2">
+                                                                        <UserIcon className="h-3 w-3 text-purple-500" />
+                                                                        <span className="text-gray-600 truncate">
+                                                                            {payment.received_by}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                                
+                                                                {/* Description */}
+                                                                {payment.description && (
+                                                                    <div className="mt-2 bg-white rounded p-2 border border-gray-100">
+                                                                        <div className="text-xs text-gray-500">Izoh:</div>
+                                                                        <div className="text-xs text-gray-700">
+                                                                            {payment.description}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            
+                                                            {/* Timeline indicator */}
+                                                            <div className="ml-3 flex flex-col items-center">
+                                                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: MAIN_COLOR }}></div>
+                                                                {index < paymentHistory.length - 1 && (
+                                                                    <div className="w-0.5 h-6 bg-gray-300 mt-1"></div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })
+                                        ) : (
+                                            <div className="text-center py-8">
+                                                <CreditCardIcon className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                                                <p className="text-gray-500 text-sm font-medium mb-1">
+                                                    To'lov tarixi topilmadi
+                                                </p>
+                                                <p className="text-gray-400 text-xs max-w-xs mx-auto">
+                                                    Bu talaba uchun hech qanday to'lov amalga oshirilmagan
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Footer */}
+                            <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3 text-xs">
+                                        <div className="text-gray-600">
+                                            <span className="font-medium">Jami:</span>
+                                            <span className="ml-1 font-bold text-blue-600">
+                                                {paymentHistory.length} ta
+                                            </span>
+                                        </div>
+                                        <div className="text-gray-600">
+                                            <span className="font-bold text-green-600">
+                                                {paymentHistory.length > 0 ? 
+                                                    formatCurrency(paymentHistory.reduce((sum, payment) => sum + parseFloat(payment.amount), 0)) :
+                                                    formatCurrency(parseFloat(selectedStudent?.paid_amount || 0))
+                                                }
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            setShowPaymentHistoryModal(false);
+                                            setSelectedStudent(null);
+                                            setPaymentHistory([]);
+                                        }}
+                                        className="px-4 py-1.5 text-xs font-medium text-white rounded-lg hover:opacity-90 transition-colors"
+                                        style={{ backgroundColor: MAIN_COLOR }}
+                                    >
+                                        Yopish
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
             </div>
         </div>
