@@ -84,12 +84,12 @@ function GroupDetails() {
               <BookOpenIcon className="h-8 w-8 mr-3 text-[#A60E07]" />
               {groupDetails.name}
             </h1>
+            <p className="text-sm text-gray-700">Fan: {subject.name}</p>
             <p className="text-lg text-gray-500">Guruh tafsilotlari va a'zolar ro'yxati</p>
-            <p className="text-sm text-gray-400">Fan: {subject.name}</p>
           </div>
           
           {/* Guruh Holati - Header ning o'ng tomonida */}
-          <div className="bg-white px-5 py-4 rounded-xl shadow-lg border border-gray-100 min-w-[180px]">
+          {/* <div className="bg-white px-5 py-4 rounded-xl shadow-lg border border-gray-100 min-w-[180px]">
             <div className="text-center">
               <h3 className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Guruh Holati</h3>
               <span className={`inline-flex px-4 py-1.5 text-xs font-bold rounded-full ${
@@ -112,11 +112,11 @@ function GroupDetails() {
                 </div>
               )}
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* 1. Asosiy Ma'lumotlar Bloki */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-8">
           {/* O'qituvchi Ma'lumotlari */}
           <div className="bg-white p-6 rounded-2xl shadow-lg border-t-4 border-orange-500">
             <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center">
@@ -125,6 +125,9 @@ function GroupDetails() {
             </h3>
             <p className="text-xl font-bold text-gray-800">
               {teacher.name || 'Tayinlanmagan'}
+            </p>
+            <p className="text-xs mt-1 font-bold text-gray-800">
+              {teacher.phone || 'Mavjud emas'}
             </p>
           </div>
 
@@ -142,7 +145,7 @@ function GroupDetails() {
           </div>
 
           {/* Guruh Statistikasi */}
-          <div className="bg-white p-6 rounded-2xl shadow-lg border-t-4 border-green-500">
+          {/* <div className="bg-white p-6 rounded-2xl shadow-lg border-t-4 border-green-500">
             <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center">
               <UsersIcon className="h-4 w-4 mr-2 text-green-500" />
               Statistika
@@ -155,7 +158,7 @@ function GroupDetails() {
                 Jami: {stats.total_members}, Faol: {stats.active_members}
               </p>
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* 3. Guruhdoshlar Ro'yxati - TABLE FORMAT */}

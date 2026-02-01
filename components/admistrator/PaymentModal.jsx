@@ -100,6 +100,16 @@ const PaymentModal = ({ isOpen, onClose, student, month }) => {
     { value: 'transfer', label: 'O\'tkazma', icon: DevicePhoneMobileIcon }
   ];
 
+  // Debug: Log student data
+  useEffect(() => {
+    if (student && isOpen) {
+      console.log('💰 PaymentModal Student Data:', student);
+      console.log('📊 Required Amount:', student.required_amount);
+      console.log('💵 Original Price:', student.original_price);
+      console.log('💸 Debt Amount:', student.debt_amount);
+    }
+  }, [student, isOpen]);
+
   if (!isOpen) return null;
 
   return (
@@ -129,21 +139,19 @@ const PaymentModal = ({ isOpen, onClose, student, month }) => {
                 <div className="col-span-2">
                   <div className="flex items-center justify-between bg-white p-3 rounded-lg border">
                     <span className="font-medium text-gray-700">Qarzlik miqdori:</span>
-                    <span className="text-lg font-bold text-red-600">
-                      {formatCurrency(Math.abs(parseFloat(student.debt_amount || 0)))}
+                    <span className={`text-lg font-bold ${parseFloat(student.debt_amount || student.original_price || 0) > 0 ? 'text-red-600' : 'text-gray-600'}`}>
+                      {formatCurrency(Math.abs(parseFloat(student.debt_amount || student.original_price || 0)))}
                     </span>
                   </div>
                 </div>
-                {student.required_amount && (
-                  <div className="col-span-2">
-                    <div className="flex items-center justify-between bg-blue-50 p-3 rounded-lg border border-blue-200">
-                      <span className="font-medium text-blue-700">Oylik to'lov miqdori:</span>
-                      <span className="text-lg font-bold text-blue-600">
-                        {formatCurrency(parseFloat(student.required_amount))}
-                      </span>
-                    </div>
+                <div className="col-span-2">
+                  <div className="flex items-center justify-between bg-blue-50 p-3 rounded-lg border border-blue-200">
+                    <span className="font-medium text-blue-700">Oylik to'lov miqdori:</span>
+                    <span className="text-lg font-bold text-blue-600">
+                      {formatCurrency(parseFloat(student.required_amount || student.original_price || 0))}
+                    </span>
                   </div>
-                )}
+                </div>
               </div>
             </div>
           </div>

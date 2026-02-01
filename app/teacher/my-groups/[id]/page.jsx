@@ -72,8 +72,8 @@ function TeacherGroupDetail() {
   const students = groupData.data.students || [];
 
   return (
-    <div className="min-h-full bg-gradient-to-br from-gray-50 to-gray-100 p-3 sm:p-4 md:p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-full bg-gradient-to-br from-gray-50 to-gray-100 p-3 sm:p-4 md:p-6 lg:p-0">
+      <div className="">
         {/* Orqaga Qaytish Tugmasi */}
         <Link
           href="/teacher"

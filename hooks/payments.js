@@ -27,7 +27,11 @@ const fetchMonthlyPayments = async (filters) => {
   const queryString = params.toString();
   const url = `/api/payments/monthly${queryString ? `?${queryString}` : ''}`;
   
+  console.log('🔍 Monthly Payments API Request:', url);
+  console.log('📊 Filters:', filters);
+  
   const response = await instance.get(url);
+  console.log('✅ Monthly Payments Response:', response.data);
   return response.data;
 };
 
@@ -133,8 +137,9 @@ export const useStudentMonthlyPayments = (month, options = {}) => {
 };
 
 // Get student's payment history
-const fetchStudentPaymentHistoryNew = async (groupId, limit = 10) => {
+const fetchStudentPaymentHistoryNew = async ({ month, groupId, limit = 10 }) => {
   const params = new URLSearchParams();
+  if (month) params.append('month', month);
   if (groupId) params.append('group_id', groupId);
   if (limit) params.append('limit', limit);
   
@@ -145,10 +150,37 @@ const fetchStudentPaymentHistoryNew = async (groupId, limit = 10) => {
   return response.data;
 };
 
-export const useStudentPaymentHistoryNew = (groupId, limit = 10, options = {}) => {
+export const useStudentPaymentHistoryNew = ({ month, groupId, limit = 10 }, options = {}) => {
   return useQuery({
-    queryKey: ['student-payment-history-new', groupId, limit],
-    queryFn: () => fetchStudentPaymentHistoryNew(groupId, limit),
+    queryKey: ['student-payment-history-new', month, groupId, limit],
+    queryFn: () => fetchStudentPaymentHistoryNew({ month, groupId, limit }),
+    enabled: !!groupId,
+    ...options,
+  });
+};
+
+// Get payment history with month filter (Admin)
+const fetchPaymentHistory = async ({ month, groupId, studentId, limit = 20 }) => {
+  const params = new URLSearchParams();
+  if (month) params.append('month', month);
+  if (groupId) params.append('group_id', groupId);
+  if (studentId) params.append('student_id', studentId);
+  if (limit) params.append('limit', limit);
+  
+  const queryString = params.toString();
+  const url = `/api/payments/my/history${queryString ? `?${queryString}` : ''}`;
+  
+  console.log('📜 Payment History API Request:', url);
+  const response = await instance.get(url);
+  console.log('📜 Payment History Response:', response.data);
+  return response.data;
+};
+
+export const usePaymentHistory = ({ month, groupId, studentId, limit = 20 }, options = {}) => {
+  return useQuery({
+    queryKey: ['payment-history', month, groupId, studentId, limit],
+    queryFn: () => fetchPaymentHistory({ month, groupId, studentId, limit }),
+    enabled: !!groupId && !!studentId,
     ...options,
   });
 };

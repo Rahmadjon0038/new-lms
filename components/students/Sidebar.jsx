@@ -123,7 +123,7 @@ function Sidebar() {
             {/* Menu items */}
             <SidebarContent />
             
-            {/* Footer */}
+            {/* Footer
             <div className="p-4 border-t border-gray-50">
               <div 
                 className="rounded-lg p-3 text-[10px] font-bold text-center opacity-40 uppercase tracking-widest"
@@ -131,7 +131,7 @@ function Sidebar() {
               >
                 LMS v2.0
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       )}

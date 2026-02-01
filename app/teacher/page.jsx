@@ -52,7 +52,7 @@ const GroupCard = ({ group }) => {
             <UsersIcon className="h-4 w-4 mr-2 text-gray-500 shrink-0" />
             <span className="text-gray-600">Talabalar:</span>
             <span className="ml-1 font-semibold text-[#A60E07]">
-              {studentsStats.active}/{studentsStats.total}
+              {studentsStats.active}
             </span>
           </p>
 
@@ -143,7 +143,7 @@ function TeacherGroups() {
       </header>
 
       {/* Grid: Mobil - 1 ta, Planshet - 2 ta, Desktop - 3 ta */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6 lg:gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-3 sm:gap-4 md:gap-6 lg:gap-8">
         {groups.map((group) => (
           <GroupCard key={group.group_info.id} group={group} />
         ))}
