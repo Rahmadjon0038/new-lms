@@ -22,14 +22,18 @@ const MAIN_COLOR = "#A60E07";
 // API functions
 const getLessonStudents = async (lessonId) => {
   const response = await instance.get(`/api/attendance/lessons/${lessonId}/students`);
+  return response.data.data;
+};
+
+const saveAttendance = async ({ lesson_id, attendance_records }) => {
+  const response = await instance.put(`/api/attendance/lessons/${lesson_id}/mark`, {
+    attendance_records
+  });
   return response.data;
 };
 
-const saveAttendance = async ({ lesson_id, attendance_data }) => {
-  const response = await instance.post("/api/attendance/mark", {
-    lesson_id,
-    attendance_data
-  });
+const updateMonthlyStatus = async (data) => {
+  const response = await instance.put('/api/attendance/student/monthly-status', data);
   return response.data;
 };
 
@@ -37,20 +41,22 @@ const saveAttendance = async ({ lesson_id, attendance_data }) => {
 const AttendanceSelect = ({ student, currentStatus, onStatusChange, isLoading }) => {
   const handleChange = (e) => {
     const newStatus = e.target.value;
-    onStatusChange(student.student_id, newStatus);
+    onStatusChange(student.attendance_id, newStatus);
   };
+
+  const isDisabled = isLoading || !student.can_mark;
 
   return (
     <select
       value={currentStatus}
       onChange={handleChange}
-      disabled={isLoading || !student.can_mark_attendance}
+      disabled={isDisabled}
       className={`w-full p-2 rounded border text-sm font-medium ${
         currentStatus === "keldi" 
           ? "bg-green-50 border-green-300 text-green-700" 
           : "bg-red-50 border-red-300 text-red-700"
       } ${
-        isLoading || !student.can_mark_attendance 
+        isDisabled 
           ? "opacity-50 cursor-not-allowed" 
           : "cursor-pointer hover:shadow-sm"
       }`}
@@ -58,6 +64,205 @@ const AttendanceSelect = ({ student, currentStatus, onStatusChange, isLoading })
       <option value="kelmadi" className="text-red-700">Kelmadi</option>
       <option value="keldi" className="text-green-700">Keldi</option>
     </select>
+  );
+};
+
+// Monthly Status Update Modal
+const MonthlyStatusModal = ({ isOpen, onClose, student, groupId, currentMonth }) => {
+  const [newStatus, setNewStatus] = useState('');
+  const [updateType, setUpdateType] = useState('single'); // single, multiple, fromMonth
+  const [selectedMonths, setSelectedMonths] = useState([]);
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (isOpen && student) {
+      setNewStatus(student.monthly_status === 'active' ? 'stopped' : 'active');
+      setUpdateType('single');
+      setSelectedMonths([currentMonth]);
+    }
+  }, [isOpen, student, currentMonth]);
+
+  const updateStatusMutation = useMutation({
+    mutationFn: updateMonthlyStatus,
+    onSuccess: () => {
+      toast.success('Status muvaffaqiyatli o\'zgartirildi!');
+      queryClient.invalidateQueries(['lesson-students']);
+      onClose();
+    },
+    onError: (error) => {
+      const message = error?.response?.data?.message || 'Status o\'zgartirishda xatolik';
+      toast.error(message);
+    }
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    if (!student) return;
+
+    let requestData = {
+      student_id: student.student_id,
+      group_id: parseInt(groupId),
+      monthly_status: newStatus
+    };
+
+    if (updateType === 'single') {
+      requestData.month = currentMonth;
+    } else if (updateType === 'multiple') {
+      requestData.months = selectedMonths;
+    } else if (updateType === 'fromMonth') {
+      requestData.from_month = currentMonth;
+    }
+
+    updateStatusMutation.mutate(requestData);
+  };
+
+  const handleMonthToggle = (month) => {
+    setSelectedMonths(prev => 
+      prev.includes(month) 
+        ? prev.filter(m => m !== month)
+        : [...prev, month]
+    );
+  };
+
+  // Generate month options (current month + next 11 months)
+  const generateMonthOptions = () => {
+    const options = [];
+    const [year, month] = currentMonth.split('-').map(Number);
+    
+    for (let i = 0; i < 12; i++) {
+      const newMonth = month + i;
+      const newYear = year + Math.floor((newMonth - 1) / 12);
+      const finalMonth = ((newMonth - 1) % 12) + 1;
+      const monthStr = `${newYear}-${String(finalMonth).padStart(2, '0')}`;
+      options.push(monthStr);
+    }
+    
+    return options;
+  };
+
+  if (!isOpen || !student) return null;
+
+  const monthOptions = generateMonthOptions();
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 bg-opacity-50">
+      <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">
+          Oylik Statusni O'zgartirish
+        </h3>
+        
+        <div className="mb-4 p-3 bg-gray-50 rounded">
+          <p className="text-sm text-gray-600">Talaba: <strong>{student.student_name}</strong></p>
+          <p className="text-sm text-gray-600">
+            Joriy status: <span className={`font-semibold ${
+              student.monthly_status === 'active' ? 'text-green-600' : 'text-orange-600'
+            }`}>
+              {student.monthly_status_description}
+            </span>
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          {/* New Status */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Yangi Status
+            </label>
+            <select
+              value={newStatus}
+              onChange={(e) => setNewStatus(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A60E07]"
+              required
+            >
+              <option value="active">Faol (Active)</option>
+              <option value="stopped">To'xtatilgan (Stopped)</option>
+            </select>
+          </div>
+
+          {/* Update Type */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Qaysi oylarni o'zgartirish
+            </label>
+            <div className="space-y-2">
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  value="single"
+                  checked={updateType === 'single'}
+                  onChange={(e) => setUpdateType(e.target.value)}
+                  className="mr-2"
+                />
+                <span className="text-sm">Faqat joriy oy ({currentMonth})</span>
+              </label>
+              
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  value="fromMonth"
+                  checked={updateType === 'fromMonth'}
+                  onChange={(e) => setUpdateType(e.target.value)}
+                  className="mr-2"
+                />
+                <span className="text-sm">Shu oydan keyingi barcha oylar</span>
+              </label>
+
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  value="multiple"
+                  checked={updateType === 'multiple'}
+                  onChange={(e) => setUpdateType(e.target.value)}
+                  className="mr-2"
+                />
+                <span className="text-sm">Bir necha oylarni tanlash</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Multiple Months Selection */}
+          {updateType === 'multiple' && (
+            <div className="mb-4 p-3 border border-gray-200 rounded-lg max-h-48 overflow-y-auto">
+              <p className="text-xs font-medium text-gray-700 mb-2">Oylarni tanlang:</p>
+              <div className="space-y-1">
+                {monthOptions.map(month => (
+                  <label key={month} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={selectedMonths.includes(month)}
+                      onChange={() => handleMonthToggle(month)}
+                      className="mr-2"
+                    />
+                    <span className="text-sm">{month}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Buttons */}
+          <div className="flex gap-3 justify-end mt-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              disabled={updateStatusMutation.isLoading}
+            >
+              Bekor qilish
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 text-sm font-medium text-white rounded-lg hover:opacity-90 transition-colors disabled:opacity-50"
+              style={{ backgroundColor: MAIN_COLOR }}
+              disabled={updateStatusMutation.isLoading || (updateType === 'multiple' && selectedMonths.length === 0)}
+            >
+              {updateStatusMutation.isLoading ? 'Saqlanmoqda...' : 'Saqlash'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 };
 
@@ -72,6 +277,10 @@ const LessonAttendancePage = () => {
 
   const [attendanceData, setAttendanceData] = useState({});
   const [hasChanges, setHasChanges] = useState(false);
+  const [statusModal, setStatusModal] = useState({ isOpen: false, student: null });
+  const [currentMonth, setCurrentMonth] = useState(
+    new Date().toISOString().slice(0, 7) // YYYY-MM format
+  );
 
   // Fetch lesson students
   const { data: response, isLoading, error } = useQuery({
@@ -81,13 +290,7 @@ const LessonAttendancePage = () => {
   });
 
   // Safely extract students array from response
-  const students = Array.isArray(response?.data?.students) 
-    ? response.data.students 
-    : Array.isArray(response?.data) 
-    ? response.data 
-    : Array.isArray(response?.students)
-    ? response.students
-    : [];
+  const students = Array.isArray(response) ? response : [];
 
   // Debug logging
   console.log("API Response:", response);
@@ -98,7 +301,7 @@ const LessonAttendancePage = () => {
     if (students.length > 0) {
       const initialAttendance = {};
       students.forEach((student) => {
-        initialAttendance[student.student_id] = student.attendance_status === "keldi" ? "keldi" : "kelmadi";
+        initialAttendance[student.attendance_id] = student.status === "keldi" ? "keldi" : "kelmadi";
       });
       setAttendanceData(initialAttendance);
       setHasChanges(false);
@@ -121,10 +324,10 @@ const LessonAttendancePage = () => {
   });
 
   // Handle status change
-  const handleStatusChange = (studentId, newStatus) => {
+  const handleStatusChange = (attendanceId, newStatus) => {
     setAttendanceData(prev => ({
       ...prev,
-      [studentId]: newStatus
+      [attendanceId]: newStatus
     }));
     setHasChanges(true);
   };
@@ -136,14 +339,14 @@ const LessonAttendancePage = () => {
       return;
     }
 
-    const attendance_data = Object.entries(attendanceData).map(([student_id, status]) => ({
-      student_id: parseInt(student_id),
+    const attendance_records = Object.entries(attendanceData).map(([attendance_id, status]) => ({
+      attendance_id: parseInt(attendance_id),
       status
     }));
 
     saveAttendanceMutation.mutate({
       lesson_id: parseInt(lessonId),
-      attendance_data
+      attendance_records
     });
   };
 
@@ -269,7 +472,7 @@ const LessonAttendancePage = () => {
                           </div>
                           <div className="ml-3">
                             <div className="text-sm font-medium text-gray-900">
-                              {student.name} {student.surname}
+                              {student.student_name}
                             </div>
                           </div>
                         </div>
@@ -281,19 +484,28 @@ const LessonAttendancePage = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          student.group_status === "active" ? "bg-green-100 text-green-800" :
-                          student.group_status === "stopped" ? "bg-orange-100 text-orange-800" :
-                          "bg-gray-100 text-gray-800"
-                        }`}>
-                          {student.group_status_description}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            student.monthly_status === "active" ? "bg-green-100 text-green-800" :
+                            student.monthly_status === "stopped" ? "bg-orange-100 text-orange-800" :
+                            "bg-gray-100 text-gray-800"
+                          }`}>
+                            {student.monthly_status_description}
+                          </span>
+                          <button
+                            onClick={() => setStatusModal({ isOpen: true, student })}
+                            className="text-xs px-2 py-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors"
+                            title="Statusni o'zgartirish"
+                          >
+                            O'zgartirish
+                          </button>
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="w-32">
                           <AttendanceSelect
                             student={student}
-                            currentStatus={attendanceData[student.student_id] || "kelmadi"}
+                            currentStatus={attendanceData[student.attendance_id] || "kelmadi"}
                             onStatusChange={handleStatusChange}
                             isLoading={saveAttendanceMutation.isLoading}
                           />
@@ -330,6 +542,15 @@ const LessonAttendancePage = () => {
             )}
           </div>
         )}
+
+        {/* Monthly Status Modal */}
+        <MonthlyStatusModal
+          isOpen={statusModal.isOpen}
+          onClose={() => setStatusModal({ isOpen: false, student: null })}
+          student={statusModal.student}
+          groupId={groupId}
+          currentMonth={currentMonth}
+        />
       </div>
     </div>
   );

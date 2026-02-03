@@ -39,12 +39,12 @@ const getGroupLessons = async (groupId, month) => {
   const url = `/api/attendance/groups/${groupId}/lessons${queryString ? `?${queryString}` : ''}`;
   
   const response = await instance.get(url);
-  return response.data;
+  return response.data.data;
 };
 
 // Create lesson API
 const createLesson = async ({ group_id, date }) => {
-  const response = await instance.post('/api/attendance/lessons/create', {
+  const response = await instance.post('/api/attendance/lessons', {
     group_id,
     date
   });
@@ -233,8 +233,8 @@ const GroupLessonsPage = () => {
     }
   });
 
-  const groupInfo = lessonsData?.data?.group_info;
-  let lessons = lessonsData?.data?.lessons || [];
+  const groupInfo = null; // Group info not provided in new API
+  let lessons = Array.isArray(lessonsData) ? lessonsData : [];
   // Show newest lessons first
   lessons = [...lessons].reverse();
 
@@ -266,8 +266,8 @@ const GroupLessonsPage = () => {
 
   // Calculate overall statistics
   const totalLessons = lessons.length;
-  const totalStudentsAttended = lessons.reduce((sum, lesson) => sum + lesson.present_count, 0);
-  const totalStudentsExpected = lessons.reduce((sum, lesson) => sum + lesson.students_count, 0);
+  const totalStudentsAttended = lessons.reduce((sum, lesson) => sum + (parseInt(lesson.present_count) || 0), 0);
+  const totalStudentsExpected = lessons.reduce((sum, lesson) => sum + (parseInt(lesson.total_students) || 0), 0);
   const averageAttendance = totalStudentsExpected > 0 
     ? Math.round((totalStudentsAttended / totalStudentsExpected) * 100)
     : 0;
@@ -417,8 +417,11 @@ const GroupLessonsPage = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {lessons.map((lesson, index) => {
-                    const attendancePercentage = lesson.students_count > 0 
-                      ? Math.round((lesson.present_count / lesson.students_count) * 100)
+                    const totalStudents = parseInt(lesson.total_students) || 0;
+                    const presentCount = parseInt(lesson.present_count) || 0;
+                    const absentCount = parseInt(lesson.absent_count) || 0;
+                    const attendancePercentage = totalStudents > 0 
+                      ? Math.round((presentCount / totalStudents) * 100)
                       : 0;
                     
                     return (
@@ -431,7 +434,7 @@ const GroupLessonsPage = () => {
                             <CalendarIcon className="h-4 w-4 text-gray-400 mr-2" />
                             <div>
                               <div className="text-sm font-medium text-gray-900">
-                                {formatDate(lesson.lesson_date)}
+                                {lesson.formatted_date || formatDate(lesson.date)}
                               </div>
                             </div>
                           </div>
@@ -439,16 +442,16 @@ const GroupLessonsPage = () => {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <div className="text-lg font-bold text-green-600">
-                              {lesson.present_count}
+                              {presentCount}
                             </div>
                             <div className="text-sm text-gray-500 ml-1">
-                              / {lesson.students_count}
+                              / {totalStudents}
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-lg font-bold text-red-600">
-                            {lesson.absent_count || (lesson.students_count - lesson.present_count)}
+                            {absentCount}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -504,7 +507,7 @@ const GroupLessonsPage = () => {
           onClose={() => setDeleteModal({ isOpen: false, lesson: null })}
           onConfirm={confirmDeleteLesson}
           lessonInfo={deleteModal.lesson ? {
-            date: formatDate(deleteModal.lesson.lesson_date)
+            date: deleteModal.lesson.formatted_date || formatDate(deleteModal.lesson.date)
           } : null}
           isLoading={deleteLessonMutation.isLoading}
         />
