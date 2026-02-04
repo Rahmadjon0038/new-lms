@@ -13,12 +13,19 @@ import {
   ChevronRightIcon,
   TrashIcon,
 } from "@heroicons/react/24/outline";
+import {
+  Calendar as CalendarLucide,
+  Clock as ClockLucide,
+  Users as UsersLucide,
+  User
+} from 'lucide-react';
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { instance } from "../../../../hooks/api";
 import MonthlyAttendanceInline from "../../../../components/MonthlyAttendanceInline";
 import { toast } from "react-hot-toast";
+import { useEffect } from "react";
 
 const MAIN_COLOR = "#A60E07";
 
@@ -33,12 +40,12 @@ const getGroupLessons = async (groupId, month) => {
   const url = `/api/attendance/groups/${groupId}/lessons${queryString ? `?${queryString}` : ''}`;
   
   const response = await instance.get(url);
-  return response.data;
+  return response.data.data;
 };
 
 // Create lesson API
 const createLesson = async ({ group_id, date }) => {
-  const response = await instance.post('/api/attendance/lessons/create', {
+  const response = await instance.post('/api/attendance/lessons', {
     group_id,
     date
   });
@@ -181,14 +188,49 @@ const DeleteConfirmModal = ({ isOpen, onClose, onConfirm, lessonInfo, isLoading 
 const TeacherGroupAttendance = () => {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   
   const groupId = params.id;
   
-  // Current month by default
-  const [selectedMonth, setSelectedMonth] = useState(
-    new Date().toISOString().slice(0, 7) // YYYY-MM format
-  );
+  // URL dan month parametrini o'qish yoki joriy oyni olish
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const monthFromURL = searchParams.get('month');
+    if (monthFromURL) {
+      return monthFromURL;
+    }
+    
+    // Agar URL da yo'q bo'lsa, localStorage dan o'qish
+    if (typeof window !== 'undefined') {
+      const savedMonth = localStorage.getItem('selectedMonth');
+      if (savedMonth) {
+        return savedMonth;
+      }
+    }
+    
+    // Default joriy oy
+    return new Date().toISOString().slice(0, 7); // YYYY-MM format
+  });
+
+  // URL dan month parametrini o'qish (sahifa yangilanganida)
+  useEffect(() => {
+    const monthFromURL = searchParams.get('month');
+    if (monthFromURL && monthFromURL !== selectedMonth) {
+      setSelectedMonth(monthFromURL);
+    }
+  }, [searchParams]);
+
+  // URL ni yangilash selectedMonth o'zgarganda
+  const updateURLWithMonth = (month) => {
+    if (typeof window !== 'undefined') {
+      // localStorage ga saqlash
+      localStorage.setItem('selectedMonth', month);
+      
+      const newURL = new URL(window.location.href);
+      newURL.searchParams.set('month', month);
+      router.replace(newURL.pathname + '?' + newURL.searchParams.toString(), { scroll: false });
+    }
+  };
   
   // Create lesson modal state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -214,8 +256,8 @@ const TeacherGroupAttendance = () => {
     }
   });
 
-  const groupInfo = lessonsData?.data?.group_info;
-  let lessons = lessonsData?.data?.lessons || [];
+  const groupInfo = null; // Group info not provided in new API
+  let lessons = Array.isArray(lessonsData) ? lessonsData : [];
   // Show newest lessons first
   lessons = [...lessons].reverse();
 
@@ -230,17 +272,20 @@ const TeacherGroupAttendance = () => {
     }
   };
 
-  // Format date for display (UTC, YYYY MM DD, no timezone shift)
-  const formatDate = (dateString) => {
-    if (!dateString) return '';
-    // Only take the date part, avoid timezone shift
-    return dateString.slice(0, 10).replace(/-/g, ' ');
+  // Format date for display - use formatted_date if available, otherwise format date
+  const formatDate = (lesson) => {
+    if (lesson.formatted_date) {
+      return lesson.formatted_date;
+    }
+    if (!lesson.date) return '';
+    // Fallback formatting if formatted_date not available
+    return lesson.date.slice(0, 10).replace(/-/g, '.');
   };
 
   // Calculate overall statistics
   const totalLessons = lessons.length;
-  const totalStudentsAttended = lessons.reduce((sum, lesson) => sum + lesson.present_count, 0);
-  const totalStudentsExpected = lessons.reduce((sum, lesson) => sum + lesson.students_count, 0);
+  const totalStudentsAttended = lessons.reduce((sum, lesson) => sum + parseInt(lesson.present_count || 0), 0);
+  const totalStudentsExpected = lessons.reduce((sum, lesson) => sum + parseInt(lesson.total_students || 0), 0);
   const averageAttendance = totalStudentsExpected > 0 
     ? Math.round((totalStudentsAttended / totalStudentsExpected) * 100)
     : 0;
@@ -303,7 +348,11 @@ const TeacherGroupAttendance = () => {
               <input
                 type="month"
                 value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
+                onChange={(e) => {
+                  const newMonth = e.target.value;
+                  setSelectedMonth(newMonth);
+                  updateURLWithMonth(newMonth);
+                }}
                 className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#A60E07] focus:border-transparent w-full sm:w-auto"
               />
             </div>
@@ -375,8 +424,11 @@ const TeacherGroupAttendance = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {lessons.map((lesson, index) => {
-                    const attendancePercentage = lesson.students_count > 0 
-                      ? Math.round((lesson.present_count / lesson.students_count) * 100)
+                    const totalStudents = parseInt(lesson.total_students || 0);
+                    const presentCount = parseInt(lesson.present_count || 0);
+                    const absentCount = parseInt(lesson.absent_count || 0);
+                    const attendancePercentage = totalStudents > 0 
+                      ? Math.round((presentCount / totalStudents) * 100)
                       : 0;
                     
                     return (
@@ -389,10 +441,10 @@ const TeacherGroupAttendance = () => {
                             <CalendarIcon className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400 mr-1 sm:mr-2" />
                             <div>
                               <div className="text-xs sm:text-sm font-medium text-gray-900">
-                                {formatDate(lesson.lesson_date)}
+                                {formatDate(lesson)}
                               </div>
                               <div className="sm:hidden text-[10px] text-green-600">
-                                {lesson.present_count}/{lesson.students_count} ({attendancePercentage}%)
+                                {presentCount}/{totalStudents} ({attendancePercentage}%)
                               </div>
                             </div>
                           </div>
@@ -400,16 +452,16 @@ const TeacherGroupAttendance = () => {
                         <td className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 whitespace-nowrap hidden sm:table-cell">
                           <div className="flex items-center">
                             <div className="text-base sm:text-lg font-bold text-green-600">
-                              {lesson.present_count}
+                              {presentCount}
                             </div>
                             <div className="text-xs sm:text-sm text-gray-500 ml-1">
-                              /{lesson.students_count}
+                              /{totalStudents}
                             </div>
                           </div>
                         </td>
                         <td className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 whitespace-nowrap hidden md:table-cell">
                           <div className="text-base sm:text-lg font-bold text-red-600">
-                            {lesson.students_count - lesson.present_count}
+                            {absentCount}
                           </div>
                         </td>
                         <td className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 whitespace-nowrap hidden lg:table-cell">
@@ -426,7 +478,7 @@ const TeacherGroupAttendance = () => {
                         <td className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 whitespace-nowrap text-right text-sm font-medium">
                           <div className="flex items-center gap-1 sm:gap-2 justify-end">
                             <Link 
-                              href={`/teacher/attendance/${groupId}/lesson/${lesson.id}`}
+                              href={`/teacher/attendance/${groupId}/lesson/${lesson.id}?month=${selectedMonth}`}
                               className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium text-white rounded-lg hover:opacity-90 transition-colors"
                               style={{ backgroundColor: MAIN_COLOR }}
                             >
@@ -467,7 +519,7 @@ const TeacherGroupAttendance = () => {
           onClose={() => setDeleteModal({ isOpen: false, lesson: null })}
           onConfirm={confirmDeleteLesson}
           lessonInfo={deleteModal.lesson ? {
-            date: formatDate(deleteModal.lesson.lesson_date)
+            date: formatDate(deleteModal.lesson)
           } : null}
           isLoading={deleteLessonMutation.isLoading}
         />

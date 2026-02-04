@@ -3,43 +3,155 @@ import React, { useState, useEffect } from "react";
 // Next.js App Router uchun muhim hook
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
+import { instance } from "../../hooks/api";
 import {
   BookOpenIcon,
   ClipboardDocumentListIcon, // Davomat uchun
   BriefcaseIcon,
+  BookmarkIcon, // Qo'llanma uchun
   Bars3Icon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 
+// API function for checking English teacher status
+const checkEnglishTeacher = async () => {
+  try {
+    console.log('=== CALLING ENGLISH TEACHER API ===');
+    console.log('Endpoint: /api/users/teachers/english');
+    console.log('Method: GET');
+    
+    const response = await instance.get('/api/users/teachers/english');
+    
+    console.log('API Response Status:', response.status);
+    console.log('API Response Headers:', response.headers);
+    console.log('API Response Data:', response.data);
+    
+    // Response formatini tekshiramiz
+    if (response.data && typeof response.data === 'object') {
+      console.log('Response has isEnglishTeacher field:', 'isEnglishTeacher' in response.data);
+      console.log('isEnglishTeacher value:', response.data.isEnglishTeacher);
+      console.log('isEnglishTeacher type:', typeof response.data.isEnglishTeacher);
+    }
+    
+    return response.data;
+  } catch (error) {
+    console.error('=== ENGLISH TEACHER API ERROR ===');
+    console.error('Error object:', error);
+    console.error('Error response:', error.response?.data || error.message);
+    console.error('Error status:', error.response?.status);
+    
+    // Xatolik bo'lsa, default false qaytaramiz
+    return { isEnglishTeacher: false, message: 'API Error', teacherId: null };
+  }
+};
+
 // --- O'qituvchi Menyu elementlari ma'lumotlari ---
-const TeacherSidebarItems = [
-  // {
-  //   name: "Dashboard",
-  //   icon: Squares2X2Icon,
-  //   href: "/teacher", // O'qituvchining asosiy yo'li (Dashboard)
-  // },
-  {
-    name: "Mening Guruhlarim",
-    icon: BookOpenIcon,
-    href: "/teacher",
-  },
-  {
-    name: "Davomat",
-    icon: ClipboardDocumentListIcon,
-    href: "/teacher/attendance",
-  },
-  
-  {
-    name: "Talabalar To'lovlari", // To'lovlar statusini ko'rish uchun
-    icon: BriefcaseIcon,
-    href: "/teacher/payments-info",
-  },
-];
+const getTeacherSidebarItems = (isEnglishTeacher) => {
+  const baseItems = [
+    // {
+    //   name: "Dashboard",
+    //   icon: Squares2X2Icon,
+    //   href: "/teacher", // O'qituvchining asosiy yo'li (Dashboard)
+    // },
+    {
+      name: "Mening Guruhlarim",
+      icon: BookOpenIcon,
+      href: "/teacher",
+    },
+    {
+      name: "Davomat",
+      icon: ClipboardDocumentListIcon,
+      href: "/teacher/attendance",
+    },
+    {
+      name: "Talabalar To'lovlari", // To'lovlar statusini ko'rish uchun
+      icon: BriefcaseIcon,
+      href: "/teacher/payments-info",
+    },
+  ];
+
+  // Agar ingliz tili o'qituvchisi bo'lsa, Qo'llanma qo'shish
+  if (isEnglishTeacher) {
+    baseItems.push({
+      name: "Qo'llanma",
+      icon: BookmarkIcon,
+      href: "/teacher/guide",
+    });
+  }
+
+  return baseItems;
+};
 
 function TeacherSidebar() {
   // 1. Joriy URL yo'lini olish uchun usePathname dan foydalanamiz
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [manualTestResult, setManualTestResult] = useState(null);
+
+  // Manual API test
+  useEffect(() => {
+    const testAPI = async () => {
+      try {
+        console.log('Manual API Test starting...');
+        const response = await fetch('/api/users/teachers/english', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        const data = await response.json();
+        console.log('Manual API Test Result:', data);
+        setManualTestResult(data);
+      } catch (error) {
+        console.error('Manual API Test Error:', error);
+        setManualTestResult({ error: error.message });
+      }
+    };
+    testAPI();
+  }, []);
+
+  // English teacher status ni tekshirish
+  const { data: teacherData, isLoading, error } = useQuery({
+    queryKey: ['english-teacher-status'],
+    queryFn: checkEnglishTeacher,
+    retry: 1,
+    staleTime: 5 * 60 * 1000, // 5 daqiqa
+  });
+
+  // Debug logging
+  useEffect(() => {
+    console.log('=== TEACHER SIDEBAR RESPONSE ANALYSIS ===');
+    console.log('Loading state:', isLoading);
+    console.log('Error state:', error);
+    console.log('Raw teacherData:', teacherData);
+    
+    if (teacherData) {
+      console.log('teacherData keys:', Object.keys(teacherData));
+      console.log('isEnglishTeacher field exists:', 'isEnglishTeacher' in teacherData);
+      console.log('isEnglishTeacher raw value:', teacherData.isEnglishTeacher);
+      console.log('isEnglishTeacher type:', typeof teacherData.isEnglishTeacher);
+      console.log('isEnglishTeacher === true:', teacherData.isEnglishTeacher === true);
+      console.log('isEnglishTeacher === false:', teacherData.isEnglishTeacher === false);
+      console.log('Boolean(isEnglishTeacher):', Boolean(teacherData.isEnglishTeacher));
+    }
+    
+    if (error) {
+      console.error('TanStack Query Error:', error);
+    }
+    
+    console.log('Manual test result:', manualTestResult);
+    console.log('=== END RESPONSE ANALYSIS ===');
+  }, [teacherData, error, manualTestResult]);
+
+  const isEnglishTeacher = teacherData?.isEnglishTeacher === true;
+  console.log('Strict comparison result (=== true):', isEnglishTeacher);
+  
+  // Loading holatida default false ishlatamiz
+  const finalIsEnglishTeacher = isLoading ? false : isEnglishTeacher;
+  console.log('Final decision - isLoading:', isLoading, 'finalIsEnglishTeacher:', finalIsEnglishTeacher);
+  
+  const TeacherSidebarItems = getTeacherSidebarItems(finalIsEnglishTeacher);
 
   // Sahifa o'zgarganda mobil menuni yopish
   useEffect(() => {
@@ -58,41 +170,55 @@ function TeacherSidebar() {
     };
   }, [isMobileMenuOpen]);
 
-  const SidebarContent = () => (
-    <nav className="flex-1 px-4 py-6 space-y-2">
-      {TeacherSidebarItems.map((item) => {
-        let isActive = pathname === item.href;
-        if (item.href !== "/teacher") {
-          isActive = pathname.startsWith(item.href);
-        } else {
-          isActive = pathname === item.href;
-        }
-        return (
-          <Link
-            key={item.name}
-            href={item.href}
-            onClick={() => setIsMobileMenuOpen(false)}
-            className={`
-              flex items-center px-3 py-3 rounded-lg text-sm font-medium transition duration-150 ease-in-out
-              ${
-                  isActive
-                    ? "bg-[#A70E07] text-white shadow-md"
-                    : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                }
-              `}
-            >
-              <item.icon
-                className={`mr-3 h-5 w-5 ${
-                  isActive ? "text-white" : "text-gray-500"
-                }`}
-                aria-hidden="true"
-              />
-              {item.name}
-            </Link>
-          );
-        })}
-      </nav>
-  );
+  const SidebarContent = () => {
+    if (isLoading) {
+      return (
+        <nav className="flex-1 px-4 py-6 space-y-2">
+          <div className="animate-pulse space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-10 bg-gray-200 rounded-lg"></div>
+            ))}
+          </div>
+        </nav>
+      );
+    }
+
+    return (
+      <nav className="flex-1 px-4 py-6 space-y-2">
+        {TeacherSidebarItems.map((item) => {
+          let isActive = pathname === item.href;
+          if (item.href !== "/teacher") {
+            isActive = pathname.startsWith(item.href);
+          } else {
+            isActive = pathname === item.href;
+          }
+          return (
+            <Link
+              key={item.name}
+              href={item.href}
+              onClick={() => setIsMobileMenuOpen(false)}
+              className={`
+                flex items-center px-3 py-3 rounded-lg text-sm font-medium transition duration-150 ease-in-out
+                ${
+                    isActive
+                      ? "bg-[#A70E07] text-white shadow-md"
+                      : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                  }
+                `}
+              >
+                <item.icon
+                  className={`mr-3 h-5 w-5 ${
+                    isActive ? "text-white" : "text-gray-500"
+                  }`}
+                  aria-hidden="true"
+                />
+                {item.name}
+              </Link>
+            );
+          })}
+        </nav>
+    );
+  };
 
   return (
     <>

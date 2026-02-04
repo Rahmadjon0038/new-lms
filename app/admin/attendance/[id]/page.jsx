@@ -495,13 +495,19 @@ const GroupLessonsPage = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            attendancePercentage >= 80 ? 'bg-green-100 text-green-800' :
-                            attendancePercentage >= 60 ? 'bg-yellow-100 text-yellow-800' : 
-                            'bg-red-100 text-red-800'
-                          }`}>
-                            {attendancePercentage}%
-                          </span>
+                          <div className="flex items-center">
+                            <div className="w-16 bg-gray-200 rounded-full h-2 mr-3">
+                              <div 
+                                className={`h-2 rounded-full transition-all duration-300 ${
+                                  attendancePercentage >= 80 ? 'bg-green-500' :
+                                  attendancePercentage >= 60 ? 'bg-yellow-500' : 
+                                  'bg-red-500'
+                                }`}
+                                style={{ width: `${attendancePercentage}%` }}
+                              ></div>
+                            </div>
+                            <span className="text-sm font-bold text-gray-700">{attendancePercentage}%</span>
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <div className="flex items-center gap-2 justify-end">

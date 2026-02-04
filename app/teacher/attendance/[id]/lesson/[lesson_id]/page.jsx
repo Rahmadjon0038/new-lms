@@ -12,7 +12,7 @@ import {
   User,
   Phone,
 } from "lucide-react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { instance } from "../../../../../../hooks/api";
 import { toast } from "react-hot-toast";
@@ -22,13 +22,12 @@ const MAIN_COLOR = "#A60E07";
 // API functions
 const getLessonStudents = async (lessonId) => {
   const response = await instance.get(`/api/attendance/lessons/${lessonId}/students`);
-  return response.data;
+  return response.data.data;
 };
 
-const saveAttendance = async ({ lesson_id, attendance_data }) => {
-  const response = await instance.post("/api/attendance/mark", {
-    lesson_id,
-    attendance_data
+const saveAttendance = async ({ lesson_id, attendance_records }) => {
+  const response = await instance.put(`/api/attendance/lessons/${lesson_id}/mark`, {
+    attendance_records
   });
   return response.data;
 };
@@ -37,22 +36,24 @@ const saveAttendance = async ({ lesson_id, attendance_data }) => {
 const AttendanceSelect = ({ student, currentStatus, onStatusChange, isLoading }) => {
   const handleChange = (e) => {
     const newStatus = e.target.value;
-    onStatusChange(student.student_id, newStatus);
+    onStatusChange(student.attendance_id, newStatus);
   };
+
+  const isDisabled = isLoading || !student.can_mark;
 
   return (
     <select
       value={currentStatus}
       onChange={handleChange}
-      disabled={isLoading || !student.can_mark_attendance}
-      className={`w-full p-1.5 sm:p-2 rounded border text-xs sm:text-sm font-medium ${
+      disabled={isDisabled}
+      className={`w-full p-2 rounded border text-sm font-medium ${
         currentStatus === "keldi" 
           ? "bg-green-50 border-green-300 text-green-700" 
           : "bg-red-50 border-red-300 text-red-700"
       } ${
-        isLoading || !student.can_mark_attendance 
+        isDisabled 
           ? "opacity-50 cursor-not-allowed" 
-          : "cursor-pointer hover:shadow-sm"
+          : "cursor-pointer"
       }`}
     >
       <option value="kelmadi" className="text-red-700">Kelmadi</option>
@@ -65,6 +66,7 @@ const AttendanceSelect = ({ student, currentStatus, onStatusChange, isLoading })
 const TeacherLessonAttendance = () => {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   
   const groupId = params.id;
@@ -81,20 +83,18 @@ const TeacherLessonAttendance = () => {
   });
 
   // Safely extract students array from response
-  const students = Array.isArray(response?.data?.students) 
-    ? response.data.students 
-    : Array.isArray(response?.data) 
-    ? response.data 
-    : Array.isArray(response?.students)
-    ? response.students
-    : [];
+  const students = Array.isArray(response) ? response : [];
+
+  // Debug logging
+  console.log("API Response:", response);
+  console.log("Students array:", students);
 
   // Initialize attendance data
   useEffect(() => {
     if (students.length > 0) {
       const initialAttendance = {};
       students.forEach((student) => {
-        initialAttendance[student.student_id] = student.attendance_status === "keldi" ? "keldi" : "kelmadi";
+        initialAttendance[student.attendance_id] = student.status === "keldi" ? "keldi" : "kelmadi";
       });
       setAttendanceData(initialAttendance);
       setHasChanges(false);
@@ -117,10 +117,10 @@ const TeacherLessonAttendance = () => {
   });
 
   // Handle status change
-  const handleStatusChange = (studentId, newStatus) => {
+  const handleStatusChange = (attendanceId, newStatus) => {
     setAttendanceData(prev => ({
       ...prev,
-      [studentId]: newStatus
+      [attendanceId]: newStatus
     }));
     setHasChanges(true);
   };
@@ -132,14 +132,14 @@ const TeacherLessonAttendance = () => {
       return;
     }
 
-    const attendance_data = Object.entries(attendanceData).map(([student_id, status]) => ({
-      student_id: parseInt(student_id),
+    const attendance_records = Object.entries(attendanceData).map(([attendance_id, status]) => ({
+      attendance_id: parseInt(attendance_id),
       status
     }));
 
     saveAttendanceMutation.mutate({
       lesson_id: parseInt(lessonId),
-      attendance_data
+      attendance_records
     });
   };
 
@@ -191,7 +191,11 @@ const TeacherLessonAttendance = () => {
         {/* Header */}
         <div className="flex items-center gap-2 sm:gap-4 mb-4 sm:mb-6">
           <button 
-            onClick={() => router.back()}
+            onClick={() => {
+              const monthParam = searchParams.get('month');
+              const backURL = `/teacher/attendance/${groupId}${monthParam ? `?month=${monthParam}` : ''}`;
+              router.push(backURL);
+            }}
             className="p-1.5 sm:p-2 rounded-lg bg-white shadow-md hover:shadow-lg transition-all"
           >
             <ArrowLeftIcon className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
@@ -265,7 +269,7 @@ const TeacherLessonAttendance = () => {
                           </div>
                           <div className="ml-2 sm:ml-3 min-w-0 flex-1">
                             <div className="text-xs sm:text-sm font-medium text-gray-900 truncate">
-                              {student.name} {student.surname}
+                              {student.student_name}
                             </div>
                             <div className="sm:hidden text-[10px] text-gray-500 flex items-center mt-0.5">
                               <Phone className="h-2 w-2 mr-1" />
@@ -282,18 +286,18 @@ const TeacherLessonAttendance = () => {
                       </td>
                       <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 whitespace-nowrap hidden md:table-cell">
                         <span className={`inline-flex px-2 py-1 text-[10px] sm:text-xs font-semibold rounded-full ${
-                          student.group_status === "active" ? "bg-green-100 text-green-800" :
-                          student.group_status === "stopped" ? "bg-orange-100 text-orange-800" :
+                          student.monthly_status === "active" ? "bg-green-100 text-green-800" :
+                          student.monthly_status === "stopped" ? "bg-orange-100 text-orange-800" :
                           "bg-gray-100 text-gray-800"
                         }`}>
-                          {student.group_status_description}
+                          {student.monthly_status_description}
                         </span>
                       </td>
                       <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 whitespace-nowrap">
                         <div className="w-24 sm:w-32">
                           <AttendanceSelect
                             student={student}
-                            currentStatus={attendanceData[student.student_id] || "kelmadi"}
+                            currentStatus={attendanceData[student.attendance_id] || "kelmadi"}
                             onStatusChange={handleStatusChange}
                             isLoading={saveAttendanceMutation.isLoading}
                           />

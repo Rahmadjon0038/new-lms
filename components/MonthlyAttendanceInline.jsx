@@ -3,6 +3,13 @@ import { useMonthlyAttendance } from "../hooks/attendance-monthly";
 import { instance } from "../hooks/api";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-hot-toast";
+import { useQuery } from "@tanstack/react-query";
+
+// API function for getting user profile
+const getUserProfile = async () => {
+  const response = await instance.get('/api/users/profile');
+  return response.data;
+};
 
 // API function for updating monthly status
 const updateMonthlyStatus = async (data) => {
@@ -204,6 +211,14 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
   const { data, isLoading, error } = useMonthlyAttendance(groupId, selectedMonth);
   const queryClient = useQueryClient();
   const [statusModal, setStatusModal] = useState({ isOpen: false, student: null });
+  
+  // Get user profile to check role
+  const { data: userProfile } = useQuery({
+    queryKey: ['user-profile'],
+    queryFn: getUserProfile
+  });
+  
+  const isAdmin = userProfile?.data?.role === 'admin';
   
   const monthData = data?.data;
   const lessons = (monthData?.lessons || []).reverse(); // Yangi darslar pastda

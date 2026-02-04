@@ -5,6 +5,11 @@ import { instance } from "./api";
 const fetchMonthlyAttendance = async (groupId, month) => {
   const url = `/api/attendance/groups/${groupId}/monthly?month=${month}`;
   const response = await instance.get(url);
+  
+  // Debug: Log API response
+  console.log('Monthly Attendance API Response:', response.data);
+  console.log('Students in response:', response.data?.data?.students);
+  
   return response.data;
 };
 
