@@ -12,7 +12,7 @@ import {
   User,
   Phone,
 } from "lucide-react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { instance } from "../../../../../../hooks/api";
 import { toast } from "react-hot-toast";
@@ -67,209 +67,11 @@ const AttendanceSelect = ({ student, currentStatus, onStatusChange, isLoading })
   );
 };
 
-// Monthly Status Update Modal
-const MonthlyStatusModal = ({ isOpen, onClose, student, groupId, currentMonth }) => {
-  const [newStatus, setNewStatus] = useState('');
-  const [updateType, setUpdateType] = useState('single'); // single, multiple, fromMonth
-  const [selectedMonths, setSelectedMonths] = useState([]);
-  const queryClient = useQueryClient();
-
-  useEffect(() => {
-    if (isOpen && student) {
-      setNewStatus(student.monthly_status === 'active' ? 'stopped' : 'active');
-      setUpdateType('single');
-      setSelectedMonths([currentMonth]);
-    }
-  }, [isOpen, student, currentMonth]);
-
-  const updateStatusMutation = useMutation({
-    mutationFn: updateMonthlyStatus,
-    onSuccess: () => {
-      toast.success('Status muvaffaqiyatli o\'zgartirildi!');
-      queryClient.invalidateQueries(['lesson-students']);
-      onClose();
-    },
-    onError: (error) => {
-      const message = error?.response?.data?.message || 'Status o\'zgartirishda xatolik';
-      toast.error(message);
-    }
-  });
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    if (!student) return;
-
-    let requestData = {
-      student_id: student.student_id,
-      group_id: parseInt(groupId),
-      monthly_status: newStatus
-    };
-
-    if (updateType === 'single') {
-      requestData.month = currentMonth;
-    } else if (updateType === 'multiple') {
-      requestData.months = selectedMonths;
-    } else if (updateType === 'fromMonth') {
-      requestData.from_month = currentMonth;
-    }
-
-    updateStatusMutation.mutate(requestData);
-  };
-
-  const handleMonthToggle = (month) => {
-    setSelectedMonths(prev => 
-      prev.includes(month) 
-        ? prev.filter(m => m !== month)
-        : [...prev, month]
-    );
-  };
-
-  // Generate month options (current month + next 11 months)
-  const generateMonthOptions = () => {
-    const options = [];
-    const [year, month] = currentMonth.split('-').map(Number);
-    
-    for (let i = 0; i < 12; i++) {
-      const newMonth = month + i;
-      const newYear = year + Math.floor((newMonth - 1) / 12);
-      const finalMonth = ((newMonth - 1) % 12) + 1;
-      const monthStr = `${newYear}-${String(finalMonth).padStart(2, '0')}`;
-      options.push(monthStr);
-    }
-    
-    return options;
-  };
-
-  if (!isOpen || !student) return null;
-
-  const monthOptions = generateMonthOptions();
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 bg-opacity-50">
-      <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">
-          Oylik Statusni O'zgartirish
-        </h3>
-        
-        <div className="mb-4 p-3 bg-gray-50 rounded">
-          <p className="text-sm text-gray-600">Talaba: <strong>{student.student_name}</strong></p>
-          <p className="text-sm text-gray-600">
-            Joriy status: <span className={`font-semibold ${
-              student.monthly_status === 'active' ? 'text-green-600' : 'text-orange-600'
-            }`}>
-              {student.monthly_status_description}
-            </span>
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit}>
-          {/* New Status */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Yangi Status
-            </label>
-            <select
-              value={newStatus}
-              onChange={(e) => setNewStatus(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A60E07]"
-              required
-            >
-              <option value="active">Faol (Active)</option>
-              <option value="stopped">To'xtatilgan (Stopped)</option>
-            </select>
-          </div>
-
-          {/* Update Type */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Qaysi oylarni o'zgartirish
-            </label>
-            <div className="space-y-2">
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  value="single"
-                  checked={updateType === 'single'}
-                  onChange={(e) => setUpdateType(e.target.value)}
-                  className="mr-2"
-                />
-                <span className="text-sm">Faqat joriy oy ({currentMonth})</span>
-              </label>
-              
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  value="fromMonth"
-                  checked={updateType === 'fromMonth'}
-                  onChange={(e) => setUpdateType(e.target.value)}
-                  className="mr-2"
-                />
-                <span className="text-sm">Shu oydan keyingi barcha oylar</span>
-              </label>
-
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  value="multiple"
-                  checked={updateType === 'multiple'}
-                  onChange={(e) => setUpdateType(e.target.value)}
-                  className="mr-2"
-                />
-                <span className="text-sm">Bir necha oylarni tanlash</span>
-              </label>
-            </div>
-          </div>
-
-          {/* Multiple Months Selection */}
-          {updateType === 'multiple' && (
-            <div className="mb-4 p-3 border border-gray-200 rounded-lg max-h-48 overflow-y-auto">
-              <p className="text-xs font-medium text-gray-700 mb-2">Oylarni tanlang:</p>
-              <div className="space-y-1">
-                {monthOptions.map(month => (
-                  <label key={month} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={selectedMonths.includes(month)}
-                      onChange={() => handleMonthToggle(month)}
-                      className="mr-2"
-                    />
-                    <span className="text-sm">{month}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Buttons */}
-          <div className="flex gap-3 justify-end mt-6">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-              disabled={updateStatusMutation.isLoading}
-            >
-              Bekor qilish
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 text-sm font-medium text-white rounded-lg hover:opacity-90 transition-colors disabled:opacity-50"
-              style={{ backgroundColor: MAIN_COLOR }}
-              disabled={updateStatusMutation.isLoading || (updateType === 'multiple' && selectedMonths.length === 0)}
-            >
-              {updateStatusMutation.isLoading ? 'Saqlanmoqda...' : 'Saqlash'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
 // Main Component
 const LessonAttendancePage = () => {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   
   const groupId = params.id;
@@ -277,10 +79,6 @@ const LessonAttendancePage = () => {
 
   const [attendanceData, setAttendanceData] = useState({});
   const [hasChanges, setHasChanges] = useState(false);
-  const [statusModal, setStatusModal] = useState({ isOpen: false, student: null });
-  const [currentMonth, setCurrentMonth] = useState(
-    new Date().toISOString().slice(0, 7) // YYYY-MM format
-  );
 
   // Fetch lesson students
   const { data: response, isLoading, error } = useQuery({
@@ -398,7 +196,11 @@ const LessonAttendancePage = () => {
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
           <button 
-            onClick={() => router.back()}
+            onClick={() => {
+              const monthParam = searchParams.get('month');
+              const backURL = `/admin/attendance/${groupId}${monthParam ? `?month=${monthParam}` : ''}`;
+              router.push(backURL);
+            }}
             className="p-2 rounded-lg bg-white shadow-md hover:shadow-lg transition-all"
           >
             <ArrowLeftIcon className="h-5 w-5 text-gray-600" />
@@ -484,22 +286,13 @@ const LessonAttendancePage = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            student.monthly_status === "active" ? "bg-green-100 text-green-800" :
-                            student.monthly_status === "stopped" ? "bg-orange-100 text-orange-800" :
-                            "bg-gray-100 text-gray-800"
-                          }`}>
-                            {student.monthly_status_description}
-                          </span>
-                          <button
-                            onClick={() => setStatusModal({ isOpen: true, student })}
-                            className="text-xs px-2 py-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors"
-                            title="Statusni o'zgartirish"
-                          >
-                            O'zgartirish
-                          </button>
-                        </div>
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          student.monthly_status === "active" ? "bg-green-100 text-green-800" :
+                          student.monthly_status === "stopped" ? "bg-orange-100 text-orange-800" :
+                          "bg-gray-100 text-gray-800"
+                        }`}>
+                          {student.monthly_status_description}
+                        </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="w-32">
@@ -542,15 +335,6 @@ const LessonAttendancePage = () => {
             )}
           </div>
         )}
-
-        {/* Monthly Status Modal */}
-        <MonthlyStatusModal
-          isOpen={statusModal.isOpen}
-          onClose={() => setStatusModal({ isOpen: false, student: null })}
-          student={statusModal.student}
-          groupId={groupId}
-          currentMonth={currentMonth}
-        />
       </div>
     </div>
   );

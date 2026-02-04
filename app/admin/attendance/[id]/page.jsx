@@ -20,11 +20,12 @@ import {
   User
 } from 'lucide-react';
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { instance } from "../../../../hooks/api";
 import MonthlyAttendanceInline from "../../../../components/MonthlyAttendanceInline";
 import { toast } from "react-hot-toast";
+import { useEffect } from "react";
 
 const MAIN_COLOR = "#A60E07";
 
@@ -140,7 +141,7 @@ const DeleteConfirmModal = ({ isOpen, onClose, onConfirm, lessonInfo, isLoading 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 bg-opacity-50">
       <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">Darsni o'chirish</h3>
         
@@ -200,14 +201,49 @@ const StatCard = ({ title, value, icon: Icon, color = "text-blue-600" }) => (
 const GroupLessonsPage = () => {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   
   const groupId = params.id;
   
-  // Current month by default
-  const [selectedMonth, setSelectedMonth] = useState(
-    new Date().toISOString().slice(0, 7) // YYYY-MM format
-  );
+  // URL dan month parametrini o'qish yoki joriy oyni olish
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const monthFromURL = searchParams.get('month');
+    if (monthFromURL) {
+      return monthFromURL;
+    }
+    
+    // Agar URL da yo'q bo'lsa, localStorage dan o'qish
+    if (typeof window !== 'undefined') {
+      const savedMonth = localStorage.getItem('selectedMonth');
+      if (savedMonth) {
+        return savedMonth;
+      }
+    }
+    
+    // Default joriy oy
+    return new Date().toISOString().slice(0, 7); // YYYY-MM format
+  });
+
+  // URL dan month parametrini o'qish (sahifa yangilanganida)
+  useEffect(() => {
+    const monthFromURL = searchParams.get('month');
+    if (monthFromURL && monthFromURL !== selectedMonth) {
+      setSelectedMonth(monthFromURL);
+    }
+  }, [searchParams]);
+
+  // URL ni yangilash selectedMonth o'zgarganda
+  const updateURLWithMonth = (month) => {
+    if (typeof window !== 'undefined') {
+      // localStorage ga saqlash
+      localStorage.setItem('selectedMonth', month);
+      
+      const newURL = new URL(window.location.href);
+      newURL.searchParams.set('month', month);
+      router.replace(newURL.pathname + '?' + newURL.searchParams.toString(), { scroll: false });
+    }
+  };
   
   // Create lesson modal state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -330,7 +366,11 @@ const GroupLessonsPage = () => {
               <input
                 type="month"
                 value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
+                onChange={(e) => {
+                  const newMonth = e.target.value;
+                  setSelectedMonth(newMonth);
+                  updateURLWithMonth(newMonth);
+                }}
                 className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#A60E07] focus:border-transparent"
               />
             </div>
@@ -466,7 +506,7 @@ const GroupLessonsPage = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <div className="flex items-center gap-2 justify-end">
                             <Link 
-                              href={`/admin/attendance/${groupId}/lesson/${lesson.id}`}
+                              href={`/admin/attendance/${groupId}/lesson/${lesson.id}?month=${selectedMonth}`}
                               className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-white rounded-lg hover:opacity-90 transition-colors"
                               style={{ backgroundColor: MAIN_COLOR }}
                             >
