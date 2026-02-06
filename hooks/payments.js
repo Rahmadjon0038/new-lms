@@ -15,23 +15,29 @@ export const usePaymentFilters = (options = {}) => {
   });
 };
 
-// Get monthly payments
+// Get monthly payments (snapshots)
 const fetchMonthlyPayments = async (filters) => {
   const params = new URLSearchParams();
-  
+
   if (filters.month) params.append('month', filters.month);
+  if (filters.group_id) params.append('group_id', filters.group_id);
   if (filters.teacher_id) params.append('teacher_id', filters.teacher_id);
   if (filters.subject_id) params.append('subject_id', filters.subject_id);
-  if (filters.status && filters.status !== 'all') params.append('status', filters.status);
-  
+
+  const monthlyStatus = filters.monthly_status;
+  if (monthlyStatus && monthlyStatus !== 'all') params.append('status', monthlyStatus);
+
+  const paymentStatus = filters.payment_status ?? filters.status;
+  if (paymentStatus && paymentStatus !== 'all') params.append('payment_status', paymentStatus);
+
   const queryString = params.toString();
-  const url = `/api/payments/monthly${queryString ? `?${queryString}` : ''}`;
-  
-  console.log('🔍 Monthly Payments API Request:', url);
-  console.log('📊 Filters:', filters);
-  
+  const url = `/api/snapshots${queryString ? `?${queryString}` : ''}`;
+
+  // Debug: log the filters and URL
+  console.log('📊 Payment Filters:', filters);
+  console.log('🔗 API URL:', url);
+
   const response = await instance.get(url);
-  console.log('✅ Monthly Payments Response:', response.data);
   return response.data;
 };
 
@@ -44,13 +50,52 @@ export const useMonthlyPayments = (filters, options = {}) => {
   });
 };
 
+// Create snapshots for new students
+const createSnapshotsForNewStudents = async (month) => {
+  const response = await instance.post('/api/snapshots/create-for-new', {
+    month: month
+  });
+  return response.data;
+};
+
+export const useCreateSnapshotsForNewStudents = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createSnapshotsForNewStudents,
+    onSuccess: (data) => {
+      // Invalidate monthly payments to refresh the list
+      queryClient.invalidateQueries({ queryKey: ['monthly-payments'] });
+      // Also invalidate new students notification
+      queryClient.invalidateQueries({ queryKey: ['new-students-notification'] });
+    },
+  });
+};
+
+// Get new students notification
+const fetchNewStudentsNotification = async (month) => {
+  const response = await instance.get(`/api/snapshots/new-students-notification?month=${month}`);
+  return response.data;
+};
+
+export const useNewStudentsNotification = (month, options = {}) => {
+  return useQuery({
+    queryKey: ['new-students-notification', month],
+    queryFn: () => fetchNewStudentsNotification(month),
+    enabled: !!month,
+    refetchOnWindowFocus: false,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    ...options,
+  });
+};
+
 // Apply discount to student
 export const useApplyDiscount = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
     mutationFn: async (discountData) => {
-      const response = await instance.post('/api/payments/discount', discountData);
+      const response = await instance.post('/api/snapshots/discount', discountData);
       return response.data;
     },
     onSuccess: () => {
@@ -66,7 +111,7 @@ export const useProcessPayment = () => {
   
   return useMutation({
     mutationFn: async (paymentData) => {
-      const response = await instance.post('/api/payments/pay', paymentData);
+      const response = await instance.post('/api/snapshots/make-payment', paymentData);
       return response.data;
     },
     onSuccess: () => {
@@ -165,10 +210,9 @@ const fetchPaymentHistory = async ({ month, groupId, studentId, limit = 20 }) =>
   if (month) params.append('month', month);
   if (groupId) params.append('group_id', groupId);
   if (studentId) params.append('student_id', studentId);
-  if (limit) params.append('limit', limit);
   
   const queryString = params.toString();
-  const url = `/api/payments/my/history${queryString ? `?${queryString}` : ''}`;
+  const url = `/api/snapshots/transactions${queryString ? `?${queryString}` : ''}`;
   
   console.log('📜 Payment History API Request:', url);
   const response = await instance.get(url);

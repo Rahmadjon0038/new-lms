@@ -50,11 +50,13 @@ const PaymentModal = ({ isOpen, onClose, student, month }) => {
 
       const response = await processPaymentMutation.mutateAsync(payload);
       
-      // Show toast notification
+      // Show toast notification with student name
       if (response?.message) {
-        toast.success(response.message);
+        const studentName = `${student.student_name} ${student.student_surname}`;
+        toast.success(`${studentName} - ${response.message}`);
       } else {
-        toast.success('To\'lov muvaffaqiyatli qabul qilindi!');
+        const studentName = `${student.student_name} ${student.student_surname}`;
+        toast.success(`${studentName} - To'lov muvaffaqiyatli qabul qilindi!`);
       }
       
       onClose();
@@ -113,51 +115,50 @@ const PaymentModal = ({ isOpen, onClose, student, month }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/30 bg-opacity-30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-auto max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white flex items-center justify-between p-6 border-b border-gray-200 rounded-t-xl">
-          <h3 className="text-xl font-semibold text-gray-900">
+    <div 
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-white rounded-lg shadow-md w-full max-w-xl mx-auto overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="text-center p-4">
+          <div className="w-12 h-12 mx-auto mb-3 bg-red-50 rounded-full flex items-center justify-center">
+            <CreditCardIcon className="h-6 w-6 text-red-500" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900">
             To'lov qabul qilish
           </h3>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
-          >
-            <XMarkIcon className="h-6 w-6" />
-          </button>
         </div>
 
         {/* Student Information */}
         {student && (
-          <div className="p-6 bg-gray-50 border-b border-gray-200">
-            <div className="space-y-2">
-              <h4 className="text-lg font-medium text-gray-900">
-                {student.name} {student.surname}
+          <div className="px-6 pb-4">
+            <div className="bg-gray-50 rounded-lg p-4 mb-4">
+              <h4 className="text-lg font-medium text-gray-900 text-center mb-3">
+                {student.student_name || student.name} {student.student_surname || student.surname}
               </h4>
-              <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
-              
-                <div className="col-span-2">
-                  <div className="flex items-center justify-between bg-white p-3 rounded-lg border">
-                    <span className="font-medium text-gray-700">Qarzlik miqdori:</span>
-                    <span className={`text-lg font-bold ${parseFloat(student.debt_amount || student.original_price || 0) > 0 ? 'text-red-600' : 'text-gray-600'}`}>
-                      {formatCurrency(Math.abs(parseFloat(student.debt_amount || student.original_price || 0)))}
-                    </span>
-                  </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Qarzlik miqdori:</span>
+                  <span className={`font-semibold ${parseFloat(student.debt_amount || student.group_price || 0) > 0 ? 'text-red-500' : 'text-gray-600'}`}>
+                    {formatCurrency(Math.abs(parseFloat(student.debt_amount || student.group_price || 0)))}
+                  </span>
                 </div>
-                <div className="col-span-2">
-                  <div className="flex items-center justify-between bg-blue-50 p-3 rounded-lg border border-blue-200">
-                    <span className="font-medium text-blue-700">Oylik to'lov miqdori:</span>
-                    <span className="text-lg font-bold text-blue-600">
-                      {formatCurrency(parseFloat(student.required_amount || student.original_price || 0))}
-                    </span>
-                  </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Oylik to'lov:</span>
+                  <span className="font-semibold text-blue-600">
+                    {formatCurrency(parseFloat(student.effective_required || student.required_amount || student.group_price || 0))}
+                  </span>
                 </div>
               </div>
             </div>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit}>
+        <div className="px-6 pb-6 space-y-4">
           {/* Payment Amount */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -168,17 +169,15 @@ const PaymentModal = ({ isOpen, onClose, student, month }) => {
                 type="text"
                 value={formatAmountForDisplay(paymentData.amount)}
                 onChange={(e) => handleChange('amount', e.target.value)}
-                className="w-full px-3 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                className="w-full px-4 py-3 pr-16 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent text-lg"
+                style={{ '--tw-ring-color': '#A60E07' }}
                 placeholder="100,000"
                 required
               />
-              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                <span className="text-gray-500 text-sm">UZS</span>
+              <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+                <span className="text-gray-500 text-sm font-medium">UZS</span>
               </div>
             </div>
-            <p className="text-xs text-gray-500 mt-1">
-              Minimal: 1,000 so'm
-            </p>
           </div>
 
           {/* Payment Method */}
@@ -186,7 +185,7 @@ const PaymentModal = ({ isOpen, onClose, student, month }) => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               To'lov usuli:
             </label>
-            <div className="grid grid-cols-1 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               {paymentMethods.map((method) => {
                 const IconComponent = method.icon;
                 return (
@@ -194,14 +193,14 @@ const PaymentModal = ({ isOpen, onClose, student, month }) => {
                     key={method.value}
                     type="button"
                     onClick={() => handleChange('payment_method', method.value)}
-                    className={`flex items-center gap-3 p-3 rounded-lg border transition-colors text-left ${
+                    className={`flex flex-col items-center gap-2 p-3 rounded-lg border transition-colors ${
                       paymentData.payment_method === method.value
-                        ? 'border-red-500 bg-red-50 text-red-700'
+                        ? 'bg-red-50 text-red-700 border-red-200'
                         : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
                     }`}
                   >
-                    <IconComponent className="h-4 w-4 flex-shrink-0" />
-                    <span className="font-medium">{method.label}</span>
+                    <IconComponent className="h-5 w-5" />
+                    <span className="text-xs font-medium">{method.label}</span>
                   </button>
                 );
               })}
@@ -216,31 +215,32 @@ const PaymentModal = ({ isOpen, onClose, student, month }) => {
             <textarea
               value={paymentData.description}
               onChange={(e) => handleChange('description', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent resize-none"
+              style={{ '--tw-ring-color': '#A60E07' }}
               rows="3"
               placeholder="To'lov haqida qo'shimcha ma'lumot..."
             />
           </div>
-
-       
 
           {/* Action Buttons */}
           <div className="flex gap-3 pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              className="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
             >
               Bekor qilish
             </button>
             <button
               type="submit"
               disabled={processPaymentMutation.isPending}
-              className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
+              className="flex-1 px-4 py-3 text-sm font-medium text-white rounded-lg hover:opacity-90 disabled:opacity-50 transition-colors"
+              style={{ backgroundColor: '#A60E07' }}
             >
               {processPaymentMutation.isPending ? 'Bajarilmoqda...' : 'To\'lov qilish'}
             </button>
           </div>
+        </div>
         </form>
       </div>
     </div>

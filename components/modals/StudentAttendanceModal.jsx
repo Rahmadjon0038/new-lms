@@ -1,89 +1,63 @@
 "use client";
 import React from 'react';
-import { XMarkIcon} from '@heroicons/react/24/outline';
-import { useGetStudentMonthlyAttendance } from '../../hooks/attendance';
+import { XMarkIcon, CheckCircleIcon, XCircleIcon, ClockIcon } from '@heroicons/react/24/outline';
+import { useGetStudentAttendanceSnapshot } from '../../hooks/attendance';
 
 const StudentAttendanceModal = ({ isOpen, onClose, student, month }) => {
-    const { data: attendanceData, isLoading, error } = useGetStudentMonthlyAttendance(
+    const { data: attendanceData, isLoading, error } = useGetStudentAttendanceSnapshot(
         student?.student_id, 
+        student?.group_id,
         month,
-        student?.group_id
+        student?.teacher_id, // teacher_id filter
+        student?.subject_id  // subject_id filter
     );
 
     if (!isOpen) return null;
 
-    // Barcha darslarni birlashtirib, sanalar bo'yicha tartiblash
-    const getAllLessons = () => {
-        if (!attendanceData?.success) return [];
-        
-        const allLessons = [];
-        attendanceData.data.groups?.forEach(group => {
-            group.lessons?.forEach(lesson => {
-                allLessons.push({
-                    ...lesson,
-                    group_name: group.group_name,
-                    subject_name: group.subject_name
-                });
-            });
-        });
-        
-        // Sana bo'yicha tartiblash
-        return allLessons.sort((a, b) => new Date(a.date) - new Date(b.date));
-    };
-
-    const lessons = getAllLessons();
-    const uniqueDates = [...new Set(lessons.map(lesson => lesson.date))].sort();
-
-    const getAttendanceForDate = (date) => {
-        const lesson = lessons.find(l => l.date === date);
-        return lesson || null;
-    };
-
-    const getAttendanceDisplay = (attendance) => {
-        if (!attendance) {
-            return <span className="text-gray-400">-</span>;
-        }
-
-        // API dan kelgan haqiqiy status description ni ko'rsatish
-        switch (attendance.attendance_status) {
+    const getStatusIcon = (status) => {
+        switch (status) {
             case 'keldi':
-                return <span className="text-green-600 text-lg">✓</span>;
+                return <span className="text-green-600 text-xl font-bold">✓</span>;
             case 'kelmadi':
-                return <span className="text-red-600 text-lg">✗</span>;
+                return <span className="text-red-600 text-xl font-bold">✗</span>;
+          
             default:
-                // Har qanday boshqa status uchun API dan kelgan description ni ko'rsatish
-                return <span className="text-orange-600 text-xs font-medium">{ '--' || attendance.attendance_status_description || attendance.attendance_status}</span>;
+                return <span className="text-gray-400">-</span>;
         }
     };
 
-    const formatDate = (dateString) => {
-        const date = new Date(dateString);
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year} ${month} ${day}`;
+    const getStatusText = (status) => {
+        if (attendanceData?.data?.monthly_status === 'active') {
+            return <span className="text-green-600 font-medium">Faol</span>;
+        } else {
+            return <span className="text-blue-600 font-medium">O'zgartirishda</span>;
+        }
     };
 
     return (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-5xl mx-auto max-h-[90vh] overflow-hidden">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-md w-full max-w-5xl mx-auto max-h-[90vh] overflow-hidden">
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-gray-200">
-                    <h3 className="text-lg font-medium text-gray-900">
-                        To'liq oylik davomat hisoboti
-                    </h3>
-                    <div className="flex items-center gap-2">
-                        
-                        <button
-                            onClick={onClose}
-                            className="text-gray-400 hover:text-gray-600 transition-colors"
-                        >
-                            <XMarkIcon className="h-5 w-5" />
-                        </button>
+                <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                    <div>
+                        <h3 className="text-xl font-semibold text-gray-900">
+                            Davomat ma'lumotlari
+                        </h3>
+                        {attendanceData?.success && (
+                            <p className="text-sm text-gray-600 mt-1">
+                                {attendanceData.data.group_info.name} - {attendanceData.data.group_info.subject}
+                            </p>
+                        )}
                     </div>
+                    <button
+                        onClick={onClose}
+                        className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100"
+                    >
+                        <XMarkIcon className="h-6 w-6" />
+                    </button>
                 </div>
 
-                <div className="overflow-auto max-h-[calc(90vh-100px)]">
+                <div className="overflow-auto max-h-[calc(90vh-120px)]">
                     {isLoading ? (
                         <div className="p-8 text-center">
                             <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-gray-600"></div>
@@ -91,50 +65,73 @@ const StudentAttendanceModal = ({ isOpen, onClose, student, month }) => {
                         </div>
                     ) : error ? (
                         <div className="p-6 text-center">
-                            <p className="text-red-600">Xatolik yuz berdi</p>
+                            <p className="text-red-600">Xatolik yuz berdi: {error?.message || 'Ma\'lumotlarni yuklashda xatolik'}</p>
                         </div>
                     ) : attendanceData?.success ? (
-                        <div className="p-4">
-                            <table className="w-full border-collapse border border-gray-300">
-                                <thead>
-                                    <tr className="bg-gray-50">
-                                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-medium text-gray-700 w-12">#</th>
-                                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-medium text-gray-700">Talaba</th>
-                                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-medium text-gray-700 w-20">Holati</th>
-                                        {uniqueDates.map(date => (
-                                            <th key={date} className="border border-gray-300 px-3 py-2 text-center text-sm font-medium text-gray-700 w-24">
-                                                {formatDate(date)}
-                                            </th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr className="hover:bg-gray-50">
-                                        <td className="border border-gray-300 px-3 py-2 text-sm text-gray-900">1</td>
-                                        <td className="border border-gray-300 px-3 py-2 text-sm text-gray-900 font-medium">
-                                            {attendanceData.data.student.name} {attendanceData.data.student.surname}
-                                        </td>
-                                        <td className="border border-gray-300 px-3 py-2 text-sm text-green-600">
-                                            Faol
-                                        </td>
-                                        {uniqueDates.map(date => (
-                                            <td key={date} className="border border-gray-300 px-3 py-2 text-center">
-                                                {getAttendanceDisplay(getAttendanceForDate(date))}
+                        <div className="p-6">
+                            {/* Attendance Table */}
+                            <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                                <table className="w-full border-collapse">
+                                    <thead className="bg-gray-50">
+                                        <tr>
+                                            <th className="border border-gray-300 px-4 py-3 text-left text-sm font-medium text-gray-700 w-12">#</th>
+                                            <th className="border border-gray-300 px-4 py-3 text-left text-sm font-medium text-gray-700">Talaba</th>
+                                            <th className="border border-gray-300 px-4 py-3 text-center text-sm font-medium text-gray-700 w-24">Holati</th>
+                                            {attendanceData.data.daily_attendance?.map((attendance, index) => (
+                                                <th key={index} className="border border-gray-300 px-4 py-3 text-center text-sm font-medium text-gray-700 min-w-[100px]">
+                                                    {attendance.formatted_date}
+                                                </th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr className="hover:bg-gray-50">
+                                            <td className="border border-gray-300 px-4 py-3 text-sm text-gray-900 text-center">1</td>
+                                            <td className="border border-gray-300 px-4 py-3">
+                                                <div>
+                                                    <div className="text-sm font-medium text-gray-900">
+                                                        {attendanceData.data.student_info.name} {attendanceData.data.student_info.surname}
+                                                    </div>
+                                                    <div className="text-xs text-gray-500">
+                                                        {attendanceData.data.student_info.phone}
+                                                    </div>
+                                                </div>
                                             </td>
-                                        ))}
-                                    </tr>
-                                </tbody>
-                            </table>
+                                            <td className="border border-gray-300 px-4 py-3 text-center">
+                                                {getStatusText(attendanceData.data.monthly_status)}
+                                            </td>
+                                            {attendanceData.data.daily_attendance?.map((attendance, index) => (
+                                                <td key={index} className="border border-gray-300 px-4 py-3 text-center">
+                                                    {getStatusIcon(attendance.status)}
+                                                </td>
+                                            ))}
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
 
-                            {uniqueDates.length === 0 && (
-                                <div className="text-center py-8 text-gray-500">
-                                    <p>Bu oyda darslar o'tkazilmagan</p>
+                            {/* Statistics Summary */}
+                            <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div className="bg-gray-50 rounded-lg p-4 text-center">
+                                    <div className="text-2xl font-bold text-blue-600">{attendanceData.data.attendance_statistics.total_lessons}</div>
+                                    <div className="text-sm text-gray-600">Jami darslar</div>
                                 </div>
-                            )}
+                                <div className="bg-green-50 rounded-lg p-4 text-center">
+                                    <div className="text-2xl font-bold text-green-600">{attendanceData.data.attendance_breakdown.keldi}</div>
+                                    <div className="text-sm text-gray-600">Keldi</div>
+                                </div>
+                                <div className="bg-red-50 rounded-lg p-4 text-center">
+                                    <div className="text-2xl font-bold text-red-600">{attendanceData.data.attendance_breakdown.kelmadi}</div>
+                                    <div className="text-sm text-gray-600">Kelmadi</div>
+                                </div>
+                             
+                            </div>
+
+                       
                         </div>
                     ) : (
                         <div className="p-6 text-center">
-                            <p className="text-gray-500">Ma'lumot topilmadi</p>
+                            <p className="text-gray-600">Ma'lumot topilmadi</p>
                         </div>
                     )}
                 </div>
@@ -142,5 +139,4 @@ const StudentAttendanceModal = ({ isOpen, onClose, student, month }) => {
         </div>
     );
 };
-
 export default StudentAttendanceModal;

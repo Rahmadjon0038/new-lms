@@ -9,6 +9,7 @@ import {
     PhoneIcon,
     MagnifyingGlassIcon,
     UsersIcon,
+    InformationCircleIcon,
 } from "@heroicons/react/24/outline";
 import { useMonthlyPayments } from "../../../hooks/payments";
 
@@ -17,16 +18,17 @@ const MAIN_COLOR = "#A60E07";
 const TeacherPaymentsInfo = () => {
     const [filters, setFilters] = useState({
         month: new Date().toISOString().slice(0, 7), // Current month (YYYY-MM)
-        status: 'all'
+        payment_status: 'all'
     });
 
     const [searchTerm, setSearchTerm] = useState('');
+    const [tooltipVisible, setTooltipVisible] = useState(null);
 
     // Fetch payments using existing hook
     const { data: paymentsData, isLoading, error } = useMonthlyPayments(filters);
 
     const students = paymentsData?.data?.students || [];
-    const apiStats = paymentsData?.data?.stats || {};
+    const apiSummary = paymentsData?.data?.summary || {};
 
     // Filter students based on search term
     const filteredStudents = useMemo(() => {
@@ -36,8 +38,8 @@ const TeacherPaymentsInfo = () => {
         
         const lowerSearchTerm = searchTerm.toLowerCase().trim();
         return students.filter(student => {
-            const fullName = `${student.name} ${student.surname}`.toLowerCase();
-            const phone = student.phone?.replace(/\s+/g, '') || '';
+            const fullName = `${student.student_name || ''} ${student.student_surname || ''}`.toLowerCase();
+            const phone = (student.student_phone || '').replace(/\s+/g, '');
             const searchPhone = lowerSearchTerm.replace(/\s+/g, '');
             
             return fullName.includes(lowerSearchTerm) ||
@@ -48,10 +50,16 @@ const TeacherPaymentsInfo = () => {
 
     // Statistics
     const stats = {
-        total_students: apiStats.total_students || 0,
-        paid: apiStats.paid || 0,
-        partial: apiStats.partial || 0,
-        unpaid: apiStats.unpaid || 0,
+        total_students: parseInt(apiSummary.total_students || 0),
+        paid: parseInt(apiSummary.paid_students || 0),
+        partial: parseInt(apiSummary.partial_students || 0),
+        unpaid: parseInt(apiSummary.unpaid_students || 0),
+        active: parseInt(apiSummary.active_students || 0),
+        total_required: parseFloat(apiSummary.total_required || 0),
+        total_paid: parseFloat(apiSummary.total_paid || 0),
+        total_debt: parseFloat(apiSummary.total_debt || 0),
+        total_discount: parseFloat(apiSummary.total_discount_amount || 0),
+        students_with_discounts: parseInt(apiSummary.students_with_discounts || 0)
     };
 
     // Format currency
@@ -154,12 +162,12 @@ const TeacherPaymentsInfo = () => {
                         {statusTabs.map((status) => (
                             <button
                                 key={status.value}
-                                onClick={() => handleFilterChange('status', status.value)}
-                                className={`px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-lg transition-colors ${filters.status === status.value
-                                        ? 'text-white shadow-md'
-                                        : 'text-gray-700 bg-gray-100 hover:bg-gray-200'
-                                    }`}
-                                style={filters.status === status.value ? { backgroundColor: MAIN_COLOR } : {}}
+                                    onClick={() => handleFilterChange('payment_status', status.value)}
+                                    className={`px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-lg transition-colors ${filters.payment_status === status.value
+                                            ? 'text-white shadow-md'
+                                            : 'text-gray-700 bg-gray-100 hover:bg-gray-200'
+                                        }`}
+                                    style={filters.payment_status === status.value ? { backgroundColor: MAIN_COLOR } : {}}
                             >
                                 {status.label}
                             </button>
@@ -204,49 +212,88 @@ const TeacherPaymentsInfo = () => {
             </div>
 
             {/* Statistics Cards */}
-            {stats.total_students > 0 && (
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
-                    <div className="bg-white p-2 sm:p-3 md:p-4 rounded-lg shadow-md border-l-4" style={{ borderColor: MAIN_COLOR }}>
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide">Jami talabalar</p>
-                                <p className="text-lg sm:text-xl md:text-2xl font-bold mt-1" style={{ color: MAIN_COLOR }}>{stats.total_students}</p>
+            {/* {stats.total_students > 0 && (
+                <>
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-4">
+                        <div className="bg-white p-2 sm:p-3 md:p-4 rounded-lg shadow-md border-l-4" style={{ borderColor: MAIN_COLOR }}>
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide">Jami talabalar</p>
+                                    <p className="text-lg sm:text-xl md:text-2xl font-bold mt-1" style={{ color: MAIN_COLOR }}>{stats.total_students}</p>
+                                    <p className="text-[10px] sm:text-xs text-gray-400">Faol: {stats.active}</p>
+                                </div>
+                                <UsersIcon className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400" />
                             </div>
-                            <UsersIcon className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400" />
+                        </div>
+
+                        <div className="bg-white p-2 sm:p-3 md:p-4 rounded-lg shadow-md border-l-4 border-green-500">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide">To'liq to'laganlar</p>
+                                    <p className="text-lg sm:text-xl md:text-2xl font-bold text-green-600 mt-1">{stats.paid}</p>
+                                </div>
+                                <CheckCircleIcon className="h-6 w-6 sm:h-8 sm:w-8 text-green-400" />
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-2 sm:p-3 md:p-4 rounded-lg shadow-md border-l-4 border-yellow-500">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide">Qisman to'laganlar</p>
+                                    <p className="text-lg sm:text-xl md:text-2xl font-bold text-yellow-600 mt-1">{stats.partial}</p>
+                                </div>
+                                <ClockIcon className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-400" />
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-2 sm:p-3 md:p-4 rounded-lg shadow-md border-l-4 border-red-500">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide">To'lamaganlar</p>
+                                    <p className="text-lg sm:text-xl md:text-2xl font-bold text-red-600 mt-1">{stats.unpaid}</p>
+                                </div>
+                                <XCircleIcon className="h-6 w-6 sm:h-8 sm:w-8 text-red-400" />
+                            </div>
                         </div>
                     </div>
 
-                    <div className="bg-white p-2 sm:p-3 md:p-4 rounded-lg shadow-md border-l-4 border-green-500">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide">To'liq to'laganlar</p>
-                                <p className="text-lg sm:text-xl md:text-2xl font-bold text-green-600 mt-1">{stats.paid}</p>
+                    {/* Financial Summary */}
+                    {/* <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 sm:gap-4 mb-4 sm:mb-6">
+                        <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-lg shadow-lg">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-xs font-medium opacity-90 uppercase tracking-wide">Jami kutilgan</p>
+                                    <p className="text-xl font-bold mt-1">{formatCurrency(stats.total_required)}</p>
+                                </div>
+                                <CurrencyDollarIcon className="h-8 w-8 opacity-80" />
                             </div>
-                            <CheckCircleIcon className="h-6 w-6 sm:h-8 sm:w-8 text-green-400" />
                         </div>
-                    </div>
 
-                    <div className="bg-white p-2 sm:p-3 md:p-4 rounded-lg shadow-md border-l-4 border-yellow-500">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide">Qisman to'laganlar</p>
-                                <p className="text-lg sm:text-xl md:text-2xl font-bold text-yellow-600 mt-1">{stats.partial}</p>
+                        <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 rounded-lg shadow-lg">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-xs font-medium opacity-90 uppercase tracking-wide">To'langan</p>
+                                    <p className="text-xl font-bold mt-1">{formatCurrency(stats.total_paid)}</p>
+                                </div>
+                                <CheckCircleIcon className="h-8 w-8 opacity-80" />
                             </div>
-                            <ClockIcon className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-400" />
                         </div>
-                    </div>
 
-                    <div className="bg-white p-2 sm:p-3 md:p-4 rounded-lg shadow-md border-l-4 border-red-500">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide">To'lamaganlar</p>
-                                <p className="text-lg sm:text-xl md:text-2xl font-bold text-red-600 mt-1">{stats.unpaid}</p>
+                        <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-4 rounded-lg shadow-lg">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-xs font-medium opacity-90 uppercase tracking-wide">Qarz</p>
+                                    <p className="text-xl font-bold mt-1">{formatCurrency(stats.total_debt)}</p>
+                                    {stats.total_discount > 0 && (
+                                        <p className="text-xs opacity-75 mt-1">Chegirma: {formatCurrency(stats.total_discount)}</p>
+                                    )}
+                                </div>
+                                <XCircleIcon className="h-8 w-8 opacity-80" />
                             </div>
-                            <XCircleIcon className="h-6 w-6 sm:h-8 sm:w-8 text-red-400" />
                         </div>
                     </div>
-                </div>
-            )}
+                </>
+            )}  */}
 
             {/* Results Table */}
             <div className="bg-white rounded-lg shadow-md">
@@ -289,47 +336,49 @@ const TeacherPaymentsInfo = () => {
                                                 <div className="min-w-0 flex-1">
                                                     <div className="flex items-center gap-1 sm:gap-2 mb-1">
                                                         <div className="text-xs sm:text-sm font-medium text-gray-900 truncate">
-                                                            {student.name} {student.surname}
+                                                            {student.student_name} {student.student_surname}
                                                         </div>
                                                         <span className={`inline-flex items-center px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium ${
-                                                            student.student_status === 'active'
+                                                            student.monthly_status === 'active'
                                                                 ? 'bg-green-100 text-green-800'
-                                                                : student.student_status === 'finished'
+                                                                : student.monthly_status === 'finished'
                                                                     ? 'bg-blue-100 text-blue-800'
-                                                                    : student.student_status === 'stopped'
+                                                                    : student.monthly_status === 'stopped'
                                                                         ? 'bg-red-100 text-red-800'
                                                                         : 'bg-gray-100 text-gray-800'
                                                         }`}>
-                                                            {student.student_status === 'active' ? 'Faol' :
-                                                             student.student_status === 'finished' ? 'Bitirgan' :
-                                                             student.student_status === 'stopped' ? "To'xtatgan" : student.student_status}
+                                                            {student.monthly_status === 'active' ? 'Faol' :
+                                                             student.monthly_status === 'finished' ? 'Bitirgan' :
+                                                             student.monthly_status === 'stopped' ? "To'xtatgan" : student.monthly_status}
                                                         </span>
                                                     </div>
                                                     <div className="flex items-center text-xs sm:text-sm text-gray-500 mt-1">
                                                         <PhoneIcon className="h-3 w-3 mr-1 flex-shrink-0" />
-                                                        <a href={`tel:${student.phone}`} className="hover:underline truncate">
-                                                            {student.phone}
+                                                        <a href={`tel:${student.student_phone}`} className="hover:underline truncate">
+                                                            {student.student_phone}
                                                         </a>
                                                     </div>
-                                                    {student.phone2 && (
+                                                    {student.student_father_phone && (
                                                         <div className="flex items-center text-[10px] sm:text-xs text-gray-400 mt-1">
                                                             <PhoneIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1 flex-shrink-0" />
-                                                            <span className="truncate">{student.phone2} (ikkinchi)</span>
+                                                            <span className="truncate">{student.student_father_phone} (ota)</span>
                                                         </div>
                                                     )}
-                                                    {student.father_name && (
+                                                    {student.student_father_name && (
                                                         <div className="text-[10px] sm:text-xs text-gray-400 mt-1 truncate">
-                                                            Otasi: {student.father_name}
-                                                            {student.father_phone && ` - ${student.father_phone}`}
+                                                            Otasi: {student.student_father_name}
                                                         </div>
                                                     )}
-                                                    {student.leave_date && (
-                                                        <div className="text-[10px] sm:text-xs text-red-500 mt-1">
-                                                            Ketgan: {new Date(student.leave_date).toLocaleDateString('uz-UZ')}
+                                                    {student.last_payment_date && (
+                                                        <div className="text-[10px] sm:text-xs text-green-600 mt-1">
+                                                            So'nggi to'lov: {student.last_payment_date}
                                                         </div>
                                                     )}
                                                     <div className="sm:hidden text-[10px] text-gray-500 mt-1 truncate">
                                                         {student.group_name} - {student.subject_name}
+                                                    </div>
+                                                    <div className="text-[10px] text-blue-600 mt-1">
+                                                        Davomat: {student.attended_lessons}/{student.total_lessons} ({student.attendance_percentage}%)
                                                     </div>
                                                 </div>
                                             </div>
@@ -348,20 +397,49 @@ const TeacherPaymentsInfo = () => {
                                             <div className="space-y-0.5 sm:space-y-1">
                                                 <div className="text-xs sm:text-sm">
                                                     <span className="text-gray-500">Asl narx:</span>
-                                                    <span className="font-medium ml-1 sm:ml-2">{formatCurrency(parseFloat(student.original_price))}</span>
+                                                    <span className="font-medium ml-1 sm:ml-2">{formatCurrency(parseFloat(student.group_price || 0))}</span>
                                                 </div>
                                                 <div className="text-xs sm:text-sm">
                                                     <span className="text-gray-500">Kerak:</span>
                                                     <span className="font-medium ml-1 sm:ml-2">{formatCurrency(parseFloat(student.required_amount))}</span>
                                                 </div>
+                                                {parseFloat(student.effective_required) !== parseFloat(student.required_amount) && (
+                                                    <div className="text-xs sm:text-sm">
+                                                        <span className="text-gray-500">Amalda kerak:</span>
+                                                        <span className="font-medium text-blue-600 ml-1 sm:ml-2">{formatCurrency(parseFloat(student.effective_required))}</span>
+                                                    </div>
+                                                )}
                                                 <div className="text-xs sm:text-sm">
                                                     <span className="text-gray-500">To'langan:</span>
                                                     <span className="font-medium text-green-600 ml-1 sm:ml-2">{formatCurrency(parseFloat(student.paid_amount))}</span>
                                                 </div>
                                                 {parseFloat(student.discount_amount) > 0 && (
-                                                    <div className="text-xs sm:text-sm">
-                                                        <span className="text-gray-500">Chegirma:</span>
-                                                        <span className="font-medium text-orange-500 ml-1 sm:ml-2">-{formatCurrency(parseFloat(student.discount_amount))}</span>
+                                                    <div className="text-xs sm:text-sm relative">
+                                                        <div className="flex items-center gap-1">
+                                                            <span className="text-gray-500">Chegirma:</span>
+                                                            <span className="font-medium text-orange-500 ml-1 sm:ml-2">-{formatCurrency(parseFloat(student.discount_amount))}</span>
+                                                            {student.discount_type && (
+                                                                <span className="text-[10px] text-gray-400">({student.discount_type === 'percent' ? `${student.discount_value}%` : 'miqdor'})</span>
+                                                            )}
+                                                            {/* Test uchun - har doim ko'rsatish */}
+                                                            <div className="relative">
+                                                                <InformationCircleIcon
+                                                                    className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500 cursor-pointer hover:text-blue-700 transition-colors"
+                                                                    onMouseEnter={() => setTooltipVisible(`${student.student_id}-${student.group_id}`)}
+                                                                    onMouseLeave={() => setTooltipVisible(null)}
+                                                                />
+                                                                {tooltipVisible === `${student.student_id}-${student.group_id}` && (
+                                                                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-48 bg-gray-900 text-white text-xs rounded-lg px-3 py-2 z-50 shadow-lg">
+                                                                        <div className="font-medium mb-1">Chegirma sababi:</div>
+                                                                        <div>{student.discount_description || 'Izoh mavjud emas'}</div>
+                                                                        {/* Triangle Arrow */}
+                                                                        <div className="absolute top-full left-1/2 transform -translate-x-1/2">
+                                                                            <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-900"></div>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 )}
                                                 {parseFloat(student.debt_amount) > 0 && (

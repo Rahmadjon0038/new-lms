@@ -16,34 +16,8 @@ import {
 
 // API function for checking English teacher status
 const checkEnglishTeacher = async () => {
-  try {
-    console.log('=== CALLING ENGLISH TEACHER API ===');
-    console.log('Endpoint: /api/users/teachers/english');
-    console.log('Method: GET');
-    
-    const response = await instance.get('/api/users/teachers/english');
-    
-    console.log('API Response Status:', response.status);
-    console.log('API Response Headers:', response.headers);
-    console.log('API Response Data:', response.data);
-    
-    // Response formatini tekshiramiz
-    if (response.data && typeof response.data === 'object') {
-      console.log('Response has isEnglishTeacher field:', 'isEnglishTeacher' in response.data);
-      console.log('isEnglishTeacher value:', response.data.isEnglishTeacher);
-      console.log('isEnglishTeacher type:', typeof response.data.isEnglishTeacher);
-    }
-    
-    return response.data;
-  } catch (error) {
-    console.error('=== ENGLISH TEACHER API ERROR ===');
-    console.error('Error object:', error);
-    console.error('Error response:', error.response?.data || error.message);
-    console.error('Error status:', error.response?.status);
-    
-    // Xatolik bo'lsa, default false qaytaramiz
-    return { isEnglishTeacher: false, message: 'API Error', teacherId: null };
-  }
+  const response = await instance.get('/api/users/teachers/english');
+  return response.data;
 };
 
 // --- O'qituvchi Menyu elementlari ma'lumotlari ---
@@ -84,74 +58,20 @@ const getTeacherSidebarItems = (isEnglishTeacher) => {
 };
 
 function TeacherSidebar() {
-  // 1. Joriy URL yo'lini olish uchun usePathname dan foydalanamiz
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [manualTestResult, setManualTestResult] = useState(null);
 
-  // Manual API test
-  useEffect(() => {
-    const testAPI = async () => {
-      try {
-        console.log('Manual API Test starting...');
-        const response = await fetch('/api/users/teachers/english', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-        const data = await response.json();
-        console.log('Manual API Test Result:', data);
-        setManualTestResult(data);
-      } catch (error) {
-        console.error('Manual API Test Error:', error);
-        setManualTestResult({ error: error.message });
-      }
-    };
-    testAPI();
-  }, []);
-
-  // English teacher status ni tekshirish
-  const { data: teacherData, isLoading, error } = useQuery({
+  // English teacher status ni tekshirish - TanStack Query bilan
+  const { data: teacherData, isLoading } = useQuery({
     queryKey: ['english-teacher-status'],
     queryFn: checkEnglishTeacher,
     retry: 1,
     staleTime: 5 * 60 * 1000, // 5 daqiqa
   });
 
-  // Debug logging
-  useEffect(() => {
-    console.log('=== TEACHER SIDEBAR RESPONSE ANALYSIS ===');
-    console.log('Loading state:', isLoading);
-    console.log('Error state:', error);
-    console.log('Raw teacherData:', teacherData);
-    
-    if (teacherData) {
-      console.log('teacherData keys:', Object.keys(teacherData));
-      console.log('isEnglishTeacher field exists:', 'isEnglishTeacher' in teacherData);
-      console.log('isEnglishTeacher raw value:', teacherData.isEnglishTeacher);
-      console.log('isEnglishTeacher type:', typeof teacherData.isEnglishTeacher);
-      console.log('isEnglishTeacher === true:', teacherData.isEnglishTeacher === true);
-      console.log('isEnglishTeacher === false:', teacherData.isEnglishTeacher === false);
-      console.log('Boolean(isEnglishTeacher):', Boolean(teacherData.isEnglishTeacher));
-    }
-    
-    if (error) {
-      console.error('TanStack Query Error:', error);
-    }
-    
-    console.log('Manual test result:', manualTestResult);
-    console.log('=== END RESPONSE ANALYSIS ===');
-  }, [teacherData, error, manualTestResult]);
-
-  const isEnglishTeacher = teacherData?.isEnglishTeacher === true;
-  console.log('Strict comparison result (=== true):', isEnglishTeacher);
-  
-  // Loading holatida default false ishlatamiz
-  const finalIsEnglishTeacher = isLoading ? false : isEnglishTeacher;
-  console.log('Final decision - isLoading:', isLoading, 'finalIsEnglishTeacher:', finalIsEnglishTeacher);
-  
-  const TeacherSidebarItems = getTeacherSidebarItems(finalIsEnglishTeacher);
+  // Loading holatida default false, aks holda backend javobini ishlatish
+  const isEnglishTeacher = isLoading ? false : teacherData?.isEnglishTeacher === true;
+  const TeacherSidebarItems = getTeacherSidebarItems(isEnglishTeacher);
 
   // Sahifa o'zgarganda mobil menuni yopish
   useEffect(() => {

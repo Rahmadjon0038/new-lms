@@ -333,9 +333,6 @@ const TeacherGroupAttendance = () => {
               <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-0.5 sm:mb-1 truncate">
                 {groupInfo?.name || 'Guruh'} - Darslar
               </h1>
-            <p className="text-[10px] sm:text-xs md:text-sm text-gray-600">
-              Fan: {groupInfo?.subject_name || 'Belgilanmagan'}
-            </p>
           </div>
         </div>
 

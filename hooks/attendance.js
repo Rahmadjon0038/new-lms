@@ -71,6 +71,34 @@ export const useGetStudentMonthlyAttendance = (student_id, month, group_id = nul
     });
 }
 
+// 📊 Snapshot davomat ma'lumotlari - yangi API
+// GET /api/snapshots/attendance?student_id={student_id}&group_id={group_id}&month={month}&teacher_id={teacher_id}&subject_id={subject_id}
+const getStudentAttendanceSnapshot = async (student_id, group_id, month, teacher_id = null, subject_id = null) => {
+    const params = new URLSearchParams();
+    params.append('student_id', student_id);
+    params.append('group_id', group_id);
+    params.append('month', month);
+    
+    // Add optional filters
+    if (teacher_id) {
+        params.append('teacher_id', teacher_id);
+    }
+    if (subject_id) {
+        params.append('subject_id', subject_id);
+    }
+    
+    const response = await instance.get(`/api/snapshots/attendance?${params.toString()}`);
+    return response.data;
+}
+
+export const useGetStudentAttendanceSnapshot = (student_id, group_id, month, teacher_id = null, subject_id = null) => {
+    return useQuery({
+        queryKey: ['student-attendance-snapshot', student_id, group_id, month, teacher_id, subject_id],
+        queryFn: () => getStudentAttendanceSnapshot(student_id, group_id, month, teacher_id, subject_id),
+        enabled: !!(student_id && group_id && month), // Only run when all required params exist
+    });
+}
+
 // 3️⃣ Dars studentlari va davomat holati
 // GET /api/attendance/lessons/{lesson_id}/students
 const getLessonStudents = async (lesson_id) => {

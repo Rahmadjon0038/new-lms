@@ -269,8 +269,8 @@ const GroupLessonsPage = () => {
     }
   });
 
-  const groupInfo = null; // Group info not provided in new API
-  let lessons = Array.isArray(lessonsData) ? lessonsData : [];
+  const groupInfo = lessonsData?.group || null;
+  let lessons = lessonsData?.lessons || [];
   // Show newest lessons first
   lessons = [...lessons].reverse();
 
@@ -349,11 +349,17 @@ const GroupLessonsPage = () => {
           
           <div className="flex-1">
             <h1 className="text-2xl font-bold text-gray-900 mb-1">
-              {groupInfo?.name || 'Guruh'} - Darslar
+              {groupInfo?.group_name || 'Guruh'} - Darslar
             </h1>
-            <p className="text-sm text-gray-600">
-              O'qituvchi: {groupInfo?.teacher_name || 'Belgilanmagan'}
-            </p>
+            <div className="space-y-1">
+              <p className="text-sm text-gray-600">
+                O'qituvchi: {groupInfo?.teacher_name || 'Belgilanmagan'}
+              </p>
+              {/* <p className="text-sm text-gray-600">
+                Fan: {groupInfo?.subject_name || 'Belgilanmagan'}
+              </p> */}
+              
+            </div>
           </div>
         </div>
 
