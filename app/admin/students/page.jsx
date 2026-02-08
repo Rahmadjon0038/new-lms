@@ -1,7 +1,7 @@
 'use client'
 import React, { useState, useMemo, useCallback, memo, useEffect } from 'react';
 import { FiEdit, FiSave, FiX, FiUserPlus, FiSearch } from 'react-icons/fi';
-import { TrashIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
+import { ClipboardDocumentCheckIcon, ClipboardDocumentIcon, InformationCircleIcon, KeyIcon, TrashIcon } from '@heroicons/react/24/outline';
 import {
     User, Phone, MapPin, Calendar, GraduationCap,
     CheckCircle, XCircle, Clock, BookOpen, Users,
@@ -67,6 +67,8 @@ const StudentsPage = () => {
     const [stats, setStats] = useState(null);
     const [editingId, setEditingId] = useState(null);
     const [editData, setEditData] = useState({});
+    const [visibleRecoveryKeys, setVisibleRecoveryKeys] = useState({});
+    const [copiedRecoveryRow, setCopiedRecoveryRow] = useState(null);
 
     // Ma'lumot kelganda state-ni yangilash
     useEffect(() => {
@@ -247,6 +249,22 @@ const StudentsPage = () => {
     const handleDeleteStudent = (student, index) => {
         if (window.confirm(`Talabani guruhdan o'chirishga ishonchingiz komilmi?`)) {
             setStudents(prevStudents => prevStudents.filter((s, idx) => `${s.id}-${s.group_id}-${idx}` !== `${student.id}-${student.group_id}-${index}`));
+        }
+    };
+
+    const toggleRecoveryKey = (rowKey) => {
+        setVisibleRecoveryKeys((prev) => ({ ...prev, [rowKey]: !prev[rowKey] }));
+    };
+
+    const copyRecoveryKey = async (rowKey, value) => {
+        if (!value) return;
+        try {
+            await navigator.clipboard.writeText(value);
+            setCopiedRecoveryRow(rowKey);
+            notify('ok', "Recovery key nusxalandi");
+            setTimeout(() => setCopiedRecoveryRow(null), 1500);
+        } catch {
+            notify('err', "Recovery key ni nusxalab bo'lmadi");
         }
     };
 
@@ -465,6 +483,40 @@ const StudentsPage = () => {
                                                                 <span className="break-words" title={student.address}><strong>Manzil:</strong> {student.address}</span>
                                                             </div>
                                                         )}
+
+                                                        {student.recovery_key ? (
+                                                            <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-2">
+                                                                <div className="flex items-center justify-between gap-2">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => toggleRecoveryKey(rowKey)}
+                                                                        className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-1 text-[11px] font-semibold text-amber-800 hover:bg-amber-100"
+                                                                    >
+                                                                        <KeyIcon className="h-3.5 w-3.5" />
+                                                                        Recovery key
+                                                                    </button>
+                                                                    {visibleRecoveryKeys[rowKey] ? (
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => copyRecoveryKey(rowKey, student.recovery_key)}
+                                                                            className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-1 text-[11px] font-semibold text-gray-700 hover:bg-gray-100"
+                                                                        >
+                                                                            {copiedRecoveryRow === rowKey ? (
+                                                                                <ClipboardDocumentCheckIcon className="h-3.5 w-3.5 text-green-600" />
+                                                                            ) : (
+                                                                                <ClipboardDocumentIcon className="h-3.5 w-3.5" />
+                                                                            )}
+                                                                            {copiedRecoveryRow === rowKey ? "Nusxalandi" : "Nusxa olish"}
+                                                                        </button>
+                                                                    ) : null}
+                                                                </div>
+                                                                {visibleRecoveryKeys[rowKey] ? (
+                                                                    <p className="mt-2 break-all rounded-md bg-white px-2 py-1.5 text-[11px] font-bold text-amber-900">
+                                                                        {student.recovery_key}
+                                                                    </p>
+                                                                ) : null}
+                                                            </div>
+                                                        ) : null}
                                                     </div>
 
                                                 </div>

@@ -10,6 +10,7 @@ import {
   ClipboardDocumentListIcon, // Davomat uchun
   BriefcaseIcon,
   BookmarkIcon, // Qo'llanma uchun
+  Cog6ToothIcon,
   Bars3Icon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
@@ -42,6 +43,11 @@ const getTeacherSidebarItems = (isEnglishTeacher) => {
       name: "Talabalar To'lovlari", // To'lovlar statusini ko'rish uchun
       icon: BriefcaseIcon,
       href: "/teacher/payments-info",
+    },
+    {
+      name: "Sozlamalar",
+      icon: Cog6ToothIcon,
+      href: "/teacher/settings",
     },
   ];
 

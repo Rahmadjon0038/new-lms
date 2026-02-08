@@ -8,6 +8,7 @@ import {
   BookOpenIcon,
   ChartBarIcon,
   BriefcaseIcon,
+  Cog6ToothIcon,
   Bars3Icon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
@@ -27,6 +28,11 @@ const sidebarItems = [
     name: "To'lovlarim",
     icon: BriefcaseIcon,
     href: "/student/my-payments",
+  },
+  {
+    name: "Sozlamalar",
+    icon: Cog6ToothIcon,
+    href: "/student/settings",
   },
 ];
 

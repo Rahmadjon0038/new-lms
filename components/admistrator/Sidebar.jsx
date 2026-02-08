@@ -9,9 +9,11 @@ import {
   BookOpenIcon, // Guruhlar
   UsersIcon, // Talabalar uchun alohida
   AcademicCapIcon, // Fanlar uchun
+  BookmarkIcon, // Qollanma
   ClipboardDocumentListIcon, // Davomat uchun
   WalletIcon, // To'lovlar uchun
   BuildingLibraryIcon, // Xonalar
+  ReceiptPercentIcon, // Rasxodlar
 } from "@heroicons/react/24/outline";
 
 // Asosiy rang konstantasi
@@ -50,6 +52,16 @@ const sidebarItems = [
     icon: AcademicCapIcon,
     href: "/admin/subjects",
   },
+  {
+    name: "Qollanma",
+    icon: BookmarkIcon,
+    href: "/admin/guide",
+  },
+  {
+    name: "Rasxodlar",
+    icon: ReceiptPercentIcon,
+    href: "/admin/expenses",
+  },
   
    {
     name: "O'qituvchilar",
@@ -73,14 +85,18 @@ const sidebarItems = [
 function AdministratorSidebar() {
   const pathname = usePathname();
 
+  const isItemActive = (itemHref) => {
+    if (!pathname) return false;
+    if (itemHref === "/admin") return pathname === "/admin";
+    return pathname === itemHref || pathname.startsWith(`${itemHref}/`);
+  };
+
   return (
     <div className="flex flex-col w-60 min-h-screen bg-white shadow-xl">
       <nav className="flex-1 px-4 py-6 space-y-2">
         {sidebarItems.map((item) => {
           // Aktivlikni tekshirish logikasi
-          const isActive = pathname === item.href;
-          const isDashboardActive = item.href === "/admin" && pathname === "/admin";
-          const currentActive = isActive || isDashboardActive;
+          const currentActive = isItemActive(item.href);
 
           return (
             <Link

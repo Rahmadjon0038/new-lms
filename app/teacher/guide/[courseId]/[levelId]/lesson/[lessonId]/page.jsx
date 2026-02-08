@@ -1,497 +1,401 @@
-"use client";
-import React, { useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import {
-  ArrowLeftIcon,
-  ClockIcon,
-  PlayCircleIcon,
-  DocumentIcon,
-  SpeakerWaveIcon,
-  VideoCameraIcon,
-  CheckCircleIcon,
-  ExclamationTriangleIcon,
-  LightBulbIcon,
-  PlusCircleIcon,
-  ChevronDownIcon,
-  ChevronRightIcon,
-  EyeIcon,
-  ArrowDownTrayIcon,
-  BookOpenIcon,
-  PencilSquareIcon,
-  AcademicCapIcon,
-  ClipboardDocumentCheckIcon
-} from "@heroicons/react/24/outline";
+'use client';
 
-const MAIN_COLOR = "#A60E07";
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { ArrowsPointingOutIcon, ArrowLeftIcon, DocumentIcon, PlayCircleIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { toast } from 'react-hot-toast';
+import { instance } from '../../../../../../../hooks/api';
+import { useTeacherGuideLessonDetail, useTeacherGuideLessonNotes } from '../../../../../../../hooks/guides';
 
-// Simple markdown renderer
-const renderMarkdown = (text) => {
-  return text
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
-    .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic
-    .replace(/\n/g, '<br />') // Line breaks
-    .replace(/^# (.*$)/gim, '<h1 class="text-xl font-bold mb-2">$1</h1>') // H1
-    .replace(/^## (.*$)/gim, '<h2 class="text-lg font-semibold mb-2">$1</h2>') // H2
-    .replace(/^### (.*$)/gim, '<h3 class="text-base font-medium mb-1">$1</h3>') // H3
-    .replace(/^- (.*$)/gim, '<li class="ml-4">• $1</li>') // List items
-    .replace(/`(.*?)`/g, '<code class="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">$1</code>'); // Inline code
+const NOTE_COLOR_MAP = {
+  blue: 'from-blue-50 to-white border-blue-300',
+  green: 'from-green-50 to-white border-green-300',
+  orange: 'from-orange-50 to-white border-orange-300',
+  red: 'from-red-50 to-white border-red-300',
+  purple: 'from-purple-50 to-white border-purple-300',
+  pink: 'from-pink-50 to-white border-pink-300',
 };
 
-// Mock lesson data with multiple PDFs and assignments
-const mockLessonData = {
-  1: {
-    1: {
-      1: {
-        id: 1,
-        title: "Alphabet and Pronunciation",
-        duration: "45 min",
-        level: "Beginner (A1)",
-        type: "Alifbo",
-        difficulty: "Oson",
-        description: "Bu darsda talabalar ingliz tilidagi 26 ta harfni va ularning tovushlarini o'rganishadi.",
-        
-        // Multiple PDFs section
-        pdfs: [
-          {
-            id: 1,
-            title: "Asosiy darslik - Alphabet",
-            description: "26 ta harf va tovushlar",
-            size: "2.1 MB",
-            pages: 15,
-            isMainPdf: true
-          },
-          {
-            id: 2,
-            title: "Pronunciation Guide",
-            description: "Tovush chiqarish qoidalari",
-            size: "1.8 MB", 
-            pages: 12,
-            isMainPdf: false
-          },
-          {
-            id: 3,
-            title: "Practice Worksheets",
-            description: "Amaliy mashq varaqalari",
-            size: "0.9 MB",
-            pages: 8,
-            isMainPdf: false
-          },
-          {
-            id: 4,
-            title: "Audio Transcripts",
-            description: "Audio mashqlar matni",
-            size: "0.5 MB",
-            pages: 4,
-            isMainPdf: false
-          }
-        ],
-
-        // Assignments section
-        assignments: [
-          {
-            id: 1,
-            title: "ABC harflari yozish",
-            description: "Barcha harflarni 3 marta yozib chiqing",
-            type: "Yozma ish",
-            difficulty: "Oson",
-            timeEstimate: "15 min",
-            dueDate: "Keyingi dars",
-            points: 10
-          },
-          {
-            id: 2,
-            title: "Tovushlar amaliyoti",
-            description: "Audio faylni tinglab, harflarni takrorlang",
-            type: "Audio mashq",
-            difficulty: "O'rta",
-            timeEstimate: "20 min",
-            dueDate: "2 kun",
-            points: 15
-          },
-          {
-            id: 3,
-            title: "Alfavit qo'shig'i",
-            description: "ABC qo'shig'ini yod olib, video yozing",
-            type: "Video topshiriq",
-            difficulty: "Qiyin",
-            timeEstimate: "30 min",
-            dueDate: "1 hafta",
-            points: 20
-          }
-        ],
-
-        // Learning objectives
-        objectives: [
-          "26 ta ingliz harfini tanish va yodlash",
-          "Har bir harfning to'g'ri tovushini chiqarish",
-          "Kichik va katta harflar o'rtasidagi farqni bilish",
-          "Oddiy so'zlarni harflab o'qish"
-        ],
-
-        // Key vocabulary
-        vocabulary: [
-          { word: "Hello", translation: "Salom", pronunciation: "/həˈloʊ/" },
-          { word: "Goodbye", translation: "Xayr", pronunciation: "/ɡʊdˈbaɪ/" },
-          { word: "Thank you", translation: "Rahmat", pronunciation: "/θæŋk juː/" },
-          { word: "Please", translation: "Iltimos", pronunciation: "/pliːz/" }
-        ],
-
-        // Single information card
-        infoCard: {
-          id: 1,
-          title: "Dars haqida",
-          content: `# Ingliz tili alfaviti
-
-Bu darsda talabalar **ingliz tilidagi 26 ta harfni** va ularning tovushlarini o'rganishadi.
-
-## Asosiy maqsadlar:
-- Harflarni tanish va yodlash
-- To'g'ri talaffuz qilish
-- Kichik va katta harflar farqini bilish
-
-### Maslahatlar:
-- Har bir harfni *bosh tovush* bilan ayting
-- Ko'rgan so'zlarni harflab o'qishga harakat qiling
-- Kuniga 5-10 daqiqa mashq qiling
-- Xatoga qo'rqmang, takrorlash juda muhim
-
-**Eslatma:** Darsni boshlashdan oldin \`Audio materiallar\` tayyorlab qo'ying.`,
-          color: "blue"
-        }
-      }
+const toList = (value, fallbackKeys = []) => {
+  if (Array.isArray(value)) return value;
+  if (value && typeof value === 'object') {
+    const direct = [...(Array.isArray(value.global) ? value.global : []), ...(Array.isArray(value.private) ? value.private : [])];
+    if (direct.length > 0) return direct;
+    for (const key of fallbackKeys) {
+      if (Array.isArray(value[key])) return value[key];
     }
   }
+  return [];
 };
 
-const LessonDetailPage = () => {
-  const params = useParams();
+const TeacherGuideLessonPage = () => {
+  const { courseId, levelId, lessonId } = useParams();
   const router = useRouter();
-  const { courseId, levelId, lessonId } = params;
-  
   const [activeTab, setActiveTab] = useState('overview');
-  const [cardColor, setCardColor] = useState('blue');
-  const [speechRate, setSpeechRate] = useState(1);
-  
-  // Convert string params to integers
-  const courseIdInt = parseInt(courseId, 10);
-  const levelIdInt = parseInt(levelId, 10);
-  const lessonIdInt = parseInt(lessonId, 10);
-  
-  const lessonData = mockLessonData[courseIdInt]?.[levelIdInt]?.[lessonIdInt];
-  
-  // Color schemes for cards
-  const getColorClasses = (color) => {
-    const schemes = {
-      blue: 'border-l-blue-500 bg-gradient-to-r from-blue-50 to-blue-25',
-      green: 'border-l-emerald-500 bg-gradient-to-r from-emerald-50 to-emerald-25',
-      orange: 'border-l-orange-500 bg-gradient-to-r from-orange-50 to-orange-25',
-      red: 'border-l-rose-500 bg-gradient-to-r from-rose-50 to-rose-25',
-      purple: 'border-l-purple-500 bg-gradient-to-r from-purple-50 to-purple-25',
-      pink: 'border-l-pink-500 bg-gradient-to-r from-pink-50 to-pink-25'
-    };
-    return schemes[color] || schemes.blue;
-  };
-  
-  const getBackgroundColor = (color) => {
-    const backgrounds = {
-      blue: 'bg-blue-50/40',
-      green: 'bg-emerald-50/40',
-      orange: 'bg-orange-50/40', 
-      red: 'bg-rose-50/40',
-      purple: 'bg-purple-50/40',
-      pink: 'bg-pink-50/40'
-    };
-    return backgrounds[color] || backgrounds.blue;
-  };
-  
-  // Speech function
-  const speakWord = (word) => {
-    if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(word);
-      utterance.lang = 'en-US';
-      utterance.rate = speechRate;
-      utterance.pitch = 1;
-      speechSynthesis.speak(utterance);
-    } else {
-      alert('Brauzeringiz ovozli o\'qishni qo\'llab-quvvatlamaydi');
+  const { data, isLoading, error } = useTeacherGuideLessonDetail(lessonId);
+  const { data: notesFromEndpoint = [] } = useTeacherGuideLessonNotes(lessonId);
+
+  const lesson = data?.lesson || null;
+  const notes = useMemo(() => {
+    const compositeNotes = toList(data?.notes);
+    return notesFromEndpoint.length > 0 ? notesFromEndpoint : compositeNotes;
+  }, [data, notesFromEndpoint]);
+  const pdfs = useMemo(() => toList(data?.pdfs), [data]);
+  const assignments = useMemo(() => toList(data?.assignments), [data]);
+  const vocabulary = useMemo(() => toList(data?.vocabulary), [data]);
+  const vocabularyImages = useMemo(
+    () => toList(data?.vocabulary_images, ['images']).map((item) => ({ ...item, protected_file_url: item.protected_file_url || item.protected_image_url || '' })),
+    [data]
+  );
+  const vocabularyMarkdowns = useMemo(() => toList(data?.vocabulary_markdowns, ['markdowns']), [data]);
+  const videos = useMemo(() => toList(data?.videos || data?.video_links), [data]);
+  const [vocabularyAssets, setVocabularyAssets] = useState({});
+  const [imageViewer, setImageViewer] = useState({ open: false, title: '', url: '', loading: false });
+  const viewerRef = useRef(null);
+
+  const openProtectedPdf = async (url) => {
+    if (!url) {
+      toast.error('PDF link not found');
+      return;
+    }
+    try {
+      const response = await instance.get(url, { responseType: 'blob' });
+      const blobUrl = URL.createObjectURL(response.data);
+      window.open(blobUrl, '_blank', 'noopener,noreferrer');
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 30000);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Failed to open PDF');
     }
   };
-  
-  if (!lessonData) {
+
+  const openProtectedFile = async (url, name = 'File') => {
+    if (!url) {
+      toast.error('File link not found');
+      return;
+    }
+    try {
+      const response = await instance.get(url, { responseType: 'blob' });
+      const blobUrl = URL.createObjectURL(response.data);
+      window.open(blobUrl, '_blank', 'noopener,noreferrer');
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 30000);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || `Failed to open ${name.toLowerCase()}`);
+    }
+  };
+
+  const extractYoutubeVideoId = (raw = '') => {
+    if (!raw) return '';
+    const text = String(raw).trim();
+    const match = text.match(
+      /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/i
+    );
+    return match?.[1] || '';
+  };
+
+  const getVideoEmbedUrl = (video) => {
+    if (video?.embed_url) return video.embed_url;
+    const id = video?.youtube_video_id || extractYoutubeVideoId(video?.youtube_url);
+    return id ? `https://www.youtube.com/embed/${id}` : '';
+  };
+
+  const openImageInViewer = async (item) => {
+    setImageViewer({ open: true, title: item.title || 'Image', url: '', loading: true });
+    try {
+      const response = await instance.get(item.protected_file_url, { responseType: 'blob' });
+      const objectUrl = URL.createObjectURL(response.data);
+      setImageViewer({ open: true, title: item.title || 'Image', url: objectUrl, loading: false });
+    } catch (err) {
+      setImageViewer({ open: false, title: '', url: '', loading: false });
+      toast.error(err?.response?.data?.message || 'Failed to open image');
+    }
+  };
+
+  const openVocabularyAsset = (item) => {
+    const asset = vocabularyAssets[item.id];
+    if (asset?.isImage) {
+      openImageInViewer(item);
+      return;
+    }
+    openProtectedFile(item.protected_file_url, item.title || 'file');
+  };
+
+  const closeImageViewer = () => {
+    if (imageViewer.url) URL.revokeObjectURL(imageViewer.url);
+    setImageViewer({ open: false, title: '', url: '', loading: false });
+  };
+
+  const openViewerFullscreen = async () => {
+    try {
+      if (viewerRef.current?.requestFullscreen) {
+        await viewerRef.current.requestFullscreen();
+      }
+    } catch {
+      toast.error('Failed to open full screen');
+    }
+  };
+
+  useEffect(() => {
+    let active = true;
+    const objectUrls = [];
+
+    const loadAssets = async () => {
+      if (!vocabularyImages.length) {
+        setVocabularyAssets({});
+        return;
+      }
+
+      const entries = await Promise.all(
+        vocabularyImages.map(async (item) => {
+          if (!item.protected_file_url) return [item.id, null];
+          try {
+            const response = await instance.get(item.protected_file_url, { responseType: 'blob' });
+            const blob = response.data;
+            const objectUrl = URL.createObjectURL(blob);
+            objectUrls.push(objectUrl);
+            const mime = blob?.type || '';
+            return [item.id, { url: objectUrl, mime, isImage: mime.startsWith('image/') }];
+          } catch {
+            return [item.id, null];
+          }
+        })
+      );
+
+      if (active) {
+        setVocabularyAssets(Object.fromEntries(entries.filter((entry) => entry[1])));
+      }
+    };
+
+    loadAssets();
+
+    return () => {
+      active = false;
+      objectUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [vocabularyImages]);
+
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center bg-white p-8 rounded-lg shadow-lg">
-          <h2 className="text-xl font-bold text-gray-800 mb-2">Dars topilmadi</h2>
-          <p className="text-gray-600 mb-6">Kechirasiz, siz qidirayotgan dars mavjud emas.</p>
-          <button 
-            onClick={() => router.back()}
-            className="text-white bg-[#A60E07] hover:bg-[#8b0c06] px-6 py-3 rounded-lg font-bold transition-all"
-          >
-            Orqaga qaytish
-          </button>
+      <div className="min-h-screen bg-gray-50 p-4">
+        <div className="text-center py-10">
+          <div className="inline-block h-10 w-10 animate-spin rounded-full border-b-2 border-[#A60E07]" />
+          <p className="mt-3 text-gray-600">Loading...</p>
         </div>
       </div>
     );
   }
 
-  const tabs = [
-    { id: 'overview', label: 'Umumiy ma\'lumot', icon: BookOpenIcon },
-    { id: 'pdfs', label: 'PDF materiallar', icon: DocumentIcon },
-    { id: 'assignments', label: 'Topshiriqlar', icon: ClipboardDocumentCheckIcon },
-    { id: 'vocabulary', label: 'Lug\'at', icon: AcademicCapIcon }
-  ];
+  if (error || !lesson) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-4">
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
+          <p className="font-semibold">Error</p>
+          <p className="text-sm">Failed to load lesson information.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Header */}
-      <div className="bg-white border-b sticky top-0 z-10">
-        <div className="py-2">
-          <div className="flex items-center gap-4 mb-2 px-4">
-            <button 
-              onClick={() => router.back()}
-              className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
-            >
-              <ArrowLeftIcon className="h-5 w-5 text-gray-600" />
-            </button>
-            
-            <div className="flex-1">
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-                {lessonData.title}
-              </h1>
-              <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
-                <span className="flex items-center gap-1">
-                  <ClockIcon className="h-4 w-4" />
-                  {lessonData.duration}
-                </span>
-                <span>•</span>
-                <span>{lessonData.level}</span>
-                <span>•</span>
-                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium">
-                  {lessonData.type}
-                </span>
-              </div>
-            </div>
+    <div className="min-h-screen bg-gray-50 ">
+      <div className="rounded-xl border border-gray-100 bg-white  shadow-md sm:p-6">
+        <div className="mb-4 flex items-center gap-3">
+          <button onClick={() => router.push(`/teacher/guide/${courseId}/${levelId}`)} className="rounded-lg bg-gray-100 p-2 hover:bg-gray-200">
+            <ArrowLeftIcon className="h-5 w-5 text-gray-700" />
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">{lesson.topic_name || lesson.title || 'Lesson'}</h1>
+            <p className="text-sm text-gray-600">{lesson.level_title}</p>
           </div>
+        </div>
 
-          {/* Tabs */}
-          <div className="flex space-x-8 overflow-x-auto px-4">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              return (
+        <div className="mb-6 flex flex-wrap gap-2 border-b border-gray-200 pb-3">
+          {[
+            { key: 'overview', label: 'Overview' },
+            { key: 'pdfs', label: 'PDF Materials' },
+            { key: 'assignments', label: 'Assignments' },
+            { key: 'vocabulary', label: 'Vocabulary' },
+            { key: 'videos', label: 'Videos' },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`rounded-lg px-3 py-2 text-sm font-semibold ${
+                activeTab === tab.key ? 'bg-[#A60E07] text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {activeTab === 'overview' ? (
+          notes.length > 0 ? (
+            <div className="space-y-3">
+              {notes.map((item) => (
+                <div key={item.id} className={`rounded-xl border bg-gradient-to-r p-4 sm:p-6 ${NOTE_COLOR_MAP[item?.color] || NOTE_COLOR_MAP.blue}`}>
+                  <div className="prose prose-sm max-w-none text-slate-800">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{item?.content_markdown || ''}</ReactMarkdown>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className={`rounded-xl border bg-gradient-to-r p-4 sm:p-6 ${NOTE_COLOR_MAP.blue}`}>
+              <p className="whitespace-pre-wrap text-base leading-7 text-slate-800">{lesson.description || 'No lesson notes have been added yet.'}</p>
+            </div>
+          )
+        ) : null}
+
+        {activeTab === 'pdfs' ? (
+          <div className="space-y-3">
+            {pdfs.length === 0 ? <p className="text-sm text-gray-500">No PDFs available.</p> : null}
+            {pdfs.map((pdf) => (
+              <div key={pdf.id} className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 p-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <DocumentIcon className="h-6 w-6 text-red-600" />
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold text-slate-900">{pdf.title || pdf.file_name || 'PDF material'}</p>
+                  </div>
+                </div>
                 <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-3 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
-                    activeTab === tab.id
-                      ? 'text-[#A60E07] border-[#A60E07]'
-                      : 'text-gray-600 border-transparent hover:text-gray-800'
-                  }`}
+                  onClick={() => openProtectedPdf(pdf.protected_file_url)}
+                  className="rounded-lg bg-[#A60E07] px-3 py-2 text-sm font-semibold text-white"
                 >
-                  <Icon className="h-4 w-4" />
-                  {tab.label}
+                  Open
                 </button>
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        {activeTab === 'assignments' ? (
+          <div className="space-y-3">
+            {assignments.length === 0 ? <p className="text-sm text-gray-500">No assignments available.</p> : null}
+            {assignments.map((item) => {
+              const text = item.assignment_text || item.text || item.description || '';
+              return (
+                <div key={item.id} className="rounded-lg border border-gray-200 p-3">
+                  <div className="prose prose-sm max-w-none text-gray-700">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
+                  </div>
+                </div>
               );
             })}
           </div>
-        </div>
-      </div>
+        ) : null}
 
-      {/* Content */}
-      <div className="flex-1 py-3">
-        {/* Overview Tab */}
-        {activeTab === 'overview' && (
-          <div className="py-3">
-            {/* Single Information Card */}
-            <div className={`rounded-lg shadow-md p-4 border-l-4 relative transition-all duration-300 ${getColorClasses(cardColor)} ${getBackgroundColor(cardColor)}`}>
-              {/* Color dots */}
-              <div className="absolute top-4 right-4 flex gap-2">
-                {['blue', 'green', 'orange', 'red', 'purple', 'pink'].map((color) => (
-                  <button
-                    key={color}
-                    onClick={() => setCardColor(color)}
-                    className={`w-5 h-5 rounded-full border-2 border-white shadow-lg hover:scale-125 transition-transform cursor-pointer ${
-                      color === 'blue' ? 'bg-blue-500' :
-                      color === 'green' ? 'bg-emerald-500' :
-                      color === 'orange' ? 'bg-orange-500' :
-                      color === 'red' ? 'bg-rose-500' :
-                      color === 'purple' ? 'bg-purple-500' :
-                      'bg-pink-500'
-                    } ${cardColor === color ? 'ring-2 ring-gray-600' : ''}`}
-                  />
+        {activeTab === 'vocabulary' ? (
+          <div className="space-y-4">
+            {vocabulary.length === 0 && vocabularyImages.length === 0 && vocabularyMarkdowns.length === 0 ? <p className="text-sm text-gray-500">No vocabulary available.</p> : null}
+
+            {vocabulary.length > 0 ? (
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                {vocabulary.map((word) => (
+                  <div key={word.id} className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                    <p className="text-lg font-bold text-slate-900">{word.word}</p>
+                    <p className="text-sm text-[#A60E07]">{word.translation}</p>
+                    {word.example ? <p className="mt-2 text-sm italic text-gray-700">{word.example}</p> : null}
+                  </div>
                 ))}
               </div>
-              
-              <h2 className="text-3xl font-bold text-gray-900 mb-4 pr-28">{lessonData.infoCard.title}</h2>
-              <div 
-                className="text-gray-800 leading-relaxed prose prose-lg max-w-none"
-                dangerouslySetInnerHTML={{ __html: renderMarkdown(lessonData.infoCard.content) }}
-              />
-            </div>
-          </div>
-        )}
+            ) : null}
 
-        {/* PDFs Tab */}
-        {activeTab === 'pdfs' && (
-          <div className="px-4">
-            <div className="mb-4">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">PDF materiallar</h2>
-              <p className="text-gray-600">Darsga tegishli barcha PDF fayllar</p>
-            </div>
-
-            <div className="grid gap-4">
-              {lessonData.pdfs.map((pdf) => (
-                <div key={pdf.id} 
-                     className={`bg-white rounded-lg shadow-md p-6 border-l-4 ${
-                       pdf.isMainPdf ? 'border-[#A60E07]' : 'border-gray-300'
-                     }`}>
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-3 rounded-lg ${pdf.isMainPdf ? 'bg-red-100' : 'bg-gray-100'}`}>
-                        <DocumentIcon className={`h-8 w-8 ${pdf.isMainPdf ? 'text-red-600' : 'text-gray-600'}`} />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">{pdf.title}</h3>
-                        {pdf.isMainPdf && (
-                          <span className="bg-[#A60E07] text-white text-xs px-2 py-1 rounded-full font-medium">
-                            Asosiy material
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div className="flex gap-2">
-                      <button className="bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2">
-                        <EyeIcon className="h-4 w-4" />
-                        Ko'rish
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <p className="text-gray-600 mb-3">{pdf.description}</p>
-                  
-                  <div className="flex items-center gap-4 text-sm text-gray-500">
-                    <span>{pdf.size}</span>
-                    <span>•</span>
-                    <span>{pdf.pages} sahifa</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Assignments Tab */}
-        {activeTab === 'assignments' && (
-          <div className="px-4">
-            <div className="mb-4">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Topshiriqlar</h2>
-              <p className="text-gray-600">Dars uchun berilgan vazifalar</p>
-            </div>
-
-            <div className="grid gap-4">
-              {lessonData.assignments.map((assignment) => (
-                <div key={assignment.id} className="bg-white rounded-lg shadow-md p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-start gap-4">
-                      <div className="bg-blue-100 p-3 rounded-lg">
-                        <PencilSquareIcon className="h-6 w-6 text-blue-600" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-1">{assignment.title}</h3>
-                        <p className="text-gray-600 mb-3">{assignment.description}</p>
-                        
-                        <div className="flex items-center gap-4 text-sm">
-                          <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded font-medium">
-                            {assignment.type}
-                          </span>
-                          <span className={`px-2 py-1 rounded font-medium ${
-                            assignment.difficulty === 'Oson' ? 'bg-green-100 text-green-800' :
-                            assignment.difficulty === 'O\'rta' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
-                            {assignment.difficulty}
-                          </span>
-                          <span className="text-gray-600">
-                            <ClockIcon className="h-4 w-4 inline mr-1" />
-                            {assignment.timeEstimate}
-                          </span>
+            {vocabularyImages.length > 0 ? (
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {vocabularyImages.map((img) => (
+                  <div key={img.id} className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
+                    <div className="mb-3 overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
+                      {vocabularyAssets[img.id]?.isImage ? (
+                        <img src={vocabularyAssets[img.id].url} alt={img.title || 'Vocabulary image'} className="h-36 w-full object-cover" />
+                      ) : (
+                        <div className="flex h-36 items-center justify-center gap-2 text-gray-500">
+                          <DocumentIcon className="h-6 w-6 text-red-600" />
+                          <span className="text-sm font-semibold">File</span>
                         </div>
-                      </div>
+                      )}
                     </div>
-                    
-                    <div className="text-right">
-                      <div className="bg-[#A60E07] text-white px-3 py-1 rounded-lg font-bold text-lg mb-1">
-                        {assignment.points} ball
-                      </div>
-                      <p className="text-sm text-gray-600">Muddati: {assignment.dueDate}</p>
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <p className="truncate font-semibold text-slate-900">{img.title || 'Vocabulary asset'}</p>
+                      <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold uppercase text-gray-600">
+                        {vocabularyAssets[img.id]?.isImage ? 'Image' : 'File'}
+                      </span>
                     </div>
-                  </div>
-                  
-                  <div className="flex justify-end">
-                    <button className="bg-[#A60E07] hover:bg-[#8b0c06] text-white px-4 py-2 rounded-lg font-medium transition-colors">
-                      Topshiriqni boshlash
+                    <button
+                      onClick={() => openVocabularyAsset(img)}
+                      disabled={!img.protected_file_url}
+                      className="w-full rounded-lg bg-[#A60E07] px-3 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {vocabularyAssets[img.id]?.isImage ? 'Open full screen' : 'Open file'}
                     </button>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : null}
+
+            {vocabularyMarkdowns.length > 0 ? (
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                {vocabularyMarkdowns.map((md) => (
+                  <div key={md.id} className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                    <div className="prose prose-sm max-w-none text-gray-700">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{md.content_markdown || ''}</ReactMarkdown>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </div>
-        )}
+        ) : null}
 
-        {/* Vocabulary Tab */}
-        {activeTab === 'vocabulary' && (
-          <div className="px-4 relative">
-            <div className="mb-4">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Asosiy lug'at</h2>
-              <p className="text-gray-600">Darsda ishlatiladigan muhim so'zlar</p>
-            </div>
+        {activeTab === 'videos' ? (
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {videos.length === 0 ? <p className="text-sm text-gray-500">No videos available.</p> : null}
+            {videos.map((video) => (
+              <div key={video.id} className="rounded-lg border border-gray-200 p-3">
+                <div className="mb-2 flex items-center gap-2">
+                  <PlayCircleIcon className="h-5 w-5 text-red-600" />
+                  <p className="truncate font-semibold text-slate-900">{video.title}</p>
+                </div>
+                <div className="aspect-video overflow-hidden rounded-lg">
+                  {getVideoEmbedUrl(video) ? (
+                    <iframe title={video.title} src={getVideoEmbedUrl(video)} className="h-full w-full" allowFullScreen />
+                  ) : (
+                    <div className="flex h-full items-center justify-center bg-gray-100 text-sm text-gray-500">Video link not found</div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </div>
 
-            {/* Speech Control - Right Corner */}
-            <div className="absolute top-4 right-4 bg-white rounded-lg shadow-md p-2 border">
+      {imageViewer.open ? (
+        <div className="fixed inset-0 z-[9999] bg-black/80 p-3 sm:p-6">
+          <div ref={viewerRef} className="h-full w-full rounded-xl bg-black p-3 sm:p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="truncate text-sm font-semibold text-white">{imageViewer.title}</p>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-600">Tezlik:</span>
-                <input
-                  type="range"
-                  min="0.1"
-                  max="2.0"
-                  step="0.1"
-                  value={speechRate}
-                  onChange={(e) => setSpeechRate(parseFloat(e.target.value))}
-                  className="w-16 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                />
-                <span className="text-xs text-gray-500 font-mono w-8">{speechRate.toFixed(1)}x</span>
+                <button onClick={openViewerFullscreen} className="rounded-lg bg-white/15 px-3 py-2 text-xs font-semibold text-white hover:bg-white/25">
+                  <ArrowsPointingOutIcon className="h-4 w-4" />
+                </button>
+                <button onClick={closeImageViewer} className="rounded-lg bg-white/15 p-2 text-white hover:bg-white/25">
+                  <XMarkIcon className="h-5 w-5" />
+                </button>
               </div>
             </div>
-
-            <div className="grid gap-3">
-              {lessonData.vocabulary.map((item, index) => (
-                <div key={index} className="bg-white rounded-lg shadow-md p-4 border-l-4 border-l-indigo-500">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-bold text-gray-900">{item.word}</h3>
-                        <span className="text-gray-400">→</span>
-                        <p className="text-lg text-gray-700">{item.translation}</p>
-                      </div>
-                      <p className="text-sm text-gray-500 font-mono">{item.pronunciation}</p>
-                    </div>
-                    
-                    <button 
-                      onClick={() => speakWord(item.word)}
-                      className="bg-green-50 hover:bg-green-100 text-green-600 px-3 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ml-4"
-                    >
-                      <SpeakerWaveIcon className="h-4 w-4" />
-                      Tinglash
-                    </button>
-                  </div>
-                </div>
-              ))}
+            <div className="h-[calc(100%-52px)] w-full overflow-auto">
+              {imageViewer.loading ? (
+                <div className="flex h-full items-center justify-center text-white">Loading...</div>
+              ) : (
+                <img src={imageViewer.url} alt={imageViewer.title} className="mx-auto h-full max-h-full w-auto max-w-full object-contain" />
+              )}
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      ) : null}
     </div>
   );
 };
 
-export default LessonDetailPage;
+export default TeacherGuideLessonPage;

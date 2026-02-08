@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   XMarkIcon,
   UserIcon,
   PhoneIcon,
+  AtSymbolIcon,
   AcademicCapIcon,
   PencilSquareIcon,
   CheckIcon,
@@ -41,17 +42,6 @@ export default function ProfileModal({ children }) {
     phone2: "",
   });
 
-  useEffect(() => {
-    if (user) {
-      setProfileData({
-        name: user.name || "",
-        surname: user.surname || "",
-        phone: user.phone || "",
-        phone2: user.phone2 || "",
-      });
-    }
-  }, [user]);
-
   const handleOpen = () => setIsOpen(true);
   const handleClose = () => {
     setIsEditing(false);
@@ -66,6 +56,16 @@ export default function ProfileModal({ children }) {
   const handleSave = () => {
     console.log("Saving...", profileData);
     setIsEditing(false);
+  };
+
+  const startEditing = () => {
+    setProfileData({
+      name: user?.name || "",
+      surname: user?.surname || "",
+      phone: user?.phone || "",
+      phone2: user?.phone2 || "",
+    });
+    setIsEditing(true);
   };
 
   const formatDate = (dateString) => {
@@ -114,10 +114,17 @@ export default function ProfileModal({ children }) {
                 </div>
                 <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center mb-1">
-                    <CalendarDaysIcon className="h-3 w-3 mr-1" style={{ color: '#A60E07' }} /> Qo'shilgan
+                    <CalendarDaysIcon className="h-3 w-3 mr-1" style={{ color: '#A60E07' }} /> Qo&apos;shilgan
                   </label>
                   <p className="text-sm font-semibold text-gray-700">{formatDate(user?.created_at)}</p>
                 </div>
+              </div>
+
+              <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center mb-1">
+                  <AtSymbolIcon className="h-3 w-3 mr-1" style={{ color: '#A60E07' }} /> Foydalanuvchi nomi
+                </label>
+                <p className="text-sm font-bold text-gray-800">{user?.username || "-"}</p>
               </div>
 
               {/* INPUTS GROUP */}
@@ -175,7 +182,7 @@ export default function ProfileModal({ children }) {
                 </div>
 
                 <div className="flex flex-col">
-                  <label className="text-xs font-bold text-gray-500 ml-1 mb-1">Qo'shimcha telefon</label>
+                  <label className="text-xs font-bold text-gray-500 ml-1 mb-1">Qo&apos;shimcha telefon</label>
                   <div className="relative">
                     <PhoneIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 transition-colors" style={{ color: isEditing ? '#A60E07' : '#9CA3AF' }} />
                     <input
@@ -199,12 +206,12 @@ export default function ProfileModal({ children }) {
                 {!isEditing ? (
                   <button
                     type="button"
-                    onClick={() => setIsEditing(true)}
+                    onClick={startEditing}
                     className="w-full flex items-center justify-center space-x-2 py-3 text-white rounded-xl font-bold transition-all shadow-lg active:scale-[0.98] hover:opacity-90"
                     style={{ backgroundColor: '#A60E07', shadowColor: 'rgba(166, 14, 7, 0.2)' }}
                   >
                     <PencilSquareIcon className="h-5 w-5" />
-                    <span>Ma'lumotlarni tahrirlash</span>
+                    <span>Ma&apos;lumotlarni tahrirlash</span>
                   </button>
                 ) : (
                   <div className="grid grid-cols-2 gap-3">

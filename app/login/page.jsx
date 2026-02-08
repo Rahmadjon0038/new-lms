@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Snowfall from "react-snowfall";
-import { useAddUser } from "../../hooks/user";
+import { useAddUser, useResetPasswordWithKey } from "../../hooks/user";
 import { useGetNotify } from "../../hooks/notify";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
@@ -10,7 +10,15 @@ import { useRouter } from "next/navigation";
 function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showForgot, setShowForgot] = useState(false);
+  const [forgotForm, setForgotForm] = useState({
+    username: "",
+    recovery_key: "",
+    new_password: "",
+  });
+  const [newRecoveryKey, setNewRecoveryKey] = useState("");
   const addUserMutation = useAddUser();
+  const resetPasswordMutation = useResetPasswordWithKey();
   const notify = useGetNotify()
   const navigate = useRouter()
 
@@ -29,6 +37,28 @@ function Login() {
       onError: (err) => {
         notify('err', err.response?.data?.message || 'Server xatosi');
       }
+    });
+  };
+
+  const handleForgotSubmit = (e) => {
+    e.preventDefault();
+    if (!forgotForm.username || !forgotForm.recovery_key || !forgotForm.new_password) {
+      notify("err", "Barcha maydonlarni to'ldiring");
+      return;
+    }
+
+    resetPasswordMutation.mutate({
+      username: forgotForm.username.trim(),
+      recovery_key: forgotForm.recovery_key.trim(),
+      new_password: forgotForm.new_password,
+      onSuccess: (data) => {
+        const key = data?.data?.recovery_key || "";
+        setNewRecoveryKey(key);
+        notify("ok", data?.message || "Parol muvaffaqiyatli tiklandi");
+      },
+      onError: (err) => {
+        notify("err", err?.response?.data?.message || "Parolni tiklashda xatolik");
+      },
     });
   };
 
@@ -90,12 +120,78 @@ function Login() {
           </button>
         </form>
 
+        <div className="mt-4 text-right">
+          <button
+            type="button"
+            onClick={() => {
+              setShowForgot((prev) => !prev);
+              setNewRecoveryKey("");
+            }}
+            className="text-xs sm:text-sm font-semibold text-[#A60E07] hover:underline"
+          >
+            Parolni unutdingizmi?
+          </button>
+        </div>
+
         <div className="mt-6 sm:mt-8 text-center">
           <p className="text-gray-400 text-[8px] sm:text-[10px] tracking-[0.1em] sm:tracking-[0.2em] uppercase italic">
             Bilim kelajak poydevori
           </p>
         </div>
       </div>
+
+      {showForgot ? (
+        <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-base font-bold text-gray-800">Parolni tiklash</h3>
+              <button
+                type="button"
+                onClick={() => setShowForgot(false)}
+                className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-200"
+              >
+                Yopish
+              </button>
+            </div>
+            <form onSubmit={handleForgotSubmit} className="space-y-3">
+              <input
+                type="text"
+                placeholder="Foydalanuvchi nomi"
+                value={forgotForm.username}
+                onChange={(e) => setForgotForm((p) => ({ ...p, username: e.target.value }))}
+                className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-[#A60E07]"
+              />
+              <input
+                type="text"
+                placeholder="Recovery key"
+                value={forgotForm.recovery_key}
+                onChange={(e) => setForgotForm((p) => ({ ...p, recovery_key: e.target.value }))}
+                className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-[#A60E07]"
+              />
+              <input
+                type="password"
+                placeholder="Yangi parol"
+                value={forgotForm.new_password}
+                onChange={(e) => setForgotForm((p) => ({ ...p, new_password: e.target.value }))}
+                className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-[#A60E07]"
+              />
+              <button
+                type="submit"
+                disabled={resetPasswordMutation.isPending}
+                className="w-full rounded-xl bg-[#A60E07] py-2.5 text-sm font-bold text-white disabled:opacity-60"
+              >
+                {resetPasswordMutation.isPending ? "Yuklanmoqda..." : "Parolni tiklash"}
+              </button>
+            </form>
+            {newRecoveryKey ? (
+              <div className="mt-3 rounded-xl bg-gray-50 p-3">
+                <p className="text-xs text-gray-500">Yangi recovery key (saqlab qo&apos;ying):</p>
+                <p className="text-sm font-bold text-[#A60E07] break-all">{newRecoveryKey}</p>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
