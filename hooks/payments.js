@@ -161,22 +161,24 @@ export const useTeacherStudentsPayments = (filters, options = {}) => {
 
 // ================ STUDENT PAYMENT APIs ================
 
-// Get student's monthly payments
-const fetchStudentMonthlyPayments = async (month) => {
+// Get student's monthly payments (new API)
+const fetchStudentMonthlyPayments = async ({ month, groupId } = {}) => {
   const params = new URLSearchParams();
   if (month) params.append('month', month);
+  if (groupId) params.append('group_id', groupId);
   
   const queryString = params.toString();
-  const url = `/api/payments/my${queryString ? `?${queryString}` : ''}`;
+  const url = `/api/students/my-payments${queryString ? `?${queryString}` : ''}`;
   
   const response = await instance.get(url);
   return response.data;
 };
 
-export const useStudentMonthlyPayments = (month, options = {}) => {
+export const useStudentMonthlyPayments = (params = {}, options = {}) => {
+  const normalizedParams = typeof params === 'string' ? { month: params } : (params || {});
   return useQuery({
-    queryKey: ['student-monthly-payments', month],
-    queryFn: () => fetchStudentMonthlyPayments(month),
+    queryKey: ['student-monthly-payments', normalizedParams.month, normalizedParams.groupId],
+    queryFn: () => fetchStudentMonthlyPayments(normalizedParams),
     ...options,
   });
 };

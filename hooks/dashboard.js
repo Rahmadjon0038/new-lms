@@ -2,6 +2,15 @@ import { useQuery } from '@tanstack/react-query';
 import { instance } from './api';
 
 const normalize = (response) => response?.data?.data ?? response?.data;
+const buildQuery = (params = {}) => {
+  const search = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      search.append(key, String(value));
+    }
+  });
+  return search.toString();
+};
 
 export function useGetDashboardDailyStats(from = null, to = null) {
   return useQuery({
@@ -38,6 +47,30 @@ export function useGetDashboardDebtors() {
     queryKey: ['dashboard-debtors'],
     queryFn: async () => {
       const res = await instance.get('/api/dashboard/debtors');
+      return normalize(res);
+    },
+    staleTime: 60 * 1000,
+  });
+}
+
+export function useGetDashboardOverview() {
+  return useQuery({
+    queryKey: ['dashboard-overview'],
+    queryFn: async () => {
+      const res = await instance.get('/api/dashboard/stats/overview');
+      return normalize(res);
+    },
+    staleTime: 60 * 1000,
+  });
+}
+
+export function useGetDashboardDebtorsByMonth(month = null) {
+  return useQuery({
+    queryKey: ['dashboard-debtors', month],
+    queryFn: async () => {
+      const query = buildQuery({ month });
+      const url = query ? `/api/dashboard/debtors?${query}` : '/api/dashboard/debtors';
+      const res = await instance.get(url);
       return normalize(res);
     },
     staleTime: 60 * 1000,

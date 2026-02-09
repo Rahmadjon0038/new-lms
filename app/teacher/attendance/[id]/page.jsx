@@ -40,7 +40,7 @@ const getGroupLessons = async (groupId, month) => {
   const url = `/api/attendance/groups/${groupId}/lessons${queryString ? `?${queryString}` : ''}`;
   
   const response = await instance.get(url);
-  return response.data.data;
+  return response.data?.data ?? response.data;
 };
 
 // Create lesson API
@@ -256,8 +256,17 @@ const TeacherGroupAttendance = () => {
     }
   });
 
-  const groupInfo = null; // Group info not provided in new API
-  let lessons = Array.isArray(lessonsData) ? lessonsData : [];
+  // Backend may return:
+  // 1) lessons array directly
+  // 2) object: { group, lessons }
+  const groupInfo = lessonsData?.group || null;
+  let lessons = [];
+
+  if (Array.isArray(lessonsData)) {
+    lessons = lessonsData;
+  } else if (Array.isArray(lessonsData?.lessons)) {
+    lessons = lessonsData.lessons;
+  }
   // Show newest lessons first
   lessons = [...lessons].reverse();
 

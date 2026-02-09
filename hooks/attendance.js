@@ -51,23 +51,24 @@ export const useCreateTodayLesson = () => {
     });
 }
 
-// 3️⃣ Talabaning oylik davomat hisoboti
-// GET /api/attendance/students/{student_id}/monthly
-const getStudentMonthlyAttendance = async (student_id, month, group_id = null) => {
+// 3️⃣ Talabaning oylik davomat hisoboti (snapshot API)
+// GET /api/snapshots/attendance?group_id={group_id}&month={month}[&student_id={student_id}]
+const getStudentMonthlyAttendance = async (group_id, month, student_id = null) => {
     const params = new URLSearchParams();
+    params.append('group_id', group_id);
     params.append('month', month);
-    if (group_id) {
-        params.append('group_id', group_id);
+    if (student_id) {
+        params.append('student_id', student_id);
     }
-    const response = await instance.get(`/api/attendance/students/${student_id}/monthly?${params.toString()}`);
+    const response = await instance.get(`/api/snapshots/attendance?${params.toString()}`);
     return response.data;
 }
 
-export const useGetStudentMonthlyAttendance = (student_id, month, group_id = null) => {
+export const useGetStudentMonthlyAttendance = (group_id, month, student_id = null) => {
     return useQuery({
-        queryKey: ['student-monthly-attendance', student_id, month, group_id],
-        queryFn: () => getStudentMonthlyAttendance(student_id, month, group_id),
-        enabled: !!(student_id && month), // Only run when both params exist
+        queryKey: ['student-monthly-attendance', group_id, month, student_id],
+        queryFn: () => getStudentMonthlyAttendance(group_id, month, student_id),
+        enabled: !!(group_id && month), // Only run when required params exist
     });
 }
 

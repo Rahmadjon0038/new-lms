@@ -20,6 +20,7 @@ import {
   StopIcon,
   EllipsisVerticalIcon,
   ExclamationTriangleIcon,
+  ClipboardDocumentIcon,
 } from "@heroicons/react/24/outline";
 import {
   usegetTeachers,
@@ -487,8 +488,9 @@ const EditTeacherModal = ({ isOpen, onClose, teacher, onUpdate, isLoading }) => 
   );
 };
 
-function TeacherCard({ teacher, onEdit, onDelete, onStatusChange }) {
+function TeacherCard({ teacher, onEdit, onDelete, onStatusChange, notify }) {
   const [showActions, setShowActions] = useState(false);
+  const [copiedRecoveryKey, setCopiedRecoveryKey] = useState(false);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -522,6 +524,21 @@ function TeacherCard({ teacher, onEdit, onDelete, onStatusChange }) {
   const formatDate = (dateString) => {
     if (!dateString) return "Belgilanmagan";
     return new Date(dateString).toLocaleDateString('uz-UZ');
+  };
+
+  const recoveryKey = teacher.recovery_key || teacher.recoveryKey;
+
+  const handleCopyRecoveryKey = async () => {
+    if (!recoveryKey) return;
+
+    try {
+      await navigator.clipboard.writeText(recoveryKey);
+      setCopiedRecoveryKey(true);
+      notify("ok", "Recovery key nusxalandi");
+      setTimeout(() => setCopiedRecoveryKey(false), 1500);
+    } catch {
+      notify("err", "Recovery key ni nusxalashda xatolik");
+    }
   };
 
   return (
@@ -618,6 +635,24 @@ function TeacherCard({ teacher, onEdit, onDelete, onStatusChange }) {
           <div className="bg-blue-50 rounded-lg p-3 mt-3">
             <span className="text-xs font-medium text-blue-600 uppercase tracking-wide">Ish jadvali</span>
             <p className="text-sm text-gray-700 mt-1">{teacher.workDaysHours}</p>
+          </div>
+        )}
+
+        {/* Recovery key */}
+        {recoveryKey && (
+          <div className="bg-amber-50 rounded-lg p-3 mt-3 border border-amber-100">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xs font-medium text-amber-700 uppercase tracking-wide">Recovery key</span>
+              <button
+                type="button"
+                onClick={handleCopyRecoveryKey}
+                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-amber-700 bg-amber-100 hover:bg-amber-200 rounded-md transition-colors"
+              >
+                {copiedRecoveryKey ? <CheckIcon className="h-3.5 w-3.5" /> : <ClipboardDocumentIcon className="h-3.5 w-3.5" />}
+                {copiedRecoveryKey ? "Copied" : "Copy"}
+              </button>
+            </div>
+            <p className="text-sm text-gray-800 mt-1 break-all">{recoveryKey}</p>
           </div>
         )}
       </div>
@@ -921,6 +956,7 @@ export default function TeachersPage() {
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onStatusChange={handleStatusChange}
+                notify={notify}
               />
             ))}
           </div>

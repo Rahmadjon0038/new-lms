@@ -1,8 +1,7 @@
 "use client";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   UsersIcon,
-  BookOpenIcon,
   PlusIcon,
   CurrencyDollarIcon,
   BanknotesIcon,
@@ -14,11 +13,37 @@ import {
   User, Phone, Calendar, AlertCircle
 } from 'lucide-react';
 import Link from "next/link";
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+} from "recharts";
 import { useGetAllStudents } from '../../hooks/students';
-import { useGetDashboardDailyStats, useGetDashboardMonthlyStats } from '../../hooks/dashboard';
+import { useGetDashboardDailyStats, useGetDashboardMonthlyStats, useGetDashboardOverview } from '../../hooks/dashboard';
 import AddGroup from '../../components/admistrator/AddGroup';
 
 const MAIN_COLOR = "#A60E07";
+const PIE_COLORS = ['#A60E07', '#2563EB', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#14B8A6', '#64748B'];
+const PAYMENT_STATUS_LABELS = {
+  paid: "To'langan",
+  partial: "Qisman to'langan",
+  unpaid: "To'lanmagan",
+  inactive: "Faol emas",
+};
+const PAYMENT_STATUS_COLORS = {
+  paid: "#16A34A",
+  partial: "#F59E0B",
+  unpaid: "#DC2626",
+  inactive: "#64748B",
+};
 
 // Format currency
 const formatCurrency = (amount) => {
@@ -29,6 +54,35 @@ const formatCurrency = (amount) => {
   }).format(amount);
 };
 
+const toNumber = (value) => Number(value) || 0;
+
+const getStatValue = (source, key, fallbackKey = null) => {
+  if (!source) return 0;
+  if (source[key] !== undefined && source[key] !== null) return toNumber(source[key]);
+  if (fallbackKey && source[fallbackKey] !== undefined && source[fallbackKey] !== null) return toNumber(source[fallbackKey]);
+  return 0;
+};
+
+const buildChartRows = (chart, keys = []) => {
+  const labels = Array.isArray(chart?.labels) ? chart.labels : [];
+  const series = chart?.series || {};
+  return labels.map((label, index) => {
+    const row = { label };
+    keys.forEach((key) => {
+      row[key] = toNumber(Array.isArray(series[key]) ? series[key][index] : 0);
+    });
+    return row;
+  });
+};
+
+const filterRowsFromMonth = (rows = [], fromMonth = "2026-01") =>
+  rows.filter((row) => {
+    const label = String(row?.label || "");
+    const match = label.match(/\d{4}-\d{2}/);
+    if (!match) return true;
+    return match[0] >= fromMonth;
+  });
+
 // Stat Card Component
 const StatCard = ({ title, value, icon: Icon, color = MAIN_COLOR, bgColor = "from-[#A60E07]/10 to-[#A60E07]/5" }) => (
   <div className="bg-white p-3 sm:p-4 rounded-xl shadow-md border border-gray-200 flex items-center gap-3 hover:shadow-lg transition group">
@@ -36,8 +90,8 @@ const StatCard = ({ title, value, icon: Icon, color = MAIN_COLOR, bgColor = "fro
       <Icon className="h-5 w-5 sm:h-6 sm:w-6" style={{ color }} />
     </div>
     <div className="flex flex-col flex-1 min-w-0">
-      <span className="text-[10px] sm:text-xs font-semibold text-gray-500 truncate uppercase">{title}</span>
-      <span className="text-base sm:text-xl md:text-2xl font-bold text-gray-900 truncate">{value}</span>
+      <span className="text-[10px] sm:text-xs font-semibold text-gray-500 uppercase whitespace-normal break-words">{title}</span>
+      <span className="text-sm sm:text-lg md:text-2xl font-bold text-gray-900 whitespace-normal break-words leading-tight">{value}</span>
     </div>
   </div>
 );
@@ -55,6 +109,13 @@ const SectionTitle = ({ icon: Icon, title, subtitle }) => (
   </div>
 );
 
+const ChartCard = ({ title, children, className = "" }) => (
+  <div className={`rounded-xl border border-gray-200 bg-white p-4 shadow-sm ${className}`}>
+    <h3 className="mb-3 text-sm font-semibold text-gray-700">{title}</h3>
+    {children}
+  </div>
+);
+
 function AdminDashboard() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM format
@@ -65,16 +126,79 @@ function AdminDashboard() {
   const unassignedStudents = backendData?.success ? (backendData.students || []) : [];
 
   // Yangi dashboard statistikasi
+  const overviewQuery = useGetDashboardOverview();
   const dailyQuery = useGetDashboardDailyStats(selectedDate, selectedDate);
   const monthlyQuery = useGetDashboardMonthlyStats(selectedMonth, selectedMonth);
+
+  const overview = overviewQuery.data;
   const daily = dailyQuery.data;
   const monthly = monthlyQuery.data;
+  const dailySummary = daily?.summary || {};
+  const monthlyCurrent = monthly?.current_month || {};
+
+  const dailyStats = {
+    payments_count: getStatValue(dailySummary, "payments_count"),
+    new_students_count: getStatValue(dailySummary, "new_students_count"),
+    expenses_count: getStatValue(dailySummary, "expenses_count"),
+    expenses_amount:
+      getStatValue(dailySummary, "expenses_amount") ||
+      getStatValue(dailySummary, "total_expense_amount"),
+  };
+
+  const monthlyStats = {
+    payments_count: getStatValue(monthlyCurrent, "payments_count"),
+    new_students_count: getStatValue(monthlyCurrent, "new_students_count"),
+    expenses_count: getStatValue(monthlyCurrent, "expenses_count"),
+    expenses_amount:
+      getStatValue(monthlyCurrent, "expenses_amount") ||
+      getStatValue(monthlyCurrent, "total_expense_amount"),
+    debtors_count: getStatValue(monthlyCurrent, "debtors_count"),
+    debt_amount: getStatValue(monthlyCurrent, "debt_amount"),
+  };
+
+  const overviewOverall = overview?.overall || {};
+  const overviewCharts = useMemo(() => overview?.charts || {}, [overview]);
+  const admissionsRows = useMemo(
+    () => filterRowsFromMonth(buildChartRows(overviewCharts?.admissions_monthly_last_12, ["admissions_count"]), "2026-01"),
+    [overviewCharts]
+  );
+  const monthlyPaymentStatusDetails = useMemo(() => {
+    const distribution = monthly?.payment_status_distribution || {};
+    const labels = distribution?.chart?.labels || [];
+    const counts = distribution?.chart?.series?.count || [];
+    const itemsMap = new Map(
+      (distribution?.items || []).map((item) => [String(item?.label || '').toLowerCase(), item])
+    );
+
+    const raw = labels.map((label, index) => {
+      const key = String(label || '').toLowerCase();
+      const item = itemsMap.get(key) || {};
+      const value = toNumber(counts[index] ?? item.count ?? 0);
+      return {
+        name: key,
+        label: PAYMENT_STATUS_LABELS[key] || label,
+        value,
+        percent: item?.percentage,
+        color: PAYMENT_STATUS_COLORS[key] || PIE_COLORS[index % PIE_COLORS.length],
+      };
+    }).filter((item) => item.value > 0);
+
+    const total = raw.reduce((sum, item) => sum + item.value, 0);
+    return raw.map((item) => ({
+      ...item,
+      percent: item.percent !== undefined && item.percent !== null ? Number(item.percent) : (total ? Math.round((item.value / total) * 100) : 0),
+    }));
+  }, [monthly]);
+  const monthlyPaymentStatusTotal = useMemo(
+    () => monthlyPaymentStatusDetails.reduce((sum, item) => sum + item.value, 0),
+    [monthlyPaymentStatusDetails]
+  );
 
   const handleModalSuccess = () => {
     refetch();
   };
 
-  if (isLoadingUnassigned || dailyQuery.isLoading || monthlyQuery.isLoading) {
+  if (isLoadingUnassigned || overviewQuery.isLoading || dailyQuery.isLoading || monthlyQuery.isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -141,66 +265,33 @@ function AdminDashboard() {
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
             <StatCard 
               title="To'lovlar soni" 
-              value={daily?.summary?.total_payments_count || 0}
+              value={dailyStats.payments_count}
               icon={BanknotesIcon}
               color="#10B981"
               bgColor="from-green-100 to-green-50"
             />
             <StatCard 
-              title="To'lovlar summasi" 
-              value={formatCurrency(daily?.summary?.total_payments_amount || 0)}
-              icon={CurrencyDollarIcon}
-              color="#10B981"
-              bgColor="from-green-100 to-green-50"
-            />
-            <StatCard 
               title="Yangi talabalar" 
-              value={daily?.summary?.total_new_students || 0}
+              value={dailyStats.new_students_count}
               icon={UsersIcon}
               color="#3B82F6"
               bgColor="from-blue-100 to-blue-50"
             />
             <StatCard 
-              title="Darslar soni" 
-              value={daily?.summary?.total_lessons || 0}
-              icon={BookOpenIcon}
-              color="#F59E0B"
-              bgColor="from-amber-100 to-amber-50"
+              title="Rasxodlar soni" 
+              value={dailyStats.expenses_count}
+              icon={CalendarIcon}
+              color="#DC2626"
+              bgColor="from-red-100 to-red-50"
             />
             <StatCard 
-              title="Davomat belgilari" 
-              value={daily?.summary?.total_attendance_marks || 0}
-              icon={ChartBarIcon}
-              color="#6366F1"
-              bgColor="from-indigo-100 to-indigo-50"
+              title="Rasxod summasi" 
+              value={formatCurrency(dailyStats.expenses_amount)}
+              icon={CurrencyDollarIcon}
+              color="#DC2626"
+              bgColor="from-red-100 to-red-50"
             />
           </div>
-          {Array.isArray(daily?.points) && daily.points.length > 0 ? (
-            <div className="mt-4 bg-white rounded-xl shadow-md overflow-x-auto border border-gray-200">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Sana</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">To&apos;lovlar</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Yangi talabalar</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Darslar</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {daily.points.slice(0, 10).map((point) => (
-                    <tr key={point.date}>
-                      <td className="px-4 py-3 text-sm text-gray-700">{point.date}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700">
-                        {point.payments_count} / {formatCurrency(point.payments_amount)}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">{point.new_students_count}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700">{point.lessons_count}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : null}
         </div>
       )}
 
@@ -218,67 +309,83 @@ function AdminDashboard() {
             title="Oylik statistika"
             subtitle={`${monthly?.period?.from_month || selectedMonth} - ${monthly?.period?.to_month || selectedMonth}`}
           />
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
             <StatCard 
               title="To'lovlar soni" 
-              value={monthly?.summary?.total_payments_count || 0}
+              value={monthlyStats.payments_count}
               icon={BanknotesIcon}
               color="#059669"
               bgColor="from-emerald-100 to-emerald-50"
             />
             <StatCard 
-              title="To'lovlar summasi" 
-              value={formatCurrency(monthly?.summary?.total_payments_amount || 0)}
-              icon={CurrencyDollarIcon}
-              color="#059669"
-              bgColor="from-emerald-100 to-emerald-50"
-            />
-            <StatCard 
               title="Yangi talabalar" 
-              value={monthly?.summary?.total_new_students || 0}
+              value={monthlyStats.new_students_count}
               icon={UsersIcon}
               color="#2563EB"
               bgColor="from-blue-100 to-blue-50"
             />
             <StatCard 
-              title="Darslar soni" 
-              value={monthly?.summary?.total_lessons || 0}
-              icon={BookOpenIcon}
-              color="#F59E0B"
+              title="Rasxodlar soni" 
+              value={monthlyStats.expenses_count}
+              icon={CalendarIcon}
+              color="#DC2626"
+              bgColor="from-red-100 to-red-50"
+            />
+            <StatCard 
+              title="Rasxod summasi" 
+              value={formatCurrency(monthlyStats.expenses_amount)}
+              icon={CurrencyDollarIcon}
+              color="#DC2626"
+              bgColor="from-red-100 to-red-50"
+            />
+            <StatCard 
+              title="Qarzdorlar soni" 
+              value={monthlyStats.debtors_count}
+              icon={AlertCircle}
+              color="#B45309"
               bgColor="from-amber-100 to-amber-50"
             />
             <StatCard 
-              title="Davomat belgilari" 
-              value={monthly?.summary?.total_attendance_marks || 0}
-              icon={ChartBarIcon}
-              color="#6366F1"
-              bgColor="from-indigo-100 to-indigo-50"
+              title="Qarz summasi" 
+              value={formatCurrency(monthlyStats.debt_amount)}
+              icon={CurrencyDollarIcon}
+              color="#B91C1C"
+              bgColor="from-rose-100 to-rose-50"
             />
           </div>
-          {Array.isArray(monthly?.points) && monthly.points.length > 0 ? (
-            <div className="mt-4 bg-white rounded-xl shadow-md overflow-x-auto border border-gray-200">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Oy</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">To&apos;lovlar</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Yangi talabalar</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Darslar</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {monthly.points.slice(0, 12).map((point) => (
-                    <tr key={point.month}>
-                      <td className="px-4 py-3 text-sm text-gray-700">{point.month}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700">
-                        {point.payments_count} / {formatCurrency(point.payments_amount)}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">{point.new_students_count}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700">{point.lessons_count}</td>
-                    </tr>
+          {monthlyPaymentStatusDetails.length > 0 ? (
+            <div className="mt-4">
+              <ChartCard title="Oylik to'lov status taqsimoti">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:items-center">
+                <div className="h-[300px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={monthlyPaymentStatusDetails} dataKey="value" nameKey="label" cx="50%" cy="50%" innerRadius={60} outerRadius={95}>
+                        {monthlyPaymentStatusDetails.map((entry) => (
+                          <Cell key={`mps-${entry.name}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value, _name, ctx) => [`${value} ta`, ctx?.payload?.label || "Status"]} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-500">Jami: <span className="font-semibold text-gray-800">{monthlyPaymentStatusTotal}</span></p>
+                  {monthlyPaymentStatusDetails.map((item) => (
+                    <div key={`monthly-legend-${item.name}`} className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                        <span className="text-sm text-gray-700 truncate">{item.label}</span>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-semibold text-gray-900">{item.value}</div>
+                        <div className="text-xs text-gray-500">{item.percent}%</div>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
+                </div>
+                </div>
+              </ChartCard>
             </div>
           ) : null}
         </div>
@@ -289,6 +396,47 @@ function AdminDashboard() {
       ) : null}
       {!monthly && !monthlyQuery.isError && !monthlyQuery.isLoading ? (
         <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-600">Oylik statistika maʼlumoti topilmadi.</div>
+      ) : null}
+
+      {overviewQuery.isError ? (
+        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <p className="font-semibold">Overview statistika yuklanmadi</p>
+          <p>{overviewQuery.error?.response?.data?.message || overviewQuery.error?.message || 'Nomaʼlum xatolik'}</p>
+        </div>
+      ) : null}
+      {overview?.overall ? (
+        <div className="mb-6 sm:mb-8">
+          <SectionTitle
+            icon={ChartBarIcon}
+            title="Umumiy operatsion statistika"
+            subtitle="Overview endpoint ma'lumotlari"
+          />
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+            <StatCard title="Faol o'qituvchilar" value={toNumber(overviewOverall.active_teachers_count)} icon={UsersIcon} color="#059669" bgColor="from-emerald-100 to-emerald-50" />
+            <StatCard title="Faol guruhlar" value={toNumber(overviewOverall.active_groups_count)} icon={CalendarIcon} color="#7C3AED" bgColor="from-violet-100 to-violet-50" />
+            <StatCard title="Fanlar soni" value={toNumber(overviewOverall.subjects_count)} icon={ChartBarIcon} color="#0EA5E9" bgColor="from-sky-100 to-sky-50" />
+          </div>
+          {admissionsRows.length > 0 ? (
+            <div className="mt-4 grid grid-cols-1 gap-4">
+              {admissionsRows.length > 0 ? (
+                <ChartCard title="Qabul trendi (12 oy)">
+                  <div className="h-[280px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={admissionsRows}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="label" tick={{ fontSize: 11 }} />
+                        <YAxis allowDecimals={false} />
+                        <Tooltip />
+                        <Legend />
+                        <Line type="monotone" dataKey="admissions_count" name="Qabul soni" stroke={MAIN_COLOR} strokeWidth={2} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </ChartCard>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
       ) : null}
 
       {/* Guruhga qo'shilmagan talabalar */}

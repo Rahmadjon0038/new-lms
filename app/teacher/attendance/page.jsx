@@ -15,6 +15,7 @@ const MAIN_COLOR = "#A60E07";
 
 // --- Guruh Kartochkasi ---
 const GroupCard = ({ group }) => {
+  const groupRouteId = group?.id ?? group?.group_id;
   // Schedule ma'lumotini olish
   const scheduleDisplay = group.schedule ? 
     `${group.schedule.days?.join(', ')} - ${group.schedule.time}` : 
@@ -27,7 +28,7 @@ const GroupCard = ({ group }) => {
   
   return (
     <Link
-      href={`/teacher/attendance/${group.id}`}
+      href={`/teacher/attendance/${groupRouteId}`}
       className="block bg-white p-3 sm:p-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 border-t-4 hover:translate-x-1"
       style={{ borderTopColor: MAIN_COLOR }}
     >
@@ -35,7 +36,7 @@ const GroupCard = ({ group }) => {
         <div className="flex-1 min-w-0">
           <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-1 flex items-center gap-1.5 sm:gap-2">
             <UserGroupIcon className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" style={{ color: MAIN_COLOR }} />
-            <span className="truncate">{group.name}</span>
+            <span className="truncate">{group.name || group.group_name}</span>
           </h3>
           <p className="text-xs sm:text-sm text-gray-600 flex items-center gap-1.5 sm:gap-2">
             <AcademicCapIcon className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400 shrink-0" />
@@ -145,7 +146,7 @@ const TeacherAttendance = () => {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-5">
                 {sortedGroups.map((group) => (
-                  <GroupCard key={group.id} group={group} />
+                  <GroupCard key={group.id ?? group.group_id} group={group} />
                 ))}
               </div>
             )}

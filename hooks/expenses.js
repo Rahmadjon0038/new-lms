@@ -33,7 +33,7 @@ const createExpense = async (payload) => {
 };
 
 const updateExpense = async ({ expenseId, payload }) => {
-  const res = await instance.patch(`/api/expenses/${expenseId}`, payload);
+  const res = await instance.put(`/api/expenses/${expenseId}`, payload);
   return normalize(res);
 };
 

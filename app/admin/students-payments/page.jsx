@@ -202,7 +202,7 @@ const StudentPayments = () => {
         try {
             const result = await createSnapshotsMutation.mutateAsync(filters.month);
             if (result.success) {
-                notify('suc', `${result.count} ta yangi talaba uchun snapshot yaratildi!`);
+                notify('ok', result.message || `${result.count} ta yangi talaba uchun snapshot yaratildi!`);
                 // Clear notification after creating snapshots
                 queryClient.invalidateQueries({ queryKey: ['new-students-notification', filters.month] });
                 setShowNotificationPopup(false); // Hide popup after successful action
@@ -323,16 +323,7 @@ const StudentPayments = () => {
                 // Refetch monthly payments data
                 queryClient.invalidateQueries({ queryKey: ['monthly-payments'] });
                 
-                // Show detailed success message
-                const data = response.data.data;
-                const stats = data?.statistics;
-                
-                let successMessage = response.data.message || `${filters.month} oyi uchun to'lov jadvali muvaffaqiyatli yaratildi!`;
-                
-                if (data?.created_records) {
-                    successMessage += ` (${data.created_records} ta yozuv yaratildi)`;
-                }
-                
+                const successMessage = response.data.message || `${filters.month} oyi uchun to'lov jadvali muvaffaqiyatli yaratildi!`;
                 notify('ok', successMessage);
             } else {
                 // Handle error (e.g., snapshot already exists)
@@ -1093,79 +1084,81 @@ const StudentPayments = () => {
                                         <p className="text-gray-600 mt-3 text-sm">Yuklanmoqda...</p>
                                     </div>
                                 ) : paymentHistory && paymentHistory.length > 0 ? (
-                                    <table className="min-w-full divide-y divide-gray-200">
-                                        <thead className="bg-gray-50" style={{ backgroundColor: `${MAIN_COLOR}05` }}>
-                                            <tr>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                                    #
-                                                </th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                                    Sana
-                                                </th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                                    Summa
-                                                </th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                                    To'lov turi
-                                                </th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                                    Qabul qildi
-                                                </th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                                    Izoh
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="bg-white divide-y divide-gray-200">
-                                            {paymentHistory.map((payment, index) => {
-                                                const paymentMethodLabels = {
-                                                    'cash': 'Naqd',
-                                                    'card': 'Karta',
-                                                    'transfer': 'O\'tkazma',
-                                                    'other': 'Boshqa'
-                                                };
-                                                
-                                                return (
-                                                    <tr key={`payment-${index}`} className="hover:bg-gray-50 transition-colors">
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                            {index + 1}
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap">
-                                                            <div className="flex items-center gap-2">
-                                                                <CalendarIcon className="h-4 w-4 text-gray-400" />
-                                                                <span className="text-sm text-gray-900">{payment.transaction_date}</span>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap">
-                                                            <div className="flex items-center gap-2">
-                                                                <CurrencyDollarIcon className="h-4 w-4" style={{ color: MAIN_COLOR }} />
-                                                                <span className="text-sm font-semibold" style={{ color: MAIN_COLOR }}>
-                                                                    {formatCurrency(parseFloat(payment.amount))}
+                                    <div className="overflow-x-auto">
+                                        <table className="min-w-[900px] w-full divide-y divide-gray-200">
+                                            <thead className="bg-gray-50" style={{ backgroundColor: `${MAIN_COLOR}05` }}>
+                                                <tr>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                                        #
+                                                    </th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                                        Sana
+                                                    </th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                                        Summa
+                                                    </th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                                        To'lov turi
+                                                    </th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                                        Qabul qildi
+                                                    </th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                                        Izoh
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="bg-white divide-y divide-gray-200">
+                                                {paymentHistory.map((payment, index) => {
+                                                    const paymentMethodLabels = {
+                                                        'cash': 'Naqd',
+                                                        'card': 'Karta',
+                                                        'transfer': 'O\'tkazma',
+                                                        'other': 'Boshqa'
+                                                    };
+                                                    
+                                                    return (
+                                                        <tr key={`payment-${index}`} className="hover:bg-gray-50 transition-colors">
+                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                                {index + 1}
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                <div className="flex items-center gap-2">
+                                                                    <CalendarIcon className="h-4 w-4 text-gray-400" />
+                                                                    <span className="text-sm text-gray-900">{payment.transaction_date}</span>
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                <div className="flex items-center gap-2">
+                                                                    <CurrencyDollarIcon className="h-4 w-4" style={{ color: MAIN_COLOR }} />
+                                                                    <span className="text-sm font-semibold" style={{ color: MAIN_COLOR }}>
+                                                                        {formatCurrency(parseFloat(payment.amount))}
+                                                                    </span>
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                                    <CreditCardIcon className="h-3 w-3" />
+                                                                    {paymentMethodLabels[payment.payment_method] || payment.payment_method}
                                                                 </span>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap">
-                                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                                <CreditCardIcon className="h-3 w-3" />
-                                                                {paymentMethodLabels[payment.payment_method] || payment.payment_method}
-                                                            </span>
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap">
-                                                            <div className="flex items-center gap-2">
-                                                                <UserIcon className="h-4 w-4 text-purple-500" />
-                                                                <span className="text-sm text-gray-700">{payment.admin_name}</span>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-6 py-4">
-                                                            <span className="text-sm text-gray-600">
-                                                                {payment.description || '-'}
-                                                            </span>
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })}
-                                        </tbody>
-                                    </table>
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                <div className="flex items-center gap-2">
+                                                                    <UserIcon className="h-4 w-4 text-purple-500" />
+                                                                    <span className="text-sm text-gray-700">{payment.admin_name}</span>
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-6 py-4">
+                                                                <span className="text-sm text-gray-600">
+                                                                    {payment.description || '-'}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 ) : (
                                     <div className="text-center py-12">
                                         <CreditCardIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />

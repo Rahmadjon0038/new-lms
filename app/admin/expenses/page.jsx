@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { BanknotesIcon, CalendarDaysIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { BanknotesIcon, CalendarDaysIcon, PencilSquareIcon, PlusIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
-import { useCreateExpense, useGetExpenseSummary, useGetExpenses } from '../../../hooks/expenses';
+import { useCreateExpense, useDeleteExpense, useGetExpenseSummary, useGetExpenses, useUpdateExpense } from '../../../hooks/expenses';
 
 const MAIN_COLOR = '#A60E07';
 const currentMonth = new Date().toISOString().slice(0, 7);
@@ -28,10 +28,14 @@ const AdminExpensesPage = () => {
   const [month, setMonth] = useState(currentMonth);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [form, setForm] = useState({ reason: '', amount: '' });
+  const [editingExpense, setEditingExpense] = useState(null);
+  const [editForm, setEditForm] = useState({ reason: '', amount: '', expense_date: currentDay });
 
   const listQuery = useGetExpenses({ month });
   const summaryQuery = useGetExpenseSummary({ month });
   const createExpense = useCreateExpense();
+  const updateExpense = useUpdateExpense();
+  const deleteExpense = useDeleteExpense();
 
   const items = useMemo(() => (Array.isArray(listQuery.data?.items) ? listQuery.data.items : []), [listQuery.data]);
   const summary = summaryQuery.data || {};
@@ -63,6 +67,91 @@ const AdminExpensesPage = () => {
       closeModal();
     } catch (err) {
       toast.error(err?.response?.data?.message || 'Rasxod qo‘shishda xatolik');
+    }
+  };
+
+  const closeEditModal = () => {
+    if (updateExpense.isPending) return;
+    setEditingExpense(null);
+    setEditForm({ reason: '', amount: '', expense_date: currentDay });
+  };
+
+  const openEditModal = (item) => {
+    setEditingExpense(item);
+    setEditForm({
+      reason: item.reason || item.title || '',
+      amount: formatAmountInput(String(item.amount || '')),
+      expense_date: item.expense_date || currentDay,
+    });
+  };
+
+  const onEditExpense = async (e) => {
+    e.preventDefault();
+    if (!editingExpense?.id) return;
+
+    const payload = {};
+    const nextReason = editForm.reason.trim();
+    const prevReason = (editingExpense.reason || editingExpense.title || '').trim();
+    if (nextReason && nextReason !== prevReason) {
+      payload.reason = nextReason;
+    }
+
+    const nextAmount = parseAmountInput(editForm.amount);
+    const prevAmount = Number(editingExpense.amount || 0);
+    if (nextAmount > 0 && nextAmount !== prevAmount) {
+      payload.amount = nextAmount;
+    }
+
+    const nextDate = editForm.expense_date;
+    const prevDate = editingExpense.expense_date;
+    if (nextDate && nextDate !== prevDate) {
+      payload.expense_date = nextDate;
+    }
+
+    if (Object.keys(payload).length === 0) {
+      toast.error('Kamida bitta maydonni o‘zgartiring');
+      return;
+    }
+
+    try {
+      const updated = await updateExpense.mutateAsync({
+        expenseId: editingExpense.id,
+        payload,
+      });
+      if (payload.expense_date) {
+        setMonth(payload.expense_date.slice(0, 7));
+      }
+      toast.success(updated?.message || 'Rasxod yangilandi');
+      closeEditModal();
+    } catch (err) {
+      const status = err?.response?.status;
+      if (status === 400) {
+        toast.error(err?.response?.data?.message || 'Noto‘g‘ri ID yoki noto‘g‘ri maʼlumot');
+      } else if (status === 404) {
+        toast.error(err?.response?.data?.message || 'Rasxod topilmadi');
+      } else {
+        toast.error(err?.response?.data?.message || 'Rasxodni yangilashda xatolik');
+      }
+    }
+  };
+
+  const onDeleteExpense = async (item) => {
+    if (!item?.id) return;
+
+    try {
+      const deleted = await deleteExpense.mutateAsync(item.id);
+      const deletedItem = deleted?.deleted_expense || deleted?.expense || deleted?.data || deleted;
+      const deletedTitle = deletedItem?.reason || item.reason || item.title || 'Rasxod';
+      toast.success(`${deletedTitle} o‘chirildi`);
+    } catch (err) {
+      const status = err?.response?.status;
+      if (status === 400) {
+        toast.error(err?.response?.data?.message || 'Noto‘g‘ri ID');
+      } else if (status === 404) {
+        toast.error(err?.response?.data?.message || 'Rasxod topilmadi');
+      } else {
+        toast.error(err?.response?.data?.message || 'Rasxodni o‘chirishda xatolik');
+      }
     }
   };
 
@@ -137,7 +226,30 @@ const AdminExpensesPage = () => {
                       <p className="truncate text-sm font-semibold text-gray-900">{item.reason || item.title}</p>
                       <p className="text-xs text-gray-500">{item.expense_date}</p>
                     </div>
-                    <p className="shrink-0 text-sm font-bold text-[#A60E07]">{formatCurrency(item.amount)}</p>
+                    <div className="shrink-0 text-right">
+                      <p className="text-sm font-bold text-[#A60E07]">{formatCurrency(item.amount)}</p>
+                      <div className="mt-2 flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => openEditModal(item)}
+                          className="rounded-lg border border-gray-300 p-1.5 text-gray-700 hover:bg-gray-100"
+                          title="Tahrirlash"
+                          aria-label="Tahrirlash"
+                        >
+                          <PencilSquareIcon className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onDeleteExpense(item)}
+                          disabled={deleteExpense.isPending}
+                          className="rounded-lg border border-red-200 p-1.5 text-red-700 hover:bg-red-50 disabled:opacity-60"
+                          title="O‘chirish"
+                          aria-label="O‘chirish"
+                        >
+                          <TrashIcon className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -189,6 +301,60 @@ const AdminExpensesPage = () => {
                 style={{ backgroundColor: MAIN_COLOR }}
               >
                 {createExpense.isPending ? 'Saqlanmoqda...' : 'Saqlash'}
+              </button>
+            </form>
+          </div>
+        </div>
+      ) : null}
+
+      {editingExpense ? (
+        <div className="fixed inset-0 z-[9999] bg-black/50 p-3 sm:p-6">
+          <div className="mx-auto mt-8 w-full max-w-xl rounded-2xl bg-white p-5 shadow-2xl sm:p-7">
+            <div className="mb-5 flex items-center justify-between">
+              <h3 className="text-xl font-bold text-gray-900">Rasxodni tahrirlash</h3>
+              <button onClick={closeEditModal} className="rounded-md p-1 text-gray-600 hover:bg-gray-100">
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={onEditExpense} className="space-y-4">
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase text-gray-500">Sabab</label>
+                <input
+                  value={editForm.reason}
+                  onChange={(e) => setEditForm((p) => ({ ...p, reason: e.target.value }))}
+                  className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-[#A60E07]"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase text-gray-500">Summa</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={editForm.amount}
+                  onChange={(e) => setEditForm((p) => ({ ...p, amount: formatAmountInput(e.target.value) }))}
+                  className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-[#A60E07]"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase text-gray-500">Sana</label>
+                <input
+                  type="date"
+                  value={editForm.expense_date}
+                  onChange={(e) => setEditForm((p) => ({ ...p, expense_date: e.target.value }))}
+                  className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-[#A60E07]"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={updateExpense.isPending}
+                className="mt-2 w-full rounded-xl px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
+                style={{ backgroundColor: MAIN_COLOR }}
+              >
+                {updateExpense.isPending ? 'Saqlanmoqda...' : 'Yangilash'}
               </button>
             </form>
           </div>
