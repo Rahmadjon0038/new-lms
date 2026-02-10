@@ -2,7 +2,8 @@ import axios from "axios";
 import Cookies from "js-cookie";
 
 export const instance = axios.create({
-  baseURL: "http://localhost:5001",
+  // baseURL: "http://localhost:5001",
+  baseURL: "https://api.taraqqiyot-teaching-center.uz",
   // http://192.168.0.121:5001/
 });
 
