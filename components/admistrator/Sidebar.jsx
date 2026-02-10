@@ -40,7 +40,7 @@ const primarySidebarItems = [
     href: "/admin/students-payments",
   },
   {
-    name: "Oqituvchilar oyli",
+    name: "O'qituvchilar oyligi",
     icon: WalletIcon,
     href: "/admin/teachers-payments",
   },
