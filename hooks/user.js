@@ -89,13 +89,66 @@ export const useChangePassword = () => {
 };
 
 // -------------- Update profile (logged in) ----------
-const updateProfile = async ({ name, surname, phone, phone2 }) => {
-    const response = await instance.patch('/api/users/profile', {
-        name,
-        surname,
-        phone,
-        phone2,
+const PROFILE_UPDATABLE_FIELDS = new Set([
+    "username",
+    "name",
+    "surname",
+    "phone",
+    "phone2",
+    "father_name",
+    "father_phone",
+    "address",
+    "age",
+    "certificate",
+    "has_experience",
+    "experience_years",
+    "experience_place",
+    "available_times",
+    "work_days_hours",
+]);
+
+const INTEGER_FIELDS = new Set(["age", "experience_years"]);
+
+const updateProfile = async (vars = {}) => {
+    const payload = {};
+
+    Object.keys(vars).forEach((key) => {
+        if (!PROFILE_UPDATABLE_FIELDS.has(key)) return;
+
+        let value = vars[key];
+        if (typeof value === "string") value = value.trim();
+        if (value === undefined) return;
+
+        if (INTEGER_FIELDS.has(key)) {
+            if (value === "" || value === null) {
+                payload[key] = null;
+                return;
+            }
+            if (typeof value === "string" && value !== "") {
+                const parsed = Number(value);
+                value = parsed;
+            }
+            if (!Number.isInteger(value)) {
+                throw new Error(`${key} butun son bo'lishi kerak`);
+            }
+        }
+
+        if (key === "has_experience" && typeof value !== "boolean") {
+            throw new Error("has_experience boolean bo'lishi kerak");
+        }
+
+        payload[key] = value;
     });
+
+    if (Object.keys(payload).length === 0) {
+        throw new Error("Kamida bitta ruxsat etilgan maydon yuboring");
+    }
+
+    if (Object.prototype.hasOwnProperty.call(payload, "username") && !payload.username) {
+        throw new Error("username bo'sh bo'lmasligi kerak");
+    }
+
+    const response = await instance.patch('/api/users/profile', payload);
     return response.data;
 };
 

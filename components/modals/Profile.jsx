@@ -39,6 +39,7 @@ export default function ProfileModal({ children }) {
   const [isEditing, setIsEditing] = useState(false);
 
   const [profileData, setProfileData] = useState({
+    username: "",
     name: "",
     surname: "",
     phone: "",
@@ -57,15 +58,34 @@ export default function ProfileModal({ children }) {
   };
 
   const handleSave = () => {
-    const payload = {
+    const nextData = {
+      username: profileData.username.trim(),
       name: profileData.name.trim(),
       surname: profileData.surname.trim(),
       phone: profileData.phone.trim(),
       phone2: profileData.phone2.trim(),
     };
 
-    if (!payload.name || !payload.surname) {
-      notify("err", "Ism va familiya majburiy");
+    if (!nextData.username) {
+      notify("err", "Username bo'sh bo'lmasligi kerak");
+      return;
+    }
+
+    const currentData = {
+      username: (user?.username || "").trim(),
+      name: (user?.name || "").trim(),
+      surname: (user?.surname || "").trim(),
+      phone: (user?.phone || "").trim(),
+      phone2: (user?.phone2 || "").trim(),
+    };
+
+    const payload = {};
+    Object.keys(nextData).forEach((key) => {
+      if (nextData[key] !== currentData[key]) payload[key] = nextData[key];
+    });
+
+    if (Object.keys(payload).length === 0) {
+      notify("err", "Yangilash uchun kamida bitta maydonni o'zgartiring");
       return;
     }
 
@@ -73,17 +93,18 @@ export default function ProfileModal({ children }) {
       ...payload,
       onSuccess: (data) => {
         notify("ok", data?.message || "Profil muvaffaqiyatli yangilandi");
-        setProfileData(payload);
+        setProfileData((prev) => ({ ...prev, ...nextData }));
         setIsEditing(false);
       },
       onError: (err) => {
-        notify("err", err?.response?.data?.message || "Profilni yangilashda xatolik");
+        notify("err", err?.response?.data?.message || err?.message || "Profilni yangilashda xatolik");
       },
     });
   };
 
   const startEditing = () => {
     setProfileData({
+      username: user?.username || "",
       name: user?.name || "",
       surname: user?.surname || "",
       phone: user?.phone || "",
@@ -144,11 +165,22 @@ export default function ProfileModal({ children }) {
                 </div>
               </div>
 
-              <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
+              <div className="flex flex-col bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center mb-1">
                   <AtSymbolIcon className="h-3 w-3 mr-1" style={{ color: '#A60E07' }} /> Foydalanuvchi nomi
                 </label>
-                <p className="text-sm font-bold text-gray-800">{user?.username || "-"}</p>
+                <input
+                  name="username"
+                  value={isEditing ? profileData.username : user?.username || ""}
+                  onChange={handleInputChange}
+                  disabled={!isEditing}
+                  className={`px-4 py-2.5 rounded-xl border transition-all duration-300 ${
+                    isEditing
+                      ? "bg-white shadow-lg text-gray-900 outline-none"
+                      : "bg-gray-100 border-transparent text-gray-600 cursor-not-allowed"
+                  } font-medium text-sm`}
+                  style={isEditing ? { borderColor: '#A60E07', boxShadow: '0 0 0 4px rgba(166, 14, 7, 0.1)' } : {}}
+                />
               </div>
 
               {/* INPUTS GROUP */}
