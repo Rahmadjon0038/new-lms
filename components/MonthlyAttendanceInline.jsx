@@ -221,7 +221,11 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
   const isAdmin = userProfile?.data?.role === 'admin';
   
   const monthData = data?.data;
-  const lessons = (monthData?.lessons || []).reverse(); // Yangi darslar pastda
+  const lessons = [...(monthData?.lessons || [])].sort((a, b) => {
+    const aDate = new Date(a?.date || 0).getTime();
+    const bDate = new Date(b?.date || 0).getTime();
+    return aDate - bDate; // Eski sana chapda, yangi sana o'ngda
+  });
   const students = monthData?.students || [];
 
   // Update status mutation
@@ -334,11 +338,7 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
       return <span className="text-gray-400 text-xs">-</span>;
     }
     if (!attendanceRecord || isMarked === false) {
-      return (
-        <span className="inline-flex px-1.5 py-0.5 rounded bg-gray-100 text-[10px] font-medium text-gray-600">
-          Belgilanmagan
-        </span>
-      );
+      return <span className="text-gray-400 text-xs">-</span>;
     }
     if (status === "keldi") {
       return (
