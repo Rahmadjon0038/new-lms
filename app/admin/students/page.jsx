@@ -1,7 +1,7 @@
 'use client'
 import React, { useState, useMemo, useCallback, memo, useEffect } from 'react';
 import { FiEdit, FiSave, FiX, FiUserPlus, FiSearch } from 'react-icons/fi';
-import { ClipboardDocumentCheckIcon, ClipboardDocumentIcon, InformationCircleIcon, KeyIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { ClipboardDocumentCheckIcon, ClipboardDocumentIcon, InformationCircleIcon, KeyIcon } from '@heroicons/react/24/outline';
 import {
     User, Phone, MapPin, Calendar, GraduationCap,
     CheckCircle, XCircle, Clock, BookOpen, Users,
@@ -246,12 +246,6 @@ const StudentsPage = () => {
         setEditData({});
     };
 
-    const handleDeleteStudent = (student, index) => {
-        if (window.confirm(`Talabani guruhdan o'chirishga ishonchingiz komilmi?`)) {
-            setStudents(prevStudents => prevStudents.filter((s, idx) => `${s.id}-${s.group_id}-${idx}` !== `${student.id}-${student.group_id}-${index}`));
-        }
-    };
-
     const toggleRecoveryKey = (rowKey) => {
         setVisibleRecoveryKeys((prev) => ({ ...prev, [rowKey]: !prev[rowKey] }));
     };
@@ -268,15 +262,15 @@ const StudentsPage = () => {
         }
     };
 
-    if (isLoading) return <div className="p-8 text-center">Yuklanmoqda...</div>;
+    if (isLoading) return <div className="p-4 text-center sm:p-8">Yuklanmoqda...</div>;
 
     return (
-        <div className="p-4 md:p-8 mx-auto font-sans bg-gray-50 min-h-screen">
-            <h1 className="text-3xl font-bold mb-6 text-gray-800">🎓 Talabalar Ro'yxati (Admin)</h1>
+        <div className="mx-auto min-h-screen bg-gray-50 p-3 font-sans sm:p-4 md:p-6">
+            <h1 className="mb-6 text-2xl font-bold text-gray-800 sm:text-3xl">Talabalar Ro'yxati (Admin)</h1>
 
-            <div className="flex flex-wrap items-center gap-4 mb-6 p-4 bg-white rounded-lg shadow-md">
+            <div className="mb-6 grid grid-cols-1 gap-3 rounded-lg bg-white p-4 shadow-md sm:grid-cols-2 xl:grid-cols-6">
                 {/* Qidiruv */}
-                <div className="flex items-center flex-grow min-w-[300px] border border-gray-300 rounded-lg bg-gray-50 p-2 focus-within:border-[#A60E07]">
+                <div className="flex items-center rounded-lg border border-gray-300 bg-gray-50 p-2 focus-within:border-[#A60E07] sm:col-span-2 xl:col-span-2">
                     <FiSearch className="text-gray-400 mr-2" size={20} />
                     <input
                         type="text"
@@ -290,7 +284,7 @@ const StudentsPage = () => {
                 {/* Guruhlanmaganlar tugmasi */}
                 <button
                     onClick={() => setShowUnassigned(!showUnassigned)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition duration-200 ${showUnassigned
+                    className={`w-full rounded-lg px-4 py-2 text-sm font-medium transition duration-200 ${showUnassigned
                             ? 'bg-orange-500 text-white hover:bg-orange-600'
                             : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                         }`}
@@ -303,7 +297,7 @@ const StudentsPage = () => {
                 <select
                     value={selectedTeacher}
                     onChange={(e) => setSelectedTeacher(e.target.value)}
-                    className="p-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:border-[#A60E07] min-w-[180px]"
+                    className="w-full rounded-lg border border-gray-300 bg-white p-2 text-sm outline-none focus:border-[#A60E07]"
                 >
                     <option value="all">Barcha o'qituvchilar</option>
                     {teachersData?.teachers?.map(teacher => (
@@ -317,7 +311,7 @@ const StudentsPage = () => {
                 <select
                     value={selectedGroup}
                     onChange={(e) => setSelectedGroup(e.target.value)}
-                    className="p-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:border-[#A60E07] min-w-[150px]"
+                    className="w-full rounded-lg border border-gray-300 bg-white p-2 text-sm outline-none focus:border-[#A60E07]"
                 >
                     <option value="all">Barcha guruhlar</option>
                     {groupsData?.groups?.map(group => (
@@ -331,7 +325,7 @@ const StudentsPage = () => {
                 <select
                     value={selectedSubject}
                     onChange={(e) => setSelectedSubject(e.target.value)}
-                    className="p-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:border-[#A60E07] min-w-[150px]"
+                    className="w-full rounded-lg border border-gray-300 bg-white p-2 text-sm outline-none focus:border-[#A60E07]"
                 >
                     <option value="all">Barcha fanlar</option>
                     {subjectsData?.subjects?.map(subject => (
@@ -342,7 +336,7 @@ const StudentsPage = () => {
                 </select>
 
                 {/* Status filter */}
-                <div className="relative min-w-[140px]">
+                <div className="relative w-full">
                     <select
                         value={selectedStatus}
                         onChange={(e) => setSelectedStatus(e.target.value)}
@@ -365,7 +359,7 @@ const StudentsPage = () => {
                 {(selectedTeacher !== 'all' || selectedGroup !== 'all' || selectedSubject !== 'all' || selectedStatus !== 'all' || showUnassigned || searchTerm) && (
                     <button
                         onClick={clearAllFilters}
-                        className="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                        className="w-full rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200"
                     >
                         <XCircle className="inline h-4 w-4 mr-1" />
                         Tozalash
@@ -373,9 +367,9 @@ const StudentsPage = () => {
                 )}
 
                 {/* Yangi talaba tugmasi */}
-                <Link href="/admin/students/new">
+                <Link href="/admin/students/new" className="w-full">
                     <button
-                        className="flex items-center gap-1 bg-[#A60E07] hover:opacity-90 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 text-sm shadow-md">
+                        className="flex w-full items-center justify-center gap-1 rounded-lg bg-[#A60E07] px-4 py-2 text-sm font-semibold text-white shadow-md transition duration-200 hover:opacity-90">
                         <FiUserPlus size={18} />
                         Yangi Talaba
                     </button>
@@ -412,7 +406,7 @@ const StudentsPage = () => {
             )} */}
 
             <div className="bg-white rounded-lg shadow-lg overflow-x-auto border border-gray-300">
-                <table className="min-w-full divide-y divide-gray-300 border-collapse">
+                <table className="min-w-[1200px] w-full divide-y divide-gray-300 border-collapse">
                     <thead className="bg-gradient-to-r from-gray-100 to-gray-200 border-b-2 border-gray-400">
                         <tr>
                             <th className="px-4 py-3 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider min-w-[220px] border-r border-gray-300 bg-gradient-to-b from-gray-100 to-gray-200">Student ma'lumotlari</th>
@@ -786,13 +780,6 @@ const StudentsPage = () => {
                                                         title="Tahrirlash"
                                                     >
                                                         <FiEdit size={12} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteStudent(student, index)}
-                                                        className="p-1.5 rounded text-white bg-red-600 hover:bg-red-700 transition-all duration-150 shadow-sm"
-                                                        title="O'chirish"
-                                                    >
-                                                        <TrashIcon className="h-3 w-3" />
                                                     </button>
                                                 </div>
                                             )}

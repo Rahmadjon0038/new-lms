@@ -2,12 +2,16 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowsPointingOutIcon, ArrowLeftIcon, DocumentIcon, PlayCircleIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { ArrowsPointingOutIcon, ArrowLeftIcon, DocumentIcon, PlayCircleIcon, SpeakerWaveIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { toast } from 'react-hot-toast';
 import { instance } from '../../../../../../../hooks/api';
-import { useTeacherGuideLessonDetail, useTeacherGuideLessonNotes } from '../../../../../../../hooks/guides';
+import {
+  useTeacherGuideLessonDetail,
+  useTeacherGuideSpeechSettings,
+  useTeacherUpdateGuideSpeechSettings,
+} from '../../../../../../../hooks/guides';
 
 const NOTE_COLOR_MAP = {
   blue: 'from-blue-50 to-white border-blue-300',
@@ -35,13 +39,11 @@ const TeacherGuideLessonPage = () => {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('overview');
   const { data, isLoading, error } = useTeacherGuideLessonDetail(lessonId);
-  const { data: notesFromEndpoint = [] } = useTeacherGuideLessonNotes(lessonId);
+  const { data: speechSettings } = useTeacherGuideSpeechSettings();
+  const updateSpeechSettingsMutation = useTeacherUpdateGuideSpeechSettings();
 
   const lesson = data?.lesson || null;
-  const notes = useMemo(() => {
-    const compositeNotes = toList(data?.notes);
-    return notesFromEndpoint.length > 0 ? notesFromEndpoint : compositeNotes;
-  }, [data, notesFromEndpoint]);
+  const notes = useMemo(() => toList(data?.notes), [data]);
   const pdfs = useMemo(() => toList(data?.pdfs), [data]);
   const assignments = useMemo(() => toList(data?.assignments), [data]);
   const vocabulary = useMemo(() => toList(data?.vocabulary), [data]);
@@ -49,9 +51,13 @@ const TeacherGuideLessonPage = () => {
     () => toList(data?.vocabulary_images, ['images']).map((item) => ({ ...item, protected_file_url: item.protected_file_url || item.protected_image_url || '' })),
     [data]
   );
+  const vocabularyPdfs = useMemo(() => toList(data?.vocabulary_pdfs, ['pdfs']), [data]);
   const vocabularyMarkdowns = useMemo(() => toList(data?.vocabulary_markdowns, ['markdowns']), [data]);
   const videos = useMemo(() => toList(data?.videos || data?.video_links), [data]);
+  const speechRate = Number(speechSettings?.speech_rate || data?.speech_settings?.speech_rate || 1);
   const [vocabularyAssets, setVocabularyAssets] = useState({});
+  const [pdfBanners, setPdfBanners] = useState({});
+  const [vocabPdfBanners, setVocabPdfBanners] = useState({});
   const [imageViewer, setImageViewer] = useState({ open: false, title: '', url: '', loading: false });
   const viewerRef = useRef(null);
 
@@ -121,6 +127,30 @@ const TeacherGuideLessonPage = () => {
     openProtectedFile(item.protected_file_url, item.title || 'file');
   };
 
+  const speakWord = (rawText) => {
+    const text = (rawText || '').trim();
+    if (!text) return;
+    if (typeof window === 'undefined' || !window.speechSynthesis) {
+      toast.error('Speech is not supported in this browser');
+      return;
+    }
+    const utterance = new window.SpeechSynthesisUtterance(text);
+    utterance.lang = 'en-US';
+    utterance.rate = Math.min(2, Math.max(0.5, speechRate));
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const updateSpeechRate = async (rateValue) => {
+    const nextRate = Number(rateValue);
+    if (!Number.isFinite(nextRate)) return;
+    try {
+      await updateSpeechSettingsMutation.mutateAsync({ speech_rate: nextRate });
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Failed to update speech speed');
+    }
+  };
+
   const closeImageViewer = () => {
     if (imageViewer.url) URL.revokeObjectURL(imageViewer.url);
     setImageViewer({ open: false, title: '', url: '', loading: false });
@@ -175,6 +205,42 @@ const TeacherGuideLessonPage = () => {
     };
   }, [vocabularyImages]);
 
+  useEffect(() => {
+    let active = true;
+    const objectUrls = [];
+
+    const loadBanners = async (items, setState) => {
+      if (!items.length) {
+        setState({});
+        return;
+      }
+      const entries = await Promise.all(
+        items.map(async (item) => {
+          if (!item?.protected_banner_url) return [item.id, ''];
+          try {
+            const response = await instance.get(item.protected_banner_url, { responseType: 'blob' });
+            const objectUrl = URL.createObjectURL(response.data);
+            objectUrls.push(objectUrl);
+            return [item.id, objectUrl];
+          } catch {
+            return [item.id, ''];
+          }
+        })
+      );
+      if (active) {
+        setState(Object.fromEntries(entries));
+      }
+    };
+
+    loadBanners(pdfs, setPdfBanners);
+    loadBanners(vocabularyPdfs, setVocabPdfBanners);
+
+    return () => {
+      active = false;
+      objectUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [pdfs, vocabularyPdfs]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 p-4">
@@ -198,19 +264,20 @@ const TeacherGuideLessonPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 ">
-      <div className="rounded-xl border border-gray-100 bg-white  shadow-md sm:p-6">
-        <div className="mb-4 flex items-center gap-3">
+    <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6">
+      <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-md sm:p-6">
+        <div className="mb-4 flex min-w-0 items-center gap-3">
           <button onClick={() => router.push(`/teacher/guide/${courseId}/${levelId}`)} className="rounded-lg bg-gray-100 p-2 hover:bg-gray-200">
             <ArrowLeftIcon className="h-5 w-5 text-gray-700" />
           </button>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">{lesson.topic_name || lesson.title || 'Lesson'}</h1>
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 break-words">{lesson.topic_name || lesson.title || 'Lesson'}</h1>
             <p className="text-sm text-gray-600">{lesson.level_title}</p>
           </div>
         </div>
 
-        <div className="mb-6 flex flex-wrap gap-2 border-b border-gray-200 pb-3">
+        <div className="mb-6 overflow-x-auto border-b border-gray-200 pb-3">
+          <div className="flex min-w-max gap-2">
           {[
             { key: 'overview', label: 'Overview' },
             { key: 'pdfs', label: 'PDF Materials' },
@@ -228,6 +295,7 @@ const TeacherGuideLessonPage = () => {
               {tab.label}
             </button>
           ))}
+          </div>
         </div>
 
         {activeTab === 'overview' ? (
@@ -252,19 +320,28 @@ const TeacherGuideLessonPage = () => {
           <div className="space-y-3">
             {pdfs.length === 0 ? <p className="text-sm text-gray-500">No PDFs available.</p> : null}
             {pdfs.map((pdf) => (
-              <div key={pdf.id} className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 p-3">
-                <div className="flex min-w-0 items-center gap-3">
-                  <DocumentIcon className="h-6 w-6 text-red-600" />
-                  <div className="min-w-0">
-                    <p className="truncate font-semibold text-slate-900">{pdf.title || pdf.file_name || 'PDF material'}</p>
-                  </div>
+              <div key={pdf.id} className="rounded-xl border border-gray-200 p-3">
+                <div className="mb-3 overflow-hidden rounded-xl border border-gray-200 bg-gradient-to-br from-gray-100 to-gray-50">
+                  {pdfBanners[pdf.id] ? (
+                    <img src={pdfBanners[pdf.id]} alt={pdf.title || 'PDF banner'} className="h-28 w-full object-cover" />
+                  ) : (
+                    <div className="flex h-28 items-center justify-center text-xs font-semibold text-gray-500">Default banner</div>
+                  )}
                 </div>
-                <button
-                  onClick={() => openProtectedPdf(pdf.protected_file_url)}
-                  className="rounded-lg bg-[#A60E07] px-3 py-2 text-sm font-semibold text-white"
-                >
-                  Open
-                </button>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <DocumentIcon className="h-6 w-6 text-red-600" />
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-slate-900">{pdf.title || pdf.file_name || 'PDF material'}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => openProtectedPdf(pdf.protected_file_url || `/api/teacher/guides/lessons/${lessonId}/pdfs/${pdf.id}/file`)}
+                    className="rounded-lg bg-[#A60E07] px-3 py-2 text-sm font-semibold text-white sm:w-auto"
+                  >
+                    Open
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -287,14 +364,42 @@ const TeacherGuideLessonPage = () => {
         ) : null}
 
         {activeTab === 'vocabulary' ? (
-          <div className="space-y-4">
-            {vocabulary.length === 0 && vocabularyImages.length === 0 && vocabularyMarkdowns.length === 0 ? <p className="text-sm text-gray-500">No vocabulary available.</p> : null}
+          <div className="space-y-3">
+            <div className="flex items-center justify-end">
+              <label className="flex items-center gap-2 text-xs font-semibold text-gray-600">
+                Speech speed
+                <select
+                  value={speechRate}
+                  onChange={(e) => updateSpeechRate(e.target.value)}
+                  className="rounded-lg border border-gray-300 bg-white px-2 py-1 text-xs"
+                >
+                  {[0.5, 0.75, 1, 1.25, 1.5, 1.75, 2].map((rate) => (
+                    <option key={rate} value={rate}>
+                      {rate}x
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            {vocabulary.length === 0 && vocabularyImages.length === 0 && vocabularyPdfs.length === 0 && vocabularyMarkdowns.length === 0 ? (
+              <p className="text-sm text-gray-500">No vocabulary available.</p>
+            ) : null}
 
             {vocabulary.length > 0 ? (
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 {vocabulary.map((word) => (
                   <div key={word.id} className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-                    <p className="text-lg font-bold text-slate-900">{word.word}</p>
+                    <div className="mb-1 flex items-center justify-between gap-2">
+                      <p className="text-lg font-bold text-slate-900">{word.word}</p>
+                      <button
+                        onClick={() => speakWord(word.speak_text || word.word)}
+                        className="rounded-lg bg-indigo-50 p-2 text-indigo-700"
+                        title="Read aloud"
+                      >
+                        <SpeakerWaveIcon className="h-4 w-4" />
+                      </button>
+                    </div>
                     <p className="text-sm text-[#A60E07]">{word.translation}</p>
                     {word.example ? <p className="mt-2 text-sm italic text-gray-700">{word.example}</p> : null}
                   </div>
@@ -316,7 +421,7 @@ const TeacherGuideLessonPage = () => {
                         </div>
                       )}
                     </div>
-                    <div className="mb-2 flex items-center justify-between gap-2">
+                    <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                       <p className="truncate font-semibold text-slate-900">{img.title || 'Vocabulary asset'}</p>
                       <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold uppercase text-gray-600">
                         {vocabularyAssets[img.id]?.isImage ? 'Image' : 'File'}
@@ -340,6 +445,36 @@ const TeacherGuideLessonPage = () => {
                   <div key={md.id} className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
                     <div className="prose prose-sm max-w-none text-gray-700">
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>{md.content_markdown || ''}</ReactMarkdown>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+
+            {vocabularyPdfs.length > 0 ? (
+              <div className="space-y-3">
+                {vocabularyPdfs.map((pdf) => (
+                  <div key={pdf.id} className="rounded-xl border border-gray-200 p-3">
+                    <div className="mb-3 overflow-hidden rounded-xl border border-gray-200 bg-gradient-to-br from-gray-100 to-gray-50">
+                      {vocabPdfBanners[pdf.id] ? (
+                        <img src={vocabPdfBanners[pdf.id]} alt={pdf.title || 'Vocabulary PDF banner'} className="h-28 w-full object-cover" />
+                      ) : (
+                        <div className="flex h-28 items-center justify-center text-xs font-semibold text-gray-500">Default banner</div>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <DocumentIcon className="h-6 w-6 text-red-600" />
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-slate-900">{pdf.title || 'Vocabulary PDF'}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => openProtectedPdf(pdf.protected_file_url || `/api/teacher/guides/lessons/${lessonId}/vocabulary-pdfs/${pdf.id}/file`)}
+                        className="rounded-lg bg-[#A60E07] px-3 py-2 text-sm font-semibold text-white sm:w-auto"
+                      >
+                        Open
+                      </button>
                     </div>
                   </div>
                 ))}

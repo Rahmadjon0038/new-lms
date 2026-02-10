@@ -28,7 +28,7 @@ function Login() {
     addUserMutation.mutate({
       logindata,
       onSuccess: (data) => {
-        navigate.push(data?.user?.role)
+        navigate.push(`/${data?.user?.role}`)
         notify('ok', 'Tizimga kirish mofaqqiyatli');
         Cookies.set('accessToken', data.accessToken);
         Cookies.set('refreshToken', data.refreshToken);

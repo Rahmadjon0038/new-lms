@@ -85,7 +85,7 @@ const TeacherMainPdfPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <div className="h-12 px-4 border-b border-gray-200 bg-white flex items-center justify-between">
+      <div className="h-12 px-3 sm:px-4 border-b border-gray-200 bg-white flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button onClick={() => router.push(`/teacher/guide/${courseId}/${levelId}`)} className="rounded-md bg-gray-100 hover:bg-gray-200 p-2">
             <ArrowLeftIcon className="h-4 w-4 text-gray-700" />
@@ -94,14 +94,14 @@ const TeacherMainPdfPage = () => {
         </div>
         <button
           onClick={() => setIsFullScreenMode(true)}
-          className="inline-flex items-center gap-1 rounded-md bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-200"
+          className="inline-flex items-center gap-1 rounded-md bg-gray-100 px-2.5 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-200 sm:px-3"
         >
           <ArrowsPointingOutIcon className="h-4 w-4" />
-          Full screen
+          <span className="hidden sm:inline">Full screen</span>
         </button>
       </div>
 
-      <div className="h-[calc(100vh-48px)] overflow-auto p-4 sm:p-6 md:p-8">
+      <div className="h-[calc(100vh-48px)] overflow-auto p-2 sm:p-3 md:p-4">
         {isLoading || loadingPdf ? (
           <div className="h-full flex items-center justify-center">
             <div className="text-center">
@@ -110,8 +110,8 @@ const TeacherMainPdfPage = () => {
             </div>
           </div>
         ) : (
-          <div className="mx-auto w-full max-w-5xl bg-white shadow-xl rounded-sm overflow-hidden">
-            <iframe title="Main PDF" src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`} className="w-full h-[calc(100vh-120px)]" />
+          <div className="mx-auto w-full max-w-5xl overflow-hidden rounded-sm bg-white shadow-xl">
+            <iframe title="Main PDF" src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`} className="w-full h-[calc(100vh-180px)] sm:h-[calc(100vh-120px)]" />
           </div>
         )}
       </div>

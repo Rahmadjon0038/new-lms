@@ -9,6 +9,7 @@ import {
   BookOpenIcon,
   ClipboardDocumentListIcon, // Davomat uchun
   BriefcaseIcon,
+  BanknotesIcon,
   BookmarkIcon, // Qo'llanma uchun
   Cog6ToothIcon,
   Bars3Icon,
@@ -45,6 +46,11 @@ const getTeacherSidebarItems = (isEnglishTeacher) => {
       href: "/teacher/payments-info",
     },
     {
+      name: "Mening Oyligim",
+      icon: BanknotesIcon,
+      href: "/teacher/salary",
+    },
+    {
       name: "Sozlamalar",
       icon: Cog6ToothIcon,
       href: "/teacher/settings",
@@ -79,11 +85,6 @@ function TeacherSidebar() {
   const isEnglishTeacher = isLoading ? false : teacherData?.isEnglishTeacher === true;
   const TeacherSidebarItems = getTeacherSidebarItems(isEnglishTeacher);
 
-  // Sahifa o'zgarganda mobil menuni yopish
-  useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [pathname]);
-
   // Body scroll ni bloklash
   useEffect(() => {
     if (isMobileMenuOpen) {
@@ -96,7 +97,7 @@ function TeacherSidebar() {
     };
   }, [isMobileMenuOpen]);
 
-  const SidebarContent = () => {
+  const renderSidebarContent = () => {
     if (isLoading) {
       return (
         <nav className="flex-1 px-4 py-6 space-y-2">
@@ -181,14 +182,14 @@ function TeacherSidebar() {
             </div>
             
             {/* Menu items */}
-            <SidebarContent />
+            {renderSidebarContent()}
           </div>
         </div>
       )}
 
       {/* Desktop Sidebar */}
       <div className="hidden md:flex flex-col w-48 lg:w-60 min-h-screen bg-white shadow-xl">
-        <SidebarContent />
+        {renderSidebarContent()}
       </div>
     </>
   );

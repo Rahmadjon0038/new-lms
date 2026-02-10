@@ -1,17 +1,52 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { AcademicCapIcon, ArrowRightIcon, BookOpenIcon } from '@heroicons/react/24/outline';
+import { ArrowsPointingOutIcon, ArrowRightIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useTeacherGuideLevels } from '../../../hooks/guides';
+import { instance } from '../../../hooks/api';
 
 const MAIN_COLOR = '#A60E07';
 
 const TeacherGuidePage = () => {
   const { data: levels = [], isLoading, error } = useTeacherGuideLevels();
+  const [levelBanners, setLevelBanners] = useState({});
+  const [bannerViewer, setBannerViewer] = useState({ open: false, url: '' });
+
+  useEffect(() => {
+    let active = true;
+    const objectUrls = [];
+
+    const loadBanners = async () => {
+      if (!levels.length) {
+        setLevelBanners({});
+        return;
+      }
+      const entries = await Promise.all(
+        levels.map(async (level) => {
+          if (!level?.protected_banner_url) return [level.id, ''];
+          try {
+            const response = await instance.get(level.protected_banner_url, { responseType: 'blob' });
+            const objectUrl = URL.createObjectURL(response.data);
+            objectUrls.push(objectUrl);
+            return [level.id, objectUrl];
+          } catch {
+            return [level.id, ''];
+          }
+        })
+      );
+      if (active) setLevelBanners(Object.fromEntries(entries));
+    };
+
+    loadBanners();
+    return () => {
+      active = false;
+      objectUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [levels]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6">
       <div>
         <div className="mb-8">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Study Guides</h1>
@@ -42,38 +77,36 @@ const TeacherGuidePage = () => {
               {levels.map((level) => (
                 <div
                   key={level.id}
-                  className="bg-white p-4 sm:p-5 lg:p-6 rounded-lg sm:rounded-xl shadow-md sm:shadow-lg border-t-4 border-[#A60E07] transition duration-150 hover:shadow-xl flex flex-col justify-between h-full"
+                  className="flex h-full flex-col rounded-xl border border-gray-200 bg-white p-4 sm:p-5 shadow-md transition duration-150 hover:shadow-lg"
+                  style={{ borderTop: `5px solid ${MAIN_COLOR}` }}
                 >
-                  <div>
-                    <div className="flex justify-between items-start mb-3 sm:mb-4 gap-2">
-                      <div className="flex items-center">
-                        <AcademicCapIcon className="h-6 w-6 sm:h-7 sm:w-7 text-[#A60E07] mr-2" />
-                        <h3 className="text-lg sm:text-xl font-bold text-gray-800">{level.title}</h3>
-                      </div>
-
-                      {level.has_main_pdf ? (
-                        <span className="px-2 py-1 text-[10px] font-bold rounded-full uppercase tracking-wider bg-green-100 text-green-700 shrink-0">
-                          PDF available
-                        </span>
-                      ) : null}
+                  <div className="relative mb-4 overflow-hidden rounded-xl border border-gray-200 bg-gradient-to-br from-gray-100 to-gray-50">
+                    <div className="absolute right-2 top-2 z-10 flex items-center gap-1">
+                      <button
+                        onClick={() => setBannerViewer({ open: true, url: levelBanners[level.id] || '' })}
+                        disabled={!levelBanners[level.id]}
+                        className="rounded-lg border border-gray-200 bg-white/95 p-2 hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                        title="Full screen"
+                      >
+                        <ArrowsPointingOutIcon className="h-4 w-4 text-gray-700" />
+                      </button>
                     </div>
-
-                    <p className="text-gray-600 text-sm mb-4 leading-relaxed min-h-12">{level.description}</p>
-
-                    {(level.lesson_count || 0) > 0 ? (
-                      <div className="mb-4 flex items-center border-b border-gray-100 pb-4 text-sm text-gray-700">
-                        <BookOpenIcon className="mr-2 h-4 w-4 text-gray-500" />
-                        <span className="font-semibold text-[#A60E07]">{level.lesson_count} lessons</span>
-                      </div>
-                    ) : null}
+                    {levelBanners[level.id] ? (
+                      <img src={levelBanners[level.id]} alt={level.title || 'Level banner'} className="h-64 w-full object-contain bg-black/5 sm:h-80 lg:h-96" />
+                    ) : (
+                      <div className="flex h-64 items-center justify-center text-sm font-semibold text-gray-500 sm:h-80 lg:h-96">Default banner</div>
+                    )}
                   </div>
+
+                  {level.description ? <p className="min-h-[80px] text-sm sm:text-base leading-relaxed text-slate-600">{level.description}</p> : null}
 
                   <Link
                     href={`/teacher/guide/${level.course_id || level.courseId || 1}/${level.id}`}
-                    className="flex items-center justify-center w-full py-3 rounded-lg font-bold text-white bg-[#A60E07] hover:bg-[#8b0c06] active:scale-[0.98] transition-all duration-150 shadow-md text-sm sm:text-base"
+                    className="mt-auto inline-flex w-full items-center justify-center rounded-lg py-3 text-base font-bold text-white transition-opacity hover:opacity-90"
+                    style={{ backgroundColor: MAIN_COLOR }}
                   >
                     View lessons
-                    <ArrowRightIcon className="h-4 w-4 sm:h-5 sm:w-5 ml-2" />
+                    <ArrowRightIcon className="ml-2 h-5 w-5" />
                   </Link>
                 </div>
               ))}
@@ -81,6 +114,22 @@ const TeacherGuidePage = () => {
           )
         ) : null}
       </div>
+
+      {bannerViewer.open ? (
+        <div className="fixed inset-0 z-[9999] bg-black/90 p-3 sm:p-6">
+          <div className="mb-3 flex justify-end">
+            <button
+              onClick={() => setBannerViewer({ open: false, url: '' })}
+              className="rounded-lg bg-white/15 p-2 text-white hover:bg-white/25"
+            >
+              <XMarkIcon className="h-5 w-5" />
+            </button>
+          </div>
+          <div className="flex h-[calc(100%-52px)] items-center justify-center overflow-auto rounded-xl bg-black/40 p-4">
+            {bannerViewer.url ? <img src={bannerViewer.url} alt="Banner full screen" className="max-h-full w-auto max-w-full object-contain" /> : null}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowsPointingOutIcon, ArrowLeftIcon, DocumentIcon, PlayCircleIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { ArrowUpTrayIcon, ArrowsPointingOutIcon, ArrowLeftIcon, DocumentIcon, PlayCircleIcon, SpeakerWaveIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { toast } from 'react-hot-toast';
@@ -19,14 +19,18 @@ import {
   useAdminDeleteNote,
   useAdminDeleteVideo,
   useAdminDeleteVocabulary,
+  useAdminDeleteVocabularyPdf,
   useAdminDeleteVocabularyImage,
   useAdminDeleteVocabularyMarkdown,
   useAdminGuideLessonDetail,
+  useAdminGuideSpeechSettings,
   useAdminUpdateAssignment,
+  useAdminUpdateGuideSpeechSettings,
   useAdminUpdateNote,
   useAdminUpdateVocabulary,
   useAdminUpdateVocabularyMarkdown,
   useAdminUploadLessonPdf,
+  useAdminUploadVocabularyPdf,
   useAdminUploadVocabularyImage,
 } from '../../../../../../../hooks/guides';
 
@@ -51,7 +55,6 @@ const NOTE_BORDER_COLOR = {
 const AdminGuideLessonPage = () => {
   const { courseId, levelId, lessonId } = useParams();
   const router = useRouter();
-  const [tab, setTab] = useState('overview');
 
   const { data, isLoading, error } = useAdminGuideLessonDetail(lessonId);
 
@@ -69,11 +72,15 @@ const AdminGuideLessonPage = () => {
   const deleteVocabularyMutation = useAdminDeleteVocabulary();
   const uploadVocabularyImageMutation = useAdminUploadVocabularyImage();
   const deleteVocabularyImageMutation = useAdminDeleteVocabularyImage();
+  const uploadVocabularyPdfMutation = useAdminUploadVocabularyPdf();
+  const deleteVocabularyPdfMutation = useAdminDeleteVocabularyPdf();
   const createVocabularyMarkdownMutation = useAdminCreateVocabularyMarkdown();
   const updateVocabularyMarkdownMutation = useAdminUpdateVocabularyMarkdown();
   const deleteVocabularyMarkdownMutation = useAdminDeleteVocabularyMarkdown();
   const createVideoMutation = useAdminCreateVideo();
   const deleteVideoMutation = useAdminDeleteVideo();
+  const { data: speechSettings } = useAdminGuideSpeechSettings();
+  const updateSpeechSettingsMutation = useAdminUpdateGuideSpeechSettings();
 
   const lesson = data?.lesson || null;
   const notes = useMemo(() => (Array.isArray(data?.notes) ? data.notes : []), [data]);
@@ -81,14 +88,17 @@ const AdminGuideLessonPage = () => {
   const assignments = useMemo(() => (Array.isArray(data?.assignments) ? data.assignments : []), [data]);
   const vocabulary = useMemo(() => (Array.isArray(data?.vocabulary) ? data.vocabulary : []), [data]);
   const vocabularyImages = useMemo(() => (Array.isArray(data?.vocabulary_images) ? data.vocabulary_images : []), [data]);
+  const vocabularyPdfs = useMemo(() => (Array.isArray(data?.vocabulary_pdfs) ? data.vocabulary_pdfs : []), [data]);
   const vocabularyMarkdowns = useMemo(() => (Array.isArray(data?.vocabulary_markdowns) ? data.vocabulary_markdowns : []), [data]);
   const videos = useMemo(() => (Array.isArray(data?.videos) ? data.videos : []), [data]);
+  const speechRate = Number(speechSettings?.speech_rate || data?.speech_settings?.speech_rate || 1);
 
   const [noteForm, setNoteForm] = useState({ id: null, content_markdown: '', color: 'blue' });
   const [pdfForm, setPdfForm] = useState({ title: '', file: null });
   const [assignmentForm, setAssignmentForm] = useState({ id: null, assignment_text: '' });
   const [vocabForm, setVocabForm] = useState({ id: null, word: '', translation: '', example: '' });
   const [vocabImageForm, setVocabImageForm] = useState({ title: '', file: null });
+  const [vocabPdfForm, setVocabPdfForm] = useState({ title: '', file: null });
   const [vocabMarkdownForm, setVocabMarkdownForm] = useState({ id: null, content_markdown: '' });
   const [videoForm, setVideoForm] = useState({ title: '', youtube_url: '' });
   const [imageThumbs, setImageThumbs] = useState({});
@@ -96,6 +106,10 @@ const AdminGuideLessonPage = () => {
   const viewerRef = useRef(null);
 
   const openProtectedPdf = async (url) => {
+    if (!url) {
+      toast.error('PDF link not found');
+      return;
+    }
     try {
       const response = await instance.get(url, { responseType: 'blob' });
       const blobUrl = URL.createObjectURL(response.data);
@@ -119,6 +133,30 @@ const AdminGuideLessonPage = () => {
     if (video?.embed_url) return video.embed_url;
     const id = video?.youtube_video_id || extractYoutubeVideoId(video?.youtube_url);
     return id ? `https://www.youtube.com/embed/${id}` : '';
+  };
+
+  const speakWord = (rawText) => {
+    const text = (rawText || '').trim();
+    if (!text) return;
+    if (typeof window === 'undefined' || !window.speechSynthesis) {
+      toast.error('Speech is not supported in this browser');
+      return;
+    }
+    const utterance = new window.SpeechSynthesisUtterance(text);
+    utterance.lang = 'en-US';
+    utterance.rate = Math.min(2, Math.max(0.5, speechRate));
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const updateSpeechRate = async (rateValue) => {
+    const nextRate = Number(rateValue);
+    if (!Number.isFinite(nextRate)) return;
+    try {
+      await updateSpeechSettingsMutation.mutateAsync({ speech_rate: nextRate });
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Failed to update speech speed');
+    }
   };
 
   const selectedImagePreviewUrl = useMemo(
@@ -345,6 +383,24 @@ const AdminGuideLessonPage = () => {
     }
   };
 
+  const saveVocabularyPdf = async () => {
+    if (!vocabPdfForm.title.trim() || !vocabPdfForm.file) {
+      toast.error('Vocabulary PDF title and file are required');
+      return;
+    }
+    try {
+      await uploadVocabularyPdfMutation.mutateAsync({
+        lessonId,
+        title: vocabPdfForm.title.trim(),
+        file: vocabPdfForm.file,
+      });
+      toast.success('Vocabulary PDF uploaded');
+      setVocabPdfForm({ title: '', file: null });
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Failed to upload vocabulary PDF');
+    }
+  };
+
   const saveVideo = async () => {
     if (!videoForm.title.trim() || !videoForm.youtube_url.trim()) {
       toast.error('Video title and YouTube link are required');
@@ -388,42 +444,25 @@ const AdminGuideLessonPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6">
       <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-md sm:p-6">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-3">
             <button onClick={() => router.push(`/admin/guide/${courseId}/${levelId}`)} className="rounded-lg bg-gray-100 p-2 hover:bg-gray-200">
               <ArrowLeftIcon className="h-5 w-5 text-gray-700" />
             </button>
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900">{lesson.topic_name || lesson.title}</h1>
+            <div className="min-w-0">
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-900 break-words">{lesson.topic_name || lesson.title}</h1>
               <p className="text-sm text-gray-600">{lesson.level_title}</p>
             </div>
           </div>
-          <button onClick={deleteLesson} className="inline-flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-100">
+          <button onClick={deleteLesson} className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-100 sm:w-auto">
             <TrashIcon className="h-5 w-5" />
             Delete lesson
           </button>
         </div>
 
-        <div className="mb-6 flex flex-wrap gap-2 border-b border-gray-200 pb-3">
-          {[
-            { key: 'overview', label: "Overview" },
-            { key: 'pdfs', label: 'PDF Materials' },
-            { key: 'assignments', label: 'Assignments' },
-            { key: 'vocabulary', label: 'Vocabulary' },
-            { key: 'videos', label: 'Videos' },
-          ].map((item) => (
-            <button
-              key={item.key}
-              onClick={() => setTab(item.key)}
-              className={`rounded-lg px-3 py-2 text-sm font-semibold ${tab === item.key ? 'bg-[#A60E07] text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-
-        {tab === 'overview' ? (
-          <div className="space-y-4">
+        <div className="space-y-6">
+          <section className="space-y-4">
+            <h2 className="text-lg font-bold text-slate-900">Overview</h2>
             <div className="rounded-2xl border border-gray-200 bg-gradient-to-br from-slate-50 to-white p-4 shadow-sm">
               <div className="mb-3 flex flex-wrap items-center gap-3">
                 {COLOR_ITEMS.map((item) => (
@@ -460,18 +499,20 @@ const AdminGuideLessonPage = () => {
                   >
                     <div className="mb-2 flex items-center justify-between gap-2">
                       <span className="text-xs font-semibold uppercase text-gray-500">{n.color || 'blue'}</span>
-                      <button
-                        onClick={() => setNoteForm({ id: n.id, content_markdown: n.content_markdown || '', color: n.color || 'blue' })}
-                        className="rounded-lg bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => deleteNoteMutation.mutateAsync({ lessonId, noteId: n.id }).catch((err) => toast.error(err?.response?.data?.message || 'Failed to delete note'))}
-                        className="rounded-lg bg-red-50 px-3 py-1 text-xs font-semibold text-red-700"
-                      >
-                        Delete
-                      </button>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          onClick={() => setNoteForm({ id: n.id, content_markdown: n.content_markdown || '', color: n.color || 'blue' })}
+                          className="rounded-lg bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => deleteNoteMutation.mutateAsync({ lessonId, noteId: n.id }).catch((err) => toast.error(err?.response?.data?.message || 'Failed to delete note'))}
+                          className="rounded-lg bg-red-50 px-3 py-1 text-xs font-semibold text-red-700"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
                     <div className="prose prose-sm max-w-none text-gray-700">
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>{n.content_markdown || ''}</ReactMarkdown>
@@ -480,25 +521,41 @@ const AdminGuideLessonPage = () => {
                 ))}
               </div>
             </div>
-          </div>
-        ) : null}
+          </section>
 
-        {tab === 'pdfs' ? (
-          <div className="space-y-4">
+          <section className="space-y-4">
+            <h2 className="text-lg font-bold text-slate-900">PDF Materials</h2>
             <div className="rounded-2xl border border-gray-200 bg-gradient-to-br from-red-50/60 to-white p-4 shadow-sm">
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                 <input
                   value={pdfForm.title}
                   onChange={(e) => setPdfForm((p) => ({ ...p, title: e.target.value }))}
                   className="rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm shadow-sm outline-none focus:border-[#A60E07] focus:ring-2 focus:ring-[#A60E07]/20"
                   placeholder="Example: Unit 3 Guide"
                 />
-                <input
-                  type="file"
-                  accept="application/pdf"
-                  onChange={(e) => setPdfForm((p) => ({ ...p, file: e.target.files?.[0] || null }))}
-                  className="rounded-xl border border-dashed border-[#A60E07]/50 bg-white px-4 py-3 text-sm"
-                />
+                {pdfForm.file ? (
+                  <div className="relative flex h-32 items-center gap-3 rounded-xl border border-gray-300 bg-gray-50 px-4">
+                    <button
+                      onClick={() => setPdfForm((p) => ({ ...p, file: null }))}
+                      className="absolute right-2 top-2 rounded-full bg-red-500 p-1 text-white"
+                    >
+                      <XMarkIcon className="h-4 w-4" />
+                    </button>
+                    <DocumentIcon className="h-8 w-8 text-red-600" />
+                    <p className="line-clamp-2 text-sm font-semibold text-gray-700">{pdfForm.file.name}</p>
+                  </div>
+                ) : (
+                  <label className="flex h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#A60E07]/40 bg-white text-gray-600 hover:bg-gray-50">
+                    <input
+                      type="file"
+                      accept="application/pdf"
+                      onChange={(e) => setPdfForm((p) => ({ ...p, file: e.target.files?.[0] || null }))}
+                      className="hidden"
+                    />
+                    <ArrowUpTrayIcon className="h-8 w-8 text-gray-400" />
+                    <p className="text-sm font-semibold">PDF yuklash</p>
+                  </label>
+                )}
               </div>
               <div className="mt-3 flex justify-end">
                 <button onClick={savePdf} className="rounded-xl bg-[#A60E07] px-5 py-2.5 text-sm font-semibold text-white shadow hover:opacity-90">
@@ -509,17 +566,23 @@ const AdminGuideLessonPage = () => {
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               {pdfs.map((pdf) => (
                 <div key={pdf.id} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+                  <div className="mb-3 flex h-28 items-center justify-center rounded-xl border border-gray-200 bg-gradient-to-br from-gray-100 to-gray-50">
+                    <DocumentIcon className="h-10 w-10 text-red-600" />
+                  </div>
                   <div className="mb-4 flex min-w-0 items-center gap-3">
                     <div className="rounded-xl bg-red-100 p-3">
                       <DocumentIcon className="h-7 w-7 text-red-600" />
                     </div>
                     <div className="min-w-0">
                       <p className="truncate text-base font-bold text-slate-900">{pdf.title}</p>
-                      <p className="text-xs text-gray-500">PDF Guide</p>
+                      <p className="text-xs text-gray-500">PDF file</p>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => openProtectedPdf(pdf.protected_file_url)} className="rounded-xl bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700">
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => openProtectedPdf(pdf.protected_file_url || `/api/admin/guides/lessons/${lessonId}/pdfs/${pdf.id}/file`)}
+                      className="rounded-xl bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700"
+                    >
                       Open
                     </button>
                     <button
@@ -532,11 +595,10 @@ const AdminGuideLessonPage = () => {
                 </div>
               ))}
             </div>
-          </div>
-        ) : null}
+          </section>
 
-        {tab === 'assignments' ? (
-          <div className="space-y-4">
+          <section className="space-y-4">
+            <h2 className="text-lg font-bold text-slate-900">Assignments</h2>
             <div className="rounded-2xl border border-gray-200 bg-gradient-to-br from-indigo-50/60 to-white p-4 shadow-sm">
               <textarea
                 value={assignmentForm.assignment_text}
@@ -556,7 +618,7 @@ const AdminGuideLessonPage = () => {
                 const text = a.assignment_text || a.text || a.description || '';
                 return (
                   <div key={a.id} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-                    <div className="mb-1 flex justify-end gap-2">
+                    <div className="mb-1 flex flex-wrap justify-end gap-2">
                       <button
                         onClick={() => setAssignmentForm({ id: a.id, assignment_text: text })}
                         className="rounded-lg bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700"
@@ -577,13 +639,28 @@ const AdminGuideLessonPage = () => {
                 );
               })}
             </div>
-          </div>
-        ) : null}
+          </section>
 
-        {tab === 'vocabulary' ? (
-          <div className="space-y-4">
+          <section className="space-y-4">
+            <h2 className="text-lg font-bold text-slate-900">Vocabulary</h2>
             <div className="rounded-2xl border border-gray-200 bg-gradient-to-br from-emerald-50/60 to-white p-4 shadow-sm">
-              <p className="mb-3 text-sm font-bold text-slate-900">Words</p>
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <p className="text-sm font-bold text-slate-900">Words</p>
+                <label className="flex items-center gap-2 text-xs font-semibold text-gray-600">
+                  Speech speed
+                  <select
+                    value={speechRate}
+                    onChange={(e) => updateSpeechRate(e.target.value)}
+                    className="rounded-lg border border-gray-300 bg-white px-2 py-1 text-xs"
+                  >
+                    {[0.5, 0.75, 1, 1.25, 1.5, 1.75, 2].map((rate) => (
+                      <option key={rate} value={rate}>
+                        {rate}x
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
               <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                 <input
                   value={vocabForm.word}
@@ -619,7 +696,13 @@ const AdminGuideLessonPage = () => {
                       <p className="text-lg font-bold text-slate-900">{v.word}</p>
                       <p className="text-sm text-[#A60E07]">{v.translation}</p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => speakWord(v.speak_text || v.word)}
+                        className="rounded-lg bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700"
+                      >
+                        <SpeakerWaveIcon className="h-4 w-4" />
+                      </button>
                       <button
                         onClick={() => {
                           setVocabForm({ id: v.id, word: v.word || '', translation: v.translation || '', example: v.example || '' });
@@ -650,24 +733,109 @@ const AdminGuideLessonPage = () => {
                   className="rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm shadow-sm"
                   placeholder="Image title"
                 />
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setVocabImageForm((p) => ({ ...p, file: e.target.files?.[0] || null }))}
-                  className="w-full rounded-xl border border-dashed border-[#A60E07]/50 bg-white px-4 py-3 text-sm"
-                />
+                {vocabImageForm.file ? (
+                  <div className="relative h-32 overflow-hidden rounded-xl border border-gray-300 bg-gray-50">
+                    <button
+                      onClick={() => setVocabImageForm((p) => ({ ...p, file: null }))}
+                      className="absolute right-2 top-2 z-10 rounded-full bg-red-500 p-1 text-white"
+                    >
+                      <XMarkIcon className="h-4 w-4" />
+                    </button>
+                    {selectedImagePreviewUrl ? <img src={selectedImagePreviewUrl} alt="Preview" className="h-full w-full object-cover" /> : null}
+                  </div>
+                ) : (
+                  <label className="flex h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#A60E07]/40 bg-white text-gray-600 hover:bg-gray-50">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setVocabImageForm((p) => ({ ...p, file: e.target.files?.[0] || null }))}
+                      className="hidden"
+                    />
+                    <ArrowUpTrayIcon className="h-8 w-8 text-gray-400" />
+                    <p className="text-sm font-semibold">Rasm yuklash</p>
+                  </label>
+                )}
               </div>
-              {vocabImageForm.file ? (
-                <div className="mt-3 rounded-xl border border-gray-200 bg-white p-3">
-                  <p className="mb-2 text-xs font-semibold text-gray-600">Selected image: {vocabImageForm.file.name}</p>
-                  {selectedImagePreviewUrl ? <img src={selectedImagePreviewUrl} alt="Preview" className="h-40 w-full rounded-lg object-cover" /> : null}
-                </div>
-              ) : null}
               <div className="mt-3 flex justify-end">
                 <button onClick={saveVocabularyImage} className="rounded-xl bg-[#A60E07] px-5 py-2.5 text-sm font-semibold text-white shadow hover:opacity-90">
                   Upload image
                 </button>
               </div>
+            </div>
+
+            <div className="rounded-2xl border border-gray-200 bg-gradient-to-br from-sky-50/60 to-white p-4 shadow-sm">
+              <p className="mb-3 text-sm font-bold text-slate-900">Vocabulary PDFs</p>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                <input
+                  value={vocabPdfForm.title}
+                  onChange={(e) => setVocabPdfForm((p) => ({ ...p, title: e.target.value }))}
+                  className="rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm shadow-sm"
+                  placeholder="Vocabulary PDF title"
+                />
+                {vocabPdfForm.file ? (
+                  <div className="relative flex h-32 items-center gap-3 rounded-xl border border-gray-300 bg-gray-50 px-4">
+                    <button
+                      onClick={() => setVocabPdfForm((p) => ({ ...p, file: null }))}
+                      className="absolute right-2 top-2 rounded-full bg-red-500 p-1 text-white"
+                    >
+                      <XMarkIcon className="h-4 w-4" />
+                    </button>
+                    <DocumentIcon className="h-8 w-8 text-red-600" />
+                    <p className="line-clamp-2 text-sm font-semibold text-gray-700">{vocabPdfForm.file.name}</p>
+                  </div>
+                ) : (
+                  <label className="flex h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#A60E07]/40 bg-white text-gray-600 hover:bg-gray-50">
+                    <input
+                      type="file"
+                      accept="application/pdf"
+                      onChange={(e) => setVocabPdfForm((p) => ({ ...p, file: e.target.files?.[0] || null }))}
+                      className="hidden"
+                    />
+                    <ArrowUpTrayIcon className="h-8 w-8 text-gray-400" />
+                    <p className="text-sm font-semibold">PDF yuklash</p>
+                  </label>
+                )}
+              </div>
+              <div className="mt-3 flex justify-end">
+                <button onClick={saveVocabularyPdf} className="rounded-xl bg-[#A60E07] px-5 py-2.5 text-sm font-semibold text-white shadow hover:opacity-90">
+                  Upload vocabulary PDF
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              {vocabularyPdfs.map((pdf) => (
+                <div key={pdf.id} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+                  <div className="mb-3 flex h-28 items-center justify-center rounded-xl border border-gray-200 bg-gradient-to-br from-gray-100 to-gray-50">
+                    <DocumentIcon className="h-10 w-10 text-red-600" />
+                  </div>
+                  <div className="mb-4 flex min-w-0 items-center gap-3">
+                    <div className="rounded-xl bg-red-100 p-3">
+                      <DocumentIcon className="h-7 w-7 text-red-600" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-base font-bold text-slate-900">{pdf.title || 'Vocabulary PDF'}</p>
+                      <p className="text-xs text-gray-500">PDF file</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() =>
+                        openProtectedPdf(pdf.protected_file_url || `/api/admin/guides/lessons/${lessonId}/vocabulary-pdfs/${pdf.id}/file`)
+                      }
+                      className="rounded-xl bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700"
+                    >
+                      Open
+                    </button>
+                    <button
+                      onClick={() => deleteVocabularyPdfMutation.mutateAsync({ lessonId, pdfId: pdf.id }).catch((err) => toast.error(err?.response?.data?.message || 'Failed to delete vocabulary PDF'))}
+                      className="rounded-xl bg-red-50 px-4 py-2 text-sm font-semibold text-red-700"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
 
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -683,7 +851,7 @@ const AdminGuideLessonPage = () => {
                     )}
                     <p className="truncate font-semibold text-slate-900">{img.title || 'Vocabulary image'}</p>
                   </div>
-                  <div className="mt-3 flex gap-2">
+                  <div className="mt-3 flex flex-wrap gap-2">
                     <button onClick={() => openImageInViewer(img)} className="rounded-xl bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700">
                       Open
                     </button>
@@ -717,7 +885,7 @@ const AdminGuideLessonPage = () => {
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               {vocabularyMarkdowns.map((md) => (
                 <div key={md.id} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-                  <div className="mb-2 flex justify-end gap-2">
+                  <div className="mb-2 flex flex-wrap justify-end gap-2">
                     <button
                       onClick={() => setVocabMarkdownForm({ id: md.id, content_markdown: md.content_markdown || '' })}
                       className="rounded-lg bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700"
@@ -737,11 +905,10 @@ const AdminGuideLessonPage = () => {
                 </div>
               ))}
             </div>
-          </div>
-        ) : null}
+          </section>
 
-        {tab === 'videos' ? (
-          <div className="space-y-4">
+          <section className="space-y-4">
+            <h2 className="text-lg font-bold text-slate-900">Videos</h2>
             <div className="rounded-lg border border-gray-200 p-4">
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 <input
@@ -766,7 +933,7 @@ const AdminGuideLessonPage = () => {
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
               {videos.map((video) => (
                 <div key={video.id} className="rounded-lg border border-gray-200 p-3">
-                  <div className="mb-2 flex items-center justify-between gap-2">
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                     <div className="flex min-w-0 items-center gap-2">
                       <PlayCircleIcon className="h-5 w-5 shrink-0 text-red-600" />
                       <p className="truncate font-semibold text-slate-900">{video.title}</p>
@@ -788,8 +955,8 @@ const AdminGuideLessonPage = () => {
                 </div>
               ))}
             </div>
-          </div>
-        ) : null}
+          </section>
+        </div>
       </div>
 
       {imageViewer.open ? (

@@ -77,11 +77,17 @@ export function useGetDashboardDebtorsByMonth(month = null) {
   });
 }
 
-export function useGetDashboardSuperAdmin() {
+export function useGetDashboardSuperAdmin(month = null, fromMonth = null, toMonth = null) {
   return useQuery({
-    queryKey: ['dashboard-super-admin'],
+    queryKey: ['dashboard-super-admin', month, fromMonth, toMonth],
     queryFn: async () => {
-      const res = await instance.get('/api/dashboard/super-admin');
+      const query = buildQuery({
+        month,
+        from_month: fromMonth,
+        to_month: toMonth,
+      });
+      const url = query ? `/api/dashboard/super-admin?${query}` : '/api/dashboard/super-admin';
+      const res = await instance.get(url);
       return normalize(res);
     },
     staleTime: 60 * 1000,

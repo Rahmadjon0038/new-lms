@@ -61,8 +61,6 @@ const ConfirmToggleModal = ({ isOpen, onClose, onConfirm, isClosing, isLoading }
 };
 
 const GroupCard = ({ group, onToggleGroupStatus, onStartClass, updateGroupLoading = false }) => {
-    console.log(group);
-    
     const [showStudentDetails, setShowStudentDetails] = useState(false);
 
     // Dropdown ni yopish uchun outside click
@@ -90,28 +88,28 @@ const GroupCard = ({ group, onToggleGroupStatus, onStartClass, updateGroupLoadin
             return {
                 borderColor: "border-yellow-400",
                 statusTextColor: "text-yellow-700",
-                statusIcon: <CalendarIcon className="h-6 w-6 mr-2 text-yellow-500" />,
+                statusIcon: <CalendarIcon className="h-5 w-5 text-yellow-500 sm:h-6 sm:w-6" />,
                 statusText: "Darsi boshlanmagan"
             };
         } else if (group.status === 'active' && group.class_status === 'started') {
             return {
                 borderColor: "border-[#A60E07]",
                 statusTextColor: "text-gray-800",
-                statusIcon: <BookOpenIcon className="h-6 w-6 mr-2 text-[#A60E07]" />,
+                statusIcon: <BookOpenIcon className="h-5 w-5 text-[#A60E07] sm:h-6 sm:w-6" />,
                 statusText: "Aktiv"
             };
         } else if (group.status === 'blocked') {
             return {
                 borderColor: "border-gray-400",
                 statusTextColor: "text-gray-500",
-                statusIcon: <ArchiveBoxXMarkIcon className="h-6 w-6 mr-2 text-gray-500" />,
+                statusIcon: <ArchiveBoxXMarkIcon className="h-5 w-5 text-gray-500 sm:h-6 sm:w-6" />,
                 statusText: "Yopilgan"
             };
         } else {
             return {
                 borderColor: "border-blue-400",
                 statusTextColor: "text-blue-700",
-                statusIcon: <CheckIcon className="h-6 w-6 mr-2 text-blue-500" />,
+                statusIcon: <CheckIcon className="h-5 w-5 text-blue-500 sm:h-6 sm:w-6" />,
                 statusText: "Faol"
             };
         }
@@ -121,15 +119,19 @@ const GroupCard = ({ group, onToggleGroupStatus, onStartClass, updateGroupLoadin
     const isDraft = group.status === 'draft' || group.class_status === 'not_started';
 
     return (
-        <div className={`flex flex-col justify-between bg-white p-6 rounded-xl shadow-lg border-t-4 ${borderColor} transition duration-150 hover:shadow-xl`}>
+        <div className={`flex flex-col justify-between rounded-xl border-t-4 bg-white p-4 shadow-lg transition duration-150 hover:shadow-xl sm:p-6 ${borderColor}`}>
             <div className="mb-4">
-                <h3 className={`text-xl font-bold ${statusTextColor} flex items-center mb-2`}>
-                    {statusIcon}
-                    {group.name}
-                    {isDraft && <span className="ml-2 text-sm font-medium text-yellow-600">(Darsi boshlanmagan)</span>}
-                    {group.status === 'blocked' && <span className="ml-2 text-sm font-medium text-gray-400">(Yopilgan)</span>}
+                <div className="mb-2 flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                        <h3 className={`flex flex-wrap items-center gap-2 text-base font-bold sm:text-xl ${statusTextColor}`}>
+                            {statusIcon}
+                            <span className="min-w-0 break-words">{group.name}</span>
+                        </h3>
+                        {isDraft && <span className="mt-1 inline-block text-xs font-medium text-yellow-600 sm:text-sm">(Darsi boshlanmagan)</span>}
+                        {group.status === 'blocked' && <span className="mt-1 inline-block text-xs font-medium text-gray-400 sm:text-sm">(Yopilgan)</span>}
+                    </div>
                     {/* Talabalar soni - dropdown ko'rinishida */}
-                    <div className="relative ml-auto student-dropdown">
+                    <div className="relative student-dropdown shrink-0">
                         <div 
                             onClick={() => setShowStudentDetails(!showStudentDetails)}
                             className="cursor-pointer flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-1 rounded-md text-xs font-medium hover:bg-blue-200 transition-colors"
@@ -188,39 +190,39 @@ const GroupCard = ({ group, onToggleGroupStatus, onStartClass, updateGroupLoadin
                             </div>
                         )}
                     </div>
-                </h3>
+                </div>
 
                 {/* Narxi yuqorida, ko'zga tashlanadigan */}
                 <div className="flex items-center gap-2 mb-3">
-                    <span className="text-2xl font-extrabold text-[#A60E07]">{group.price ? parseFloat(group.price).toLocaleString() + ' so\'m' : 'Narxi belgilanmagan'}</span>
+                    <span className="break-words text-xl font-extrabold text-[#A60E07] sm:text-2xl">{group.price ? parseFloat(group.price).toLocaleString() + ' so\'m' : 'Narxi belgilanmagan'}</span>
                 </div>
 
                 <div className="space-y-2 text-sm text-gray-700">
-                    <p className="flex ">
+                    <p className="flex items-start">
                         <UsersIcon className="h-4 w-4 mr-2 text-gray-400" />
-                        Holati: <span className="ml-1 font-semibold text-[#A60E07]">{statusText}</span>
+                        <span>Holati: <span className="ml-1 font-semibold text-[#A60E07]">{statusText}</span></span>
                     </p>
-                    <p className="flex ">
+                    <p className="flex items-start">
                         <CalendarDaysIcon className="h-4 w-4 mr-2 text-gray-400" />
-                        Jadval: <span className="ml-1 font-semibold">{scheduleDays}</span>
+                        <span>Jadval: <span className="ml-1 font-semibold break-words">{scheduleDays}</span></span>
                     </p>
-                    <p className="flex ">
+                    <p className="flex items-start">
                         <Clock className="h-4 w-4 mr-2 text-gray-400" />
-                        Vaqti: <span className="ml-1 font-medium text-gray-600">{timeInfo}</span>
+                        <span>Vaqti: <span className="ml-1 font-medium text-gray-600">{timeInfo}</span></span>
                     </p>
-                    <p className="flex ">
+                    <p className="flex items-start">
                         <PencilSquareIcon className="h-4 w-4 mr-2 text-gray-400" />
-                        O'qituvchi: <span className="ml-1 font-bold text-gray-800">{group.teacher_name || "Tayinlanmagan"}</span>
+                        <span>O'qituvchi: <span className="ml-1 font-bold text-gray-800 break-words">{group.teacher_name || "Tayinlanmagan"}</span></span>
                     </p>
                     {group.subject_name && (
-                        <p className="flex ">
+                        <p className="flex items-start">
                             <BookOpenIcon className="h-4 w-4 mr-2 text-gray-400" />
-                            Fan: <span className="ml-1 font-bold text-gray-800">{group.subject_name}</span>
+                            <span>Fan: <span className="ml-1 font-bold text-gray-800 break-words">{group.subject_name}</span></span>
                         </p>
                     )}
-                    <p className="flex ">
+                    <p className="flex items-start">
                         <Building2 className="h-4 w-4 mr-2 text-gray-400" />
-                        Xona: <span className="ml-1 font-bold text-gray-800">
+                        <span>Xona: <span className="ml-1 font-bold text-gray-800">
                             {group.room_number ? (
                                 <>
                                     {group.room_number}
@@ -230,53 +232,55 @@ const GroupCard = ({ group, onToggleGroupStatus, onStartClass, updateGroupLoadin
                             ) : (
                                 <span className="text-gray-500">Xona belgilanmagan</span>
                             )}
-                        </span>
+                        </span></span>
                     </p>
-                    <p className="flex ">
+                    <p className="flex items-start">
                         <CalendarIcon className="h-4 w-4 mr-2 text-gray-400" />
-                        Dars boshlanish sanasi: <span className="ml-1 font-semibold text-gray-600">{startDate}</span>
+                        <span>Dars boshlanish sanasi: <span className="ml-1 font-semibold text-gray-600">{startDate}</span></span>
                     </p>
                 </div>
             </div>
 
-            <div className="mt-4 flex space-x-3 items-stretch">
+            <div className="mt-4 space-y-2">
                 <Link
                     href={`/admin/groups/${group.id}`}
-                    className={`flex-1 flex items-center justify-center py-2.5 rounded-lg font-semibold text-white transition duration-150 shadow-md h-full 
+                    className={`flex w-full items-center justify-center rounded-lg py-2.5 font-semibold text-white shadow-md transition duration-150
                         ${group.status === 'blocked' ? 'bg-gray-400 hover:bg-gray-500' : 'bg-[#A60E07] hover:opacity-90'}`}
                 >
                     <ArrowRightIcon className="h-5 w-5 mr-2" />
                     Guruhga Kirish
                 </Link>
 
-                {isDraft && (
-                    <button
-                        onClick={() => onStartClass(group.id)}
-                        className="flex items-center justify-center px-4 py-2.5 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-700 transition duration-150 shadow-md h-full"
-                        disabled={updateGroupLoading}
-                    >
-                        <PlayIcon className="h-5 w-5 mr-2" />
-                        Darsni Boshlash
-                    </button>
-                )}
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                    {isDraft && (
+                        <button
+                            onClick={() => onStartClass(group.id)}
+                            className="flex w-full items-center justify-center rounded-lg bg-green-600 px-4 py-2.5 font-semibold text-white shadow-md transition duration-150 hover:bg-green-700 sm:w-auto"
+                            disabled={updateGroupLoading}
+                        >
+                            <PlayIcon className="mr-2 h-5 w-5" />
+                            Darsni Boshlash
+                        </button>
+                    )}
 
-                <AdminUpdateGroupModal initialData={group}>
-                    <button className="p-2.5 rounded-lg text-white bg-gray-600 hover:bg-gray-700 transition duration-150 shadow-md h-full">
-                        <PencilSquareIcon className="h-5 w-5" />
-                    </button>
-                </AdminUpdateGroupModal>
+                    <AdminUpdateGroupModal initialData={group}>
+                        <button className="flex min-h-[42px] min-w-[42px] items-center justify-center rounded-lg bg-gray-600 p-2.5 text-white shadow-md transition duration-150 hover:bg-gray-700">
+                            <PencilSquareIcon className="h-5 w-5" />
+                        </button>
+                    </AdminUpdateGroupModal>
 
-                {!isDraft && (
-                    <button
-                        onClick={() => onToggleGroupStatus(group.id, group.status === 'active' ? 'blocked' : 'active')}
-                        className={`p-2.5 rounded-lg text-white transition duration-150 shadow-md h-full ${
-                            group.status === 'active' ? 'bg-orange-600 hover:bg-orange-700' : 'bg-[#A60E07] hover:opacity-90'
-                        }`}
-                        disabled={updateGroupLoading}
-                    >
-                        {group.status === 'active' ? <LockClosedIcon className="h-5 w-5" /> : <CheckIcon className="h-5 w-5" />}
-                    </button>
-                )}
+                    {!isDraft && (
+                        <button
+                            onClick={() => onToggleGroupStatus(group.id, group.status === 'active' ? 'blocked' : 'active')}
+                            className={`flex min-h-[42px] min-w-[42px] items-center justify-center rounded-lg p-2.5 text-white shadow-md transition duration-150 ${
+                                group.status === 'active' ? 'bg-orange-600 hover:bg-orange-700' : 'bg-[#A60E07] hover:opacity-90'
+                            }`}
+                            disabled={updateGroupLoading}
+                        >
+                            {group.status === 'active' ? <LockClosedIcon className="h-5 w-5" /> : <CheckIcon className="h-5 w-5" />}
+                        </button>
+                    )}
+                </div>
             </div>
         </div>
     );
@@ -369,21 +373,22 @@ function AdminGroupsPage() {
         });
     };
 
-    if (isLoading) return <div className="p-10 text-center font-bold text-[#A60E07] text-xl animate-pulse">Guruhlar yuklanmoqda...</div>;
-    if (error) return <div className="p-10 text-center text-red-600 font-bold">Xatolik yuz berdi!</div>;
+    if (isLoading) return <div className="p-6 text-center text-base font-bold text-[#A60E07] animate-pulse sm:p-10 sm:text-xl">Guruhlar yuklanmoqda...</div>;
+    if (error) return <div className="p-6 text-center font-bold text-red-600 sm:p-10">Xatolik yuz berdi!</div>;
 
     const tabClass = (tabName) =>
-        `px-6 py-2 text-center text-lg font-bold border-b-4 transition duration-200 cursor-pointer
+        `px-3 py-2 text-center text-sm font-bold border-b-4 transition duration-200 cursor-pointer whitespace-nowrap sm:px-6 sm:text-base
          ${currentTab === tabName
             ? 'border-[#A60E07] text-[#A60E07] bg-red-50'
             : 'border-transparent text-gray-500 hover:text-[#A60E07] hover:border-gray-300'}`;
 
     return (
-        <div className="min-h-full p-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-1">Guruhlarni Boshqarish Paneli</h1>
-            <p className="text-lg text-gray-500 mb-6">Jami {backendData?.success ? backendData.count || 0 : 0} ta guruh mavjud</p>
+        <div className="min-h-full p-3 sm:p-4 md:p-6">
+            <h1 className="mb-1 text-2xl font-bold text-gray-900 sm:text-3xl">Guruhlarni Boshqarish Paneli</h1>
+            <p className="mb-6 text-sm text-gray-500 sm:text-lg">Jami {backendData?.success ? backendData.count || 0 : 0} ta guruh mavjud</p>
 
-            <div className="flex border-b border-gray-200 mb-6">
+            <div className="mb-6 overflow-x-auto border-b border-gray-200">
+                <div className="flex min-w-max">
                 <button onClick={() => setCurrentTab('active')} className={tabClass('active')}>
                     <UsersIcon className="h-5 w-5 inline mr-2" />
                     Faol Guruhlar
@@ -396,18 +401,19 @@ function AdminGroupsPage() {
                     <LockClosedIcon className="h-5 w-5 inline mr-2" />
                     Yopilgan Guruhlar
                 </button>
+                </div>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-8 p-4 bg-white rounded-xl shadow-sm border border-gray-100">
-                <div className="flex flex-wrap items-center gap-3">
-                    <FiFilter className="h-5 w-5 text-[#A60E07]" />
-                    <div className="min-w-[200px]">
+            <div className="mb-8 flex flex-col gap-4 rounded-xl border border-gray-100 bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center lg:w-auto">
+                    <FiFilter className="hidden h-5 w-5 text-[#A60E07] sm:block" />
+                    <div className="w-full sm:min-w-[200px]">
                         <TeacherSelect
                             value={selectedTeacher}
                             onChange={setSelectedTeacher}
                         />
                     </div>
-                    <div className="min-w-[200px]">
+                    <div className="w-full sm:min-w-[200px]">
                         <SubjectsSelect
                             value={selectedSubject}
                             onChange={setSelectedSubject}
@@ -417,13 +423,13 @@ function AdminGroupsPage() {
                 </div>
 
                 <AdminNewGroupModal onSuccess={() => setCurrentTab('draft')}>
-                    <button className="flex items-center px-4 py-2.5 rounded-lg text-white bg-[#A60E07] hover:opacity-90 transition text-sm font-bold shadow-md">
+                    <button className="flex w-full items-center justify-center rounded-lg bg-[#A60E07] px-4 py-2.5 text-sm font-bold text-white shadow-md transition hover:opacity-90 lg:w-auto">
                         <PlusCircleIcon className="h-5 w-5 mr-1" /> Yangi Guruh Ochish
                     </button>
                 </AdminNewGroupModal>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-3">
                 {groups.map((group) => (
                     <GroupCard
                         key={group.id}

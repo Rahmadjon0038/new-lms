@@ -157,14 +157,14 @@ const AdminExpensesPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6">
-      <div className="mb-6 flex items-center justify-between gap-3">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Rasxodlar</h1>
+          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Rasxodlar</h1>
           <p className="text-sm text-gray-600">Oyni tanlang va rasxodlarni boshqaring</p>
         </div>
         <button
           onClick={() => setIsAddModalOpen(true)}
-          className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white sm:w-auto"
           style={{ backgroundColor: MAIN_COLOR }}
         >
           <PlusIcon className="h-4 w-4" />
@@ -221,14 +221,14 @@ const AdminExpensesPage = () => {
             <div className="space-y-2">
               {items.map((item) => (
                 <div key={item.id} className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold text-gray-900">{item.reason || item.title}</p>
                       <p className="text-xs text-gray-500">{item.expense_date}</p>
                     </div>
-                    <div className="shrink-0 text-right">
+                    <div className="shrink-0 text-left sm:text-right">
                       <p className="text-sm font-bold text-[#A60E07]">{formatCurrency(item.amount)}</p>
-                      <div className="mt-2 flex items-center justify-end gap-2">
+                      <div className="mt-2 flex items-center justify-start gap-2 sm:justify-end">
                         <button
                           type="button"
                           onClick={() => openEditModal(item)}

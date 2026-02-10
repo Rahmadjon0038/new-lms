@@ -154,3 +154,44 @@ export const useGetMonthlyAttendance = (group_id, month) => {
         enabled: !!group_id && !!month,
     });
 }
+
+// 6️⃣ Guruh darslari (auto-generate bilan)
+// GET /api/attendance/groups/{group_id}/lessons?month=YYYY-MM
+const getGroupLessons = async ({ group_id, month }) => {
+    const params = new URLSearchParams();
+    if (month) {
+        params.append('month', month);
+    }
+
+    const queryString = params.toString();
+    const response = await instance.get(
+        `/api/attendance/groups/${group_id}/lessons${queryString ? `?${queryString}` : ''}`
+    );
+    return response.data?.data ?? response.data;
+}
+
+export const useGetGroupLessons = (group_id, month) => {
+    return useQuery({
+        queryKey: ['group-lessons', group_id, month],
+        queryFn: () => getGroupLessons({ group_id, month }),
+        enabled: !!group_id,
+    });
+}
+
+// 7️⃣ Lesson sanasini o'zgartirish
+// PUT /api/attendance/lessons/{lesson_id}/date
+const updateLessonDate = async ({ lesson_id, date }) => {
+    const response = await instance.put(`/api/attendance/lessons/${lesson_id}/date`, { date });
+    return response.data;
+}
+
+export const useUpdateLessonDate = (group_id, month) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: updateLessonDate,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['group-lessons', group_id, month] });
+        },
+    });
+}

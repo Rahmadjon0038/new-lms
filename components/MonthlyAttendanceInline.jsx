@@ -91,7 +91,7 @@ const MonthlyStatusModal = ({ isOpen, onClose, student, groupId, currentMonth, u
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 bg-opacity-50">
       <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
-          Oylik Statusni O'zgartirish
+          Oylik Statusni O&apos;zgartirish
         </h3>
         
         <div className="mb-4 p-3 bg-gray-50 rounded">
@@ -118,14 +118,14 @@ const MonthlyStatusModal = ({ isOpen, onClose, student, groupId, currentMonth, u
               required
             >
               <option value="active">Faol (Active)</option>
-              <option value="stopped">To'xtatilgan (Stopped)</option>
+              <option value="stopped">To&apos;xtatilgan (Stopped)</option>
             </select>
           </div>
 
           {/* Update Type */}
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Qaysi oylarni o'zgartirish
+              Qaysi oylarni o&apos;zgartirish
             </label>
             <div className="space-y-2">
               <label className="flex items-center">
@@ -291,101 +291,161 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
     return `${day}.${month}.${year}`;
   };
 
+  const getWeekdayFull = (dateString) => {
+    if (!dateString) return '';
+    const [year, month, day] = dateString.split('-').map(Number);
+    if (!year || !month || !day) return '';
+    const date = new Date(year, month - 1, day);
+    const weekdays = ["Yakshanba", "Dushanba", "Seshanba", "Chorshanba", "Payshanba", "Juma", "Shanba"];
+    return weekdays[date.getDay()] || '';
+  };
+
+  const parseYmdDate = (dateString) => {
+    if (!dateString) return null;
+    const [year, month, day] = String(dateString).split('-').map(Number);
+    if (!year || !month || !day) return null;
+    return new Date(year, month - 1, day);
+  };
+
+  const isLessonWithinMembership = (lessonDate, membershipPeriods = []) => {
+    if (!Array.isArray(membershipPeriods) || membershipPeriods.length === 0) {
+      return true;
+    }
+
+    const lesson = parseYmdDate(lessonDate);
+    if (!lesson) return true;
+
+    return membershipPeriods.some((period) => {
+      const joinedAt = parseYmdDate(period?.joined_at);
+      const leftAt = parseYmdDate(period?.left_at);
+      if (!joinedAt) return false;
+      if (lesson < joinedAt) return false;
+      if (leftAt && lesson > leftAt) return false;
+      return true;
+    });
+  };
+
+  const renderAttendanceSymbol = (attendanceRecord, lessonDate, membershipPeriods = []) => {
+    const status = attendanceRecord?.status;
+    const isMarked = attendanceRecord?.is_marked;
+    const isInMembership = isLessonWithinMembership(lessonDate, membershipPeriods);
+
+    if (!isInMembership) {
+      return <span className="text-gray-400 text-xs">-</span>;
+    }
+    if (!attendanceRecord || isMarked === false) {
+      return (
+        <span className="inline-flex px-1.5 py-0.5 rounded bg-gray-100 text-[10px] font-medium text-gray-600">
+          Belgilanmagan
+        </span>
+      );
+    }
+    if (status === "keldi") {
+      return (
+        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-green-100 text-sm font-bold text-green-700">
+          ✓
+        </span>
+      );
+    }
+    if (status === "kelmadi") {
+      return (
+        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-red-100 text-sm font-bold text-red-700">
+          ✗
+        </span>
+      );
+    }
+    if (status === "kechikdi") {
+      return (
+        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-yellow-100 text-sm font-bold text-yellow-700">
+          •
+        </span>
+      );
+    }
+    return <span className="text-gray-400 text-xs">-</span>;
+  };
+
   return (
-    <div className="bg-white rounded-lg overflow-x-auto mt-6 sm:mt-8 md:mt-12 p-3 sm:p-4 md:p-6">
-        
-      {/* <div className="mb-4">
-        <div className="text-lg font-bold text-gray-800">{group?.name}</div>
-        <div className="text-sm text-gray-600">Oy: {stats?.month}</div>
-        <div className="text-sm text-gray-600">Jami darslar: {lessons.length}</div>
-        <div className="text-sm text-gray-600">Jami talabalar: {attendanceGrid.length}</div>
-        <div className="text-sm text-gray-600">O'qituvchi: {group?.teacher_name} ({group?.teacher_phone})</div>
-        <div className="text-sm text-gray-600">Fan: {group?.subject_name}</div>
-        {group?.schedule && (
-          <div className="text-sm text-gray-600">Dars vaqti: {group.schedule.days?.join(', ')} {group.schedule.time}</div>
-        )}
-      </div> */}
-    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
-      <h1 className="text-base sm:text-lg md:text-xl font-semibold text-gray-800">To'liq oylik davomat Xisoboti</h1>
-      <button 
-        onClick={handleExport}
-        className="bg-green-500 active:scale-90 px-3 sm:px-4 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium text-white hover:bg-green-600 transition-colors shadow-md whitespace-nowrap w-full sm:w-auto"
-      >
-        <span className="hidden sm:inline">Exelga export qilish</span>
-        <span className="sm:hidden">Export</span>
-      </button>
-    </div>
-      <div className="overflow-x-auto mt-3 sm:mt-4 -mx-3 sm:mx-0">
-        <table className="min-w-full">
+    <div className="mt-6 rounded-lg bg-white p-3 sm:mt-8 sm:p-4 md:mt-12 md:p-6">
+      <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center sm:gap-4">
+        <h1 className="text-base font-semibold text-gray-800 sm:text-lg md:text-xl">To&apos;liq oylik davomat Xisoboti</h1>
+        <button
+          onClick={handleExport}
+          className="w-full whitespace-nowrap rounded-md bg-green-500 px-3 py-1.5 text-xs font-medium text-white shadow-md transition-colors hover:bg-green-600 active:scale-90 sm:w-auto sm:px-4 sm:py-2 sm:text-sm"
+        >
+          <span className="hidden sm:inline">Exelga export qilish</span>
+          <span className="sm:hidden">Export</span>
+        </button>
+      </div>
+
+      {/* Table (all devices) */}
+      <div className="mt-4 overflow-x-auto">
+        <table className="min-w-[980px] w-full">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold text-gray-700 text-left border border-gray-400">#</th>
-              <th className="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold text-gray-700 text-left border border-gray-400 whitespace-nowrap">Talaba</th>
-              <th className="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold text-gray-700 text-center border border-gray-400 whitespace-nowrap">Holati</th>
-              {lessons.map(lesson => (
-                <th key={lesson.id} className="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-[9px] sm:text-[10px] md:text-xs font-semibold text-gray-700 text-center bg-gray-50 sticky top-0 z-10 border border-gray-400 whitespace-nowrap min-w-[80px] sm:min-w-[100px]">
-                  {formatDate(lesson.date)}
+              <th className="border border-gray-400 px-3 py-2 text-left text-xs font-semibold text-gray-700">#</th>
+              <th className="border border-gray-400 px-3 py-2 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">Talaba</th>
+              <th className="border border-gray-400 px-3 py-2 text-center text-xs font-semibold text-gray-700 whitespace-nowrap">Holati</th>
+              {lessons.map((lesson) => (
+                <th key={lesson.id} className="min-w-[100px] whitespace-nowrap border border-gray-400 px-3 py-2 text-center text-xs font-semibold text-gray-700">
+                  <div>{formatDate(lesson.date)}</div>
+                  <div className="text-[10px] font-medium text-gray-500">{getWeekdayFull(lesson.date)}</div>
                 </th>
               ))}
-              <th className="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold text-gray-700 text-center border border-gray-400 whitespace-nowrap">Statistika</th>
+              <th className="border border-gray-400 px-3 py-2 text-center text-xs font-semibold text-gray-700 whitespace-nowrap">Statistika</th>
             </tr>
           </thead>
           <tbody className="bg-white">
             {students.map((student, idx) => {
-              // Create a map of attendance records by lesson_id for quick lookup
               const attendanceMap = {};
-              student.attendance_records?.forEach(record => {
-                attendanceMap[record.lesson_id] = record.status;
+              student.attendance_records?.forEach((record) => {
+                attendanceMap[record.lesson_id] = record;
               });
 
               return (
                 <tr key={`${student.student_id}-${idx}`} className="hover:bg-gray-50">
-                  <td className="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs text-gray-600 border border-gray-400">{idx + 1}</td>
-                  <td className="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-medium text-gray-900 whitespace-nowrap border border-gray-400">
+                  <td className="border border-gray-400 px-3 py-2 text-xs text-gray-600">{idx + 1}</td>
+                  <td className="border border-gray-400 px-3 py-2 text-xs font-medium text-gray-900 whitespace-nowrap">
                     <div>
                       <div className="font-medium">{student.student_name}</div>
-                      <div className="text-[9px] sm:text-[10px] text-gray-500 mt-0.5">{student.phone}</div>
+                      <div className="mt-0.5 text-[10px] text-gray-500">{student.phone}</div>
                     </div>
                   </td>
-                  <td className="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-[9px] sm:text-[10px] md:text-xs text-center border border-gray-400">
-                    <div className="flex justify-center  items-center gap-1">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                  <td className="border border-gray-400 px-3 py-2 text-center text-xs">
+                    <div className="flex items-center justify-center gap-1">
+                      <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
                         student.monthly_status === "active" ? "bg-green-100 text-green-800" :
                         student.monthly_status === "stopped" ? "bg-orange-100 text-orange-800" :
                         "bg-gray-100 text-gray-800"
                       }`}>
                         {student.monthly_status === "active" ? "Faol" : student.monthly_status === "stopped" ? "To'xtagan" : student.monthly_status}
                       </span>
-                      <button
-                        onClick={() => setStatusModal({ isOpen: true, student })}
-                        className="text-xs px-2 py-0.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors "
-                        title="Statusni o'zgartirish"
-                      >
-                        O'zgartirish
-                      </button>
+                      {isAdmin ? (
+                        <button
+                          onClick={() => setStatusModal({ isOpen: true, student })}
+                          className="rounded px-2 py-0.5 text-xs text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-800"
+                          title="Statusni o'zgartirish"
+                        >
+                          O&apos;zgartirish
+                        </button>
+                      ) : null}
                     </div>
                   </td>
-                  {lessons.map(lesson => {
-                    const status = attendanceMap[lesson.id];
-                    return (
-                      <td key={lesson.id} className="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-center border border-gray-400">
-                        {status === "keldi" ? (
-                          <p className="text-green-600 text-sm sm:text-base font-bold">✓</p>
-                        ) : status === "kelmadi" ? (
-                          <p className="text-red-600 text-sm sm:text-base font-bold">✗</p>
-                        ) : (
-                          <span className="text-gray-400 text-xs sm:text-sm">-</span>
-                        )}
-                      </td>
-                    );
-                  })}
-                  <td className="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-[9px] sm:text-[10px] md:text-xs text-center border border-gray-400">
+                  {lessons.map((lesson) => (
+                    <td key={lesson.id} className="border border-gray-400 px-3 py-2 text-center">
+                      {renderAttendanceSymbol(
+                        attendanceMap[lesson.id],
+                        lesson.date,
+                        student.membership_periods || []
+                      )}
+                    </td>
+                  ))}
+                  <td className="border border-gray-400 px-3 py-2 text-center text-xs">
                     <div className="text-center">
-                      <div className="text-green-600 font-semibold">{student.statistics?.total_attended || student.total_present || 0}</div>
-                      <div className="text-red-600 font-semibold">{student.statistics?.total_missed || student.total_absent || 0}</div>
+                      <div className="font-semibold text-green-600">{student.statistics?.total_attended || student.total_present || 0}</div>
+                      <div className="font-semibold text-red-600">{student.statistics?.total_missed || student.total_absent || 0}</div>
                       <div className={`text-xs font-medium ${
-                        (student.statistics?.attendance_percentage || 0) >= 80 ? 'text-green-600' :
-                        (student.statistics?.attendance_percentage || 0) >= 60 ? 'text-orange-600' : 'text-red-600'
+                        (student.statistics?.attendance_percentage || 0) >= 80 ? "text-green-600" :
+                        (student.statistics?.attendance_percentage || 0) >= 60 ? "text-orange-600" : "text-red-600"
                       }`}>
                         {student.statistics?.attendance_percentage || 0}%
                       </div>

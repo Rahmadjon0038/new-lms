@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeftIcon, DocumentIcon, EyeIcon, PencilSquareIcon, PlusCircleIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { ArrowUpTrayIcon, ArrowLeftIcon, DocumentIcon, EyeIcon, PencilSquareIcon, PlusCircleIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
 import {
   useAdminCreateLesson,
@@ -221,62 +221,59 @@ const AdminGuideLevelPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6">
-      <div className="mb-6 flex items-center gap-3">
+      <div className="mb-6 flex items-start gap-3">
         <button onClick={() => router.push('/admin/guide')} className="rounded-xl bg-white p-2 shadow">
           <ArrowLeftIcon className="h-5 w-5 text-gray-700" />
         </button>
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">{level?.title || 'Level'}</h1>
+        <div className="min-w-0">
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 break-words">{level?.title || 'Level'}</h1>
         </div>
       </div>
 
       <div className="mb-6 rounded-xl bg-white p-4 sm:p-5 shadow-md border border-gray-100">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-slate-900">Main PDF guide</h2>
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="text-lg sm:text-xl font-semibold text-slate-900">Main PDF guide</h2>
           <span className={`text-sm px-3 py-1 rounded-full font-medium ${mainPdf ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
             {mainPdf ? 'PDF available' : 'PDF missing'}
           </span>
         </div>
 
-        <div className="rounded-lg border-2 border-dashed border-gray-200 p-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4 min-w-0">
-              <div className="rounded-lg bg-red-100 p-3">
-                <DocumentIcon className="h-8 w-8 text-red-600" />
+        {mainPdf ? (
+          <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-4 min-w-0">
+                <div className="rounded-xl bg-red-100 p-3">
+                  <DocumentIcon className="h-8 w-8 text-red-600" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-base sm:text-lg font-semibold text-slate-900 truncate">{mainPdf.file_name || 'Main PDF'}</h3>
+                  <p className="text-sm text-slate-600">PDF uploaded</p>
+                </div>
               </div>
-              <div className="min-w-0">
-                <h3 className="text-base sm:text-lg font-semibold text-slate-900 truncate">{mainPdf?.file_name || `${level?.title || 'Level'} - Main guide`}</h3>
-                <p className="text-sm text-slate-600">{mainPdf ? 'PDF uploaded' : 'Main PDF not uploaded yet'}</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              {mainPdf ? (
-                <>
-                  <Link
-                    href={`/admin/guide/${courseId}/${levelId}/main-pdf`}
-                    className="rounded-lg bg-[#A60E07] px-4 py-2 text-sm font-semibold text-white"
-                  >
-                    Open
-                  </Link>
-                  <button onClick={handleDeleteMainPdf} className="rounded-lg bg-red-50 px-3 py-2 text-red-700 hover:bg-red-100">
-                    <TrashIcon className="h-5 w-5" />
-                  </button>
-                </>
-              ) : (
-                <button onClick={() => setPdfModalOpen(true)} className="rounded-lg bg-[#A60E07] px-4 py-2 text-sm font-semibold text-white">
-                  Upload
+              <div className="flex w-full items-center gap-2 sm:w-auto">
+                <Link href={`/admin/guide/${courseId}/${levelId}/main-pdf`} className="rounded-lg bg-[#A60E07] px-4 py-2 text-sm font-semibold text-white">
+                  Open
+                </Link>
+                <button onClick={handleDeleteMainPdf} className="rounded-lg bg-red-50 px-3 py-2 text-red-700 hover:bg-red-100">
+                  <TrashIcon className="h-5 w-5" />
                 </button>
-              )}
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="rounded-xl border-2 border-dashed border-gray-300 bg-white p-6 text-center">
+            <p className="mb-3 text-sm text-gray-600">Main PDF not uploaded yet</p>
+            <button onClick={() => setPdfModalOpen(true)} className="rounded-lg bg-[#A60E07] px-4 py-2 text-sm font-semibold text-white">
+              Upload PDF
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="rounded-xl bg-white p-4 sm:p-5 shadow-md border border-gray-100">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-slate-900">Lesson list</h2>
-          <div className="flex items-center gap-2">
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="text-lg sm:text-xl font-semibold text-slate-900">Lesson list</h2>
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={handleSaveOrder}
               disabled={!hasOrderChanged || reorderLessonsMutation.isPending}
@@ -311,7 +308,7 @@ const AdminGuideLevelPage = () => {
                 draggingLessonId === lesson.id ? 'border-[#A60E07] bg-red-50' : 'border-gray-200'
               }`}
             >
-              <div className="flex items-center justify-between gap-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                 <div className="flex items-center gap-4 min-w-0">
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#A60E07] text-sm font-bold text-white">{idx + 1}</div>
                   <div className="min-w-0">
@@ -320,7 +317,7 @@ const AdminGuideLevelPage = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <button onClick={() => openEditLessonModal(lesson)} className="inline-flex items-center gap-1 rounded-lg bg-gray-100 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-200">
                     <PencilSquareIcon className="h-4 w-4" />
                     Edit
@@ -349,12 +346,31 @@ const AdminGuideLevelPage = () => {
         onSave={handleSaveMainPdf}
         loading={uploadMainPdfMutation.isPending}
       >
-        <input
-          type="file"
-          accept="application/pdf"
-          onChange={(e) => setPdfForm({ file: e.target.files?.[0] || null })}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-        />
+        <div className="space-y-3">
+          {pdfForm.file ? (
+            <div className="relative flex h-28 items-center gap-3 rounded-xl border border-gray-300 bg-gray-50 px-4">
+              <button
+                onClick={() => setPdfForm((p) => ({ ...p, file: null }))}
+                className="absolute right-2 top-2 rounded-full bg-red-500 p-1 text-white"
+              >
+                <XMarkIcon className="h-4 w-4" />
+              </button>
+              <DocumentIcon className="h-8 w-8 text-red-600" />
+              <p className="line-clamp-2 text-sm font-semibold text-gray-700">{pdfForm.file.name}</p>
+            </div>
+          ) : (
+            <label className="flex h-28 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#A60E07]/40 bg-white text-gray-600 hover:bg-gray-50">
+              <input
+                type="file"
+                accept="application/pdf"
+                onChange={(e) => setPdfForm((prev) => ({ ...prev, file: e.target.files?.[0] || null }))}
+                className="hidden"
+              />
+              <ArrowUpTrayIcon className="h-8 w-8 text-gray-400" />
+              <p className="text-sm font-semibold">PDF yuklash</p>
+            </label>
+          )}
+        </div>
       </Modal>
 
       <Modal

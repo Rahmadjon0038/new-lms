@@ -1,5 +1,6 @@
 "use client";
-import React, { useState, useMemo } from "react";
+/* eslint-disable react/no-unescaped-entities */
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
     CalendarIcon,
@@ -15,6 +16,7 @@ import {
     CreditCardIcon,
     InformationCircleIcon,
     MagnifyingGlassIcon,
+    FunnelIcon,
     EyeIcon,
     ArrowDownTrayIcon,
     TrashIcon,
@@ -42,7 +44,6 @@ const StudentPayments = () => {
     
     const [filters, setFilters] = useState({
         month: new Date().toISOString().slice(0, 7), // Current month (YYYY-MM)
-        group_id: '',
         payment_status: 'all',
         teacher_id: '',
         subject_id: ''
@@ -53,6 +54,8 @@ const StudentPayments = () => {
     );
 
     const [searchTerm, setSearchTerm] = useState('');
+    const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+    const filterDropdownRef = useRef(null);
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [showNotificationPopup, setShowNotificationPopup] = useState(true); // Always start as true
@@ -86,20 +89,6 @@ const StudentPayments = () => {
 
     const students = paymentsData?.data?.students || [];
     const apiSummary = paymentsData?.data?.summary || {};
-
-    const groups = useMemo(() => {
-        const map = new Map();
-        students.forEach((student) => {
-            if (!student.group_id || !student.group_name) return;
-            if (!map.has(student.group_id)) {
-                map.set(student.group_id, {
-                    id: student.group_id,
-                    name: student.group_name
-                });
-            }
-        });
-        return Array.from(map.values());
-    }, [students]);
 
     // Filter students based on search term
     const filteredStudents = useMemo(() => {
@@ -150,9 +139,6 @@ const StudentPayments = () => {
                 month: filters.month,
             });
 
-            if (filters.group_id) {
-                params.append('group_id', filters.group_id);
-            }
             if (filters.payment_status !== 'all') {
                 params.append('payment_status', filters.payment_status);
             }
@@ -250,7 +236,6 @@ const StudentPayments = () => {
     const clearFilters = () => {
         setFilters({
             month: new Date().toISOString().slice(0, 7),
-            group_id: '',
             payment_status: 'all',
             teacher_id: '',
             subject_id: ''
@@ -259,7 +244,7 @@ const StudentPayments = () => {
     };
 
     // Check if any filter is active
-    const hasActiveFilters = filters.group_id || filters.payment_status !== 'all' || searchTerm.trim() || filters.teacher_id || filters.subject_id;
+    const hasActiveFilters = filters.payment_status !== 'all' || searchTerm.trim() || filters.teacher_id || filters.subject_id;
 
     // Clear student month data
     const handleClearStudentMonth = async () => {
@@ -358,9 +343,35 @@ const StudentPayments = () => {
         }));
     };
 
+    useEffect(() => {
+        if (!showFilterDropdown) return undefined;
+
+        const handleOutsideClick = (event) => {
+            if (filterDropdownRef.current && !filterDropdownRef.current.contains(event.target)) {
+                setShowFilterDropdown(false);
+            }
+        };
+
+        const handleEscape = (event) => {
+            if (event.key === 'Escape') {
+                setShowFilterDropdown(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleOutsideClick);
+        document.addEventListener('touchstart', handleOutsideClick);
+        document.addEventListener('keydown', handleEscape);
+
+        return () => {
+            document.removeEventListener('mousedown', handleOutsideClick);
+            document.removeEventListener('touchstart', handleOutsideClick);
+            document.removeEventListener('keydown', handleEscape);
+        };
+    }, [showFilterDropdown]);
+
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-gray-50 p-6">
+            <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6">
                 <div className="max-w-7xl mx-auto">
                     <div className="text-center py-12">
                         <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: MAIN_COLOR }}></div>
@@ -373,7 +384,7 @@ const StudentPayments = () => {
 
     if (error) {
         return (
-            <div className="min-h-screen bg-gray-50 p-6">
+            <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6">
                 <div className="max-w-7xl mx-auto">
                     <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
                         <p className="font-semibold">Xatolik yuz berdi:</p>
@@ -385,25 +396,25 @@ const StudentPayments = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6">
+        <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6">
             <div className="px-2">
                 {/* Header */}
-                <div className="mb-6 flex items-center justify-between">
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="max-w-2xl">
+                        <h1 className="mb-2 text-xl font-bold text-gray-900 sm:text-2xl">
                             Talabalar oylik to'lovlari
                         </h1>
-                        <p className="text-gray-600">
+                        <p className="text-sm text-gray-600 sm:text-base">
                             Talabalarning oylik to'lov ma'lumotlari va statistikasi
                         </p>
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex items-center gap-3">
+                    <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 lg:w-auto lg:grid-cols-3 lg:gap-3">
                         <button
                             onClick={handleCreateSnapshot}
                             disabled={snapshotLoading}
-                            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg hover:opacity-90 focus:ring-2 focus:ring-offset-2 transition-colors disabled:opacity-50 bg-green-600"
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90 focus:ring-2 focus:ring-offset-2 disabled:opacity-50"
                             title="Yangi oy uchun to'lov jadvali yaratish"
                         >
                             {snapshotLoading ? (
@@ -422,7 +433,7 @@ const StudentPayments = () => {
                             <button
                                 onClick={handleCreateSnapshotsForNew}
                                 disabled={!filters.month || createSnapshotsMutation.isPending}
-                                className="group relative inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg hover:opacity-90 focus:ring-2 focus:ring-offset-2 transition-all duration-300 disabled:opacity-50 bg-green-600 hover:scale-105 hover:shadow-lg"
+                                className="group relative inline-flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition-all duration-300 hover:scale-[1.01] hover:opacity-90 hover:shadow-lg focus:ring-2 focus:ring-offset-2 disabled:opacity-50"
                                 title="Yangi qo'shilgan talabalar uchun snapshot yaratish"
                             >
                                 {createSnapshotsMutation.isPending ? (
@@ -446,7 +457,7 @@ const StudentPayments = () => {
                             {/* Notification Popup - Minimalistic design */}
                             {showNotificationPopup && newStudentsNotification?.data?.count > 0 && (
                                 <div 
-                                    className="absolute top-full left-0 mt-2 w-64 bg-white rounded-lg border border-gray-300 p-4 z-50 shadow-sm"
+                                    className="absolute left-0 top-full z-50 mt-2 w-64 max-w-[85vw] rounded-lg border border-gray-300 bg-white p-4 shadow-sm sm:w-72"
                                 >
                                     <div className="flex items-center justify-between mb-2">
                                         <div className="flex items-center gap-2">
@@ -477,7 +488,7 @@ const StudentPayments = () => {
                         </div>
                         <button
                             onClick={handleExport}
-                            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg hover:opacity-90 focus:ring-2 focus:ring-offset-2 transition-colors"
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90 focus:ring-2 focus:ring-offset-2"
                             style={{ backgroundColor: MAIN_COLOR, focusRingColor: MAIN_COLOR }}
                         >
                             <ArrowDownTrayIcon className="h-4 w-4" />
@@ -486,251 +497,189 @@ const StudentPayments = () => {
                     </div>
                 </div>
 
-                {/* Filters */}
-                <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+                {/* Statistics Cards - Display Only */}
+                {stats.total_students > 0 && (
+                    <div className="mb-5 grid grid-cols-2 gap-2 sm:mb-6 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 lg:gap-4">
 
-                    {/* Status Filter Buttons */}
-                    <div className="mb-6">
-                        <label className="block text-sm font-medium text-gray-700 mb-3">
-                            To'lov holati:
-                        </label>
-                        <div className="flex flex-wrap gap-2">
-                            {statusTabs.map((status) => (
-                                <button
-                                    key={status.value}
-                                    onClick={() => handleFilterChange('payment_status', status.value)}
-                                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${filters.payment_status === status.value
-                                        ? 'text-white shadow-md'
-                                        : 'text-gray-700 bg-gray-100 hover:bg-gray-200'
-                                        }`}
-                                    style={filters.payment_status === status.value ? { backgroundColor: MAIN_COLOR } : {}}
-                                >
-                                    {status.label}
-                                </button>
-                            ))}
+                        <div className="rounded-lg border-l-4 border-green-500 bg-white p-3 shadow-md sm:p-4">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-[11px] font-medium uppercase tracking-wide text-gray-500 sm:text-xs">To'liq to'laganlar</p>
+                                    <p className="mt-1 text-xl font-bold text-green-600 sm:text-2xl">{stats.paid}</p>
+                                </div>
+                                <CheckCircleIcon className="h-6 w-6 text-green-400 sm:h-8 sm:w-8" />
+                            </div>
+                        </div>
+
+                        <div className="rounded-lg border-l-4 border-yellow-500 bg-white p-3 shadow-md sm:p-4">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-[11px] font-medium uppercase tracking-wide text-gray-500 sm:text-xs">Qisman to'laganlar</p>
+                                    <p className="mt-1 text-xl font-bold text-yellow-600 sm:text-2xl">{stats.partial}</p>
+                                </div>
+                                <ClockIcon className="h-6 w-6 text-yellow-400 sm:h-8 sm:w-8" />
+                            </div>
+                        </div>
+
+                        <div className="rounded-lg border-l-4 border-red-500 bg-white p-3 shadow-md sm:p-4">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-[11px] font-medium uppercase tracking-wide text-gray-500 sm:text-xs">To'lamaganlar</p>
+                                    <p className="mt-1 text-xl font-bold text-red-600 sm:text-2xl">{stats.unpaid}</p>
+                                </div>
+                                <XCircleIcon className="h-6 w-6 text-red-400 sm:h-8 sm:w-8" />
+                            </div>
+                        </div>
+
+                        <div className="rounded-lg border-l-4 border-indigo-500 bg-white p-3 shadow-md sm:p-4">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-[11px] font-medium uppercase tracking-wide text-gray-500 sm:text-xs">Umumiy kerak</p>
+                                    <p className="mt-1 text-sm font-bold text-indigo-600 sm:text-lg">{formatCurrency(stats.total_expected)}</p>
+                                </div>
+                                <CurrencyDollarIcon className="h-6 w-6 text-indigo-400 sm:h-8 sm:w-8" />
+                            </div>
+                        </div>
+
+                        <div className="rounded-lg border-l-4 border-emerald-500 bg-white p-3 shadow-md sm:p-4">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-[11px] font-medium uppercase tracking-wide text-gray-500 sm:text-xs">Yig'ilgan summa</p>
+                                    <p className="mt-1 text-sm font-bold text-emerald-600 sm:text-lg">{formatCurrency(stats.total_collected)}</p>
+                                </div>
+                                <CheckCircleIcon className="h-6 w-6 text-emerald-400 sm:h-8 sm:w-8" />
+                            </div>
+                        </div>
+
+                        <div className="rounded-lg border-l-4 border-rose-500 bg-white p-3 shadow-md sm:p-4">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-[11px] font-medium uppercase tracking-wide text-gray-500 sm:text-xs">
+                                        {stats.total_debt < 0 ? 'Ortiqcha' : 'Umumiy qarz'}
+                                    </p>
+                                    <p className={`mt-1 text-sm font-bold sm:text-lg ${stats.total_debt < 0 ? 'text-blue-600' : 'text-rose-600'}`}>
+                                        {stats.total_debt < 0 ? '-' : ''}{formatCurrency(Math.abs(stats.total_debt))}
+                                    </p>
+                                </div>
+                                <ExclamationTriangleIcon className={`h-6 w-6 sm:h-8 sm:w-8 ${stats.total_debt < 0 ? 'text-blue-400' : 'text-rose-400'}`} />
+                            </div>
                         </div>
                     </div>
+                )}
 
-                    {/* Other Filters */}
-                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-
-                        {/* Search Input - First Column */}
-                        <div className="lg:col-span-1">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Qidiruv:
-                            </label>
-                            <div className="relative">
-                                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                {/* Filters */}
+                <div className="mb-6 rounded-lg bg-white p-4 shadow-md sm:p-6">
+                    <div className="relative" ref={filterDropdownRef}>
+                        <div className="flex items-center gap-2">
+                            <div className="relative flex-1">
+                                <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                                 <input
                                     type="text"
                                     placeholder="Ism, telefon, guruh..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full pl-9 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition-colors text-sm"
+                                    className="w-full rounded-lg border border-gray-300 py-2 pl-9 pr-8 text-sm transition-colors focus:border-transparent focus:ring-2"
                                     style={{ focusRingColor: MAIN_COLOR }}
                                 />
                                 {searchTerm && (
                                     <button
                                         onClick={() => setSearchTerm('')}
-                                        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors text-xs"
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 transition-colors hover:text-gray-600"
                                     >
                                         ✕
                                     </button>
                                 )}
                             </div>
-                        </div>
-
-                        {/* Month Filter */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Oy:
-                            </label>
-                            <input
-                                type="month"
-                                value={filters.month}
-                                onChange={(e) => handleFilterChange('month', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
-                                style={{ focusRingColor: MAIN_COLOR }}
-                            />
-                        </div>
-
-                        {/* Group Filter */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Guruh:
-                            </label>
-                            <select
-                                value={filters.group_id}
-                                onChange={(e) => handleFilterChange('group_id', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
-                                style={{ focusRingColor: MAIN_COLOR }}
+                            <button
+                                type="button"
+                                onClick={() => setShowFilterDropdown((prev) => !prev)}
+                                className="inline-flex h-10 items-center justify-center gap-1 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
                             >
-                                <option value="">Barcha guruhlar</option>
-                                {groups.map((group) => (
-                                    <option key={group.id} value={group.id}>
-                                        {group.name}
-                                    </option>
-                                ))}
-                            </select>
+                                <FunnelIcon className="h-4 w-4" />
+                                Filter
+                            </button>
                         </div>
 
-                        {/* Teacher Filter */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                O'qituvchi:
-                            </label>
-                            <select
-                                value={filters.teacher_id}
-                                onChange={(e) => handleFilterChange('teacher_id', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
-                                style={{ focusRingColor: MAIN_COLOR }}
-                            >
-                                <option value="">Barcha o'qituvchilar</option>
-                                {teachers.map((teacher) => (
-                                    <option key={teacher.id} value={teacher.id}>
-                                        {teacher.name} {teacher.surname}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
+                        {showFilterDropdown && (
+                            <div className="absolute right-0 z-20 mt-2 w-full rounded-lg border border-gray-200 bg-white p-3 shadow-lg sm:w-[680px]">
+                                <div className="mb-4">
+                                    <label className="mb-2 block text-sm font-medium text-gray-700">To'lov holati:</label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {statusTabs.map((status) => (
+                                            <button
+                                                key={status.value}
+                                                onClick={() => handleFilterChange('payment_status', status.value)}
+                                                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors sm:text-sm ${filters.payment_status === status.value
+                                                    ? 'text-white shadow-md'
+                                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                                    }`}
+                                                style={filters.payment_status === status.value ? { backgroundColor: MAIN_COLOR } : {}}
+                                            >
+                                                {status.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
 
-                        {/* Subject Filter */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Fan:
-                            </label>
-                            <SubjectsSelect
-                                value={filters.subject_id}
-                                onChange={(value) => handleFilterChange('subject_id', value)}
-                                placeholder="Barcha fanlar"
-                                className="w-full"
-                                showAll={false}
-                            />
-                        </div>
+                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                                    <div>
+                                        <label className="mb-1.5 block text-xs font-medium text-gray-700 sm:text-sm">Oy:</label>
+                                        <input
+                                            type="month"
+                                            value={filters.month}
+                                            onChange={(e) => handleFilterChange('month', e.target.value)}
+                                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2"
+                                            style={{ focusRingColor: MAIN_COLOR }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="mb-1.5 block text-xs font-medium text-gray-700 sm:text-sm">O'qituvchi:</label>
+                                        <select
+                                            value={filters.teacher_id}
+                                            onChange={(e) => handleFilterChange('teacher_id', e.target.value)}
+                                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2"
+                                            style={{ focusRingColor: MAIN_COLOR }}
+                                        >
+                                            <option value="">Barcha o'qituvchilar</option>
+                                            {teachers.map((teacher) => (
+                                                <option key={teacher.id} value={teacher.id}>
+                                                    {teacher.name} {teacher.surname}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="mb-1.5 block text-xs font-medium text-gray-700 sm:text-sm">Fan:</label>
+                                        <SubjectsSelect
+                                            value={filters.subject_id}
+                                            onChange={(value) => handleFilterChange('subject_id', value)}
+                                            placeholder="Barcha fanlar"
+                                            className="w-full"
+                                            showAll={false}
+                                        />
+                                    </div>
+                                </div>
 
-                        {/* Clear Filters Button */}
-                        {hasActiveFilters && (
-                            <div className="flex items-end">
-                                <button
-                                    onClick={clearFilters}
-                                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-offset-2 transition-colors h-10"
-                                    style={{ '--tw-ring-color': MAIN_COLOR }}
-                                >
-                                    <XCircleIcon className="h-4 w-4" />
-                                    Filtrlarni tozalash
-                                </button>
+                                {hasActiveFilters && (
+                                    <div className="mt-3 flex justify-end">
+                                        <button
+                                            onClick={clearFilters}
+                                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                                        >
+                                            <XCircleIcon className="h-4 w-4" />
+                                            Filtrlarni tozalash
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
                 </div>
 
-                {/* Statistics Cards - Display Only */}
-                {stats.total_students > 0 && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-
-                        {/* To'liq to'laganlar */}
-                        <div className="bg-white p-4 rounded-lg shadow-md border-l-4 border-green-500">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">To'liq to'laganlar</p>
-                                    <p className="text-2xl font-bold text-green-600 mt-1">{stats.paid}</p>
-                                </div>
-                                <CheckCircleIcon className="h-8 w-8 text-green-400" />
-                            </div>
-                        </div>
-
-                        {/* Qisman to'laganlar */}
-                        <div className="bg-white p-4 rounded-lg shadow-md border-l-4 border-yellow-500">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Qisman to'laganlar</p>
-                                    <p className="text-2xl font-bold text-yellow-600 mt-1">{stats.partial}</p>
-                                </div>
-                                <ClockIcon className="h-8 w-8 text-yellow-400" />
-                            </div>
-                        </div>
-
-                        {/* To'lamaganlar */}
-                        <div className="bg-white p-4 rounded-lg shadow-md border-l-4 border-red-500">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">To'lamaganlar</p>
-                                    <p className="text-2xl font-bold text-red-600 mt-1">{stats.unpaid}</p>
-                                </div>
-                                <XCircleIcon className="h-8 w-8 text-red-400" />
-                            </div>
-                        </div>
-
-                        {/* Umumiy kerakli summa */}
-                        <div className="bg-white p-4 rounded-lg shadow-md border-l-4 border-indigo-500">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Umumiy kerak</p>
-                                    <p className="text-lg font-bold text-indigo-600 mt-1">{formatCurrency(stats.total_expected)}</p>
-                                </div>
-                                <CurrencyDollarIcon className="h-8 w-8 text-indigo-400" />
-                            </div>
-                        </div>
-
-                        {/* Umumiy to'langan */}
-                        <div className="bg-white p-4 rounded-lg shadow-md border-l-4 border-emerald-500">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Yig'ilgan summa</p>
-                                    <p className="text-lg font-bold text-emerald-600 mt-1">{formatCurrency(stats.total_collected)}</p>
-                                </div>
-                                <CheckCircleIcon className="h-8 w-8 text-emerald-400" />
-                            </div>
-                        </div>
-
-                        {/* Umumiy qarz */}
-                        <div className="bg-white p-4 rounded-lg shadow-md border-l-4 border-rose-500">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                                        {stats.total_debt < 0 ? 'Ortiqcha' : 'Umumiy qarz'}
-                                    </p>
-                                    <p className={`text-lg font-bold mt-1 ${stats.total_debt < 0 ? 'text-blue-600' : 'text-rose-600'}`}>
-                                        {stats.total_debt < 0 ? '-' : ''}{formatCurrency(Math.abs(stats.total_debt))}
-                                    </p>
-                                </div>
-                                <ExclamationTriangleIcon className={`h-8 w-8 ${stats.total_debt < 0 ? 'text-blue-400' : 'text-rose-400'}`} />
-                            </div>
-                        </div>
-
-                        {/* Chegirmali talabalar */}
-                        {stats.students_with_discounts > 0 && (
-                            <div className="bg-white p-4 rounded-lg shadow-md border-l-4 border-orange-500">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Chegirmali talabalar</p>
-                                        <p className="text-2xl font-bold text-orange-600 mt-1">{stats.students_with_discounts}</p>
-                                    </div>
-                                    <UserIcon className="h-8 w-8 text-orange-400" />
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Umumiy chegirma */}
-                        {stats.total_discount > 0 && (
-                            <div className="bg-white p-4 rounded-lg shadow-md border-l-4 border-amber-500">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Umumiy chegirma</p>
-                                        <p className="text-lg font-bold text-amber-600 mt-1">{formatCurrency(stats.total_discount)}</p>
-                                    </div>
-                                    <CurrencyDollarIcon className="h-8 w-8 text-amber-400" />
-                                </div>
-                            </div>
-                        )}
-
-                    </div>
-                )}
-
                 {/* Results */}
                 <div className="bg-white rounded-lg shadow-md">
-                    <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-                        <h2 className="text-lg font-semibold text-gray-800">
+                    <div className="flex flex-col gap-2 border-b border-gray-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                        <h2 className="text-base font-semibold text-gray-800 sm:text-lg">
                             To'lov ma'lumotlari ({students.length} ta)
                         </h2>
                         {/* {stats.total_expected > 0 && (
@@ -754,7 +703,83 @@ const StudentPayments = () => {
 
                     <div className="overflow-x-auto">
                         {filteredStudents.length > 0 ? (
-                            <table className="min-w-full divide-y divide-gray-200">
+                            <>
+                            <div className="space-y-3 p-3 sm:p-4 lg:hidden">
+                                {filteredStudents.map((student, index) => (
+                                    <div key={`${student.student_id}-${student.group_id}-${index}`} className="rounded-lg border border-gray-200 p-3">
+                                        <div className="mb-2 flex items-start justify-between gap-2">
+                                            <div className="min-w-0">
+                                                <p className="text-xs text-gray-400">#{index + 1}</p>
+                                                <p className="text-sm font-semibold text-gray-900">
+                                                    {student.student_name} {student.student_surname}
+                                                </p>
+                                                <p className="text-xs text-gray-500">{student.student_phone}</p>
+                                            </div>
+                                            {getStatusBadge(student.payment_status)}
+                                        </div>
+                                        <div className="space-y-1 text-xs text-gray-700">
+                                            <p><span className="text-gray-500">Guruh:</span> {student.group_name}</p>
+                                            <p><span className="text-gray-500">Fan:</span> {student.subject_name}</p>
+                                            <p><span className="text-gray-500">O'qituvchi:</span> {student.teacher_name}</p>
+                                            <p><span className="text-gray-500">Kerak:</span> {formatCurrency(parseFloat(student.effective_required || student.required_amount))}</p>
+                                            <p><span className="text-gray-500">To'langan:</span> <span className="font-semibold text-green-600">{formatCurrency(parseFloat(student.paid_amount))}</span></p>
+                                            {parseFloat(student.debt_amount) !== 0 ? (
+                                                <p>
+                                                    <span className="text-gray-500">{parseFloat(student.debt_amount) < 0 ? 'Ortiqcha:' : 'Qarz:'}</span>{" "}
+                                                    <span className={`font-semibold ${parseFloat(student.debt_amount) < 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                                                        {parseFloat(student.debt_amount) < 0 ? '-' : ''}{formatCurrency(Math.abs(parseFloat(student.debt_amount)))}
+                                                    </span>
+                                                </p>
+                                            ) : null}
+                                        </div>
+                                        <div className="mt-3 grid grid-cols-2 gap-2">
+                                            <button
+                                                onClick={() => {
+                                                    setSelectedStudent(student);
+                                                    setShowPaymentModal(true);
+                                                }}
+                                                className="inline-flex items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-white"
+                                                style={{ backgroundColor: MAIN_COLOR }}
+                                            >
+                                                <CreditCardIcon className="h-3 w-3" />
+                                                To'lov
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setSelectedStudent(student);
+                                                    setShowDiscountModal(true);
+                                                }}
+                                                className="inline-flex items-center justify-center gap-1 rounded-lg bg-orange-100 px-2 py-1.5 text-xs font-medium text-orange-700"
+                                            >
+                                                <PlusCircleIcon className="h-3 w-3" />
+                                                Chegirma
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setSelectedStudent(student);
+                                                    setShowAttendanceModal(true);
+                                                }}
+                                                className="inline-flex items-center justify-center gap-1 rounded-lg bg-blue-100 px-2 py-1.5 text-xs font-medium text-blue-700"
+                                            >
+                                                <EyeIcon className="h-3 w-3" />
+                                                Davomat
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setSelectedStudent(student);
+                                                    setShowClearModal(true);
+                                                }}
+                                                className="inline-flex items-center justify-center gap-1 rounded-lg bg-red-100 px-2 py-1.5 text-xs font-medium text-red-700"
+                                            >
+                                                <TrashIcon className="h-3 w-3" />
+                                                Tozalash
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <table className="hidden min-w-[1100px] w-full divide-y divide-gray-200 lg:table">
                                 <thead className="bg-gray-50">
                                     <tr>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -994,6 +1019,7 @@ const StudentPayments = () => {
                                     ))}
                                 </tbody>
                             </table>
+                            </>
                         ) : (
                             <div className="text-center py-12">
                                 <CurrencyDollarIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
@@ -1045,10 +1071,10 @@ const StudentPayments = () => {
                 {/* Payment History Modal */}
                 {showPaymentHistoryModal && selectedStudent && (
                     <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center z-50 p-4">
-                        <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[85vh] overflow-hidden">
+                            <div className="max-h-[85vh] w-full max-w-4xl overflow-hidden rounded-xl bg-white shadow-2xl">
                             {/* Header */}
                             <div className="px-6 py-4 border-b border-gray-200" style={{ backgroundColor: `${MAIN_COLOR}10` }}>
-                                <div className="flex items-center justify-between">
+                                <div className="flex items-start justify-between gap-3">
                                     <div>
                                         <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                                             <CreditCardIcon className="h-5 w-5" style={{ color: MAIN_COLOR }} />
@@ -1240,7 +1266,7 @@ const StudentPayments = () => {
                             <div className="px-6 pb-6">
                                 {/* Student Info */}
                                 <div className="bg-gray-50 rounded-xl p-4 mb-5">
-                                    <div className="grid grid-cols-2 gap-3 text-sm">
+                                    <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
                                         <div className="flex gap-2">
                                             <span className="text-gray-500">Talaba:</span>
                                             <p className="font-medium text-gray-900">

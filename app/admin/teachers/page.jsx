@@ -95,7 +95,7 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText,
           </div>
           <h3 className="text-xl font-bold text-gray-800 mb-2">{title}</h3>
           <p className="text-gray-600 mb-6">{message}</p>
-          <div className="flex gap-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
             <button
               onClick={onClose}
               className="flex-1 py-2.5 rounded-xl font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition"
@@ -542,14 +542,14 @@ function TeacherCard({ teacher, onEdit, onDelete, onStatusChange, notify }) {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-shadow duration-300">
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center space-x-3">
+    <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-lg transition-shadow duration-300 hover:shadow-xl sm:p-6">
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-center space-x-3">
           <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center">
             <UserIcon className="h-6 w-6 text-white" />
           </div>
-          <div>
-            <h3 className="text-lg font-bold text-gray-900">
+          <div className="min-w-0">
+            <h3 className="text-base font-bold text-gray-900 sm:text-lg break-words">
               {teacher.name} {teacher.surname}
             </h3>
             <p className="text-sm text-gray-600">ID: {teacher.id}</p>
@@ -658,9 +658,9 @@ function TeacherCard({ teacher, onEdit, onDelete, onStatusChange, notify }) {
       </div>
 
       {/* Action tugmalari */}
-      <div className="mt-4 pt-4 border-t border-gray-100 relative">
-        <div className="flex justify-between items-center">
-          <div className="flex flex-wrap gap-4 items-center text-xs text-gray-500">
+      <div className="relative mt-4 border-t border-gray-100 pt-4">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-gray-500">
             <span>Ro'yxatga olingan: {formatDate(teacher.registrationDate)}</span>
             {teacher.terminationDate && (
               <span className="text-red-500">Ishdan bo'shatilgan: {formatDate(teacher.terminationDate)}</span>
@@ -686,7 +686,7 @@ function TeacherCard({ teacher, onEdit, onDelete, onStatusChange, notify }) {
                 />
 
                 {/* Menu */}
-                <div className="absolute right-0 top-full mt-1 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-20">
+                <div className="absolute right-0 top-full z-20 mt-1 w-56 rounded-lg border border-gray-200 bg-white py-2 shadow-lg">
                   <button
                     onClick={() => {
                       onEdit(teacher);
@@ -880,7 +880,7 @@ export default function TeachersPage() {
 
   if (isLoading) {
     return (
-      <div className="p-8 text-center">
+      <div className="p-4 text-center sm:p-8">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#A60E07] mx-auto mb-4"></div>
         <p className="text-lg font-medium text-gray-600">O'qituvchilar yuklanmoqda...</p>
       </div>
@@ -889,7 +889,7 @@ export default function TeachersPage() {
 
   if (error) {
     return (
-      <div className="p-8 text-center">
+      <div className="p-4 text-center sm:p-8">
         <div className="text-red-500 mb-4 text-xl">❌ Xatolik yuz berdi</div>
         <p className="text-gray-600">{error.message}</p>
       </div>
@@ -898,13 +898,13 @@ export default function TeachersPage() {
 
 
   return (
-    <div className="min-h-full p-8 bg-gray-50 pb-36">
+    <div className="min-h-full bg-gray-50 p-3 pb-36 sm:p-4 md:p-6">
       <div className="">
         {/* Header + Add Button */}
-        <div className="flex items-center justify-between mb-8 gap-4">
-          <h1 className="text-3xl font-bold text-gray-900">O'qituvchilar Boshqaruvi</h1>
+        <div className="mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+          <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">O'qituvchilar Boshqaruvi</h1>
           <AddTeacherModal>
-            <button className="flex items-center px-4 py-2 bg-[#A60E07] text-white rounded-lg hover:opacity-90 transition font-semibold shadow-md text-sm">
+            <button className="flex w-full items-center justify-center rounded-lg bg-[#A60E07] px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:opacity-90 sm:w-auto">
               <UserPlusIcon className="h-5 w-5 mr-2" />
               Yangi O'qituvchi Qo'shish
             </button>
@@ -912,20 +912,22 @@ export default function TeachersPage() {
         </div>
 
         {/* Filter */}
-        <div className="flex items-center gap-4 mb-8">
-          <FunnelIcon className="h-5 w-5 text-[#A60E07]" />
+        <div className="mb-8 grid grid-cols-1 gap-3 rounded-xl border border-gray-100 bg-white p-3 sm:p-4 md:grid-cols-3 lg:grid-cols-4">
+          <div className="hidden items-center md:flex">
+            <FunnelIcon className="h-5 w-5 text-[#A60E07]" />
+          </div>
 
           <SubjectsSelect
             value={selectedSubject}
             onChange={setSelectedSubject}
             placeholder="Fan bo'yicha filterlash"
-            className="w-[200px] px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#A60E07] focus:border-transparent text-sm"
+            className="w-full px-2 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#A60E07] focus:border-transparent text-sm"
           />
 
           <select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
-            className="w-[180px] px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#A60E07] focus:border-transparent text-sm"
+            className="w-full px-2 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#A60E07] focus:border-transparent text-sm"
           >
             <option value="all">Barcha holatlar</option>
             <option value="active">Faol</option>
@@ -939,7 +941,7 @@ export default function TeachersPage() {
                 setSelectedSubject('all');
                 setSelectedStatus('all');
               }}
-              className="px-3 py-1 text-sm text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition-colors"
+              className="w-full rounded bg-gray-100 px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-200 md:w-auto"
             >
               Tozalash
             </button>
@@ -948,7 +950,7 @@ export default function TeachersPage() {
 
         {/* Teachers Grid */}
         {teachers.length > 0 ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2 xl:grid-cols-3">
             {teachers.map((teacher) => (
               <TeacherCard
                 key={teacher.id}

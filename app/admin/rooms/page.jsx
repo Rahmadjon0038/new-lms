@@ -48,7 +48,7 @@ const AddRoomModal = ({ isOpen, onClose, onSubmit, isLoading }) => {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-            <div className="bg-white max-w-2xl p-6 rounded-2xl shadow-2xl w-full">
+            <div className="w-full max-w-2xl rounded-2xl bg-white p-4 shadow-2xl sm:p-6">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-xl font-bold text-gray-800">Yangi Xona Qo'shish</h3>
                     <button
@@ -152,10 +152,10 @@ const ScheduleModal = ({ isOpen, onClose, roomId }) => {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-            <div className="bg-white p-6 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-                <div className="flex justify-between items-center mb-6">
+            <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-4 shadow-2xl sm:p-6">
+                <div className="mb-6 flex items-start justify-between gap-3">
                     <div>
-                        <h3 className="text-2xl font-bold text-gray-800">
+                        <h3 className="text-xl font-bold text-gray-800 sm:text-2xl">
                             Xona {room?.room_number} - Dars Jadvali
                         </h3>
                         <p className="text-sm text-gray-600 mt-1">
@@ -193,7 +193,7 @@ const ScheduleModal = ({ isOpen, onClose, roomId }) => {
                                 key={group.id} 
                                 className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:shadow-md transition"
                             >
-                                <div className="flex items-start justify-between mb-3">
+                                <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                                     <div>
                                         <h4 className="text-lg font-bold text-gray-900 mb-1">
                                             {group.name}
@@ -222,8 +222,8 @@ const ScheduleModal = ({ isOpen, onClose, roomId }) => {
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-4 text-sm bg-white p-3 rounded-lg">
-                                    <div className="flex items-center gap-2">
+                                <div className="rounded-lg bg-white p-3 text-sm">
+                                    <div className="mb-2 flex items-center gap-2">
                                         <CalendarDaysIcon className="h-4 w-4" style={{ color: MAIN_COLOR }} />
                                         <span className="font-medium text-gray-700">
                                             {group.schedule?.days?.join(', ')}
@@ -254,36 +254,36 @@ const RoomCard = ({ room, onDelete, onEdit, onViewSchedule }) => {
     };
 
     return (
-        <div className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-lg transition">
-            <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-3">
+        <div className="rounded-xl border border-gray-200 bg-white p-4 transition hover:shadow-lg">
+            <div className="mb-3 flex items-start justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-3">
                     <div
                         className="p-3 rounded-lg"
                         style={{ backgroundColor: MAIN_COLOR + '15' }}
                     >
                         <Building2 className="h-6 w-6" style={{ color: MAIN_COLOR }} />
                     </div>
-                    <div>
-                        <h3 className="text-lg font-bold text-gray-900">
+                    <div className="min-w-0">
+                        <h3 className="text-base font-bold text-gray-900 sm:text-lg break-words">
                             Xona {room.room_number}
                         </h3>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-xs text-gray-500 sm:text-sm">
                             {room.building && `Bino: ${room.building}`}
                             {room.building && room.floor && ' • '}
                             {room.floor && `Qavat: ${room.floor}`}
                         </p>
                     </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex shrink-0 gap-1 sm:gap-2">
                     <button
                         onClick={onEdit}
-                        className="p-2 hover:bg-blue-50 rounded-lg transition text-blue-600"
+                        className="rounded-lg p-2 text-blue-600 transition hover:bg-blue-50"
                     >
                         <PencilSquareIcon className="h-5 w-5" />
                     </button>
                     <button
                         onClick={handleDeleteClick}
-                        className="p-2 hover:bg-red-50 rounded-lg transition text-red-600"
+                        className="rounded-lg p-2 text-red-600 transition hover:bg-red-50"
                     >
                         <TrashIcon className="h-5 w-5" />
                     </button>
@@ -294,8 +294,8 @@ const RoomCard = ({ room, onDelete, onEdit, onViewSchedule }) => {
                 <p className="text-sm text-gray-600 mb-3">{room.description}</p>
             )}
 
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4 text-sm">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-wrap items-center gap-3 text-sm sm:gap-4">
                     <div className="flex items-center gap-1">
                         <Sofa className="h-4 w-4 text-gray-500" />
                         <span className="text-gray-700 font-medium">{room.capacity} o'rinlik</span>
@@ -310,7 +310,7 @@ const RoomCard = ({ room, onDelete, onEdit, onViewSchedule }) => {
                 
                 <button
                     onClick={onViewSchedule}
-                    className="px-3 py-1.5 text-xs font-bold rounded-lg transition text-white hover:opacity-90"
+                    className="w-full rounded-lg px-3 py-2 text-xs font-bold text-white transition hover:opacity-90 sm:w-auto sm:py-1.5"
                     style={{ backgroundColor: MAIN_COLOR }}
                 >
                     <CalendarDaysIcon className="h-4 w-4 inline mr-1" />
@@ -375,17 +375,17 @@ const RoomsPage = () => {
     };
 
     return (
-        <div className="p-6 bg-gray-50 min-h-screen">
+        <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6">
             <div className="">
                 {/* Header */}
-                <div className="flex items-center justify-between mb-8">
+                <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900">Xonalar Boshqarish</h1>
-                        <p className="text-gray-600 mt-1">Barcha xonalarni boshqaring va yangi xonalar qo'shing</p>
+                        <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">Xonalar Boshqarish</h1>
+                        <p className="mt-1 text-sm text-gray-600 sm:text-base">Barcha xonalarni boshqaring va yangi xonalar qo'shing</p>
                     </div>
                     <button
                         onClick={() => setIsModalOpen(true)}
-                        className="flex items-center gap-2 px-4 py-3 bg-white rounded-lg border-2 hover:shadow-md transition font-bold text-white"
+                        className="flex w-full items-center justify-center gap-2 rounded-lg border-2 bg-white px-4 py-2.5 font-bold text-white transition hover:shadow-md sm:w-auto sm:py-3"
                         style={{ borderColor: MAIN_COLOR, backgroundColor: MAIN_COLOR }}
                     >
                         <PlusIcon className="h-5 w-5" />
@@ -432,7 +432,7 @@ const RoomsPage = () => {
                         </button>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                         {rooms.map(room => (
                             <RoomCard
                                 key={room.id}

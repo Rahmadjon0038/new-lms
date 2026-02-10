@@ -33,6 +33,16 @@ const getTeacherLessonDetail = async (lessonId) => {
   return unwrap(response);
 };
 
+const getTeacherSpeechSettings = async () => {
+  const response = await instance.get('/api/teacher/guides/speech-settings');
+  return unwrap(response);
+};
+
+const updateTeacherSpeechSettings = async ({ speech_rate }) => {
+  const response = await instance.patch('/api/teacher/guides/speech-settings', { speech_rate });
+  return unwrap(response);
+};
+
 const getTeacherLessonNotes = async (lessonId) => {
   const response = await instance.get(`/api/teacher/guides/lessons/${lessonId}/notes`);
   const data = unwrap(response);
@@ -66,6 +76,12 @@ export const useTeacherGuideLessonDetail = (lessonId) =>
     enabled: !!lessonId,
   });
 
+export const useTeacherGuideSpeechSettings = () =>
+  useQuery({
+    queryKey: ['teacher-guide-speech-settings'],
+    queryFn: getTeacherSpeechSettings,
+  });
+
 export const useTeacherGuideLessonNotes = (lessonId) =>
   useQuery({
     queryKey: ['teacher-guide-lesson-notes', lessonId],
@@ -73,6 +89,17 @@ export const useTeacherGuideLessonNotes = (lessonId) =>
     enabled: !!lessonId,
     retry: false,
   });
+
+export const useTeacherUpdateGuideSpeechSettings = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updateTeacherSpeechSettings,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teacher-guide-speech-settings'] });
+      queryClient.invalidateQueries({ queryKey: ['teacher-guide-lesson-detail'] });
+    },
+  });
+};
 
 // ============================
 // Admin API
@@ -82,13 +109,17 @@ const getAdminLevels = async () => {
   return normalizeLevels(unwrap(response));
 };
 
-const createAdminLevel = async ({ title, description }) => {
-  const response = await instance.post('/api/admin/guides/levels', { title, description });
+const createAdminLevel = async ({ banner }) => {
+  const formData = new FormData();
+  formData.append('banner', banner);
+  const response = await instance.post('/api/admin/guides/levels', formData);
   return unwrap(response);
 };
 
-const updateAdminLevel = async ({ levelId, title, description }) => {
-  const response = await instance.patch(`/api/admin/guides/levels/${levelId}`, { title, description });
+const updateAdminLevel = async ({ levelId, banner }) => {
+  const formData = new FormData();
+  formData.append('banner', banner);
+  const response = await instance.patch(`/api/admin/guides/levels/${levelId}`, formData);
   return unwrap(response);
 };
 
@@ -107,9 +138,20 @@ const getAdminLessonDetail = async (lessonId) => {
   return unwrap(response);
 };
 
-const uploadAdminMainPdf = async ({ levelId, file }) => {
+const getAdminSpeechSettings = async () => {
+  const response = await instance.get('/api/admin/guides/speech-settings');
+  return unwrap(response);
+};
+
+const updateAdminSpeechSettings = async ({ speech_rate }) => {
+  const response = await instance.patch('/api/admin/guides/speech-settings', { speech_rate });
+  return unwrap(response);
+};
+
+const uploadAdminMainPdf = async ({ levelId, file, banner }) => {
   const formData = new FormData();
   formData.append('file', file);
+  if (banner) formData.append('banner', banner);
   const response = await instance.post(`/api/admin/guides/levels/${levelId}/main-pdf`, formData);
   return unwrap(response);
 };
@@ -155,10 +197,11 @@ const deleteAdminNote = async ({ lessonId, noteId }) => {
   return unwrap(response);
 };
 
-const uploadAdminLessonPdf = async ({ lessonId, title, file }) => {
+const uploadAdminLessonPdf = async ({ lessonId, title, file, banner }) => {
   const formData = new FormData();
   formData.append('title', title);
   formData.append('file', file);
+  if (banner) formData.append('banner', banner);
   const response = await instance.post(`/api/admin/guides/lessons/${lessonId}/pdfs`, formData);
   return unwrap(response);
 };
@@ -213,6 +256,20 @@ const deleteAdminVocabularyImage = async ({ lessonId, imageId }) => {
   return unwrap(response);
 };
 
+const uploadAdminVocabularyPdf = async ({ lessonId, title, file, banner }) => {
+  const formData = new FormData();
+  formData.append('title', title);
+  formData.append('file', file);
+  if (banner) formData.append('banner', banner);
+  const response = await instance.post(`/api/admin/guides/lessons/${lessonId}/vocabulary-pdfs`, formData);
+  return unwrap(response);
+};
+
+const deleteAdminVocabularyPdf = async ({ lessonId, pdfId }) => {
+  const response = await instance.delete(`/api/admin/guides/lessons/${lessonId}/vocabulary-pdfs/${pdfId}`);
+  return unwrap(response);
+};
+
 const createAdminVocabularyMarkdown = async ({ lessonId, content_markdown }) => {
   const response = await instance.post(`/api/admin/guides/lessons/${lessonId}/vocabulary-markdowns`, { content_markdown });
   return unwrap(response);
@@ -256,6 +313,12 @@ export const useAdminGuideLessonDetail = (lessonId) =>
     queryKey: ['admin-guide-lesson-detail', lessonId],
     queryFn: () => getAdminLessonDetail(lessonId),
     enabled: !!lessonId,
+  });
+
+export const useAdminGuideSpeechSettings = () =>
+  useQuery({
+    queryKey: ['admin-guide-speech-settings'],
+    queryFn: getAdminSpeechSettings,
   });
 
 export const useAdminCreateLevel = () => {
@@ -485,6 +548,22 @@ export const useAdminDeleteVocabularyImage = () => {
   });
 };
 
+export const useAdminUploadVocabularyPdf = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: uploadAdminVocabularyPdf,
+    onSuccess: (_, vars) => invalidateLessonDetails(queryClient, vars.lessonId),
+  });
+};
+
+export const useAdminDeleteVocabularyPdf = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteAdminVocabularyPdf,
+    onSuccess: (_, vars) => invalidateLessonDetails(queryClient, vars.lessonId),
+  });
+};
+
 export const useAdminCreateVocabularyMarkdown = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -522,5 +601,16 @@ export const useAdminDeleteVideo = () => {
   return useMutation({
     mutationFn: deleteAdminVideo,
     onSuccess: (_, vars) => invalidateLessonDetails(queryClient, vars.lessonId),
+  });
+};
+
+export const useAdminUpdateGuideSpeechSettings = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updateAdminSpeechSettings,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-guide-speech-settings'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-guide-lesson-detail'] });
+    },
   });
 };

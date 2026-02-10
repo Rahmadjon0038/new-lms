@@ -1,5 +1,6 @@
 "use client";
-import React, { useState, useMemo } from "react";
+/* eslint-disable react/no-unescaped-entities */
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
     CalendarIcon,
     CurrencyDollarIcon,
@@ -8,6 +9,7 @@ import {
     ClockIcon,
     PhoneIcon,
     MagnifyingGlassIcon,
+    FunnelIcon,
     UsersIcon,
     InformationCircleIcon,
 } from "@heroicons/react/24/outline";
@@ -22,6 +24,8 @@ const TeacherPaymentsInfo = () => {
     });
 
     const [searchTerm, setSearchTerm] = useState('');
+    const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+    const filterDropdownRef = useRef(null);
     const [tooltipVisible, setTooltipVisible] = useState(null);
 
     // Fetch payments using existing hook
@@ -117,6 +121,32 @@ const TeacherPaymentsInfo = () => {
         }));
     };
 
+    useEffect(() => {
+        if (!showFilterDropdown) return undefined;
+
+        const handleOutsideClick = (event) => {
+            if (filterDropdownRef.current && !filterDropdownRef.current.contains(event.target)) {
+                setShowFilterDropdown(false);
+            }
+        };
+
+        const handleEscape = (event) => {
+            if (event.key === 'Escape') {
+                setShowFilterDropdown(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleOutsideClick);
+        document.addEventListener('touchstart', handleOutsideClick);
+        document.addEventListener('keydown', handleEscape);
+
+        return () => {
+            document.removeEventListener('mousedown', handleOutsideClick);
+            document.removeEventListener('touchstart', handleOutsideClick);
+            document.removeEventListener('keydown', handleEscape);
+        };
+    }, [showFilterDropdown]);
+
     if (isLoading) {
         return (
             <div className="min-h-full flex items-center justify-center">
@@ -152,62 +182,69 @@ const TeacherPaymentsInfo = () => {
             </div>
 
             {/* Filters */}
-            <div className="bg-white p-3 sm:p-4 md:p-6 rounded-lg shadow-md mb-4 sm:mb-6">
-                {/* Status Filter Buttons */}
-                <div className="mb-4 sm:mb-6">
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2 sm:mb-3">
-                        To'lov holati:
-                    </label>
-                    <div className="flex flex-wrap gap-1 sm:gap-2">
-                        {statusTabs.map((status) => (
-                            <button
-                                key={status.value}
-                                    onClick={() => handleFilterChange('payment_status', status.value)}
-                                    className={`px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-lg transition-colors ${filters.payment_status === status.value
-                                            ? 'text-white shadow-md'
-                                            : 'text-gray-700 bg-gray-100 hover:bg-gray-200'
-                                        }`}
-                                    style={filters.payment_status === status.value ? { backgroundColor: MAIN_COLOR } : {}}
-                            >
-                                {status.label}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Other Filters */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
-                    {/* Search Input */}
-                    <div>
-                        <div className="relative">
-                            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-gray-400" />
+            <div className="mb-4 rounded-lg bg-white p-3 shadow-md sm:mb-6 sm:p-4 md:p-6">
+                <div className="relative" ref={filterDropdownRef}>
+                    <div className="flex items-center gap-2">
+                        <div className="relative flex-1">
+                            <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400 sm:h-4 sm:w-4" />
                             <input
                                 type="text"
                                 placeholder="Ism, telefon, guruh..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-8 sm:pl-9 pr-6 sm:pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition-colors text-xs sm:text-sm"
+                                className="w-full rounded-lg border border-gray-300 py-2 pl-8 pr-7 text-xs transition-colors focus:border-transparent focus:ring-2 sm:pl-9 sm:pr-8 sm:text-sm"
                             />
                             {searchTerm && (
                                 <button
                                     onClick={() => setSearchTerm('')}
-                                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors text-xs"
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 transition-colors hover:text-gray-600"
                                 >
                                     ✕
                                 </button>
                             )}
                         </div>
+                        <button
+                            type="button"
+                            onClick={() => setShowFilterDropdown((prev) => !prev)}
+                            className="inline-flex h-10 items-center justify-center gap-1 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                        >
+                            <FunnelIcon className="h-4 w-4" />
+                            Filter
+                        </button>
                     </div>
 
-                    {/* Month Filter */}
-                    <div>
-                        <input
-                            type="month"
-                            value={filters.month}
-                            onChange={(e) => handleFilterChange('month', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent text-xs sm:text-sm"
-                        />
-                    </div>
+                    {showFilterDropdown && (
+                        <div className="absolute right-0 z-20 mt-2 w-full rounded-lg border border-gray-200 bg-white p-3 shadow-lg sm:w-[560px]">
+                            <div className="mb-3">
+                                <label className="mb-2 block text-xs font-medium text-gray-700 sm:text-sm">To'lov holati:</label>
+                                <div className="flex flex-wrap gap-2">
+                                    {statusTabs.map((status) => (
+                                        <button
+                                            key={status.value}
+                                            onClick={() => handleFilterChange('payment_status', status.value)}
+                                            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors sm:text-sm ${filters.payment_status === status.value
+                                                ? 'text-white shadow-md'
+                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                                }`}
+                                            style={filters.payment_status === status.value ? { backgroundColor: MAIN_COLOR } : {}}
+                                        >
+                                            {status.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="mb-1.5 block text-xs font-medium text-gray-700 sm:text-sm">Oy:</label>
+                                <input
+                                    type="month"
+                                    value={filters.month}
+                                    onChange={(e) => handleFilterChange('month', e.target.value)}
+                                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs focus:border-transparent focus:outline-none focus:ring-2 sm:text-sm"
+                                />
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
