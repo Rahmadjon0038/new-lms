@@ -32,7 +32,7 @@ import {
 } from "../../../hooks/teacher";
 import { useGetNotify } from "../../../hooks/notify";
 import { useGetAllSubjects } from "../../../hooks/subjects";
-import AddTeacherModal from "../../../components/admistrator/AddTeacher";
+import AddTeacherModal from "../../../components/admistrator/AddTeacher.jsx";
 import SubjectsSelect from "../../../components/SubjectsSelect";
 import Box from "@mui/material/Box";
 import Modal from "@mui/material/Modal";
