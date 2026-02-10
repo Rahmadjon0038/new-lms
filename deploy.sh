@@ -14,6 +14,24 @@ fi
 
 TEMP_DOCKERFILE=""
 DOCKERFILE_PATH="Dockerfile"
+TEMP_DOCKERIGNORE_CREATED="false"
+DOCKERIGNORE_BACKUP=""
+
+cleanup() {
+  if [ -n "${TEMP_DOCKERFILE}" ] && [ -f "${TEMP_DOCKERFILE}" ]; then
+    rm -f "${TEMP_DOCKERFILE}"
+  fi
+
+  if [ "${TEMP_DOCKERIGNORE_CREATED}" = "true" ] && [ -f ".dockerignore" ]; then
+    rm -f ".dockerignore"
+  fi
+
+  if [ -n "${DOCKERIGNORE_BACKUP}" ] && [ -f "${DOCKERIGNORE_BACKUP}" ]; then
+    mv "${DOCKERIGNORE_BACKUP}" .dockerignore
+  fi
+}
+
+trap cleanup EXIT
 
 if [ ! -f "${DOCKERFILE_PATH}" ]; then
   TEMP_DOCKERFILE=".Dockerfile.deploy"
@@ -51,6 +69,23 @@ DOCKERFILE
   echo "Info: Dockerfile topilmadi. Vaqtinchalik ${TEMP_DOCKERFILE} ishlatiladi."
 fi
 
+# Build context to'g'ri bo'lishi uchun .dockerignore ni vaqtincha xavfsiz holatga o'tkazamiz.
+if [ -f ".dockerignore" ]; then
+  DOCKERIGNORE_BACKUP=".dockerignore.bak.deploy"
+  mv .dockerignore "${DOCKERIGNORE_BACKUP}"
+fi
+
+cat > .dockerignore <<'DOCKERIGNORE'
+node_modules
+.git
+.next
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+DOCKERIGNORE
+TEMP_DOCKERIGNORE_CREATED="true"
+
 echo "[1/3] Image build qilinmoqda: ${IMAGE_NAME}"
 docker build -f "${DOCKERFILE_PATH}" -t "${IMAGE_NAME}" .
 
@@ -65,10 +100,6 @@ docker run -d \
   --restart unless-stopped \
   -p "${HOST_PORT}:${CONTAINER_PORT}" \
   "${IMAGE_NAME}" >/dev/null
-
-if [ -n "${TEMP_DOCKERFILE}" ] && [ -f "${TEMP_DOCKERFILE}" ]; then
-  rm -f "${TEMP_DOCKERFILE}"
-fi
 
 echo "Tayyor. Container: ${CONTAINER_NAME}"
 echo "URL: http://localhost:${HOST_PORT}"
