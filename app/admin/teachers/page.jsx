@@ -898,13 +898,13 @@ export default function TeachersPage() {
 
 
   return (
-    <div className="min-h-full bg-gray-50 p-3 pb-36 sm:p-4 md:p-6">
+    <div className="min-h-full bg-gray-50 p-2 pb-36 sm:p-4 md:p-6">
       <div className="">
         {/* Header + Add Button */}
         <div className="mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-          <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">O'qituvchilar Boshqaruvi</h1>
+          <h1 className="text-xl font-bold text-gray-900 sm:text-3xl">O'qituvchilar Boshqaruvi</h1>
           <AddTeacherModal>
-            <button className="flex w-full items-center justify-center rounded-lg bg-[#A60E07] px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:opacity-90 sm:w-auto">
+            <button className="flex w-full items-center justify-center rounded-lg bg-[#A60E07] px-3 py-2 text-sm font-semibold text-white shadow-md transition hover:opacity-90 sm:w-auto">
               <UserPlusIcon className="h-5 w-5 mr-2" />
               Yangi O'qituvchi Qo'shish
             </button>
@@ -912,7 +912,7 @@ export default function TeachersPage() {
         </div>
 
         {/* Filter */}
-        <div className="mb-8 grid grid-cols-1 gap-3 rounded-xl border border-gray-100 bg-white p-3 sm:p-4 md:grid-cols-3 lg:grid-cols-4">
+        <div className="mb-8 grid grid-cols-1 gap-2 rounded-xl border border-gray-100 bg-white p-3 sm:gap-3 sm:p-4 md:grid-cols-3 lg:grid-cols-4">
           <div className="hidden items-center md:flex">
             <FunnelIcon className="h-5 w-5 text-[#A60E07]" />
           </div>

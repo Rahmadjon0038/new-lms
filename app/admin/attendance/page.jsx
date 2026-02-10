@@ -79,7 +79,7 @@ const GroupCard = ({ group }) => {
       <div className="space-y-2 text-sm text-gray-700">
         <div className="flex items-center gap-2">
           <UsersIcon className="h-4 w-4 text-gray-400" />
-          <span>O'qituvchi:</span>
+          <span>O&apos;qituvchi:</span>
           <span className="font-medium">{group.teacher_name}</span>
         </div>
 
@@ -146,10 +146,10 @@ const Attendance = () => {
   const hasActiveFilters = selectedTeacher || selectedSubject || statusFilter !== 'active';
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="px-2">
+    <div className="min-h-screen bg-gray-50 px-3 md:px-4 lg:px-6">
+      <div>
         {/* Header */}
-        <div className="mb-6">
+        <div className="mb-6 pt-3 md:pt-4">
           <h1 className="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-2">
             <CalendarIcon className="h-6 w-6 text-red-600" />
             Davomat Tizimi
@@ -161,11 +161,11 @@ const Attendance = () => {
 
         {/* Status Tabs */}
         <div className="mb-6">
-          <div className="bg-white p-1 rounded-lg shadow-sm">
+          <div className="rounded-lg bg-white p-1 shadow-sm">
             <div className="flex gap-1">
               <button
                 onClick={() => setStatusFilter('active')}
-                className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex-1 rounded-lg px-2 py-2 text-xs font-medium transition-colors sm:px-4 sm:text-sm ${
                   statusFilter === 'active'
                     ? 'bg-green-100 text-green-700 shadow-sm'
                     : 'text-gray-600 hover:bg-gray-50'
@@ -178,7 +178,7 @@ const Attendance = () => {
               </button>
               <button
                 onClick={() => setStatusFilter('blocked')}
-                className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex-1 rounded-lg px-2 py-2 text-xs font-medium transition-colors sm:px-4 sm:text-sm ${
                   statusFilter === 'blocked'
                     ? 'bg-red-100 text-red-700 shadow-sm'
                     : 'text-gray-600 hover:bg-gray-50'
@@ -195,15 +195,15 @@ const Attendance = () => {
 
         {/* Filters */}
         <div className="mb-4">
-          <div className="bg-white p-4 rounded-lg shadow-sm">
-            <div className="flex flex-wrap items-center gap-4">
+          <div className="rounded-lg bg-white p-4 shadow-sm">
+            <div className="flex flex-col gap-4 md:flex-row md:flex-wrap md:items-center">
               <div className="flex items-center gap-2">
                 <FunnelIcon className="h-5 w-5 text-gray-500" />
                 <span className="text-sm font-medium text-gray-700">Filterlar:</span>
               </div>
               
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="min-w-[180px]">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:flex lg:flex-wrap lg:items-center">
+                <div className="w-full min-w-0 sm:min-w-[180px]">
                   <TeacherSelect
                     value={selectedTeacher}
                     onChange={setSelectedTeacher}
@@ -212,7 +212,7 @@ const Attendance = () => {
                   />
                 </div>
                 
-                <div className="min-w-[180px]">
+                <div className="w-full min-w-0 sm:min-w-[180px]">
                   <SubjectsSelect
                     value={selectedSubject}
                     onChange={setSelectedSubject}
@@ -224,7 +224,7 @@ const Attendance = () => {
                 {hasActiveFilters && (
                   <button
                     onClick={clearFilters}
-                    className="flex items-center gap-1 px-3 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                    className="flex items-center justify-center gap-1 rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-200"
                   >
                     <XMarkIcon className="h-4 w-4" />
                     Tozalash
@@ -256,7 +256,7 @@ const Attendance = () => {
           <>
             {/* Statistics Summary */}
             <div className="mb-4">
-              <div className="flex flex-wrap items-center gap-4 bg-white p-3 rounded-lg shadow-sm ">
+              <div className="flex flex-wrap items-center gap-4 rounded-lg bg-white p-3 shadow-sm">
                 <div className="flex items-center gap-2">
                   <UserGroupIcon className="h-5 w-5 text-red-600" />
                   <span className="text-sm font-medium text-gray-700">

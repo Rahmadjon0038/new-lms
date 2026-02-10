@@ -261,10 +261,10 @@ const StudentsPage = () => {
     if (isLoading) return <div className="p-4 text-center sm:p-8">Yuklanmoqda...</div>;
 
     return (
-        <div className="mx-auto min-h-screen bg-gray-50 p-3 font-sans sm:p-4 md:p-6">
-            <h1 className="mb-6 text-2xl font-bold text-gray-800 sm:text-3xl">Talabalar Ro'yxati (Admin)</h1>
+        <div className="mx-auto min-h-screen bg-gray-50 p-2 font-sans sm:p-4 md:p-6">
+            <h1 className="mb-4 text-xl font-bold text-gray-800 sm:mb-6 sm:text-3xl">Talabalar Ro'yxati (Admin)</h1>
 
-            <div className="mb-6 rounded-lg bg-white p-4 shadow-md">
+            <div className="mb-5 rounded-lg bg-white p-3 shadow-md sm:mb-6 sm:p-4">
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-6">
                     {/* Qidiruv + mobile filter */}
                     <div className="flex items-center gap-2 sm:col-span-2 xl:col-span-2">
@@ -276,7 +276,7 @@ const StudentsPage = () => {
                         >
                             <FiFilter size={18} />
                         </button>
-                        <div className="flex flex-1 items-center rounded-lg border border-gray-300 bg-gray-50 p-2 focus-within:border-[#A60E07]">
+                        <div className="flex flex-1 items-center rounded-lg border border-gray-300 bg-gray-50 p-1.5 sm:p-2 focus-within:border-[#A60E07]">
                             <FiSearch className="mr-2 text-gray-400" size={20} />
                             <input
                                 type="text"

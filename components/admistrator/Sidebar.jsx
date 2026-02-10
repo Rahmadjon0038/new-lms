@@ -133,11 +133,11 @@ function AdministratorSidebar({ isOpen = false, onClose = () => {} }) {
 
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-50 w-64 transform bg-white shadow-xl transition-transform duration-200 md:static md:min-h-screen md:translate-x-0 ${
+      className={`fixed inset-y-0 left-0 z-50 w-64 transform bg-white shadow-xl transition-transform duration-200 lg:static lg:min-h-screen lg:translate-x-0 ${
         isOpen ? "translate-x-0" : "-translate-x-full"
       }`}
     >
-      <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3 md:hidden">
+      <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3 lg:hidden">
         <p className="text-sm font-semibold text-gray-800">Admin Menu</p>
         <button onClick={onClose} className="rounded-md p-1 hover:bg-gray-100">
           <XMarkIcon className="h-5 w-5 text-gray-600" />

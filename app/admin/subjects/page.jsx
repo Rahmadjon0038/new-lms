@@ -292,12 +292,12 @@ export default function SubjectsPage() {
     const subjects = subjectsData?.subjects || [];
 
     return (
-        <div className="flex-1 bg-gray-50 p-3 sm:p-4 md:p-8">
+        <div className="flex-1 bg-gray-50 p-2 sm:p-4 md:p-8">
             {/* Header */}
             <div className="mb-6 sm:mb-8">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h1 className="flex items-center text-2xl font-bold text-gray-800 sm:text-3xl">
+                        <h1 className="flex items-center text-xl font-bold text-gray-800 sm:text-3xl">
                             <BookOpenIcon className="mr-2 h-7 w-7 text-[#A60E07] sm:mr-3 sm:h-8 sm:w-8" />
                             Fanlar
                         </h1>
@@ -307,7 +307,7 @@ export default function SubjectsPage() {
                     </div>
                     <button
                         onClick={() => setShowFormModal(true)}
-                        className="flex w-full items-center justify-center rounded-xl bg-[#A60E07] px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition duration-150 hover:opacity-90 sm:w-auto sm:px-6 sm:py-3 sm:text-base"
+                        className="flex w-full items-center justify-center rounded-xl bg-[#A60E07] px-3 py-2 text-sm font-semibold text-white shadow-lg transition duration-150 hover:opacity-90 sm:w-auto sm:px-6 sm:py-3 sm:text-base"
                     >
                         <PlusCircleIcon className="h-5 w-5 mr-2" />
                         Yangi fan yaratish

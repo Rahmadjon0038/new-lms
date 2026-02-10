@@ -97,7 +97,7 @@ function Sidebar() {
       {/* Mobil uchun Hamburger tugmasi */}
       <button
         onClick={() => setIsMobileMenuOpen(true)}
-        className="md:hidden fixed bottom-4 right-4 z-40 p-3 bg-[#A60E07] text-white rounded-full shadow-lg hover:bg-[#8a0c06] transition-colors"
+        className="lg:hidden fixed bottom-4 right-4 z-40 p-3 bg-[#A60E07] text-white rounded-full shadow-lg hover:bg-[#8a0c06] transition-colors"
         aria-label="Menuni ochish"
       >
         <Bars3Icon className="h-6 w-6" />
@@ -105,7 +105,7 @@ function Sidebar() {
 
       {/* Mobil Sidebar (Overlay) */}
       {isMobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-50">
+        <div className="lg:hidden fixed inset-0 z-50">
           {/* Qora overlay */}
           <div 
             className="absolute inset-0 bg-black/50 transition-opacity"
@@ -143,7 +143,7 @@ function Sidebar() {
       )}
 
       {/* Desktop Sidebar */}
-      <div className="hidden md:flex flex-col w-48 lg:w-60 min-h-screen bg-white shadow-2xl border-r border-gray-100">
+      <div className="hidden lg:flex flex-col w-48 xl:w-60 min-h-screen bg-white shadow-2xl border-r border-gray-100">
         <SidebarContent />
         
         {/* Sidebar ostida kichik brend belgi */}

@@ -15,7 +15,7 @@ export default function RootLayout({ children }) {
 
           {/* 2. Asosiy Kontent (Sahifalar) */}
           {/* Next.js sahifalari (page.js) shu joyga yuklanadi. */}
-          <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 overflow-y-auto">{children}</main>
+          <main className="flex-1 p-3 sm:p-4 md:p-4 lg:p-6 xl:p-8 overflow-y-auto">{children}</main>
         </div>
       </body>
     </html>

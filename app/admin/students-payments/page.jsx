@@ -63,6 +63,7 @@ const StudentPayments = () => {
     const [showAttendanceModal, setShowAttendanceModal] = useState(false);
     const [showPaymentHistoryModal, setShowPaymentHistoryModal] = useState(false);
     const [showClearModal, setShowClearModal] = useState(false);
+    const [showStats, setShowStats] = useState(true);
     const [clearLoading, setClearLoading] = useState(false);
     const [snapshotLoading, setSnapshotLoading] = useState(false);
     const [historyFilters, setHistoryFilters] = useState({
@@ -410,22 +411,23 @@ const StudentPayments = () => {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 lg:w-auto lg:grid-cols-3 lg:gap-3">
+                    <div className="grid w-full grid-cols-3 gap-2 sm:grid-cols-2 lg:w-auto lg:grid-cols-3 lg:gap-3">
                         <button
                             onClick={handleCreateSnapshot}
                             disabled={snapshotLoading}
-                            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90 focus:ring-2 focus:ring-offset-2 disabled:opacity-50"
+                            className="inline-flex w-full items-center justify-center gap-1 rounded-lg bg-green-600 px-2 py-2 text-xs font-medium text-white transition-colors hover:opacity-90 focus:ring-2 focus:ring-offset-2 disabled:opacity-50 sm:gap-2 sm:px-4 sm:text-sm"
                             title="Yangi oy uchun to'lov jadvali yaratish"
                         >
                             {snapshotLoading ? (
                                 <>
                                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                    Yaratilmoqda...
+                                    <span className="hidden sm:inline">Yaratilmoqda...</span>
                                 </>
                             ) : (
                                 <>
                                     <PlusIcon className="h-4 w-4" />
-                                    Oylik jadval yaratish
+                                    <span className="hidden sm:inline">Oylik jadval yaratish</span>
+                                    <span className="sm:hidden">Jadval</span>
                                 </>
                             )}
                         </button>
@@ -433,18 +435,19 @@ const StudentPayments = () => {
                             <button
                                 onClick={handleCreateSnapshotsForNew}
                                 disabled={!filters.month || createSnapshotsMutation.isPending}
-                                className="group relative inline-flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition-all duration-300 hover:scale-[1.01] hover:opacity-90 hover:shadow-lg focus:ring-2 focus:ring-offset-2 disabled:opacity-50"
+                                className="group relative inline-flex w-full items-center justify-center gap-1 rounded-lg bg-green-600 px-2 py-2 text-xs font-medium text-white transition-all duration-300 hover:scale-[1.01] hover:opacity-90 hover:shadow-lg focus:ring-2 focus:ring-offset-2 disabled:opacity-50 sm:gap-2 sm:px-4 sm:text-sm"
                                 title="Yangi qo'shilgan talabalar uchun snapshot yaratish"
                             >
                                 {createSnapshotsMutation.isPending ? (
                                     <>
                                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                        Yaratilmoqda...
+                                        <span className="hidden sm:inline">Yaratilmoqda...</span>
                                     </>
                                 ) : (
                                     <>
                                         <ArrowRightIcon className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                                        Yangi talabalar uchun
+                                        <span className="hidden sm:inline">Yangi talabalar uchun</span>
+                                        <span className="sm:hidden">Yangi</span>
                                         {newStudentsNotification?.data?.count > 0 && (
                                             <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center animate-bounce">
                                                 {newStudentsNotification.data.count}
@@ -488,17 +491,31 @@ const StudentPayments = () => {
                         </div>
                         <button
                             onClick={handleExport}
-                            className="inline-flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90 focus:ring-2 focus:ring-offset-2"
+                            className="inline-flex w-full items-center justify-center gap-1 rounded-lg px-2 py-2 text-xs font-medium text-white transition-colors hover:opacity-90 focus:ring-2 focus:ring-offset-2 sm:gap-2 sm:px-4 sm:text-sm"
                             style={{ backgroundColor: MAIN_COLOR, focusRingColor: MAIN_COLOR }}
                         >
                             <ArrowDownTrayIcon className="h-4 w-4" />
-                            Excel yuklab olish
+                            <span className="hidden sm:inline">Excel yuklab olish</span>
+                            <span className="sm:hidden">Excel</span>
                         </button>
                     </div>
                 </div>
 
                 {/* Statistics Cards - Display Only */}
                 {stats.total_students > 0 && (
+                    <div className="mb-3 flex items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 sm:px-4">
+                        <p className="text-sm font-semibold text-gray-800">Statistika</p>
+                        <button
+                            type="button"
+                            onClick={() => setShowStats((prev) => !prev)}
+                            className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 sm:text-sm"
+                        >
+                            {showStats ? "Yashirish" : "Ko'rsatish"}
+                        </button>
+                    </div>
+                )}
+
+                {stats.total_students > 0 && showStats && (
                     <div className="mb-5 grid grid-cols-2 gap-2 sm:mb-6 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 lg:gap-4">
 
                         <div className="rounded-lg border-l-4 border-green-500 bg-white p-3 shadow-md sm:p-4">

@@ -11,7 +11,6 @@ import {
 import ProfileModal from "./modals/Profile";
 import { usegetProfile } from "../hooks/user";
 import Cookies from "js-cookie";
-import { useRouter } from "next/navigation";
 
 const getRoleColor = (role = "") => {
   const normalizedRole = role.toLowerCase();
@@ -29,13 +28,31 @@ const getRoleColor = (role = "") => {
 
 function Navbar() {
   const { data: user, isLoading } = usegetProfile();
-  const navigate = useRouter();
 
   const handleLogout = () => {
-    Cookies.remove('accessToken');
-    Cookies.remove('refreshToken');
-    Cookies.remove('role');
-    navigate.push('/');
+    const cookieKeys = ["accessToken", "refreshToken", "role"];
+    const host = window.location.hostname;
+    const domainCandidates = [undefined, host];
+
+    if (host.includes(".")) {
+      domainCandidates.push(`.${host}`);
+      const parts = host.split(".");
+      if (parts.length > 2) {
+        domainCandidates.push(`.${parts.slice(-2).join(".")}`);
+      }
+    }
+
+    cookieKeys.forEach((key) => {
+      Cookies.remove(key);
+      Cookies.remove(key, { path: "/" });
+      domainCandidates.forEach((domain) => {
+        if (domain) {
+          Cookies.remove(key, { path: "/", domain });
+        }
+      });
+    });
+
+    window.location.replace("/login");
   };
 
   // Faqat ismni olish (mobil uchun qisqaroq ko'rinish)

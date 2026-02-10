@@ -377,28 +377,28 @@ function AdminGroupsPage() {
     if (error) return <div className="p-6 text-center font-bold text-red-600 sm:p-10">Xatolik yuz berdi!</div>;
 
     const tabClass = (tabName) =>
-        `px-3 py-2 text-center text-sm font-bold border-b-4 transition duration-200 cursor-pointer whitespace-nowrap sm:px-6 sm:text-base
+        `px-2 py-2 text-center text-xs font-bold border-b-4 transition duration-200 cursor-pointer whitespace-nowrap sm:px-6 sm:text-base
          ${currentTab === tabName
             ? 'border-[#A60E07] text-[#A60E07] bg-red-50'
             : 'border-transparent text-gray-500 hover:text-[#A60E07] hover:border-gray-300'}`;
 
     return (
-        <div className="min-h-full p-3 sm:p-4 md:p-6">
-            <h1 className="mb-1 text-2xl font-bold text-gray-900 sm:text-3xl">Guruhlarni Boshqarish Paneli</h1>
-            <p className="mb-6 text-sm text-gray-500 sm:text-lg">Jami {backendData?.success ? backendData.count || 0 : 0} ta guruh mavjud</p>
+        <div className="min-h-full p-2 sm:p-4 md:p-6">
+            <h1 className="mb-1 text-xl font-bold text-gray-900 sm:text-3xl">Guruhlarni Boshqarish Paneli</h1>
+            <p className="mb-5 text-sm text-gray-500 sm:text-lg">Jami {backendData?.success ? backendData.count || 0 : 0} ta guruh mavjud</p>
 
             <div className="mb-6 overflow-x-auto border-b border-gray-200">
                 <div className="flex min-w-max">
                 <button onClick={() => setCurrentTab('active')} className={tabClass('active')}>
-                    <UsersIcon className="h-5 w-5 inline mr-2" />
+                    <UsersIcon className="mr-1 inline h-4 w-4 sm:mr-2 sm:h-5 sm:w-5" />
                     Faol Guruhlar
                 </button>
                 <button onClick={() => setCurrentTab('draft')} className={tabClass('draft')}>
-                    <CalendarIcon className="h-5 w-5 inline mr-2" />
+                    <CalendarIcon className="mr-1 inline h-4 w-4 sm:mr-2 sm:h-5 sm:w-5" />
                     Darsi Boshlanmagan
                 </button>
                 <button onClick={() => setCurrentTab('closed')} className={tabClass('closed')}>
-                    <LockClosedIcon className="h-5 w-5 inline mr-2" />
+                    <LockClosedIcon className="mr-1 inline h-4 w-4 sm:mr-2 sm:h-5 sm:w-5" />
                     Yopilgan Guruhlar
                 </button>
                 </div>

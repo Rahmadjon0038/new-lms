@@ -18,7 +18,7 @@ export default function RootLayout({ children }) {
             <button
               type="button"
               onClick={() => setIsSidebarOpen(false)}
-              className="fixed inset-0 z-40 bg-black/40 md:hidden"
+              className="fixed inset-0 z-40 bg-black/40 lg:hidden"
               aria-label="Close menu overlay"
             />
           ) : null}
@@ -26,7 +26,7 @@ export default function RootLayout({ children }) {
           <AdministratorSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
           <main className="min-w-0 flex-1 overflow-y-auto">
-            <div className="sticky top-0 z-30 border-b border-gray-200 bg-white px-3 py-2 md:hidden">
+            <div className="sticky top-0 z-30 border-b border-gray-200 bg-white px-3 py-2 lg:hidden">
               <button
                 type="button"
                 onClick={() => setIsSidebarOpen(true)}
