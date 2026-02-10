@@ -197,7 +197,6 @@ const TeacherPayments = () => {
         <div className="mb-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="w-full sm:w-80">
-              <label className="mb-2 block text-sm font-medium text-gray-700">Oy</label>
               <input
                 type="month"
                 value={month}
@@ -206,7 +205,6 @@ const TeacherPayments = () => {
               />
             </div>
             <div className="w-full sm:max-w-md">
-              <label className="mb-2 block text-sm font-medium text-gray-700">Local qidiruv</label>
               <input
                 type="text"
                 value={searchTerm}

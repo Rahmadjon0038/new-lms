@@ -436,13 +436,13 @@ const TeacherPaymentsInfo = () => {
                                                     <span className="text-gray-500">Asl narx:</span>
                                                     <span className="font-medium ml-1 sm:ml-2">{formatCurrency(parseFloat(student.group_price || 0))}</span>
                                                 </div>
-                                                <div className="text-xs sm:text-sm">
+                                                {/* <div className="text-xs sm:text-sm">
                                                     <span className="text-gray-500">Kerak:</span>
                                                     <span className="font-medium ml-1 sm:ml-2">{formatCurrency(parseFloat(student.required_amount))}</span>
-                                                </div>
+                                                </div> */}
                                                 {parseFloat(student.effective_required) !== parseFloat(student.required_amount) && (
                                                     <div className="text-xs sm:text-sm">
-                                                        <span className="text-gray-500">Amalda kerak:</span>
+                                                        <span className="text-gray-500">Kerak:</span>
                                                         <span className="font-medium text-blue-600 ml-1 sm:ml-2">{formatCurrency(parseFloat(student.effective_required))}</span>
                                                     </div>
                                                 )}

@@ -1,6 +1,6 @@
 'use client'
 import React, { useState, useMemo, useCallback, memo, useEffect } from 'react';
-import { FiEdit, FiSave, FiX, FiUserPlus, FiSearch } from 'react-icons/fi';
+import { FiUserPlus, FiSearch } from 'react-icons/fi';
 import { ClipboardDocumentCheckIcon, ClipboardDocumentIcon, InformationCircleIcon, KeyIcon } from '@heroicons/react/24/outline';
 import {
     User, Phone, MapPin, Calendar, GraduationCap,
@@ -413,7 +413,6 @@ const StudentsPage = () => {
                             <th className="px-4 py-3 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider min-w-[250px] border-r border-gray-300 bg-gradient-to-b from-gray-100 to-gray-200">Guruh / Kurs ma'lumotlari</th>
                             <th className="px-4 py-3 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider border-r border-gray-300 bg-gradient-to-b from-gray-100 to-gray-200">Ro'yxatdan sana</th>
                             <th className="px-4 py-3 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider border-r border-gray-300 bg-gradient-to-b from-gray-100 to-gray-200">Talaba holati</th>
-                            <th className="px-4 py-3 text-center text-xs font-semibold text-gray-800 uppercase tracking-wider w-[150px] bg-gradient-to-b from-gray-100 to-gray-200">Amallar</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-300">
@@ -538,7 +537,7 @@ const StudentsPage = () => {
                                                         )}
                                                         <AddGroup student={student} onSuccess={handleModalSuccess}>
                                                             <div className={`p-1.5 rounded-lg text-white transition duration-200 flex-shrink-0 cursor-pointer ${student.group_id ? 'bg-blue-500 hover:bg-blue-600' : 'bg-[#A60E07] hover:opacity-90'}`}>
-                                                                {student.group_id ? <FiEdit size={14} /> : <FiUserPlus size={14} />}
+                                                                <FiUserPlus size={14} />
                                                             </div>
                                                         </AddGroup>
                                                     </div>
@@ -766,30 +765,12 @@ const StudentsPage = () => {
                                             )}
                                         </td>
 
-                                        <td className="px-4 py-3 text-center">
-                                            {isEditing ? (
-                                                <div className="flex justify-center items-center gap-1">
-                                                    <button onClick={() => handleSave(rowKey)} className="p-1.5 rounded text-white bg-green-600 hover:bg-green-700 transition-all duration-150 shadow-sm border border-green-700 hover:shadow-md transform hover:scale-105"><FiSave size={12} /></button>
-                                                    <button onClick={handleCancel} className="p-1.5 rounded text-white bg-gray-500 hover:bg-gray-600 transition-all duration-150 shadow-sm border border-gray-600 hover:shadow-md transform hover:scale-105"><FiX size={12} /></button>
-                                                </div>
-                                            ) : (
-                                                <div className="flex justify-center items-center gap-1">
-                                                    <button
-                                                        onClick={() => handleEditClick(student, index)}
-                                                        className="p-1.5 rounded text-white bg-blue-600 hover:bg-blue-700 transition-all duration-150 shadow-sm"
-                                                        title="Tahrirlash"
-                                                    >
-                                                        <FiEdit size={12} />
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </td>
                                     </tr>
                                 );
                             })
                         ) : (
                             <tr className="bg-white">
-                                <td colSpan="5" className="px-4 py-12 text-center text-gray-500 border-b border-gray-200">
+                                <td colSpan="4" className="px-4 py-12 text-center text-gray-500 border-b border-gray-200">
                                     <div className="flex flex-col items-center gap-4">
                                         <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
                                             <User className="h-8 w-8 text-gray-400" />

@@ -404,29 +404,57 @@ function AdminGroupsPage() {
                 </div>
             </div>
 
-            <div className="mb-8 flex flex-col gap-4 rounded-xl border border-gray-100 bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
-                <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center lg:w-auto">
-                    <FiFilter className="hidden h-5 w-5 text-[#A60E07] sm:block" />
-                    <div className="w-full sm:min-w-[200px]">
+            <div className="mb-8 rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-4 shadow-sm sm:p-5">
+                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-2">
+                        <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-red-50 text-[#A60E07]">
+                            <FiFilter className="h-4 w-4" />
+                        </span>
+                        <div>
+                            <p className="text-sm font-semibold text-slate-900">Filtrlar</p>
+                            <p className="text-xs text-slate-500">O&apos;qituvchi va fan bo&apos;yicha guruhlarni saralang</p>
+                        </div>
+                    </div>
+
+                    <AdminNewGroupModal onSuccess={() => setCurrentTab('draft')}>
+                        <button className="flex w-full items-center justify-center rounded-xl bg-[#A60E07] px-5 py-2.5 text-sm font-bold text-white shadow-md transition hover:opacity-90 sm:w-auto">
+                            <PlusCircleIcon className="mr-1 h-5 w-5" /> Yangi Guruh Ochish
+                        </button>
+                    </AdminNewGroupModal>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-[minmax(260px,1fr)_minmax(260px,1fr)_auto] xl:items-end">
+                    <div className="space-y-1.5">
+                        <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">O&apos;qituvchi</label>
                         <TeacherSelect
                             value={selectedTeacher}
                             onChange={setSelectedTeacher}
                         />
                     </div>
-                    <div className="w-full sm:min-w-[200px]">
+
+                    <div className="space-y-1.5">
+                        <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">Fan</label>
                         <SubjectsSelect
                             value={selectedSubject}
                             onChange={setSelectedSubject}
                             placeholder="Fanni tanlang"
+                            showAll={true}
+                            className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold"
                         />
                     </div>
-                </div>
 
-                <AdminNewGroupModal onSuccess={() => setCurrentTab('draft')}>
-                    <button className="flex w-full items-center justify-center rounded-lg bg-[#A60E07] px-4 py-2.5 text-sm font-bold text-white shadow-md transition hover:opacity-90 lg:w-auto">
-                        <PlusCircleIcon className="h-5 w-5 mr-1" /> Yangi Guruh Ochish
-                    </button>
-                </AdminNewGroupModal>
+                    {(selectedTeacher !== 'all' || selectedSubject !== 'all') ? (
+                        <button
+                            onClick={() => {
+                                setSelectedTeacher('all');
+                                setSelectedSubject('all');
+                            }}
+                            className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                        >
+                            Filtrni tozalash
+                        </button>
+                    ) : null}
+                </div>
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-3">

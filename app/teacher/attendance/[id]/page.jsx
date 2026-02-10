@@ -656,7 +656,7 @@ const GroupLessonsPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6">
-      <div className="mx-auto max-w-7xl">
+      <div className="mx-auto ">
         
         {/* Header */}
         <div className="mb-5 flex items-start gap-3 sm:mb-6 sm:gap-4">
