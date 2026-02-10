@@ -374,24 +374,24 @@ const TeacherPayments = () => {
           </div>
 
           <div className="hidden overflow-x-auto lg:block">
-            <table className="min-w-[1700px] w-full text-base">
+            <table className="min-w-[1850px] w-full text-base">
               <thead>
                 <tr className="border-b bg-gray-50/80 text-left text-sm font-semibold tracking-wide text-gray-600">
-                  <th className="py-2 pr-2">ID</th>
-                  <th className="py-2 pr-2">O'qituvchi</th>
-                  <th className="py-2 pr-2">To'lagan</th>
-                  <th className="py-2 pr-2">Qisman</th>
-                  <th className="py-2 pr-2">To'lamagan</th>
-                  <th className="py-2 pr-2">Jami tushum</th>
-                  <th className="py-2 pr-2">Foiz</th>
-                  <th className="py-2 pr-2">Kutilgan oylik</th>
-                  <th className="py-2 pr-2">Jami avans</th>
-                  <th className="py-2 pr-2">Yakuniy oylik</th>
-                  <th className="py-2 pr-2">Holat</th>
-                  <th className="py-2 pr-2">O'quvchilar</th>
-                  <th className="py-2 pr-2">Foizni sozlash</th>
-                  <th className="py-2 pr-2">Avans berish</th>
-                  <th className="py-2 pr-2">Oylikni yopish</th>
+                  <th className="whitespace-nowrap py-2 pr-2">ID</th>
+                  <th className="whitespace-nowrap py-2 pr-2">O'qituvchi</th>
+                  <th className="whitespace-nowrap py-2 pr-2">To'lagan</th>
+                  <th className="whitespace-nowrap py-2 pr-2">Qisman</th>
+                  <th className="whitespace-nowrap py-2 pr-2">To'lamagan</th>
+                  <th className="whitespace-nowrap py-2 pr-2">Jami tushum</th>
+                  <th className="whitespace-nowrap py-2 pr-2">Foiz</th>
+                  <th className="whitespace-nowrap py-2 pr-2">Kutilgan oylik</th>
+                  <th className="whitespace-nowrap py-2 pr-2">Jami avans</th>
+                  <th className="whitespace-nowrap py-2 pr-2">Yakuniy oylik</th>
+                  <th className="whitespace-nowrap py-2 pr-2">Holat</th>
+                  <th className="whitespace-nowrap py-2 pr-2">O'quvchilar</th>
+                  <th className="whitespace-nowrap py-2 pr-2">Foizni sozlash</th>
+                  <th className="whitespace-nowrap py-2 pr-2">Avans berish</th>
+                  <th className="whitespace-nowrap py-2 pr-2">Oylikni yopish</th>
                 </tr>
               </thead>
               <tbody>
@@ -414,17 +414,17 @@ const TeacherPayments = () => {
                     return (
                       <React.Fragment key={`${teacherId}-${i}`}>
                         <tr className="border-b border-gray-100 hover:bg-slate-50">
-                          <td className="py-3 pr-3 text-gray-600">{teacherId || "-"}</td>
-                          <td className="py-3 pr-3 font-medium text-gray-900">{teacherName}</td>
-                          <td className="py-3 pr-3">{num(t, ["paid_students_count", "paid_students"])}</td>
-                          <td className="py-3 pr-3">{num(t, ["partial_students_count"])}</td>
-                          <td className="py-3 pr-3">{num(t, ["unpaid_students_count", "unpaid_students"])}</td>
-                          <td className="py-3 pr-3">{fmtMoney(num(t, ["total_collected", "close_revenue"]))}</td>
-                          <td className="py-3 pr-3">{num(t, ["salary_percentage"])}%</td>
-                          <td className="py-3 pr-3">{fmtMoney(num(t, ["expected_salary", "close_expected_salary"]))}</td>
-                          <td className="py-3 pr-3">{fmtMoney(num(t, ["total_advances"]))}</td>
-                          <td className="py-3 pr-3 font-semibold text-gray-900">{fmtMoney(num(t, ["final_salary", "close_balance"]))}</td>
-                          <td className="py-3 pr-3">
+                          <td className="whitespace-nowrap py-3 pr-3 text-gray-600">{teacherId || "-"}</td>
+                          <td className="whitespace-nowrap py-3 pr-3 font-medium text-gray-900">{teacherName}</td>
+                          <td className="whitespace-nowrap py-3 pr-3">{num(t, ["paid_students_count", "paid_students"])}</td>
+                          <td className="whitespace-nowrap py-3 pr-3">{num(t, ["partial_students_count"])}</td>
+                          <td className="whitespace-nowrap py-3 pr-3">{num(t, ["unpaid_students_count", "unpaid_students"])}</td>
+                          <td className="whitespace-nowrap py-3 pr-3">{fmtMoney(num(t, ["total_collected", "close_revenue"]))}</td>
+                          <td className="whitespace-nowrap py-3 pr-3">{num(t, ["salary_percentage"])}%</td>
+                          <td className="whitespace-nowrap py-3 pr-3">{fmtMoney(num(t, ["expected_salary", "close_expected_salary"]))}</td>
+                          <td className="whitespace-nowrap py-3 pr-3">{fmtMoney(num(t, ["total_advances"]))}</td>
+                          <td className="whitespace-nowrap py-3 pr-3 font-semibold text-gray-900">{fmtMoney(num(t, ["final_salary", "close_balance"]))}</td>
+                          <td className="whitespace-nowrap py-3 pr-3">
                             <span
                               className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${salaryStatusStyle(
                                 t?.is_closed
@@ -433,7 +433,7 @@ const TeacherPayments = () => {
                               {salaryStatusLabel(t?.is_closed)}
                             </span>
                           </td>
-                          <td className="py-3 pr-3">
+                          <td className="whitespace-nowrap py-3 pr-3">
                             <button
                               onClick={() => toggleStudents(teacherId)}
                               className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
@@ -441,8 +441,8 @@ const TeacherPayments = () => {
                               {isStudentsOpen ? "Yopish" : "Ko'rish"}
                             </button>
                           </td>
-                          <td className="py-3 pr-3">
-                            <div className="flex items-center gap-2">
+                          <td className="whitespace-nowrap py-3 pr-3">
+                            <div className="flex items-center gap-2 whitespace-nowrap">
                               <input
                                 type="number"
                                 min={0}
@@ -466,8 +466,8 @@ const TeacherPayments = () => {
                               </button>
                             </div>
                           </td>
-                          <td className="py-3 pr-3">
-                            <div className="flex items-center gap-2">
+                          <td className="whitespace-nowrap py-3 pr-3">
+                            <div className="flex items-center gap-2 whitespace-nowrap">
                               <input
                                 type="text"
                                 inputMode="numeric"
@@ -479,7 +479,7 @@ const TeacherPayments = () => {
                                   }))
                                 }
                                 placeholder="0 so'm"
-                                className="w-40 rounded-xl border border-gray-300 px-3 py-2 text-sm outline-none transition focus:border-[#A60E07] focus:ring-2 focus:ring-[#A60E07]/20"
+                                className="w-44 rounded-xl border border-gray-300 px-3 py-2 text-sm outline-none transition focus:border-[#A60E07] focus:ring-2 focus:ring-[#A60E07]/20"
                               />
                               <input
                                 type="text"
@@ -491,7 +491,7 @@ const TeacherPayments = () => {
                                   }))
                                 }
                                 placeholder="Izoh"
-                                className="w-32 rounded-xl border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#A60E07]/20"
+                                className="w-36 rounded-xl border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#A60E07]/20"
                               />
                               <button
                                 onClick={() => handleCreateAdvance(teacherId, t?.can_give_advance)}
@@ -502,7 +502,7 @@ const TeacherPayments = () => {
                               </button>
                             </div>
                           </td>
-                          <td className="py-3 pr-3">
+                          <td className="whitespace-nowrap py-3 pr-3">
                             <button
                               onClick={() => handleCloseMonth(teacherId, t?.is_closed)}
                               disabled={closeMutation.isPending || t?.is_closed}
