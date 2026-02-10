@@ -218,7 +218,8 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
     queryFn: getUserProfile
   });
   
-  const isAdmin = userProfile?.data?.role === 'admin';
+  const userRole = userProfile?.data?.role;
+  const canChangeMonthlyStatus = userRole === 'admin';
   
   const monthData = data?.data;
   const lessons = [...(monthData?.lessons || [])].sort((a, b) => {
@@ -419,7 +420,7 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
                       }`}>
                         {student.monthly_status === "active" ? "Faol" : student.monthly_status === "stopped" ? "To'xtagan" : student.monthly_status}
                       </span>
-                      {isAdmin ? (
+                      {canChangeMonthlyStatus ? (
                         <button
                           onClick={() => setStatusModal({ isOpen: true, student })}
                           className="rounded px-2 py-0.5 text-xs text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-800"
