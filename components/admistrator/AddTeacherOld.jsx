@@ -18,13 +18,13 @@ import Modal from "@mui/material/Modal";
 import { useRegisterTeacher } from "../../hooks/teacher";
 import { useGetNotify } from "../../hooks/notify";
 import SubjectsSelect from "../SubjectsSelect";
-import { usegetSubjects } from "../../hooks/subjects";
+import { useGetAllSubjects } from "../../hooks/subjects";
 
 const MAIN_COLOR = "#A60E07";
 
 // Fanlar tanlash komponenti
 const SubjectSelectionSection = ({ formData, onSubjectChange, onPrimarySubjectChange, onChange }) => {
-    const { data: subjectsData } = usegetSubjects();
+    const { data: subjectsData } = useGetAllSubjects();
     const subjects = subjectsData?.subjects || [];
     
     const selectedSubjects = subjects.filter(subject => 
