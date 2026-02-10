@@ -14,7 +14,8 @@ import {
 
 import Box from "@mui/material/Box";
 import Modal from "@mui/material/Modal";
-import { usegetProfile } from "../../hooks/user";
+import { usegetProfile, useUpdateProfile } from "../../hooks/user";
+import { useGetNotify } from "../../hooks/notify";
 
 const modalStyle = {
   position: "absolute",
@@ -33,6 +34,8 @@ const modalStyle = {
 export default function ProfileModal({ children }) {
   const [isOpen, setIsOpen] = useState(false);
   const { data: user, isLoading } = usegetProfile();
+  const updateProfileMutation = useUpdateProfile();
+  const notify = useGetNotify();
   const [isEditing, setIsEditing] = useState(false);
 
   const [profileData, setProfileData] = useState({
@@ -54,8 +57,29 @@ export default function ProfileModal({ children }) {
   };
 
   const handleSave = () => {
-    console.log("Saving...", profileData);
-    setIsEditing(false);
+    const payload = {
+      name: profileData.name.trim(),
+      surname: profileData.surname.trim(),
+      phone: profileData.phone.trim(),
+      phone2: profileData.phone2.trim(),
+    };
+
+    if (!payload.name || !payload.surname) {
+      notify("err", "Ism va familiya majburiy");
+      return;
+    }
+
+    updateProfileMutation.mutate({
+      ...payload,
+      onSuccess: (data) => {
+        notify("ok", data?.message || "Profil muvaffaqiyatli yangilandi");
+        setProfileData(payload);
+        setIsEditing(false);
+      },
+      onError: (err) => {
+        notify("err", err?.response?.data?.message || "Profilni yangilashda xatolik");
+      },
+    });
   };
 
   const startEditing = () => {
@@ -134,7 +158,7 @@ export default function ProfileModal({ children }) {
                     <label className="text-xs font-bold text-gray-500 ml-1 mb-1">Ism</label>
                     <input
                       name="name"
-                      value={isEditing ? profileData.name : user?.name}
+                      value={isEditing ? profileData.name : user?.name || ""}
                       onChange={handleInputChange}
                       disabled={!isEditing}
                       className={`px-4 py-2.5 rounded-xl border transition-all duration-300 ${
@@ -149,7 +173,7 @@ export default function ProfileModal({ children }) {
                     <label className="text-xs font-bold text-gray-500 ml-1 mb-1">Familiya</label>
                     <input
                       name="surname"
-                      value={isEditing ? profileData.surname : user?.surname}
+                      value={isEditing ? profileData.surname : user?.surname || ""}
                       onChange={handleInputChange}
                       disabled={!isEditing}
                       className={`px-4 py-2.5 rounded-xl border transition-all duration-300 ${
@@ -168,7 +192,7 @@ export default function ProfileModal({ children }) {
                     <PhoneIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 transition-colors" style={{ color: isEditing ? '#A60E07' : '#9CA3AF' }} />
                     <input
                       name="phone"
-                      value={isEditing ? profileData.phone : user?.phone}
+                      value={isEditing ? profileData.phone : user?.phone || ""}
                       onChange={handleInputChange}
                       disabled={!isEditing}
                       className={`pl-10 pr-4 py-2.5 w-full rounded-xl border transition-all duration-300 ${
@@ -187,7 +211,7 @@ export default function ProfileModal({ children }) {
                     <PhoneIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 transition-colors" style={{ color: isEditing ? '#A60E07' : '#9CA3AF' }} />
                     <input
                       name="phone2"
-                      value={isEditing ? profileData.phone2 : user?.phone2}
+                      value={isEditing ? profileData.phone2 : user?.phone2 || ""}
                       onChange={handleInputChange}
                       disabled={!isEditing}
                       className={`pl-10 pr-4 py-2.5 w-full rounded-xl border transition-all duration-300 ${
@@ -225,10 +249,11 @@ export default function ProfileModal({ children }) {
                     <button
                       type="button"
                       onClick={handleSave}
-                      className="flex items-center justify-center space-x-2 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold transition-all shadow-lg"
+                      disabled={updateProfileMutation.isPending}
+                      className="flex items-center justify-center space-x-2 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold transition-all shadow-lg disabled:opacity-60"
                     >
                       <CheckIcon className="h-5 w-5" />
-                      <span>Saqlash</span>
+                      <span>{updateProfileMutation.isPending ? "Saqlanmoqda..." : "Saqlash"}</span>
                     </button>
                   </div>
                 )}

@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 const { instance } = require("./api")
 
@@ -80,6 +80,31 @@ export const useChangePassword = () => {
     return useMutation({
         mutationFn: changePassword,
         onSuccess: (data, vars) => {
+            if (vars.onSuccess) vars.onSuccess(data);
+        },
+        onError: (err, vars) => {
+            if (vars.onError) vars.onError(err);
+        },
+    });
+};
+
+// -------------- Update profile (logged in) ----------
+const updateProfile = async ({ name, surname, phone, phone2 }) => {
+    const response = await instance.patch('/api/users/profile', {
+        name,
+        surname,
+        phone,
+        phone2,
+    });
+    return response.data;
+};
+
+export const useUpdateProfile = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: updateProfile,
+        onSuccess: (data, vars) => {
+            queryClient.invalidateQueries({ queryKey: ['user'] });
             if (vars.onSuccess) vars.onSuccess(data);
         },
         onError: (err, vars) => {
