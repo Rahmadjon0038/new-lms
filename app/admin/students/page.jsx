@@ -1,6 +1,6 @@
 'use client'
 import React, { useState, useMemo, useCallback, memo, useEffect } from 'react';
-import { FiUserPlus, FiSearch } from 'react-icons/fi';
+import { FiUserPlus, FiSearch, FiFilter } from 'react-icons/fi';
 import { ClipboardDocumentCheckIcon, ClipboardDocumentIcon, InformationCircleIcon, KeyIcon } from '@heroicons/react/24/outline';
 import {
     User, Phone, MapPin, Calendar, GraduationCap,
@@ -12,7 +12,6 @@ import Link from 'next/link';
 import { useGetAllStudents, useUpdateStudentStatus } from '../../../hooks/students';
 import { usegetTeachers } from '../../../hooks/teacher';
 import { useGetAllSubjects } from '../../../hooks/subjects';
-import { usegetAllgroups } from '../../../hooks/groups';
 import { useGetNotify } from '../../../hooks/notify';
 import { getAllStatusOptions, getStatusInfo } from '../../../utils/studentStatus';
 import AddGroup from '../../../components/admistrator/AddGroup';
@@ -35,21 +34,19 @@ const StudentsPage = () => {
     // Filter state'lari
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedTeacher, setSelectedTeacher] = useState('all');
-    const [selectedGroup, setSelectedGroup] = useState('all');
     const [selectedSubject, setSelectedSubject] = useState('all');
     const [selectedStatus, setSelectedStatus] = useState('all');
     const [showUnassigned, setShowUnassigned] = useState(false);
+    const [showMobileFilters, setShowMobileFilters] = useState(false);
     const [statusDropdownOpen, setStatusDropdownOpen] = useState(null); // Status dropdown state
 
     // Filter options uchun data
     const { data: teachersData } = usegetTeachers();
     const { data: subjectsData } = useGetAllSubjects();
-    const { data: groupsData } = usegetAllgroups();
 
     // Filterlarni backend uchun tayyorlash
     const filters = {
         teacher_id: selectedTeacher,
-        group_id: selectedGroup,
         subject_id: selectedSubject,
         group_status: selectedStatus,
         unassigned: showUnassigned ? 'true' : undefined
@@ -208,7 +205,6 @@ const StudentsPage = () => {
     // Barcha filterlarni tozalash
     const clearAllFilters = () => {
         setSelectedTeacher('all');
-        setSelectedGroup('all');
         setSelectedSubject('all');
         setSelectedStatus('all');
         setShowUnassigned(false);
@@ -268,112 +264,169 @@ const StudentsPage = () => {
         <div className="mx-auto min-h-screen bg-gray-50 p-3 font-sans sm:p-4 md:p-6">
             <h1 className="mb-6 text-2xl font-bold text-gray-800 sm:text-3xl">Talabalar Ro'yxati (Admin)</h1>
 
-            <div className="mb-6 grid grid-cols-1 gap-3 rounded-lg bg-white p-4 shadow-md sm:grid-cols-2 xl:grid-cols-6">
-                {/* Qidiruv */}
-                <div className="flex items-center rounded-lg border border-gray-300 bg-gray-50 p-2 focus-within:border-[#A60E07] sm:col-span-2 xl:col-span-2">
-                    <FiSearch className="text-gray-400 mr-2" size={20} />
-                    <input
-                        type="text"
-                        placeholder="Ism, telefon bo'yicha qidiruv..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="border-none p-1 flex-grow outline-none bg-transparent text-sm"
-                    />
-                </div>
-
-                {/* Guruhlanmaganlar tugmasi */}
-                <button
-                    onClick={() => setShowUnassigned(!showUnassigned)}
-                    className={`w-full rounded-lg px-4 py-2 text-sm font-medium transition duration-200 ${showUnassigned
-                            ? 'bg-orange-500 text-white hover:bg-orange-600'
-                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                        }`}
-                >
-                    <Users className="inline h-4 w-4 mr-1" />
-                    {showUnassigned ? 'Hammasi' : 'Guruhlanmaganlar'}
-                </button>
-
-                {/* Teacher filter */}
-                <select
-                    value={selectedTeacher}
-                    onChange={(e) => setSelectedTeacher(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 bg-white p-2 text-sm outline-none focus:border-[#A60E07]"
-                >
-                    <option value="all">Barcha o'qituvchilar</option>
-                    {teachersData?.teachers?.map(teacher => (
-                        <option key={teacher.id} value={teacher.id}>
-                            {teacher.name} {teacher.surname}
-                        </option>
-                    ))}
-                </select>
-
-                {/* Group filter */}
-                <select
-                    value={selectedGroup}
-                    onChange={(e) => setSelectedGroup(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 bg-white p-2 text-sm outline-none focus:border-[#A60E07]"
-                >
-                    <option value="all">Barcha guruhlar</option>
-                    {groupsData?.groups?.map(group => (
-                        <option key={group.id} value={group.id}>
-                            {group.name}
-                        </option>
-                    ))}
-                </select>
-
-                {/* Subject filter */}
-                <select
-                    value={selectedSubject}
-                    onChange={(e) => setSelectedSubject(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 bg-white p-2 text-sm outline-none focus:border-[#A60E07]"
-                >
-                    <option value="all">Barcha fanlar</option>
-                    {subjectsData?.subjects?.map(subject => (
-                        <option key={subject.id} value={subject.id}>
-                            {subject.name}
-                        </option>
-                    ))}
-                </select>
-
-                {/* Status filter */}
-                <div className="relative w-full">
-                    <select
-                        value={selectedStatus}
-                        onChange={(e) => setSelectedStatus(e.target.value)}
-                        className="w-full p-2 pr-8 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:border-[#A60E07] appearance-none cursor-pointer hover:border-gray-400 transition-colors"
-                    >
-                        <option value="all">Barcha holatlar</option>
-                        <option value="active"> Faol</option>
-                        <option value="stopped">To'xtatilgan</option>
-                        <option value="finished">Bitirgan</option>
-                    </select>
-                    {/* Dropdown arrow */}
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                        <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                        </svg>
+            <div className="mb-6 rounded-lg bg-white p-4 shadow-md">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-6">
+                    {/* Qidiruv + mobile filter */}
+                    <div className="flex items-center gap-2 sm:col-span-2 xl:col-span-2">
+                        <button
+                            type="button"
+                            onClick={() => setShowMobileFilters((prev) => !prev)}
+                            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 md:hidden"
+                            aria-label="Filtrlarni ochish"
+                        >
+                            <FiFilter size={18} />
+                        </button>
+                        <div className="flex flex-1 items-center rounded-lg border border-gray-300 bg-gray-50 p-2 focus-within:border-[#A60E07]">
+                            <FiSearch className="mr-2 text-gray-400" size={20} />
+                            <input
+                                type="text"
+                                placeholder="Ism, telefon bo'yicha qidiruv..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="flex-grow border-none bg-transparent p-1 text-sm outline-none"
+                            />
+                        </div>
                     </div>
+
+                    {/* Desktop filters */}
+                    <div className="hidden md:block">
+                        <button
+                            onClick={() => setShowUnassigned(!showUnassigned)}
+                            className={`w-full rounded-lg px-4 py-2 text-sm font-medium transition duration-200 ${showUnassigned
+                                    ? 'bg-orange-500 text-white hover:bg-orange-600'
+                                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                }`}
+                        >
+                            <Users className="mr-1 inline h-4 w-4" />
+                            {showUnassigned ? 'Hammasi' : 'Guruhlanmaganlar'}
+                        </button>
+                    </div>
+
+                    <select
+                        value={selectedTeacher}
+                        onChange={(e) => setSelectedTeacher(e.target.value)}
+                        className="hidden w-full rounded-lg border border-gray-300 bg-white p-2 text-sm outline-none focus:border-[#A60E07] md:block"
+                    >
+                        <option value="all">Barcha o'qituvchilar</option>
+                        {teachersData?.teachers?.map(teacher => (
+                            <option key={teacher.id} value={teacher.id}>
+                                {teacher.name} {teacher.surname}
+                            </option>
+                        ))}
+                    </select>
+
+                    <select
+                        value={selectedSubject}
+                        onChange={(e) => setSelectedSubject(e.target.value)}
+                        className="hidden w-full rounded-lg border border-gray-300 bg-white p-2 text-sm outline-none focus:border-[#A60E07] md:block"
+                    >
+                        <option value="all">Barcha fanlar</option>
+                        {subjectsData?.subjects?.map(subject => (
+                            <option key={subject.id} value={subject.id}>
+                                {subject.name}
+                            </option>
+                        ))}
+                    </select>
+
+                    <div className="relative hidden w-full md:block">
+                        <select
+                            value={selectedStatus}
+                            onChange={(e) => setSelectedStatus(e.target.value)}
+                            className="w-full appearance-none rounded-lg border border-gray-300 bg-white p-2 pr-8 text-sm outline-none transition-colors hover:border-gray-400 focus:border-[#A60E07]"
+                        >
+                            <option value="all">Barcha holatlar</option>
+                            <option value="active"> Faol</option>
+                            <option value="stopped">To'xtatilgan</option>
+                            <option value="finished">Bitirgan</option>
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                            <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    {(selectedTeacher !== 'all' || selectedSubject !== 'all' || selectedStatus !== 'all' || showUnassigned || searchTerm) && (
+                        <button
+                            onClick={clearAllFilters}
+                            className="hidden w-full rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200 md:block"
+                        >
+                            <XCircle className="mr-1 inline h-4 w-4" />
+                            Tozalash
+                        </button>
+                    )}
+
+                    <Link href="/admin/students/new" className="w-full md:col-span-2 xl:col-span-1">
+                        <button
+                            className="flex w-full items-center justify-center gap-1 rounded-lg bg-[#A60E07] px-4 py-2 text-sm font-semibold text-white shadow-md transition duration-200 hover:opacity-90">
+                            <FiUserPlus size={18} />
+                            Yangi Talaba
+                        </button>
+                    </Link>
                 </div>
 
-                {/* Clear filters button */}
-                {(selectedTeacher !== 'all' || selectedGroup !== 'all' || selectedSubject !== 'all' || selectedStatus !== 'all' || showUnassigned || searchTerm) && (
-                    <button
-                        onClick={clearAllFilters}
-                        className="w-full rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200"
-                    >
-                        <XCircle className="inline h-4 w-4 mr-1" />
-                        Tozalash
-                    </button>
-                )}
+                {/* Mobile expandable filters */}
+                {showMobileFilters ? (
+                    <div className="mt-3 grid grid-cols-1 gap-2 border-t border-gray-100 pt-3 md:hidden">
+                        <button
+                            onClick={() => setShowUnassigned(!showUnassigned)}
+                            className={`w-full rounded-lg px-4 py-2 text-sm font-medium transition duration-200 ${showUnassigned
+                                    ? 'bg-orange-500 text-white hover:bg-orange-600'
+                                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                }`}
+                        >
+                            <Users className="mr-1 inline h-4 w-4" />
+                            {showUnassigned ? 'Hammasi' : 'Guruhlanmaganlar'}
+                        </button>
 
-                {/* Yangi talaba tugmasi */}
-                <Link href="/admin/students/new" className="w-full">
-                    <button
-                        className="flex w-full items-center justify-center gap-1 rounded-lg bg-[#A60E07] px-4 py-2 text-sm font-semibold text-white shadow-md transition duration-200 hover:opacity-90">
-                        <FiUserPlus size={18} />
-                        Yangi Talaba
-                    </button>
-                </Link>
+                        <select
+                            value={selectedTeacher}
+                            onChange={(e) => setSelectedTeacher(e.target.value)}
+                            className="w-full rounded-lg border border-gray-300 bg-white p-2 text-sm outline-none focus:border-[#A60E07]"
+                        >
+                            <option value="all">Barcha o'qituvchilar</option>
+                            {teachersData?.teachers?.map(teacher => (
+                                <option key={teacher.id} value={teacher.id}>
+                                    {teacher.name} {teacher.surname}
+                                </option>
+                            ))}
+                        </select>
+
+                        <select
+                            value={selectedSubject}
+                            onChange={(e) => setSelectedSubject(e.target.value)}
+                            className="w-full rounded-lg border border-gray-300 bg-white p-2 text-sm outline-none focus:border-[#A60E07]"
+                        >
+                            <option value="all">Barcha fanlar</option>
+                            {subjectsData?.subjects?.map(subject => (
+                                <option key={subject.id} value={subject.id}>
+                                    {subject.name}
+                                </option>
+                            ))}
+                        </select>
+
+                        <select
+                            value={selectedStatus}
+                            onChange={(e) => setSelectedStatus(e.target.value)}
+                            className="w-full rounded-lg border border-gray-300 bg-white p-2 text-sm outline-none focus:border-[#A60E07]"
+                        >
+                            <option value="all">Barcha holatlar</option>
+                            <option value="active">Faol</option>
+                            <option value="stopped">To'xtatilgan</option>
+                            <option value="finished">Bitirgan</option>
+                        </select>
+
+                        {(selectedTeacher !== 'all' || selectedSubject !== 'all' || selectedStatus !== 'all' || showUnassigned || searchTerm) ? (
+                            <button
+                                onClick={clearAllFilters}
+                                className="w-full rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200"
+                            >
+                                <XCircle className="mr-1 inline h-4 w-4" />
+                                Tozalash
+                            </button>
+                        ) : null}
+                    </div>
+                ) : null}
             </div>
 
             {/* Statistika bo'limi */}
@@ -405,7 +458,54 @@ const StudentsPage = () => {
                 </div>
             )} */}
 
-            <div className="bg-white rounded-lg shadow-lg overflow-x-auto border border-gray-300">
+            <div className="space-y-3 md:hidden">
+                {filteredStudents.length > 0 ? (
+                    filteredStudents.map((student, index) => {
+                        const statusInfo = getStatusInfo(student.group_status);
+                        return (
+                            <div key={`${student.id}-${student.group_id}-${index}`} className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
+                                <div className="mb-2 flex items-start justify-between gap-2">
+                                    <div>
+                                        <p className="text-sm font-semibold text-gray-900">{student.name} {student.surname}</p>
+                                        <p className="text-xs text-gray-500">#{student.id}</p>
+                                    </div>
+                                    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
+                                        student.group_status === 'active' ? 'bg-green-100 text-green-700' :
+                                        student.group_status === 'stopped' ? 'bg-orange-100 text-orange-700' :
+                                        student.group_status === 'finished' ? 'bg-purple-100 text-purple-700' :
+                                        'bg-gray-100 text-gray-700'
+                                    }`}>
+                                        {statusInfo.label}
+                                    </span>
+                                </div>
+
+                                <div className="space-y-1.5 text-xs text-gray-700">
+                                    <p><span className="font-medium text-gray-500">Telefon:</span> {student.phone || '-'}</p>
+                                    <p><span className="font-medium text-gray-500">Guruh:</span> {student.group_name || 'Guruh biriktirilmagan'}</p>
+                                    <p><span className="font-medium text-gray-500">Fan:</span> {student.subject_name || '-'}</p>
+                                    <p><span className="font-medium text-gray-500">O'qituvchi:</span> {student.teacher_name || '-'}</p>
+                                    <p><span className="font-medium text-gray-500">Ro'yxatdan sana:</span> {student.registration_date?.split('T')[0] || '-'}</p>
+                                </div>
+
+                                <div className="mt-3">
+                                    <AddGroup student={student} onSuccess={handleModalSuccess}>
+                                        <div className={`inline-flex cursor-pointer items-center gap-1 rounded-lg px-3 py-2 text-xs font-semibold text-white ${student.group_id ? 'bg-blue-500 hover:bg-blue-600' : 'bg-[#A60E07] hover:opacity-90'}`}>
+                                            <FiUserPlus size={14} />
+                                            {student.group_id ? "Guruhni yangilash" : "Guruhga qo'shish"}
+                                        </div>
+                                    </AddGroup>
+                                </div>
+                            </div>
+                        );
+                    })
+                ) : (
+                    <div className="rounded-xl border border-gray-200 bg-white p-8 text-center text-sm text-gray-500">
+                        Talaba topilmadi
+                    </div>
+                )}
+            </div>
+
+            <div className="hidden rounded-lg border border-gray-300 bg-white shadow-lg overflow-x-auto md:block">
                 <table className="min-w-[1200px] w-full divide-y divide-gray-300 border-collapse">
                     <thead className="bg-gradient-to-r from-gray-100 to-gray-200 border-b-2 border-gray-400">
                         <tr>

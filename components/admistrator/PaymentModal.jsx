@@ -8,30 +8,23 @@ const PaymentModal = ({ isOpen, onClose, student, month }) => {
   const [paymentData, setPaymentData] = useState({
     amount: '',
     payment_method: 'cash',
-    description: '',
-    month: month || new Date().toISOString().slice(0, 7)
+    description: ''
   });
 
   const processPaymentMutation = useProcessPayment();
 
-  // Update month when prop changes
-  useEffect(() => {
-    if (month) {
-      setPaymentData(prev => ({ ...prev, month }));
-    }
-  }, [month]);
+  const resetForm = () => {
+    setPaymentData({
+      amount: '',
+      payment_method: 'cash',
+      description: ''
+    });
+  };
 
-  // Reset form when modal closes
-  useEffect(() => {
-    if (!isOpen) {
-      setPaymentData({
-        amount: '',
-        payment_method: 'cash',
-        description: '',
-        month: month || new Date().toISOString().slice(0, 7)
-      });
-    }
-  }, [isOpen, month]);
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -43,7 +36,7 @@ const PaymentModal = ({ isOpen, onClose, student, month }) => {
         student_id: student.student_id,
         group_id: student.group_id,
         amount: Number(paymentData.amount),
-        month: paymentData.month,
+        month: month || new Date().toISOString().slice(0, 7),
         payment_method: paymentData.payment_method,
         description: paymentData.description
       };
@@ -59,7 +52,7 @@ const PaymentModal = ({ isOpen, onClose, student, month }) => {
         toast.success(`${studentName} - To'lov muvaffaqiyatli qabul qilindi!`);
       }
       
-      onClose();
+      handleClose();
     } catch (error) {
       toast.error(error?.message || 'To\'lov qabul qilishda xatolik yuz berdi');
       console.error('Payment processing failed:', error);
@@ -115,61 +108,67 @@ const PaymentModal = ({ isOpen, onClose, student, month }) => {
   if (!isOpen) return null;
 
   return (
-    <div 
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-      onClick={onClose}
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-2 backdrop-blur-sm sm:items-center sm:p-4"
+      onClick={handleClose}
     >
       <div 
-        className="bg-white rounded-lg shadow-md w-full max-w-xl mx-auto overflow-hidden"
+        className="mx-auto flex max-h-[94vh] w-full max-w-xl flex-col overflow-hidden rounded-2xl bg-white shadow-md sm:max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="text-center p-4">
-          <div className="w-12 h-12 mx-auto mb-3 bg-red-50 rounded-full flex items-center justify-center">
-            <CreditCardIcon className="h-6 w-6 text-red-500" />
+        <div className="sticky top-0 z-10 border-b border-gray-100 bg-white px-4 py-3 sm:px-6 sm:py-4">
+          <button
+            type="button"
+            onClick={handleClose}
+            className="absolute right-3 top-3 rounded-lg p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+          >
+            <XMarkIcon className="h-5 w-5" />
+          </button>
+          <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-red-50 sm:h-12 sm:w-12">
+            <CreditCardIcon className="h-5 w-5 text-red-500 sm:h-6 sm:w-6" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900">
-            To'lov qabul qilish
+          <h3 className="text-center text-base font-semibold text-gray-900 sm:text-lg">
+            To&apos;lov qabul qilish
           </h3>
         </div>
 
+        <div className="overflow-y-auto px-4 pb-4 pt-3 sm:px-6 sm:pb-6 sm:pt-4">
         {/* Student Information */}
         {student && (
-          <div className="px-6 pb-4">
-            <div className="bg-gray-50 rounded-lg p-4 mb-4">
-              <h4 className="text-lg font-medium text-gray-900 text-center mb-3">
+          <div className="mb-4 rounded-lg bg-gray-50 p-3 sm:p-4">
+              <h4 className="mb-3 text-center text-base font-medium text-gray-900 sm:text-lg">
                 {student.student_name || student.name} {student.student_surname || student.surname}
               </h4>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Qarzlik miqdori:</span>
-                  <span className={`font-semibold ${parseFloat(student.debt_amount || student.group_price || 0) > 0 ? 'text-red-500' : 'text-gray-600'}`}>
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs text-gray-600 sm:text-sm">Qarzlik miqdori:</span>
+                  <span className={`text-sm font-semibold sm:text-base ${parseFloat(student.debt_amount || student.group_price || 0) > 0 ? 'text-red-500' : 'text-gray-600'}`}>
                     {formatCurrency(Math.abs(parseFloat(student.debt_amount || student.group_price || 0)))}
                   </span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Oylik to'lov:</span>
-                  <span className="font-semibold text-blue-600">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs text-gray-600 sm:text-sm">Oylik to&apos;lov:</span>
+                  <span className="text-sm font-semibold text-blue-600 sm:text-base">
                     {formatCurrency(parseFloat(student.effective_required || student.required_amount || student.group_price || 0))}
                   </span>
                 </div>
               </div>
-            </div>
           </div>
         )}
 
         <form onSubmit={handleSubmit}>
-        <div className="px-6 pb-6 space-y-4">
+        <div className="space-y-4">
           {/* Payment Amount */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              To'lov miqdori:
+                  To&apos;lov miqdori:
             </label>
             <div className="relative">
               <input
                 type="text"
                 value={formatAmountForDisplay(paymentData.amount)}
                 onChange={(e) => handleChange('amount', e.target.value)}
-                className="w-full px-4 py-3 pr-16 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent text-lg"
+                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 pr-16 text-base focus:border-transparent focus:ring-2 sm:py-3 sm:text-lg"
                 style={{ '--tw-ring-color': '#A60E07' }}
                 placeholder="100,000"
                 required
@@ -183,9 +182,9 @@ const PaymentModal = ({ isOpen, onClose, student, month }) => {
           {/* Payment Method */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              To'lov usuli:
+                  To&apos;lov usuli:
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
               {paymentMethods.map((method) => {
                 const IconComponent = method.icon;
                 return (
@@ -193,7 +192,7 @@ const PaymentModal = ({ isOpen, onClose, student, month }) => {
                     key={method.value}
                     type="button"
                     onClick={() => handleChange('payment_method', method.value)}
-                    className={`flex flex-col items-center gap-2 p-3 rounded-lg border transition-colors ${
+                    className={`flex items-center gap-2 rounded-lg border p-3 transition-colors sm:flex-col sm:justify-center ${
                       paymentData.payment_method === method.value
                         ? 'bg-red-50 text-red-700 border-red-200'
                         : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
@@ -215,26 +214,26 @@ const PaymentModal = ({ isOpen, onClose, student, month }) => {
             <textarea
               value={paymentData.description}
               onChange={(e) => handleChange('description', e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent resize-none"
+              className="w-full resize-none rounded-lg border border-gray-300 px-4 py-2.5 focus:border-transparent focus:ring-2 sm:py-3"
               style={{ '--tw-ring-color': '#A60E07' }}
               rows="3"
-              placeholder="To'lov haqida qo'shimcha ma'lumot..."
+                  placeholder="To'lov haqida qo'shimcha ma'lumot..."
             />
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-3 pt-4">
+          <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:gap-3 sm:pt-4">
             <button
               type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  onClick={handleClose}
+              className="w-full rounded-lg bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 sm:flex-1 sm:py-3"
             >
               Bekor qilish
             </button>
             <button
               type="submit"
               disabled={processPaymentMutation.isPending}
-              className="flex-1 px-4 py-3 text-sm font-medium text-white rounded-lg hover:opacity-90 disabled:opacity-50 transition-colors"
+              className="w-full rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-colors hover:opacity-90 disabled:opacity-50 sm:flex-1 sm:py-3"
               style={{ backgroundColor: '#A60E07' }}
             >
               {processPaymentMutation.isPending ? 'Bajarilmoqda...' : 'To\'lov qilish'}
@@ -242,6 +241,7 @@ const PaymentModal = ({ isOpen, onClose, student, month }) => {
           </div>
         </div>
         </form>
+        </div>
       </div>
     </div>
   );

@@ -37,7 +37,6 @@ const toList = (value, fallbackKeys = []) => {
 const TeacherGuideLessonPage = () => {
   const { courseId, levelId, lessonId } = useParams();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('overview');
   const { data, isLoading, error } = useTeacherGuideLessonDetail(lessonId);
   const { data: speechSettings } = useTeacherGuideSpeechSettings();
   const updateSpeechSettingsMutation = useTeacherUpdateGuideSpeechSettings();
@@ -276,48 +275,28 @@ const TeacherGuideLessonPage = () => {
           </div>
         </div>
 
-        <div className="mb-6 overflow-x-auto border-b border-gray-200 pb-3">
-          <div className="flex min-w-max gap-2">
-          {[
-            { key: 'overview', label: 'Overview' },
-            { key: 'pdfs', label: 'PDF Materials' },
-            { key: 'assignments', label: 'Assignments' },
-            { key: 'vocabulary', label: 'Vocabulary' },
-            { key: 'videos', label: 'Videos' },
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`rounded-lg px-3 py-2 text-sm font-semibold ${
-                activeTab === tab.key ? 'bg-[#A60E07] text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-          </div>
-        </div>
-
-        {activeTab === 'overview' ? (
-          notes.length > 0 ? (
-            <div className="space-y-3">
-              {notes.map((item) => (
-                <div key={item.id} className={`rounded-xl border bg-gradient-to-r p-4 sm:p-6 ${NOTE_COLOR_MAP[item?.color] || NOTE_COLOR_MAP.blue}`}>
-                  <div className="prose prose-sm max-w-none text-slate-800">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{item?.content_markdown || ''}</ReactMarkdown>
+        <div className="space-y-8">
+          <section className="space-y-3">
+            <h2 className="border-b border-gray-200 pb-2 text-lg font-bold text-slate-900">Overview</h2>
+            {notes.length > 0 ? (
+              <div className="space-y-3">
+                {notes.map((item) => (
+                  <div key={item.id} className={`rounded-xl border bg-gradient-to-r p-4 sm:p-6 ${NOTE_COLOR_MAP[item?.color] || NOTE_COLOR_MAP.blue}`}>
+                    <div className="prose prose-sm max-w-none text-slate-800">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{item?.content_markdown || ''}</ReactMarkdown>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className={`rounded-xl border bg-gradient-to-r p-4 sm:p-6 ${NOTE_COLOR_MAP.blue}`}>
-              <p className="whitespace-pre-wrap text-base leading-7 text-slate-800">{lesson.description || 'No lesson notes have been added yet.'}</p>
-            </div>
-          )
-        ) : null}
+                ))}
+              </div>
+            ) : (
+              <div className={`rounded-xl border bg-gradient-to-r p-4 sm:p-6 ${NOTE_COLOR_MAP.blue}`}>
+                <p className="whitespace-pre-wrap text-base leading-7 text-slate-800">{lesson.description || 'No lesson notes have been added yet.'}</p>
+              </div>
+            )}
+          </section>
 
-        {activeTab === 'pdfs' ? (
-          <div className="space-y-3">
+          <section className="space-y-3">
+            <h2 className="border-b border-gray-200 pb-2 text-lg font-bold text-slate-900">PDF Materials</h2>
             {pdfs.length === 0 ? <p className="text-sm text-gray-500">No PDFs available.</p> : null}
             {pdfs.map((pdf) => (
               <div key={pdf.id} className="rounded-xl border border-gray-200 p-3">
@@ -344,11 +323,10 @@ const TeacherGuideLessonPage = () => {
                 </div>
               </div>
             ))}
-          </div>
-        ) : null}
+          </section>
 
-        {activeTab === 'assignments' ? (
-          <div className="space-y-3">
+          <section className="space-y-3">
+            <h2 className="border-b border-gray-200 pb-2 text-lg font-bold text-slate-900">Assignments</h2>
             {assignments.length === 0 ? <p className="text-sm text-gray-500">No assignments available.</p> : null}
             {assignments.map((item) => {
               const text = item.assignment_text || item.text || item.description || '';
@@ -360,11 +338,10 @@ const TeacherGuideLessonPage = () => {
                 </div>
               );
             })}
-          </div>
-        ) : null}
+          </section>
 
-        {activeTab === 'vocabulary' ? (
-          <div className="space-y-3">
+          <section className="space-y-3">
+            <h2 className="border-b border-gray-200 pb-2 text-lg font-bold text-slate-900">Vocabulary</h2>
             <div className="flex items-center justify-end">
               <label className="flex items-center gap-2 text-xs font-semibold text-gray-600">
                 Speech speed
@@ -480,11 +457,11 @@ const TeacherGuideLessonPage = () => {
                 ))}
               </div>
             ) : null}
-          </div>
-        ) : null}
+          </section>
 
-        {activeTab === 'videos' ? (
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <section className="space-y-3">
+            <h2 className="border-b border-gray-200 pb-2 text-lg font-bold text-slate-900">Videos</h2>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
             {videos.length === 0 ? <p className="text-sm text-gray-500">No videos available.</p> : null}
             {videos.map((video) => (
               <div key={video.id} className="rounded-lg border border-gray-200 p-3">
@@ -501,8 +478,9 @@ const TeacherGuideLessonPage = () => {
                 </div>
               </div>
             ))}
-          </div>
-        ) : null}
+            </div>
+          </section>
+        </div>
       </div>
 
       {imageViewer.open ? (

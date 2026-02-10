@@ -36,6 +36,17 @@ const StudentAttendanceModal = ({ isOpen, onClose, student, month }) => {
         }
     };
 
+    const getStatusLabel = (status) => {
+        switch (status) {
+            case 'keldi':
+                return "Keldi";
+            case 'kelmadi':
+                return "Kelmadi";
+            default:
+                return "-";
+        }
+    };
+
     const getStatusText = (status) => {
         if (attendanceData?.data?.monthly_status === 'active') {
             return <span className="text-green-600 font-medium">Faol</span>;
@@ -45,8 +56,8 @@ const StudentAttendanceModal = ({ isOpen, onClose, student, month }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-2 sm:p-4">
-            <div className="mx-auto h-[94vh] w-full max-w-6xl overflow-hidden rounded-xl bg-white shadow-md sm:h-auto sm:max-h-[92vh]">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-1 sm:items-center sm:p-4">
+            <div className="mx-auto h-[95vh] w-full max-w-6xl overflow-hidden rounded-t-2xl bg-white shadow-md sm:h-auto sm:max-h-[92vh] sm:rounded-xl">
                 {/* Header */}
                 <div className="sticky top-0 z-20 flex items-start justify-between border-b border-gray-200 bg-white p-3 sm:items-center sm:p-6">
                     <div>
@@ -67,7 +78,7 @@ const StudentAttendanceModal = ({ isOpen, onClose, student, month }) => {
                     </button>
                 </div>
 
-                <div className="max-h-[calc(94vh-76px)] overflow-auto sm:max-h-[calc(92vh-120px)]">
+                <div className="max-h-[calc(95vh-76px)] overflow-auto sm:max-h-[calc(92vh-120px)]">
                     {isLoading ? (
                         <div className="p-8 text-center">
                             <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-gray-600"></div>
@@ -97,8 +108,8 @@ const StudentAttendanceModal = ({ isOpen, onClose, student, month }) => {
                                 </div>
                             </div>
 
-                            {/* Attendance Table */}
-                            <div className="-mx-3 overflow-x-auto rounded-lg border border-gray-200 bg-white sm:mx-0">
+                            {/* Attendance Table - desktop/tablet */}
+                            <div className="hidden overflow-x-auto rounded-lg border border-gray-200 bg-white sm:block">
                                 <table className="w-full min-w-[760px] border-collapse sm:min-w-[900px]">
                                     <thead className="bg-gray-50">
                                         <tr>
@@ -139,6 +150,26 @@ const StudentAttendanceModal = ({ isOpen, onClose, student, month }) => {
                                         </tr>
                                     </tbody>
                                 </table>
+                            </div>
+
+                            {/* Attendance list - mobile */}
+                            <div className="space-y-2 sm:hidden">
+                                {attendanceData.data.daily_attendance?.map((attendance, index) => (
+                                    <div key={index} className="rounded-lg border border-gray-200 bg-white p-3">
+                                        <div className="flex items-center justify-between gap-2">
+                                            <div>
+                                                <p className="text-sm font-semibold text-gray-900">{attendance.formatted_date}</p>
+                                                <p className="text-xs text-gray-500">
+                                                    {getWeekdayFull(attendance.date || attendance.lesson_date || attendance.formatted_date)}
+                                                </p>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                {getStatusIcon(attendance.status)}
+                                                <span className="text-sm font-medium text-gray-700">{getStatusLabel(attendance.status)}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
 
                             {/* Statistics Summary */}

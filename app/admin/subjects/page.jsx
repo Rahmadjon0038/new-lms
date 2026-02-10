@@ -22,8 +22,8 @@ const StatsModal = ({ isOpen, onClose, subjectId }) => {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-            <div className="bg-white p-6 rounded-2xl shadow-2xl max-w-md w-full animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 p-2 backdrop-blur-sm sm:items-center sm:p-4">
+            <div className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-white p-4 shadow-2xl animate-in fade-in zoom-in duration-200 sm:rounded-2xl sm:p-6">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-xl font-bold text-gray-800">Fan statistikasi</h3>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
@@ -42,7 +42,7 @@ const StatsModal = ({ isOpen, onClose, subjectId }) => {
                             <h4 className="font-semibold text-lg text-gray-800 mb-2">{statsData.subject.name}</h4>
                         </div>
                         
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
                             <div className="bg-blue-50 p-4 rounded-lg text-center">
                                 <BookOpenIcon className="h-8 w-8 text-blue-500 mx-auto mb-2" />
                                 <p className="text-2xl font-bold text-blue-600">{statsData.stats.total_groups}</p>
@@ -68,7 +68,7 @@ const StatsModal = ({ isOpen, onClose, subjectId }) => {
                             </div>
                         </div>
                         
-                        <div className="grid grid-cols-2 gap-4 mt-4">
+                        <div className="mt-3 grid grid-cols-2 gap-3 sm:mt-4 sm:gap-4">
                             <div className="bg-yellow-50 p-3 rounded-lg text-center">
                                 <p className="text-lg font-bold text-yellow-600">{statsData.stats.draft_groups}</p>
                                 <p className="text-xs text-gray-600">Tayyorgarlik</p>
@@ -95,8 +95,8 @@ const DeleteConfirmModal = ({ isOpen, onClose, onConfirm, subjectName, isLoading
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-            <div className="bg-white p-6 rounded-2xl shadow-2xl max-w-sm w-full animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 p-2 backdrop-blur-sm sm:items-center sm:p-4">
+            <div className="w-full max-w-sm rounded-t-2xl bg-white p-4 shadow-2xl animate-in fade-in zoom-in duration-200 sm:rounded-2xl sm:p-6">
                 <div className="flex justify-center mb-4">
                     <ExclamationTriangleIcon className="h-14 w-14 text-red-500" />
                 </div>
@@ -106,7 +106,7 @@ const DeleteConfirmModal = ({ isOpen, onClose, onConfirm, subjectName, isLoading
                 <p className="text-gray-500 text-center text-sm mb-6">
                     Haqiqatan ham "<span className="font-semibold">{subjectName}</span>" fanini o'chirmoqchimisiz? Bu amalni bekor qilib bo'lmaydi.
                 </p>
-                <div className="flex gap-3">
+                <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
                     <button
                         onClick={onClose}
                         disabled={isLoading}
@@ -179,8 +179,8 @@ const SubjectFormModal = ({ isOpen, onClose, editData = null }) => {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-            <div className="bg-white p-6 rounded-2xl shadow-2xl max-w-md w-full animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 p-2 backdrop-blur-sm sm:items-center sm:p-4">
+            <div className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-white p-4 shadow-2xl animate-in fade-in zoom-in duration-200 sm:rounded-2xl sm:p-6">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-xl font-bold text-gray-800">
                         {isEditing ? "Fanni tahrirlash" : "Yangi fan yaratish"}
@@ -205,7 +205,7 @@ const SubjectFormModal = ({ isOpen, onClose, editData = null }) => {
                         />
                     </div>
                     
-                    <div className="flex gap-3 pt-4">
+                    <div className="flex flex-col gap-2 pt-4 sm:flex-row sm:gap-3">
                         <button
                             type="button"
                             onClick={onClose}
@@ -280,7 +280,7 @@ export default function SubjectsPage() {
 
     if (isLoading) {
         return (
-            <div className="flex-1 p-8 bg-gray-50">
+            <div className="flex-1 bg-gray-50 p-4 sm:p-6 md:p-8">
                 <div className="text-center py-12">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#A60E07] mx-auto"></div>
                     <p className="mt-4 text-gray-500">Fanlar yuklanmoqda...</p>
@@ -292,22 +292,22 @@ export default function SubjectsPage() {
     const subjects = subjectsData?.subjects || [];
 
     return (
-        <div className="flex-1 p-8 bg-gray-50">
+        <div className="flex-1 bg-gray-50 p-3 sm:p-4 md:p-8">
             {/* Header */}
-            <div className="mb-8">
-                <div className="flex justify-between items-center">
+            <div className="mb-6 sm:mb-8">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-800 flex items-center">
-                            <BookOpenIcon className="h-8 w-8 mr-3 text-[#A60E07]" />
+                        <h1 className="flex items-center text-2xl font-bold text-gray-800 sm:text-3xl">
+                            <BookOpenIcon className="mr-2 h-7 w-7 text-[#A60E07] sm:mr-3 sm:h-8 sm:w-8" />
                             Fanlar
                         </h1>
-                        <p className="text-gray-600 mt-2">
+                        <p className="mt-1 text-sm text-gray-600 sm:mt-2 sm:text-base">
                             Barcha fanlar va ularning statistikasini boshqaring
                         </p>
                     </div>
                     <button
                         onClick={() => setShowFormModal(true)}
-                        className="flex items-center px-6 py-3 bg-[#A60E07] text-white font-semibold rounded-xl hover:opacity-90 transition duration-150 shadow-lg"
+                        className="flex w-full items-center justify-center rounded-xl bg-[#A60E07] px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition duration-150 hover:opacity-90 sm:w-auto sm:px-6 sm:py-3 sm:text-base"
                     >
                         <PlusCircleIcon className="h-5 w-5 mr-2" />
                         Yangi fan yaratish
@@ -317,7 +317,7 @@ export default function SubjectsPage() {
 
             {/* Subjects List */}
             {subjects.length === 0 ? (
-                <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+                <div className="bg-white rounded-xl shadow-sm p-6 text-center sm:p-12">
                     <BookOpenIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
                     <h3 className="text-xl font-semibold text-gray-800 mb-2">Fanlar topilmadi</h3>
                     <p className="text-gray-500 mb-6">Hozircha hech qanday fan yaratilmagan</p>
@@ -330,13 +330,13 @@ export default function SubjectsPage() {
                     </button>
                 </div>
             ) : (
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                     {subjects.map((subject) => (
-                        <div key={subject.id} className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition duration-150">
-                            <div className="flex items-center justify-between">
-                                <div className="flex-1">
-                                    <h3 className="text-lg font-semibold text-gray-800 mb-2">{subject.name}</h3>
-                                    <div className="flex items-center space-x-6 text-sm text-gray-600">
+                        <div key={subject.id} className="bg-white rounded-xl shadow-sm p-4 transition duration-150 hover:shadow-md sm:p-6">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="mb-2 break-words text-base font-semibold text-gray-800 sm:text-lg">{subject.name}</h3>
+                                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-600 sm:gap-x-6">
                                         <div className="flex items-center">
                                             <BookOpenIcon className="h-4 w-4 mr-1 text-blue-500" />
                                             <span>{subject.groups_count} guruh</span>
@@ -348,7 +348,7 @@ export default function SubjectsPage() {
                                     </div>
                                 </div>
                                 
-                                <div className="flex items-center space-x-2">
+                                <div className="flex items-center justify-end space-x-2 sm:justify-start">
                                     {/* <button
                                         onClick={() => handleViewStats(subject)}
                                         className="px-4 py-2 bg-blue-100 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-200 transition"

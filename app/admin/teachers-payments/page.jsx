@@ -236,13 +236,13 @@ const TeacherPayments = () => {
                     <div className="mb-2 flex items-start justify-between gap-2">
                       <div>
                         <p className="text-sm font-semibold text-gray-900">{teacherName}</p>
-                        <p className="text-xs text-gray-500">ID: {teacherId || "-"}</p>
                       </div>
                       <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${salaryStatusStyle(t?.is_closed)}`}>
                         {salaryStatusLabel(t?.is_closed)}
                       </span>
                     </div>
 
+                    <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-gray-500">O&apos;quvchilarning to&apos;lov statistikasi</p>
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <div className="rounded-lg bg-gray-50 p-2"><span className="text-gray-500">To'lagan:</span> <span className="font-semibold">{num(t, ["paid_students_count", "paid_students"])}</span></div>
                       <div className="rounded-lg bg-gray-50 p-2"><span className="text-gray-500">Qisman:</span> <span className="font-semibold">{num(t, ["partial_students_count"])}</span></div>
