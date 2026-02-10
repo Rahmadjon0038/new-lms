@@ -9,7 +9,6 @@ import {
   BookOpenIcon,
   ClipboardDocumentListIcon, // Davomat uchun
   BriefcaseIcon,
-  BanknotesIcon,
   BookmarkIcon, // Qo'llanma uchun
   Cog6ToothIcon,
   Bars3Icon,
@@ -44,11 +43,6 @@ const getTeacherSidebarItems = (isEnglishTeacher) => {
       name: "Talabalar To'lovlari", // To'lovlar statusini ko'rish uchun
       icon: BriefcaseIcon,
       href: "/teacher/payments-info",
-    },
-    {
-      name: "Mening Oyligim",
-      icon: BanknotesIcon,
-      href: "/teacher/salary",
     },
     {
       name: "Sozlamalar",

@@ -192,14 +192,39 @@ export default function AddTeacherModal({ children, onClose }) {
         });
     };
 
+    const getErrorMessage = (error) => {
+        const apiData = error?.response?.data;
+        if (typeof apiData?.message === "string" && apiData.message.trim()) return apiData.message;
+
+        if (Array.isArray(apiData?.errors) && apiData.errors.length > 0) {
+            const firstError = apiData.errors[0];
+            if (typeof firstError === "string") return firstError;
+            if (typeof firstError?.message === "string") return firstError.message;
+        }
+
+        if (apiData?.errors && typeof apiData.errors === "object") {
+            const firstKey = Object.keys(apiData.errors)[0];
+            const firstValue = apiData.errors[firstKey];
+            if (Array.isArray(firstValue) && firstValue.length > 0) return String(firstValue[0]);
+            if (typeof firstValue === "string") return firstValue;
+        }
+
+        return error?.message || "Noma'lum xatolik yuz berdi";
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
 
+        if (formData.subject_ids.length === 0) {
+            notify("err", "Kamida bitta fan biriktirilishi shart");
+            return;
+        }
+
         // Validation
         if (!formData.name || !formData.surname || !formData.username ||
-            !formData.password || !formData.phone || formData.subject_ids.length === 0 ||
+            !formData.password || !formData.phone ||
             !formData.startDate || !formData.age) {
-            notify("Iltimos, barcha majburiy maydonlarni to'ldiring", "error");
+            notify("err", "Iltimos, barcha majburiy maydonlarni to'ldiring");
             return;
         }
 
@@ -218,7 +243,7 @@ export default function AddTeacherModal({ children, onClose }) {
                 handleClose();
             },
             onError: (error) => {
-                notify("err" + error?.response?.data?.message);
+                notify("err", getErrorMessage(error));
             }
         });
     };
