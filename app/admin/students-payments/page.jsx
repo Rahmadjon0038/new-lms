@@ -418,12 +418,12 @@ const StudentPayments = () => {
                 {/* Header */}
                 <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div className="max-w-2xl">
-                        <h1 className="mb-2 text-xl font-bold text-gray-900 sm:text-2xl">
+                        {/* <h1 className="mb-2 text-xl font-bold text-gray-900 sm:text-2xl">
                             Talabalar oylik to'lovlari
-                        </h1>
-                        <p className="text-sm text-gray-600 sm:text-base">
+                        </h1> */}
+                        {/* <p className="text-sm text-gray-600 sm:text-base">
                             Talabalarning oylik to'lov ma'lumotlari va statistikasi
-                        </p>
+                        </p> */}
                     </div>
 
                     {/* Action Buttons */}

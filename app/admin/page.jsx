@@ -212,10 +212,10 @@ function AdminDashboard() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start gap-3 sm:gap-4 mb-6 sm:mb-8">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold mb-1 tracking-tight drop-shadow-sm" style={{ color: MAIN_COLOR }}>
+          {/* <h1 className="text-2xl sm:text-3xl font-extrabold mb-1 tracking-tight drop-shadow-sm" style={{ color: MAIN_COLOR }}>
             Dashboard
           </h1>
-          <p className="text-sm sm:text-base text-gray-500">Markazning umumiy ko&apos;rsatkichlari</p>
+          <p className="text-sm sm:text-base text-gray-500">Markazning umumiy ko&apos;rsatkichlari</p> */}
         </div>
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
           <input

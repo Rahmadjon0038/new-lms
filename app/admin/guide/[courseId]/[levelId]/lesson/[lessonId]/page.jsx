@@ -14,7 +14,6 @@ import {
   useAdminCreateVideo,
   useAdminCreateVocabulary,
   useAdminDeleteAssignment,
-  useAdminDeleteLesson,
   useAdminDeleteLessonPdf,
   useAdminDeleteNote,
   useAdminDeleteVideo,
@@ -58,7 +57,6 @@ const AdminGuideLessonPage = () => {
 
   const { data, isLoading, error } = useAdminGuideLessonDetail(lessonId);
 
-  const deleteLessonMutation = useAdminDeleteLesson();
   const createNoteMutation = useAdminCreateNote();
   const updateNoteMutation = useAdminUpdateNote();
   const deleteNoteMutation = useAdminDeleteNote();
@@ -91,6 +89,7 @@ const AdminGuideLessonPage = () => {
   const vocabularyPdfs = useMemo(() => (Array.isArray(data?.vocabulary_pdfs) ? data.vocabulary_pdfs : []), [data]);
   const vocabularyMarkdowns = useMemo(() => (Array.isArray(data?.vocabulary_markdowns) ? data.vocabulary_markdowns : []), [data]);
   const videos = useMemo(() => (Array.isArray(data?.videos) ? data.videos : []), [data]);
+  const hasVocabularyData = vocabulary.length > 0 || vocabularyImages.length > 0 || vocabularyPdfs.length > 0 || vocabularyMarkdowns.length > 0;
   const speechRate = Number(speechSettings?.speech_rate || data?.speech_settings?.speech_rate || 1);
 
   const [noteForm, setNoteForm] = useState({ id: null, content_markdown: '', color: 'blue' });
@@ -103,6 +102,12 @@ const AdminGuideLessonPage = () => {
   const [videoForm, setVideoForm] = useState({ title: '', youtube_url: '' });
   const [imageThumbs, setImageThumbs] = useState({});
   const [imageViewer, setImageViewer] = useState({ open: false, title: '', url: '', loading: false });
+  const [showOverviewModal, setShowOverviewModal] = useState(false);
+  const [showPdfModal, setShowPdfModal] = useState(false);
+  const [showAssignmentModal, setShowAssignmentModal] = useState(false);
+  const [showVocabularyModal, setShowVocabularyModal] = useState(false);
+  const [showVideoModal, setShowVideoModal] = useState(false);
+  const [vocabUploadType, setVocabUploadType] = useState('word');
   const viewerRef = useRef(null);
 
   const openProtectedPdf = async (url) => {
@@ -230,17 +235,6 @@ const AdminGuideLessonPage = () => {
     }
   };
 
-  const deleteLesson = async () => {
-    if (!window.confirm('Are you sure you want to delete this lesson?')) return;
-    try {
-      await deleteLessonMutation.mutateAsync({ lessonId, levelId });
-      toast.success('Lesson deleted');
-      router.push(`/admin/guide/${courseId}/${levelId}`);
-    } catch (err) {
-      toast.error(err?.response?.data?.message || 'Failed to delete lesson');
-    }
-  };
-
   const saveNote = async () => {
     if (!noteForm.content_markdown.trim()) {
       toast.error('Note content is required');
@@ -264,6 +258,7 @@ const AdminGuideLessonPage = () => {
         toast.success('Note created');
       }
       setNoteForm({ id: null, content_markdown: '', color: 'blue' });
+      setShowOverviewModal(false);
     } catch (err) {
       toast.error(err?.response?.data?.message || 'Failed to save note');
     }
@@ -282,6 +277,7 @@ const AdminGuideLessonPage = () => {
       });
       toast.success('PDF uploaded');
       setPdfForm({ title: '', file: null });
+      setShowPdfModal(false);
     } catch (err) {
       toast.error(err?.response?.data?.message || 'Failed to upload PDF');
     }
@@ -308,6 +304,7 @@ const AdminGuideLessonPage = () => {
         toast.success('Assignment added');
       }
       setAssignmentForm({ id: null, assignment_text: '' });
+      setShowAssignmentModal(false);
     } catch (err) {
       toast.error(err?.response?.data?.message || 'Failed to save assignment');
     }
@@ -338,6 +335,7 @@ const AdminGuideLessonPage = () => {
         toast.success('Word added');
       }
       setVocabForm({ id: null, word: '', translation: '', example: '' });
+      setShowVocabularyModal(false);
     } catch (err) {
       toast.error(err?.response?.data?.message || 'Failed to save word');
     }
@@ -352,6 +350,7 @@ const AdminGuideLessonPage = () => {
       await uploadVocabularyImageMutation.mutateAsync({ lessonId, title: vocabImageForm.title.trim(), file: vocabImageForm.file });
       toast.success('Vocabulary image uploaded');
       setVocabImageForm({ title: '', file: null });
+      setShowVocabularyModal(false);
     } catch (err) {
       toast.error(err?.response?.data?.message || 'Failed to upload vocabulary image');
     }
@@ -378,6 +377,7 @@ const AdminGuideLessonPage = () => {
         toast.success('Markdown added');
       }
       setVocabMarkdownForm({ id: null, content_markdown: '' });
+      setShowVocabularyModal(false);
     } catch (err) {
       toast.error(err?.response?.data?.message || 'Failed to save markdown');
     }
@@ -396,6 +396,7 @@ const AdminGuideLessonPage = () => {
       });
       toast.success('Vocabulary PDF uploaded');
       setVocabPdfForm({ title: '', file: null });
+      setShowVocabularyModal(false);
     } catch (err) {
       toast.error(err?.response?.data?.message || 'Failed to upload vocabulary PDF');
     }
@@ -414,6 +415,7 @@ const AdminGuideLessonPage = () => {
       });
       toast.success('Video added');
       setVideoForm({ title: '', youtube_url: '' });
+      setShowVideoModal(false);
     } catch (err) {
       toast.error(err?.response?.data?.message || 'Failed to add video');
     }
@@ -454,115 +456,103 @@ const AdminGuideLessonPage = () => {
               <p className="text-sm text-gray-600">{lesson.level_title}</p>
             </div>
           </div>
-          <button onClick={deleteLesson} className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-100 sm:w-auto">
-            <TrashIcon className="h-5 w-5" />
-            Delete lesson
+        </div>
+
+        <div className="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+          <button
+            onClick={() => {
+              setNoteForm({ id: null, content_markdown: '', color: 'blue' });
+              setShowOverviewModal(true);
+            }}
+            className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50 sm:text-sm"
+          >
+            + Overview
+          </button>
+          <button
+            onClick={() => {
+              setPdfForm({ title: '', file: null });
+              setShowPdfModal(true);
+            }}
+            className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50 sm:text-sm"
+          >
+            + PDF Material
+          </button>
+          <button
+            onClick={() => {
+              setAssignmentForm({ id: null, assignment_text: '' });
+              setShowAssignmentModal(true);
+            }}
+            className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50 sm:text-sm"
+          >
+            + Assignment
+          </button>
+          <button
+            onClick={() => {
+              setVocabForm({ id: null, word: '', translation: '', example: '' });
+              setVocabImageForm({ title: '', file: null });
+              setVocabPdfForm({ title: '', file: null });
+              setVocabMarkdownForm({ id: null, content_markdown: '' });
+              setVocabUploadType('word');
+              setShowVocabularyModal(true);
+            }}
+            className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50 sm:text-sm"
+          >
+            + Vocabulary
+          </button>
+          <button
+            onClick={() => {
+              setVideoForm({ title: '', youtube_url: '' });
+              setShowVideoModal(true);
+            }}
+            className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50 sm:text-sm"
+          >
+            + Video
           </button>
         </div>
 
         <div className="space-y-6">
+          {notes.length > 0 ? (
           <section className="space-y-4">
             <h2 className="text-lg font-bold text-slate-900">Overview</h2>
-            <div className="rounded-2xl border border-gray-200 bg-gradient-to-br from-slate-50 to-white p-4 shadow-sm">
-              <div className="mb-3 flex flex-wrap items-center gap-3">
-                {COLOR_ITEMS.map((item) => (
-                  <button
-                    key={item.key}
-                    onClick={() => setNoteForm((p) => ({ ...p, color: item.key }))}
-                    className={`h-7 w-7 rounded-full border-2 ${item.cls} ${
-                      noteForm.color === item.key ? 'scale-110 border-slate-900 shadow-md' : 'border-white'
-                    } transition`}
-                    title={item.key}
-                  />
-                ))}
-              </div>
-              <div className="space-y-3">
-                <textarea
-                  value={noteForm.content_markdown}
-                  onChange={(e) => setNoteForm((p) => ({ ...p, content_markdown: e.target.value }))}
-                  className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm shadow-sm outline-none focus:border-[#A60E07] focus:ring-2 focus:ring-[#A60E07]/20"
-                  rows={8}
-                  placeholder={'Example:\n# Lesson goals\n- Core rules\n- Practice tasks\n\nNote: ...'}
-                />
-                <div className="flex justify-end">
-                  <button onClick={saveNote} className="rounded-xl bg-[#A60E07] px-5 py-2.5 text-sm font-semibold text-white shadow hover:opacity-90">
-                    {noteForm.id ? 'Update note' : 'Add note'}
-                  </button>
-                </div>
-              </div>
-              <div className="mt-4 space-y-2">
-                {notes.map((n) => (
-                  <div
-                    key={n.id}
-                    className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
-                    style={{ borderLeftWidth: 6, borderLeftColor: NOTE_BORDER_COLOR[n.color] || NOTE_BORDER_COLOR.blue }}
-                  >
-                    <div className="mb-2 flex items-center justify-between gap-2">
-                      <span className="text-xs font-semibold uppercase text-gray-500">{n.color || 'blue'}</span>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <button
-                          onClick={() => setNoteForm({ id: n.id, content_markdown: n.content_markdown || '', color: n.color || 'blue' })}
-                          className="rounded-lg bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => deleteNoteMutation.mutateAsync({ lessonId, noteId: n.id }).catch((err) => toast.error(err?.response?.data?.message || 'Failed to delete note'))}
-                          className="rounded-lg bg-red-50 px-3 py-1 text-xs font-semibold text-red-700"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                    <div className="prose prose-sm max-w-none text-gray-700">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{n.content_markdown || ''}</ReactMarkdown>
+            <div className="space-y-2">
+              {notes.map((n) => (
+                <div
+                  key={n.id}
+                  className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+                  style={{ borderLeftWidth: 6, borderLeftColor: NOTE_BORDER_COLOR[n.color] || NOTE_BORDER_COLOR.blue }}
+                >
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <span className="text-xs font-semibold uppercase text-gray-500">{n.color || 'blue'}</span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        onClick={() => {
+                          setNoteForm({ id: n.id, content_markdown: n.content_markdown || '', color: n.color || 'blue' });
+                          setShowOverviewModal(true);
+                        }}
+                        className="rounded-lg bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => deleteNoteMutation.mutateAsync({ lessonId, noteId: n.id }).catch((err) => toast.error(err?.response?.data?.message || 'Failed to delete note'))}
+                        className="rounded-lg bg-red-50 px-3 py-1 text-xs font-semibold text-red-700"
+                      >
+                        Delete
+                      </button>
                     </div>
                   </div>
-                ))}
-              </div>
+                  <div className="prose prose-sm max-w-none text-gray-700">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{n.content_markdown || ''}</ReactMarkdown>
+                  </div>
+                </div>
+              ))}
             </div>
           </section>
+          ) : null}
 
+          {pdfs.length > 0 ? (
           <section className="space-y-4">
             <h2 className="text-lg font-bold text-slate-900">PDF Materials</h2>
-            <div className="rounded-2xl border border-gray-200 bg-gradient-to-br from-red-50/60 to-white p-4 shadow-sm">
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                <input
-                  value={pdfForm.title}
-                  onChange={(e) => setPdfForm((p) => ({ ...p, title: e.target.value }))}
-                  className="rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm shadow-sm outline-none focus:border-[#A60E07] focus:ring-2 focus:ring-[#A60E07]/20"
-                  placeholder="Example: Unit 3 Guide"
-                />
-                {pdfForm.file ? (
-                  <div className="relative flex h-32 items-center gap-3 rounded-xl border border-gray-300 bg-gray-50 px-4">
-                    <button
-                      onClick={() => setPdfForm((p) => ({ ...p, file: null }))}
-                      className="absolute right-2 top-2 rounded-full bg-red-500 p-1 text-white"
-                    >
-                      <XMarkIcon className="h-4 w-4" />
-                    </button>
-                    <DocumentIcon className="h-8 w-8 text-red-600" />
-                    <p className="line-clamp-2 text-sm font-semibold text-gray-700">{pdfForm.file.name}</p>
-                  </div>
-                ) : (
-                  <label className="flex h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#A60E07]/40 bg-white text-gray-600 hover:bg-gray-50">
-                    <input
-                      type="file"
-                      accept="application/pdf"
-                      onChange={(e) => setPdfForm((p) => ({ ...p, file: e.target.files?.[0] || null }))}
-                      className="hidden"
-                    />
-                    <ArrowUpTrayIcon className="h-8 w-8 text-gray-400" />
-                    <p className="text-sm font-semibold">PDF yuklash</p>
-                  </label>
-                )}
-              </div>
-              <div className="mt-3 flex justify-end">
-                <button onClick={savePdf} className="rounded-xl bg-[#A60E07] px-5 py-2.5 text-sm font-semibold text-white shadow hover:opacity-90">
-                  PDF yuklash
-                </button>
-              </div>
-            </div>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               {pdfs.map((pdf) => (
                 <div key={pdf.id} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
@@ -596,23 +586,11 @@ const AdminGuideLessonPage = () => {
               ))}
             </div>
           </section>
+          ) : null}
 
+          {assignments.length > 0 ? (
           <section className="space-y-4">
             <h2 className="text-lg font-bold text-slate-900">Assignments</h2>
-            <div className="rounded-2xl border border-gray-200 bg-gradient-to-br from-indigo-50/60 to-white p-4 shadow-sm">
-              <textarea
-                value={assignmentForm.assignment_text}
-                onChange={(e) => setAssignmentForm((p) => ({ ...p, assignment_text: e.target.value }))}
-                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm shadow-sm outline-none focus:border-[#A60E07] focus:ring-2 focus:ring-[#A60E07]/20"
-                rows={7}
-                placeholder={'Example:\n# Homework\n1. Write 10 sentences\n2. Create 5 questions'}
-              />
-              <div className="mt-3 flex justify-end">
-                <button onClick={saveAssignment} className="rounded-xl bg-[#A60E07] px-5 py-2.5 text-sm font-semibold text-white shadow hover:opacity-90">
-                  {assignmentForm.id ? 'Update' : 'Add'}
-                </button>
-              </div>
-            </div>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               {assignments.map((a) => {
                 const text = a.assignment_text || a.text || a.description || '';
@@ -620,7 +598,10 @@ const AdminGuideLessonPage = () => {
                   <div key={a.id} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
                     <div className="mb-1 flex flex-wrap justify-end gap-2">
                       <button
-                        onClick={() => setAssignmentForm({ id: a.id, assignment_text: text })}
+                        onClick={() => {
+                          setAssignmentForm({ id: a.id, assignment_text: text });
+                          setShowAssignmentModal(true);
+                        }}
                         className="rounded-lg bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700"
                       >
                         Edit
@@ -640,52 +621,26 @@ const AdminGuideLessonPage = () => {
               })}
             </div>
           </section>
+          ) : null}
 
+          {hasVocabularyData ? (
           <section className="space-y-4">
             <h2 className="text-lg font-bold text-slate-900">Vocabulary</h2>
-            <div className="rounded-2xl border border-gray-200 bg-gradient-to-br from-emerald-50/60 to-white p-4 shadow-sm">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <p className="text-sm font-bold text-slate-900">Words</p>
-                <label className="flex items-center gap-2 text-xs font-semibold text-gray-600">
-                  Speech speed
-                  <select
-                    value={speechRate}
-                    onChange={(e) => updateSpeechRate(e.target.value)}
-                    className="rounded-lg border border-gray-300 bg-white px-2 py-1 text-xs"
-                  >
-                    {[0.5, 0.75, 1, 1.25, 1.5, 1.75, 2].map((rate) => (
-                      <option key={rate} value={rate}>
-                        {rate}x
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                <input
-                  value={vocabForm.word}
-                  onChange={(e) => setVocabForm((p) => ({ ...p, word: e.target.value }))}
-                  className="rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm shadow-sm"
-                  placeholder="Word"
-                />
-                <input
-                  value={vocabForm.translation}
-                  onChange={(e) => setVocabForm((p) => ({ ...p, translation: e.target.value }))}
-                  className="rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm shadow-sm"
-                  placeholder="Translation"
-                />
-                <input
-                  value={vocabForm.example}
-                  onChange={(e) => setVocabForm((p) => ({ ...p, example: e.target.value }))}
-                  className="rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm shadow-sm"
-                  placeholder="Example sentence (optional)"
-                />
-              </div>
-              <div className="mt-3 flex justify-end">
-                <button onClick={saveVocabulary} className="rounded-xl bg-[#A60E07] px-5 py-2.5 text-sm font-semibold text-white shadow hover:opacity-90">
-                  {vocabForm.id ? 'Update' : 'Add'}
-                </button>
-              </div>
+            <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+              <label className="flex items-center gap-2 text-xs font-semibold text-gray-600">
+                Speech speed
+                <select
+                  value={speechRate}
+                  onChange={(e) => updateSpeechRate(e.target.value)}
+                  className="rounded-lg border border-gray-300 bg-white px-2 py-1 text-xs"
+                >
+                  {[0.5, 0.75, 1, 1.25, 1.5, 1.75, 2].map((rate) => (
+                    <option key={rate} value={rate}>
+                      {rate}x
+                    </option>
+                  ))}
+                </select>
+              </label>
             </div>
 
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -706,6 +661,8 @@ const AdminGuideLessonPage = () => {
                       <button
                         onClick={() => {
                           setVocabForm({ id: v.id, word: v.word || '', translation: v.translation || '', example: v.example || '' });
+                          setVocabUploadType('word');
+                          setShowVocabularyModal(true);
                         }}
                         className="rounded-lg bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700"
                       >
@@ -722,85 +679,6 @@ const AdminGuideLessonPage = () => {
                   {v.example ? <p className="text-sm italic text-gray-700">{v.example}</p> : null}
                 </div>
               ))}
-            </div>
-
-            <div className="rounded-2xl border border-gray-200 bg-gradient-to-br from-amber-50/60 to-white p-4 shadow-sm">
-              <p className="mb-3 text-sm font-bold text-slate-900">Images</p>
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                <input
-                  value={vocabImageForm.title}
-                  onChange={(e) => setVocabImageForm((p) => ({ ...p, title: e.target.value }))}
-                  className="rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm shadow-sm"
-                  placeholder="Image title"
-                />
-                {vocabImageForm.file ? (
-                  <div className="relative h-32 overflow-hidden rounded-xl border border-gray-300 bg-gray-50">
-                    <button
-                      onClick={() => setVocabImageForm((p) => ({ ...p, file: null }))}
-                      className="absolute right-2 top-2 z-10 rounded-full bg-red-500 p-1 text-white"
-                    >
-                      <XMarkIcon className="h-4 w-4" />
-                    </button>
-                    {selectedImagePreviewUrl ? <img src={selectedImagePreviewUrl} alt="Preview" className="h-full w-full object-cover" /> : null}
-                  </div>
-                ) : (
-                  <label className="flex h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#A60E07]/40 bg-white text-gray-600 hover:bg-gray-50">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => setVocabImageForm((p) => ({ ...p, file: e.target.files?.[0] || null }))}
-                      className="hidden"
-                    />
-                    <ArrowUpTrayIcon className="h-8 w-8 text-gray-400" />
-                    <p className="text-sm font-semibold">Rasm yuklash</p>
-                  </label>
-                )}
-              </div>
-              <div className="mt-3 flex justify-end">
-                <button onClick={saveVocabularyImage} className="rounded-xl bg-[#A60E07] px-5 py-2.5 text-sm font-semibold text-white shadow hover:opacity-90">
-                  Upload image
-                </button>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-gray-200 bg-gradient-to-br from-sky-50/60 to-white p-4 shadow-sm">
-              <p className="mb-3 text-sm font-bold text-slate-900">Vocabulary PDFs</p>
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                <input
-                  value={vocabPdfForm.title}
-                  onChange={(e) => setVocabPdfForm((p) => ({ ...p, title: e.target.value }))}
-                  className="rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm shadow-sm"
-                  placeholder="Vocabulary PDF title"
-                />
-                {vocabPdfForm.file ? (
-                  <div className="relative flex h-32 items-center gap-3 rounded-xl border border-gray-300 bg-gray-50 px-4">
-                    <button
-                      onClick={() => setVocabPdfForm((p) => ({ ...p, file: null }))}
-                      className="absolute right-2 top-2 rounded-full bg-red-500 p-1 text-white"
-                    >
-                      <XMarkIcon className="h-4 w-4" />
-                    </button>
-                    <DocumentIcon className="h-8 w-8 text-red-600" />
-                    <p className="line-clamp-2 text-sm font-semibold text-gray-700">{vocabPdfForm.file.name}</p>
-                  </div>
-                ) : (
-                  <label className="flex h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#A60E07]/40 bg-white text-gray-600 hover:bg-gray-50">
-                    <input
-                      type="file"
-                      accept="application/pdf"
-                      onChange={(e) => setVocabPdfForm((p) => ({ ...p, file: e.target.files?.[0] || null }))}
-                      className="hidden"
-                    />
-                    <ArrowUpTrayIcon className="h-8 w-8 text-gray-400" />
-                    <p className="text-sm font-semibold">PDF yuklash</p>
-                  </label>
-                )}
-              </div>
-              <div className="mt-3 flex justify-end">
-                <button onClick={saveVocabularyPdf} className="rounded-xl bg-[#A60E07] px-5 py-2.5 text-sm font-semibold text-white shadow hover:opacity-90">
-                  Upload vocabulary PDF
-                </button>
-              </div>
             </div>
 
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -866,28 +744,16 @@ const AdminGuideLessonPage = () => {
               ))}
             </div>
 
-            <div className="rounded-2xl border border-gray-200 bg-gradient-to-br from-violet-50/60 to-white p-4 shadow-sm">
-              <p className="mb-3 text-sm font-bold text-slate-900">Markdown text</p>
-              <textarea
-                value={vocabMarkdownForm.content_markdown}
-                onChange={(e) => setVocabMarkdownForm((p) => ({ ...p, content_markdown: e.target.value }))}
-                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm shadow-sm outline-none focus:border-[#A60E07] focus:ring-2 focus:ring-[#A60E07]/20"
-                rows={7}
-                placeholder={'Example:\n# Vocabulary topic\n- apple: apple\n- book: book'}
-              />
-              <div className="mt-3 flex justify-end">
-                <button onClick={saveVocabularyMarkdown} className="rounded-xl bg-[#A60E07] px-5 py-2.5 text-sm font-semibold text-white shadow hover:opacity-90">
-                  {vocabMarkdownForm.id ? 'Update' : 'Add'}
-                </button>
-              </div>
-            </div>
-
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               {vocabularyMarkdowns.map((md) => (
                 <div key={md.id} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
                   <div className="mb-2 flex flex-wrap justify-end gap-2">
                     <button
-                      onClick={() => setVocabMarkdownForm({ id: md.id, content_markdown: md.content_markdown || '' })}
+                      onClick={() => {
+                        setVocabMarkdownForm({ id: md.id, content_markdown: md.content_markdown || '' });
+                        setVocabUploadType('markdown');
+                        setShowVocabularyModal(true);
+                      }}
                       className="rounded-lg bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700"
                     >
                       Edit
@@ -906,30 +772,11 @@ const AdminGuideLessonPage = () => {
               ))}
             </div>
           </section>
+          ) : null}
 
+          {videos.length > 0 ? (
           <section className="space-y-4">
             <h2 className="text-lg font-bold text-slate-900">Videos</h2>
-            <div className="rounded-lg border border-gray-200 p-4">
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                <input
-                  value={videoForm.title}
-                  onChange={(e) => setVideoForm((p) => ({ ...p, title: e.target.value }))}
-                  className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                  placeholder="Video title"
-                />
-                <input
-                  value={videoForm.youtube_url}
-                  onChange={(e) => setVideoForm((p) => ({ ...p, youtube_url: e.target.value }))}
-                  className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                  placeholder="YouTube URL"
-                />
-              </div>
-              <div className="mt-3 flex justify-end">
-                <button onClick={saveVideo} className="rounded-lg bg-[#A60E07] px-4 py-2 text-sm font-semibold text-white">
-                  Add video
-                </button>
-              </div>
-            </div>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
               {videos.map((video) => (
                 <div key={video.id} className="rounded-lg border border-gray-200 p-3">
@@ -956,8 +803,166 @@ const AdminGuideLessonPage = () => {
               ))}
             </div>
           </section>
+          ) : null}
         </div>
       </div>
+
+      {showOverviewModal ? (
+        <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/50 p-3">
+          <div className="w-full max-w-2xl rounded-2xl bg-white p-4 shadow-2xl sm:p-5">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-base font-bold text-slate-900">{noteForm.id ? 'Overview yangilash' : 'Overview qo&apos;shish'}</h3>
+              <button onClick={() => setShowOverviewModal(false)} className="rounded-lg bg-gray-100 p-2 hover:bg-gray-200"><XMarkIcon className="h-4 w-4" /></button>
+            </div>
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              {COLOR_ITEMS.map((item) => (
+                <button
+                  key={item.key}
+                  onClick={() => setNoteForm((p) => ({ ...p, color: item.key }))}
+                  className={`h-7 w-7 rounded-full border-2 ${item.cls} ${noteForm.color === item.key ? 'scale-110 border-slate-900 shadow-md' : 'border-white'} transition`}
+                />
+              ))}
+            </div>
+            <textarea
+              value={noteForm.content_markdown}
+              onChange={(e) => setNoteForm((p) => ({ ...p, content_markdown: e.target.value }))}
+              className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm shadow-sm outline-none focus:border-[#A60E07] focus:ring-2 focus:ring-[#A60E07]/20"
+              rows={10}
+              placeholder="Overview matni..."
+            />
+            <div className="mt-3 flex justify-end">
+              <button onClick={saveNote} className="rounded-xl bg-[#A60E07] px-5 py-2.5 text-sm font-semibold text-white shadow hover:opacity-90">{noteForm.id ? 'Update' : 'Save'}</button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {showPdfModal ? (
+        <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/50 p-3">
+          <div className="w-full max-w-xl rounded-2xl bg-white p-4 shadow-2xl sm:p-5">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-base font-bold text-slate-900">PDF material yuklash</h3>
+              <button onClick={() => setShowPdfModal(false)} className="rounded-lg bg-gray-100 p-2 hover:bg-gray-200"><XMarkIcon className="h-4 w-4" /></button>
+            </div>
+            <div className="space-y-3">
+              <input
+                value={pdfForm.title}
+                onChange={(e) => setPdfForm((p) => ({ ...p, title: e.target.value }))}
+                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm shadow-sm"
+                placeholder="PDF title"
+              />
+              <label className="flex min-h-[120px] cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#A60E07]/40 bg-white text-gray-600 hover:bg-gray-50">
+                <input type="file" accept="application/pdf" onChange={(e) => setPdfForm((p) => ({ ...p, file: e.target.files?.[0] || null }))} className="hidden" />
+                <ArrowUpTrayIcon className="h-7 w-7 text-gray-400" />
+                <p className="text-sm font-semibold">{pdfForm.file ? pdfForm.file.name : 'PDF tanlang'}</p>
+              </label>
+            </div>
+            <div className="mt-3 flex justify-end">
+              <button onClick={savePdf} className="rounded-xl bg-[#A60E07] px-5 py-2.5 text-sm font-semibold text-white shadow hover:opacity-90">Yuklash</button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {showAssignmentModal ? (
+        <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/50 p-3">
+          <div className="w-full max-w-2xl rounded-2xl bg-white p-4 shadow-2xl sm:p-5">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-base font-bold text-slate-900">{assignmentForm.id ? 'Assignment yangilash' : 'Assignment qo&apos;shish'}</h3>
+              <button onClick={() => setShowAssignmentModal(false)} className="rounded-lg bg-gray-100 p-2 hover:bg-gray-200"><XMarkIcon className="h-4 w-4" /></button>
+            </div>
+            <textarea
+              value={assignmentForm.assignment_text}
+              onChange={(e) => setAssignmentForm((p) => ({ ...p, assignment_text: e.target.value }))}
+              className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm shadow-sm outline-none focus:border-[#A60E07] focus:ring-2 focus:ring-[#A60E07]/20"
+              rows={10}
+              placeholder="Assignments text..."
+            />
+            <div className="mt-3 flex justify-end">
+              <button onClick={saveAssignment} className="rounded-xl bg-[#A60E07] px-5 py-2.5 text-sm font-semibold text-white shadow hover:opacity-90">{assignmentForm.id ? 'Update' : 'Save'}</button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {showVocabularyModal ? (
+        <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/50 p-3">
+          <div className="w-full max-w-2xl rounded-2xl bg-white p-4 shadow-2xl sm:p-5">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-base font-bold text-slate-900">Vocabulary yuklash</h3>
+              <button onClick={() => setShowVocabularyModal(false)} className="rounded-lg bg-gray-100 p-2 hover:bg-gray-200"><XMarkIcon className="h-4 w-4" /></button>
+            </div>
+            <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <button onClick={() => setVocabUploadType('word')} className={`rounded-lg px-3 py-2 text-xs font-semibold ${vocabUploadType === 'word' ? 'bg-[#A60E07] text-white' : 'bg-gray-100 text-gray-700'}`}>Word</button>
+              <button onClick={() => setVocabUploadType('image')} className={`rounded-lg px-3 py-2 text-xs font-semibold ${vocabUploadType === 'image' ? 'bg-[#A60E07] text-white' : 'bg-gray-100 text-gray-700'}`}>Image</button>
+              <button onClick={() => setVocabUploadType('pdf')} className={`rounded-lg px-3 py-2 text-xs font-semibold ${vocabUploadType === 'pdf' ? 'bg-[#A60E07] text-white' : 'bg-gray-100 text-gray-700'}`}>PDF</button>
+              <button onClick={() => setVocabUploadType('markdown')} className={`rounded-lg px-3 py-2 text-xs font-semibold ${vocabUploadType === 'markdown' ? 'bg-[#A60E07] text-white' : 'bg-gray-100 text-gray-700'}`}>Markdown</button>
+            </div>
+
+            {vocabUploadType === 'word' ? (
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                <input value={vocabForm.word} onChange={(e) => setVocabForm((p) => ({ ...p, word: e.target.value }))} className="rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm shadow-sm" placeholder="Word" />
+                <input value={vocabForm.translation} onChange={(e) => setVocabForm((p) => ({ ...p, translation: e.target.value }))} className="rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm shadow-sm" placeholder="Translation" />
+                <input value={vocabForm.example} onChange={(e) => setVocabForm((p) => ({ ...p, example: e.target.value }))} className="rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm shadow-sm" placeholder="Example (optional)" />
+              </div>
+            ) : null}
+            {vocabUploadType === 'image' ? (
+              <div className="space-y-3">
+                <input value={vocabImageForm.title} onChange={(e) => setVocabImageForm((p) => ({ ...p, title: e.target.value }))} className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm shadow-sm" placeholder="Image title" />
+                <label className="flex min-h-[120px] cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#A60E07]/40 bg-white text-gray-600 hover:bg-gray-50">
+                  <input type="file" accept="image/*" onChange={(e) => setVocabImageForm((p) => ({ ...p, file: e.target.files?.[0] || null }))} className="hidden" />
+                  <ArrowUpTrayIcon className="h-7 w-7 text-gray-400" />
+                  <p className="text-sm font-semibold">{vocabImageForm.file ? vocabImageForm.file.name : 'Rasm tanlang'}</p>
+                </label>
+              </div>
+            ) : null}
+            {vocabUploadType === 'pdf' ? (
+              <div className="space-y-3">
+                <input value={vocabPdfForm.title} onChange={(e) => setVocabPdfForm((p) => ({ ...p, title: e.target.value }))} className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm shadow-sm" placeholder="PDF title" />
+                <label className="flex min-h-[120px] cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#A60E07]/40 bg-white text-gray-600 hover:bg-gray-50">
+                  <input type="file" accept="application/pdf" onChange={(e) => setVocabPdfForm((p) => ({ ...p, file: e.target.files?.[0] || null }))} className="hidden" />
+                  <ArrowUpTrayIcon className="h-7 w-7 text-gray-400" />
+                  <p className="text-sm font-semibold">{vocabPdfForm.file ? vocabPdfForm.file.name : 'PDF tanlang'}</p>
+                </label>
+              </div>
+            ) : null}
+            {vocabUploadType === 'markdown' ? (
+              <textarea
+                value={vocabMarkdownForm.content_markdown}
+                onChange={(e) => setVocabMarkdownForm((p) => ({ ...p, content_markdown: e.target.value }))}
+                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm shadow-sm outline-none focus:border-[#A60E07] focus:ring-2 focus:ring-[#A60E07]/20"
+                rows={9}
+                placeholder="Markdown content..."
+              />
+            ) : null}
+
+            <div className="mt-3 flex justify-end">
+              {vocabUploadType === 'word' ? <button onClick={saveVocabulary} className="rounded-xl bg-[#A60E07] px-5 py-2.5 text-sm font-semibold text-white shadow hover:opacity-90">{vocabForm.id ? 'Update' : 'Save'}</button> : null}
+              {vocabUploadType === 'image' ? <button onClick={saveVocabularyImage} className="rounded-xl bg-[#A60E07] px-5 py-2.5 text-sm font-semibold text-white shadow hover:opacity-90">Upload</button> : null}
+              {vocabUploadType === 'pdf' ? <button onClick={saveVocabularyPdf} className="rounded-xl bg-[#A60E07] px-5 py-2.5 text-sm font-semibold text-white shadow hover:opacity-90">Upload</button> : null}
+              {vocabUploadType === 'markdown' ? <button onClick={saveVocabularyMarkdown} className="rounded-xl bg-[#A60E07] px-5 py-2.5 text-sm font-semibold text-white shadow hover:opacity-90">{vocabMarkdownForm.id ? 'Update' : 'Save'}</button> : null}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {showVideoModal ? (
+        <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/50 p-3">
+          <div className="w-full max-w-xl rounded-2xl bg-white p-4 shadow-2xl sm:p-5">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-base font-bold text-slate-900">Video qo&apos;shish</h3>
+              <button onClick={() => setShowVideoModal(false)} className="rounded-lg bg-gray-100 p-2 hover:bg-gray-200"><XMarkIcon className="h-4 w-4" /></button>
+            </div>
+            <div className="space-y-3">
+              <input value={videoForm.title} onChange={(e) => setVideoForm((p) => ({ ...p, title: e.target.value }))} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" placeholder="Video title" />
+              <input value={videoForm.youtube_url} onChange={(e) => setVideoForm((p) => ({ ...p, youtube_url: e.target.value }))} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" placeholder="YouTube URL" />
+            </div>
+            <div className="mt-3 flex justify-end">
+              <button onClick={saveVideo} className="rounded-lg bg-[#A60E07] px-4 py-2 text-sm font-semibold text-white">Save</button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {imageViewer.open ? (
         <div className="fixed inset-0 z-[9999] bg-black/80 p-3 sm:p-6">

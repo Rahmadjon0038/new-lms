@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import {
     BookOpenIcon,
     PlusCircleIcon,
@@ -290,6 +290,8 @@ function AdminGroupsPage() {
     const [selectedTeacher, setSelectedTeacher] = useState('all');
     const [selectedSubject, setSelectedSubject] = useState('all');
     const [currentTab, setCurrentTab] = useState('active');
+    const [showMobileFilters, setShowMobileFilters] = useState(false);
+    const mobileFilterRef = useRef(null);
 
     // --- Modal State ---
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, groupId: null, newStatus: null });
@@ -321,6 +323,33 @@ function AdminGroupsPage() {
     const changeGroupStatusMutation = useChangeGroupStatus();
 
     const groups = filteredGroups;
+    const hasActiveFilters = selectedTeacher !== 'all' || selectedSubject !== 'all';
+
+    useEffect(() => {
+        if (!showMobileFilters) return undefined;
+
+        const handleOutsideClick = (event) => {
+            if (mobileFilterRef.current && !mobileFilterRef.current.contains(event.target)) {
+                setShowMobileFilters(false);
+            }
+        };
+
+        const handleEscape = (event) => {
+            if (event.key === 'Escape') {
+                setShowMobileFilters(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleOutsideClick);
+        document.addEventListener('touchstart', handleOutsideClick);
+        document.addEventListener('keydown', handleEscape);
+
+        return () => {
+            document.removeEventListener('mousedown', handleOutsideClick);
+            document.removeEventListener('touchstart', handleOutsideClick);
+            document.removeEventListener('keydown', handleEscape);
+        };
+    }, [showMobileFilters]);
 
     // Darsni boshlash funksiyasi (draft -> active)
     const handleStartClass = (groupId) => {
@@ -423,7 +452,53 @@ function AdminGroupsPage() {
                     </AdminNewGroupModal>
                 </div>
 
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-[minmax(260px,1fr)_minmax(260px,1fr)_auto] xl:items-end">
+                <div className="mb-3 flex items-center justify-end md:hidden" ref={mobileFilterRef}>
+                    <div className="relative">
+                        <button
+                            type="button"
+                            onClick={() => setShowMobileFilters((prev) => !prev)}
+                            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700"
+                            aria-label="Filtrlarni ochish"
+                        >
+                            <FiFilter className="h-4 w-4" />
+                            {hasActiveFilters ? <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[#A60E07]" /> : null}
+                        </button>
+
+                        {showMobileFilters ? (
+                            <div className="absolute right-0 z-30 mt-2 w-[300px] max-w-[85vw] rounded-xl border border-slate-200 bg-white p-3 shadow-xl">
+                                <div className="space-y-3">
+                                    <TeacherSelect
+                                        value={selectedTeacher}
+                                        onChange={setSelectedTeacher}
+                                    />
+
+                                    <SubjectsSelect
+                                        value={selectedSubject}
+                                        onChange={setSelectedSubject}
+                                        placeholder="Fanni tanlang"
+                                        showAll={true}
+                                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold"
+                                    />
+
+                                    {hasActiveFilters ? (
+                                        <button
+                                            onClick={() => {
+                                                setSelectedTeacher('all');
+                                                setSelectedSubject('all');
+                                                setShowMobileFilters(false);
+                                            }}
+                                            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                                        >
+                                            Filtrni tozalash
+                                        </button>
+                                    ) : null}
+                                </div>
+                            </div>
+                        ) : null}
+                    </div>
+                </div>
+
+                <div className="hidden grid-cols-1 gap-3 md:grid xl:grid-cols-[minmax(260px,1fr)_minmax(260px,1fr)_auto] xl:items-end">
                     <div className="space-y-1.5">
                         <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">O&apos;qituvchi</label>
                         <TeacherSelect
@@ -443,7 +518,7 @@ function AdminGroupsPage() {
                         />
                     </div>
 
-                    {(selectedTeacher !== 'all' || selectedSubject !== 'all') ? (
+                    {hasActiveFilters ? (
                         <button
                             onClick={() => {
                                 setSelectedTeacher('all');

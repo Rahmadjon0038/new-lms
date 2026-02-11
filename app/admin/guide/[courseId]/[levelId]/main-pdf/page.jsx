@@ -84,7 +84,7 @@ const AdminMainPdfPage = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen overflow-x-hidden bg-gray-100">
       <div className="h-12 px-3 sm:px-4 border-b border-gray-200 bg-white flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button onClick={() => router.push(`/admin/guide/${courseId}/${levelId}`)} className="rounded-md bg-gray-100 hover:bg-gray-200 p-2">
@@ -101,7 +101,7 @@ const AdminMainPdfPage = () => {
         </button>
       </div>
 
-      <div className="h-[calc(100vh-48px)] overflow-auto p-4 sm:p-6 md:p-8">
+      <div className="h-[calc(100vh-48px)] overflow-auto bg-gray-100 p-4 sm:p-6 md:p-8">
         {isLoading || loadingPdf ? (
           <div className="h-full flex items-center justify-center">
             <div className="text-center">
@@ -110,8 +110,20 @@ const AdminMainPdfPage = () => {
             </div>
           </div>
         ) : (
-          <div className="mx-auto w-full max-w-5xl bg-white shadow-xl rounded-sm overflow-hidden">
-            <iframe title="Main PDF" src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`} className="w-full h-[calc(100vh-180px)] sm:h-[calc(100vh-120px)]" />
+          <div className="mx-auto w-full max-w-4xl">
+            <div className="mb-3 rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
+              <p className="text-sm font-semibold text-gray-800">Main PDF</p>
+              <p className="text-xs text-gray-500">Markazlangan ko&apos;rinish</p>
+            </div>
+            <div className="rounded-2xl border border-gray-200 bg-white p-3 shadow-sm sm:p-4">
+              <div className="mx-auto w-full max-w-[860px] overflow-hidden rounded-xl border border-gray-200 bg-white">
+                <iframe
+                  title="Main PDF"
+                  src={`${pdfUrl}#toolbar=0&navpanes=0&view=FitH&zoom=page-width`}
+                  className="h-[70vh] min-h-[520px] w-full"
+                />
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -133,8 +145,16 @@ const AdminMainPdfPage = () => {
               </button>
             </div>
           </div>
-          <div className="h-[calc(100vh-48px)] bg-[#0b1220]">
-            <iframe title="Main PDF Full Screen" src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`} className="h-full w-full" />
+          <div className="h-[calc(100vh-48px)] overflow-auto bg-[#0b1220] p-3 sm:p-4">
+            <div className="mx-auto w-full max-w-6xl">
+              <div className="mx-auto w-full max-w-[960px] overflow-hidden rounded-xl border border-white/10 bg-white">
+                <iframe
+                  title="Main PDF Full Screen"
+                  src={`${pdfUrl}#toolbar=0&navpanes=0&view=FitH&zoom=page-width`}
+                  className="h-[calc(100vh-80px)] min-h-[540px] w-full"
+                />
+              </div>
+            </div>
           </div>
         </div>
       ) : null}

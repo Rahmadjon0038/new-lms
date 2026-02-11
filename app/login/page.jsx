@@ -1,7 +1,6 @@
 "use client";
 import React, { useState } from "react";
 import Image from "next/image";
-import Snowfall from "react-snowfall";
 import { useAddUser, useResetPasswordWithKey } from "../../hooks/user";
 import { useGetNotify } from "../../hooks/notify";
 import Cookies from "js-cookie";
@@ -64,8 +63,6 @@ function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#A60E07] p-4 relative overflow-hidden">
-      <Snowfall snowflakeCount={100} color="white" />
-
       {/* - max-w-[550px] saqlandi (katta ekranda o'zgarmaydi)
           - p-6 (mobil) -> sm:p-12 (katta ekran) qilib o'zgartirildi
           - rounded-2xl (mobil) -> sm:rounded-3xl (katta ekran)
