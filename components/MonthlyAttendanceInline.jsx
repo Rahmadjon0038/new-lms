@@ -218,8 +218,12 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
     queryFn: getUserProfile
   });
   
-  const userRole = userProfile?.data?.role;
-  const canChangeMonthlyStatus = userRole === 'admin';
+  const rawRole = userProfile?.data?.role || userProfile?.role || "";
+  const normalizedRole = String(rawRole).toLowerCase();
+  const canChangeMonthlyStatus =
+    normalizedRole === "admin" ||
+    normalizedRole === "super_admin" ||
+    normalizedRole === "superadmin";
   
   const monthData = data?.data;
   const lessons = [...(monthData?.lessons || [])].sort((a, b) => {
@@ -412,7 +416,7 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
                     </div>
                   </td>
                   <td className="border border-gray-400 px-3 py-2 text-center text-xs">
-                    <div className="flex items-center justify-center gap-1">
+                    <div className="flex flex-col items-center justify-center gap-1">
                       <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
                         student.monthly_status === "active" ? "bg-green-100 text-green-800" :
                         student.monthly_status === "stopped" ? "bg-orange-100 text-orange-800" :

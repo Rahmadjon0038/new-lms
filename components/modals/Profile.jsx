@@ -10,6 +10,7 @@ import {
   PencilSquareIcon,
   CheckIcon,
   CalendarDaysIcon,
+  ArrowRightEndOnRectangleIcon,
 } from "@heroicons/react/24/outline";
 
 import Box from "@mui/material/Box";
@@ -31,7 +32,7 @@ const modalStyle = {
   overflow: "hidden",
 };
 
-export default function ProfileModal({ children }) {
+export default function ProfileModal({ children, onLogout }) {
   const [isOpen, setIsOpen] = useState(false);
   const { data: user, isLoading } = usegetProfile();
   const updateProfileMutation = useUpdateProfile();
@@ -260,15 +261,25 @@ export default function ProfileModal({ children }) {
               {/* ACTION BUTTONS */}
               <div className="pt-4">
                 {!isEditing ? (
-                  <button
-                    type="button"
-                    onClick={startEditing}
-                    className="w-full flex items-center justify-center space-x-2 py-3 text-white rounded-xl font-bold transition-all shadow-lg active:scale-[0.98] hover:opacity-90"
-                    style={{ backgroundColor: '#A60E07', shadowColor: 'rgba(166, 14, 7, 0.2)' }}
-                  >
-                    <PencilSquareIcon className="h-5 w-5" />
-                    <span>Ma&apos;lumotlarni tahrirlash</span>
-                  </button>
+                  <div className="space-y-3">
+                    <button
+                      type="button"
+                      onClick={startEditing}
+                      className="w-full flex items-center justify-center space-x-2 py-3 text-white rounded-xl font-bold transition-all shadow-lg active:scale-[0.98] hover:opacity-90"
+                      style={{ backgroundColor: '#A60E07', shadowColor: 'rgba(166, 14, 7, 0.2)' }}
+                    >
+                      <PencilSquareIcon className="h-5 w-5" />
+                      <span>Ma&apos;lumotlarni tahrirlash</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={onLogout}
+                      className="md:hidden w-full flex items-center justify-center space-x-2 py-3 bg-gray-900 text-white rounded-xl font-bold transition-all hover:bg-black"
+                    >
+                      <ArrowRightEndOnRectangleIcon className="h-5 w-5" />
+                      <span>Chiqish</span>
+                    </button>
+                  </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-3">
                     <button

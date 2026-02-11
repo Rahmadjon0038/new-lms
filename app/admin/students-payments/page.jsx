@@ -36,6 +36,7 @@ import StudentAttendanceModal from "../../../components/modals/StudentAttendance
 import SubjectsSelect from "../../../components/SubjectsSelect";
 
 const MAIN_COLOR = "#A60E07";
+const STATS_VISIBILITY_KEY = "students_payments_stats_visibility";
 
 const StudentPayments = () => {
     const queryClient = useQueryClient();
@@ -63,7 +64,7 @@ const StudentPayments = () => {
     const [showAttendanceModal, setShowAttendanceModal] = useState(false);
     const [showPaymentHistoryModal, setShowPaymentHistoryModal] = useState(false);
     const [showClearModal, setShowClearModal] = useState(false);
-    const [showStats, setShowStats] = useState(true);
+    const [showStats, setShowStats] = useState(false);
     const [clearLoading, setClearLoading] = useState(false);
     const [snapshotLoading, setSnapshotLoading] = useState(false);
     const [historyFilters, setHistoryFilters] = useState({
@@ -370,6 +371,21 @@ const StudentPayments = () => {
         };
     }, [showFilterDropdown]);
 
+    useEffect(() => {
+        const savedVisibility = localStorage.getItem(STATS_VISIBILITY_KEY);
+        if (savedVisibility === "true") {
+            setShowStats(true);
+        }
+    }, []);
+
+    const handleToggleStats = () => {
+        setShowStats((prev) => {
+            const nextValue = !prev;
+            localStorage.setItem(STATS_VISIBILITY_KEY, String(nextValue));
+            return nextValue;
+        });
+    };
+
     if (isLoading) {
         return (
             <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6">
@@ -488,6 +504,7 @@ const StudentPayments = () => {
                                     <div className="absolute -top-1 left-6 w-2 h-2 bg-white border-l border-t border-gray-300 rotate-45"></div>
                                 </div>
                             )}
+                     
                         </div>
                         <button
                             onClick={handleExport}
@@ -507,7 +524,7 @@ const StudentPayments = () => {
                         <p className="text-sm font-semibold text-gray-800">Statistika</p>
                         <button
                             type="button"
-                            onClick={() => setShowStats((prev) => !prev)}
+                            onClick={handleToggleStats}
                             className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 sm:text-sm"
                         >
                             {showStats ? "Yashirish" : "Ko'rsatish"}
@@ -639,8 +656,8 @@ const StudentPayments = () => {
                                 </div>
 
                                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                                    <div>
-                                        <label className="mb-1.5 block text-xs font-medium text-gray-700 sm:text-sm">Oy:</label>
+                                    <div  >
+                                        {/* <label className="mb-1.5 block text-xs font-medium text-gray-700 sm:text-sm">Oy:</label> */}
                                         <input
                                             type="month"
                                             value={filters.month}
@@ -650,7 +667,7 @@ const StudentPayments = () => {
                                         />
                                     </div>
                                     <div>
-                                        <label className="mb-1.5 block text-xs font-medium text-gray-700 sm:text-sm">O'qituvchi:</label>
+                                        {/* <label className="mb-1.5 block text-xs font-medium text-gray-700 sm:text-sm">O'qituvchi:</label> */}
                                         <select
                                             value={filters.teacher_id}
                                             onChange={(e) => handleFilterChange('teacher_id', e.target.value)}
@@ -666,7 +683,7 @@ const StudentPayments = () => {
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="mb-1.5 block text-xs font-medium text-gray-700 sm:text-sm">Fan:</label>
+                                        {/* <label className="mb-1.5 block text-xs font-medium text-gray-700 sm:text-sm">Fan:</label> */}
                                         <SubjectsSelect
                                             value={filters.subject_id}
                                             onChange={(value) => handleFilterChange('subject_id', value)}

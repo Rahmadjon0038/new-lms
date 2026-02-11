@@ -84,7 +84,7 @@ function Navbar() {
               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
             </div>
           ) : (
-            <ProfileModal>
+            <ProfileModal onLogout={handleLogout}>
               <div
                 className="group flex items-center space-x-2 md:space-x-3 p-1.5 md:p-2 rounded-xl transition duration-200 cursor-pointer hover:bg-white/10 min-w-0"
                 title="Profil ma'lumotlarini ko'rish"
@@ -117,12 +117,12 @@ function Navbar() {
           )}
 
           {/* Ajratuvchi chiziq */}
-          <div className="h-6 md:h-8 w-[1px] bg-white/20 mx-1 shrink-0" />
+          <div className="hidden md:block h-6 md:h-8 w-[1px] bg-white/20 mx-1 shrink-0" />
 
           {/* Chiqish tugmasi */}
           <button
             onClick={handleLogout}
-            className="flex items-center justify-center p-2 md:px-3 md:py-2 rounded-lg text-sm font-bold transition duration-200 text-white hover:bg-black/20 shrink-0"
+            className="hidden md:flex items-center justify-center p-2 md:px-3 md:py-2 rounded-lg text-sm font-bold transition duration-200 text-white hover:bg-black/20 shrink-0"
             title="Tizimdan chiqish"
           >
             <ArrowRightEndOnRectangleIcon

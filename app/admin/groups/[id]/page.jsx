@@ -389,7 +389,7 @@ const GroupDetailPage = () => {
                                             Talaba Holati
                                         </th>
                                         <th className="px-3 py-2 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border-b border-gray-200">
-                                            Amallar
+                                            
                                         </th>
                                     </tr>
                                 </thead>

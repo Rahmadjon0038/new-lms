@@ -31,19 +31,19 @@ const GroupCard = ({ group }) => {
   const getStatusInfo = () => {
     if (group.status === 'blocked') {
       return {
-        color: 'border-red-600',
-        bgColor: 'bg-red-50',
+        color: 'border-red-300',
+        bgColor: 'bg-white',
         badge: 'bg-red-100 text-red-700',
         text: 'Bloklangan',
-        icon: '🔒'
+        dot: 'bg-red-500'
       };
     }
     return {
-      color: 'border-green-600',
-      bgColor: 'bg-green-50',
-      badge: '',
-      text: '',
-      icon: ''
+      color: 'border-green-200',
+      bgColor: 'bg-white',
+      badge: 'bg-green-100 text-green-700',
+      text: 'Faol',
+      dot: 'bg-green-500'
     };
   };
   
@@ -52,19 +52,15 @@ const GroupCard = ({ group }) => {
   return (
     <Link
       href={`/admin/attendance/${group.id}`}
-      className={`block bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 border-t-4 ${statusInfo.color} hover:translate-x-1 ${statusInfo.bgColor}`}
+      className={`block rounded-2xl border p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${statusInfo.color} ${statusInfo.bgColor}`}
     >
       <div className="flex justify-between items-start mb-3">
         <div className="flex-1">
-          <h3 className="text-lg font-bold text-gray-800 mb-1 flex items-center gap-2">
+          <h3 className="mb-1 flex items-center gap-2 text-lg font-bold text-gray-800">
             <UserGroupIcon className="h-5 w-5 text-red-600" />
             {group.name}
           </h3>
-          <div className="flex items-center gap-2 mb-2">
-            
-            
-          </div>
-          <p className="text-sm text-gray-600 flex items-center gap-2">
+          <p className="flex items-center gap-2 text-sm text-gray-600">
             <AcademicCapIcon className="h-4 w-4 text-gray-400" />
             {group.subject_name} {group.room_number && (
               <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
@@ -73,7 +69,13 @@ const GroupCard = ({ group }) => {
             )}
           </p>
         </div>
-        <ChevronRightIcon className="h-5 w-5 text-gray-400" />
+        <div className="flex items-center gap-2">
+          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${statusInfo.badge}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${statusInfo.dot}`}></span>
+            {statusInfo.text}
+          </span>
+          <ChevronRightIcon className="h-5 w-5 text-gray-400" />
+        </div>
       </div>
 
       <div className="space-y-2 text-sm text-gray-700">
@@ -95,7 +97,7 @@ const GroupCard = ({ group }) => {
       </div>
       
       {/* Student Count */}
-      <div className="mt-3 pt-3 border-t border-gray-100">
+      <div className="mt-3 border-t border-gray-200 pt-3">
         <div className="flex justify-between items-center">
           <span className="text-xs font-medium text-gray-600">Jami talabalar:</span>
           <div className="flex items-center gap-2">
@@ -146,10 +148,10 @@ const Attendance = () => {
   const hasActiveFilters = selectedTeacher || selectedSubject || statusFilter !== 'active';
 
   return (
-    <div className="min-h-screen bg-gray-50 px-3 md:px-4 lg:px-6">
-      <div>
+    <div className="min-h-screen bg-gray-50 px-3 pb-6 pt-2 md:px-4 lg:px-6">
+      <div className="mx-auto max-w-[1600px]">
         {/* Header */}
-        <div className="mb-6 pt-3 md:pt-4">
+        <div className="mb-5 pt-3 md:pt-4">
           <h1 className="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-2">
             <CalendarIcon className="h-6 w-6 text-red-600" />
             Davomat Tizimi
@@ -161,13 +163,13 @@ const Attendance = () => {
 
         {/* Status Tabs */}
         <div className="mb-6">
-          <div className="rounded-lg bg-white p-1 shadow-sm">
-            <div className="flex gap-1">
+          <div className="rounded-2xl border border-gray-200 bg-white p-2 shadow-sm">
+            <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => setStatusFilter('active')}
-                className={`flex-1 rounded-lg px-2 py-2 text-xs font-medium transition-colors sm:px-4 sm:text-sm ${
+                className={`rounded-xl px-2 py-3 text-xs font-semibold transition-colors sm:px-4 sm:text-sm ${
                   statusFilter === 'active'
-                    ? 'bg-green-100 text-green-700 shadow-sm'
+                    ? 'bg-green-100 text-green-700 shadow-sm ring-1 ring-green-300'
                     : 'text-gray-600 hover:bg-gray-50'
                 }`}
               >
@@ -178,9 +180,9 @@ const Attendance = () => {
               </button>
               <button
                 onClick={() => setStatusFilter('blocked')}
-                className={`flex-1 rounded-lg px-2 py-2 text-xs font-medium transition-colors sm:px-4 sm:text-sm ${
+                className={`rounded-xl px-2 py-3 text-xs font-semibold transition-colors sm:px-4 sm:text-sm ${
                   statusFilter === 'blocked'
-                    ? 'bg-red-100 text-red-700 shadow-sm'
+                    ? 'bg-red-100 text-red-700 shadow-sm ring-1 ring-red-300'
                     : 'text-gray-600 hover:bg-gray-50'
                 }`}
               >
@@ -195,15 +197,15 @@ const Attendance = () => {
 
         {/* Filters */}
         <div className="mb-4">
-          <div className="rounded-lg bg-white p-4 shadow-sm">
-            <div className="flex flex-col gap-4 md:flex-row md:flex-wrap md:items-center">
-              <div className="flex items-center gap-2">
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-2 text-gray-700">
                 <FunnelIcon className="h-5 w-5 text-gray-500" />
-                <span className="text-sm font-medium text-gray-700">Filterlar:</span>
+                <span className="text-sm font-medium">Filterlar:</span>
               </div>
               
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:flex lg:flex-wrap lg:items-center">
-                <div className="w-full min-w-0 sm:min-w-[180px]">
+              <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 lg:items-end">
+                <div className="w-full min-w-0">
                   <TeacherSelect
                     value={selectedTeacher}
                     onChange={setSelectedTeacher}
@@ -212,7 +214,7 @@ const Attendance = () => {
                   />
                 </div>
                 
-                <div className="w-full min-w-0 sm:min-w-[180px]">
+                <div className="w-full min-w-0">
                   <SubjectsSelect
                     value={selectedSubject}
                     onChange={setSelectedSubject}
@@ -224,7 +226,7 @@ const Attendance = () => {
                 {hasActiveFilters && (
                   <button
                     onClick={clearFilters}
-                    className="flex items-center justify-center gap-1 rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-200"
+                    className="flex items-center justify-center gap-1 rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-200 sm:col-span-2 lg:col-span-1"
                   >
                     <XMarkIcon className="h-4 w-4" />
                     Tozalash
@@ -256,7 +258,7 @@ const Attendance = () => {
           <>
             {/* Statistics Summary */}
             <div className="mb-4">
-              <div className="flex flex-wrap items-center gap-4 rounded-lg bg-white p-3 shadow-sm">
+              <div className="flex flex-wrap items-center gap-4 rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
                 <div className="flex items-center gap-2">
                   <UserGroupIcon className="h-5 w-5 text-red-600" />
                   <span className="text-sm font-medium text-gray-700">

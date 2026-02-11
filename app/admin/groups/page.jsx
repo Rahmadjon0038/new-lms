@@ -384,7 +384,7 @@ function AdminGroupsPage() {
 
     return (
         <div className="min-h-full p-2 sm:p-4 md:p-6">
-            <h1 className="mb-1 text-xl font-bold text-gray-900 sm:text-3xl">Guruhlarni Boshqarish Paneli</h1>
+            {/* <h1 className="mb-1 text-xl font-bold text-gray-900 sm:text-3xl">Guruhlarni Boshqarish Paneli</h1> */}
             <p className="mb-5 text-sm text-gray-500 sm:text-lg">Jami {backendData?.success ? backendData.count || 0 : 0} ta guruh mavjud</p>
 
             <div className="mb-6 overflow-x-auto border-b border-gray-200">

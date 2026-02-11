@@ -138,8 +138,8 @@ export default function NewStudentPage() {
     }, []);
 
     return (
-        <div className="min-h-screen bg-gray-50 py-6">
-            <div className="px-12 mx-auto px-4">
+        <div className="min-h-screen bg-gray-50 py-4 sm:py-6">
+            <div className="mx-auto w-full  px-3 sm:px-4 lg:px-6">
                 {/* Header */}
                 <div className="mb-6">
                     <div className="flex items-center justify-between mb-3">
@@ -167,7 +167,7 @@ export default function NewStudentPage() {
                         />
                     </div>
                     
-                    <h1 className="text-3xl font-bold text-gray-800">
+                    <h1 className="text-2xl font-bold text-gray-800 sm:text-3xl">
                         {step === 1 ? 'Yangi student ro\'yxatdan o\'tkazish' : 'Guruhga biriktirish'}
                     </h1>
                     <p className="text-gray-600 mt-1">
@@ -181,7 +181,7 @@ export default function NewStudentPage() {
                 {/* Content Card */}
                 <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
                     {step === 1 ? (
-                        <div className="p-6">
+                        <div className="p-4 sm:p-6">
 
                             
                             {/* Registration Form */}
@@ -385,7 +385,7 @@ export default function NewStudentPage() {
                                     />
                                 </div>
                                 
-                                <div className="flex justify-between items-center pt-4">
+                                <div className="flex flex-col-reverse gap-2 pt-4 sm:flex-row sm:items-center sm:justify-between">
                                     <button
                                         type="button"
                                         onClick={clearForm}
@@ -420,7 +420,7 @@ export default function NewStudentPage() {
                             </form>
                         </div>
                     ) : (
-                        <div className="p-6">
+                        <div className="p-4 sm:p-6">
                             {/* Success Message */}
                             <div 
                                 className="p-3 rounded-lg mb-4"
@@ -505,7 +505,7 @@ export default function NewStudentPage() {
                                     )}
                                 </div>
                                 
-                                <div className="flex space-x-4 pt-4">
+                                <div className="flex flex-col gap-3 pt-4 sm:flex-row">
                                     {selectedGroup ? (
                                         <button 
                                             onClick={handleJoinGroup}

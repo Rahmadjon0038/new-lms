@@ -2,7 +2,6 @@
 import React, { useMemo, useState } from "react";
 import {
   UsersIcon,
-  PlusIcon,
   CurrencyDollarIcon,
   BanknotesIcon,
   ChartBarIcon,
@@ -12,7 +11,6 @@ import { FiUserPlus } from 'react-icons/fi';
 import {
   User, Phone, Calendar, AlertCircle
 } from 'lucide-react';
-import Link from "next/link";
 import {
   ResponsiveContainer,
   LineChart,
@@ -236,15 +234,6 @@ function AdminDashboard() {
             style={{ outlineColor: MAIN_COLOR }}
             placeholder="Oy tanlash"
           />
-          <Link 
-            href="/admin/students/new" 
-            className="flex items-center justify-center gap-2 px-4 py-2 text-white font-semibold rounded-lg shadow transition hover:opacity-90 text-sm"
-            style={{ backgroundColor: MAIN_COLOR }}
-          >
-            <PlusIcon className="h-4 w-4 sm:h-5 sm:w-5" /> 
-            <span className="hidden sm:inline">Yangi talaba qo&apos;shish</span>
-            <span className="sm:hidden">Talaba qo&apos;shish</span>
-          </Link>
         </div>
       </div>
 
