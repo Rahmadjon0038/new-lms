@@ -20,6 +20,12 @@ function Login() {
   const resetPasswordMutation = useResetPasswordWithKey();
   const notify = useGetNotify()
   const navigate = useRouter()
+  const roleRouteMap = {
+    teacher: "/teacher/attendance",
+    admin: "/admin/attendance",
+    super_admin: "/super_admin",
+    student: "/student",
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -27,7 +33,8 @@ function Login() {
     addUserMutation.mutate({
       logindata,
       onSuccess: (data) => {
-        navigate.push(`/${data?.user?.role}`)
+        const role = data?.user?.role;
+        navigate.push(roleRouteMap[role] || `/${role}`);
         notify('ok', 'Tizimga kirish mofaqqiyatli');
         Cookies.set('accessToken', data.accessToken);
         Cookies.set('refreshToken', data.refreshToken);

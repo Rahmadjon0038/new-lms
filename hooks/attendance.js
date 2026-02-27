@@ -33,6 +33,28 @@ export const useGetAttendanceGroups = (filters = {}) => {
     });
 }
 
+// 1️⃣b Teacher My Groups (teacher alias)
+// GET /api/attendance/my-groups
+const getMyAttendanceGroups = async (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.status_filter) params.append('status_filter', filters.status_filter);
+    if (filters.subject_id) params.append('subject_id', filters.subject_id);
+    if (filters.date) params.append('date', filters.date);
+    if (filters.day) params.append('day', filters.day);
+    if (filters.shift) params.append('shift', filters.shift);
+
+    const queryString = params.toString();
+    const response = await instance.get(`/api/attendance/my-groups${queryString ? `?${queryString}` : ''}`);
+    return response.data;
+};
+
+export const useGetMyAttendanceGroups = (filters = {}) => {
+    return useQuery({
+        queryKey: ['attendance-my-groups', filters],
+        queryFn: () => getMyAttendanceGroups(filters),
+    });
+};
+
 // 2️⃣ Bugungi darsni yaratish
 // POST /api/attendance/groups/{group_id}/create-lesson
 const createTodayLesson = async (group_id) => {
@@ -195,3 +217,179 @@ export const useUpdateLessonDate = (group_id, month) => {
         },
     });
 }
+
+// 8️⃣ Teacher My Lessons
+// GET /api/attendance/my-lessons?date=YYYY-MM-DD
+// GET /api/attendance/my-lessons?month=YYYY-MM
+const getMyLessons = async ({ date, month }) => {
+    const params = new URLSearchParams();
+    if (month) {
+        params.append('month', month);
+    } else if (date) {
+        params.append('date', date);
+    }
+
+    const response = await instance.get(`/api/attendance/my-lessons?${params.toString()}`);
+    return response.data;
+};
+
+export const useGetMyLessons = ({ date, month }) => {
+    return useQuery({
+        queryKey: ['attendance-my-lessons', date, month],
+        queryFn: () => getMyLessons({ date, month }),
+        enabled: Boolean(date || month),
+    });
+};
+
+// 9️⃣ Admin Teachers Board
+// GET /api/attendance/admin/teachers?date=YYYY-MM-DD&shift=morning|evening
+const getAdminTeachersBoard = async ({ date, shift }) => {
+    const params = new URLSearchParams();
+    if (date) params.append('date', date);
+    if (shift) params.append('shift', shift);
+
+    const response = await instance.get(`/api/attendance/admin/teachers?${params.toString()}`);
+    return response.data;
+};
+
+export const useGetAdminTeachersBoard = ({ date, shift }) => {
+    return useQuery({
+        queryKey: ['attendance-admin-teachers', date, shift],
+        queryFn: () => getAdminTeachersBoard({ date, shift }),
+        enabled: Boolean(date && shift),
+    });
+};
+
+// 🔟 Admin Teacher Lessons
+// GET /api/attendance/admin/teachers/:teacher_id/lessons?date=...&shift=...
+const getAdminTeacherLessons = async ({ teacher_id, date, shift }) => {
+    const params = new URLSearchParams();
+    if (date) params.append('date', date);
+    if (shift) params.append('shift', shift);
+
+    const response = await instance.get(
+        `/api/attendance/admin/teachers/${teacher_id}/lessons?${params.toString()}`
+    );
+    return response.data;
+};
+
+export const useGetAdminTeacherLessons = ({ teacher_id, date, shift }) => {
+    return useQuery({
+        queryKey: ['attendance-admin-teacher-lessons', teacher_id, date, shift],
+        queryFn: () => getAdminTeacherLessons({ teacher_id, date, shift }),
+        enabled: Boolean(teacher_id && date && shift),
+    });
+};
+
+// 1️⃣4️⃣ Attendance teacher list (admin/super_admin)
+// GET /api/attendance/teachers
+const getAttendanceTeachers = async () => {
+    const response = await instance.get('/api/attendance/teachers');
+    return response.data;
+};
+
+export const useGetAttendanceTeachers = () => {
+    return useQuery({
+        queryKey: ['attendance-teachers-list'],
+        queryFn: getAttendanceTeachers,
+    });
+};
+
+// 1️⃣5️⃣ Teacher groups in attendance
+// GET /api/attendance/teachers/:teacher_id/groups
+const getAttendanceTeacherGroups = async (teacher_id, filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.date) params.append('date', filters.date);
+    if (filters.day) params.append('day', filters.day);
+    if (filters.shift) params.append('shift', filters.shift);
+
+    const queryString = params.toString();
+    const response = await instance.get(
+        `/api/attendance/teachers/${teacher_id}/groups${queryString ? `?${queryString}` : ''}`
+    );
+    return response.data;
+};
+
+export const useGetAttendanceTeacherGroups = (teacher_id, filters = {}, options = {}) => {
+    return useQuery({
+        queryKey: ['attendance-teacher-groups', teacher_id, filters],
+        queryFn: () => getAttendanceTeacherGroups(teacher_id, filters),
+        enabled: Boolean(teacher_id) && (options.enabled ?? true),
+    });
+};
+
+// 1️⃣1️⃣ PUT /api/attendance/lessons/:lesson_id/mark
+const markLessonAttendance = async ({ lesson_id, attendance_records }) => {
+    const response = await instance.put(`/api/attendance/lessons/${lesson_id}/mark`, {
+        attendance_records,
+    });
+    return response.data;
+};
+
+export const useMarkLessonAttendance = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: markLessonAttendance,
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['lesson-students', variables.lesson_id] });
+            queryClient.invalidateQueries({ queryKey: ['attendance-my-lessons'] });
+            queryClient.invalidateQueries({ queryKey: ['attendance-admin-teacher-lessons'] });
+            queryClient.invalidateQueries({ queryKey: ['attendance-admin-teachers'] });
+        },
+    });
+};
+
+// 1️⃣2️⃣ POST /api/attendance/lessons/manual
+const createManualLesson = async (payload) => {
+    const response = await instance.post('/api/attendance/lessons/manual', payload);
+    return response.data;
+};
+
+export const useCreateManualLesson = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: createManualLesson,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['attendance-admin-teachers'] });
+            queryClient.invalidateQueries({ queryKey: ['attendance-admin-teacher-lessons'] });
+            queryClient.invalidateQueries({ queryKey: ['attendance-my-lessons'] });
+        },
+    });
+};
+
+// 1️⃣3️⃣ PATCH /api/attendance/lessons/:lesson_id
+const patchLesson = async ({ lesson_id, payload }) => {
+    const response = await instance.patch(`/api/attendance/lessons/${lesson_id}`, payload);
+    return response.data;
+};
+
+export const usePatchLesson = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: patchLesson,
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['lesson-students', variables.lesson_id] });
+            queryClient.invalidateQueries({ queryKey: ['attendance-admin-teachers'] });
+            queryClient.invalidateQueries({ queryKey: ['attendance-admin-teacher-lessons'] });
+            queryClient.invalidateQueries({ queryKey: ['attendance-my-lessons'] });
+        },
+    });
+};
+
+// 1️⃣6️⃣ PUT /api/attendance/student/monthly-status
+const updateStudentMonthlyStatus = async (payload) => {
+    const response = await instance.put('/api/attendance/student/monthly-status', payload);
+    return response.data;
+};
+
+export const useUpdateStudentMonthlyStatus = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: updateStudentMonthlyStatus,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['lesson-students'] });
+            queryClient.invalidateQueries({ queryKey: ['group-lessons'] });
+        },
+    });
+};

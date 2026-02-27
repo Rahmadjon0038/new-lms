@@ -4,7 +4,13 @@ export function middleware(request) {
   const token = request.cookies.get('accessToken')?.value;
   const role = request.cookies.get('role')?.value;
   const { pathname } = request.nextUrl;
-  const roleHomeMap = {
+  const roleHomeRedirectMap = {
+    admin: '/admin/attendance',
+    teacher: '/teacher/attendance',
+    student: '/student',
+    super_admin: '/super_admin',
+  };
+  const roleBaseMap = {
     admin: '/admin',
     teacher: '/teacher',
     student: '/student',
@@ -18,18 +24,23 @@ export function middleware(request) {
 
   // 2. Agar login qilgan bo'lsa va login sahifasiga yoki "/" ga kirmoqchi bo'lsa -> Roliga qarab haydash
   if (token && (pathname === '/login' || pathname === '/')) {
-    const target = roleHomeMap[role] || '/login';
+    const target = roleHomeRedirectMap[role] || '/login';
     return NextResponse.redirect(new URL(target, request.url));
   }
 
   // 3. Rolga tegishli bo'lmagan sahifaga kirsa -> o'z home sahifasiga qaytarish
   if (token && role) {
-    const roleBase = roleHomeMap[role];
+    if (role === 'super_admin' && pathname.startsWith('/super_admin/attendance')) {
+      return NextResponse.redirect(new URL('/super_admin', request.url));
+    }
+
+    const roleBase = roleBaseMap[role];
     if (roleBase) {
-      const protectedBases = Object.values(roleHomeMap);
+      const protectedBases = Object.values(roleBaseMap);
       const requestedBase = protectedBases.find((base) => pathname === base || pathname.startsWith(`${base}/`));
       if (requestedBase && requestedBase !== roleBase) {
-        return NextResponse.redirect(new URL(roleBase, request.url));
+        const target = roleHomeRedirectMap[role] || roleBase;
+        return NextResponse.redirect(new URL(target, request.url));
       }
     }
   }

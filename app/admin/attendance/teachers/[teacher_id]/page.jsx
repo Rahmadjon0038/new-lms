@@ -1,33 +1,36 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
+import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import {
-  useGetMyAttendanceGroups,
+  useGetAttendanceTeacherGroups,
   useGetGroupLessons,
   useGetLessonStudents,
   useMarkLessonAttendance,
-} from "../../../hooks/attendance";
-import { useGetNotify } from "../../../hooks/notify";
+  useUpdateStudentMonthlyStatus,
+} from "../../../../../hooks/attendance";
+import { useGetNotify } from "../../../../../hooks/notify";
 
 const CURRENT_MONTH = new Date().toISOString().slice(0, 7);
 const WEEKDAYS_UZ = ["yakshanba", "dushanba", "seshanba", "chorshanba", "payshanba", "juma", "shanba"];
-const STATUS_OPTIONS = ["keldi", "kelmadi"];
 
-export default function TeacherAttendancePage() {
+export default function AdminTeacherGroupsPage() {
+  const { teacher_id } = useParams();
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
   const searchString = searchParams.toString();
   const notify = useGetNotify();
 
-  const [date, setDate] = useState(searchParams.get("date") || "");
-  const [day, setDay] = useState(searchParams.get("day") || "");
-  const [shift, setShift] = useState(searchParams.get("shift") || "");
-  const [selectedMonth, setSelectedMonth] = useState(searchParams.get("month") || CURRENT_MONTH);
+  const [date, setDate] = useState("");
+  const [day, setDay] = useState("");
+  const [shift, setShift] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState(CURRENT_MONTH);
   const [selectedGroupId, setSelectedGroupId] = useState(() => {
-    if (typeof window === "undefined") return searchParams.get("group_id") || "";
-    return searchParams.get("group_id") || localStorage.getItem("attendance-selected-group-teacher") || "";
+    if (typeof window === "undefined") return "";
+    return localStorage.getItem(`attendance-selected-group-${teacher_id}`) || "";
   });
   const [selectedLessonId, setSelectedLessonId] = useState("");
   const [attendanceOverrides, setAttendanceOverrides] = useState({});
@@ -38,30 +41,29 @@ export default function TeacherAttendancePage() {
     if (date) params.set("date", date); else params.delete("date");
     if (day) params.set("day", day); else params.delete("day");
     if (shift) params.set("shift", shift); else params.delete("shift");
-    if (selectedMonth) params.set("month", selectedMonth); else params.delete("month");
-    if (selectedGroupId) params.set("group_id", String(selectedGroupId)); else params.delete("group_id");
     router.replace(`${pathname}?${params.toString()}`);
-  }, [date, day, shift, selectedMonth, selectedGroupId, pathname, router, searchString]);
+  }, [date, day, shift, pathname, router, searchString]);
 
-  const groupsQuery = useGetMyAttendanceGroups({
+  const query = useGetAttendanceTeacherGroups(teacher_id, {
     date: date || undefined,
     day: day || undefined,
     shift: shift || undefined,
   });
 
+  const teacher = useMemo(() => {
+    const payload = query.data?.data;
+    return payload?.teacher || null;
+  }, [query.data]);
+
   const groups = useMemo(() => {
-    const payload = groupsQuery.data?.data ?? groupsQuery.data;
-    if (Array.isArray(payload)) return payload;
-    if (Array.isArray(payload?.groups)) return payload.groups;
-    if (Array.isArray(payload?.data)) return payload.data;
-    return [];
-  }, [groupsQuery.data]);
+    const payload = query.data?.data;
+    return Array.isArray(payload?.groups) ? payload.groups : [];
+  }, [query.data]);
 
   const activeGroupId = useMemo(() => {
-    const selectedExists = groups.some((group) => String(group.group_id || group.id) === String(selectedGroupId));
+    const selectedExists = groups.some((group) => String(group.group_id) === String(selectedGroupId));
     if (selectedExists) return String(selectedGroupId);
-    const first = groups[0];
-    return first ? String(first.group_id || first.id) : "";
+    return groups[0] ? String(groups[0].group_id) : "";
   }, [groups, selectedGroupId]);
 
   const handleSelectGroup = (groupId) => {
@@ -69,12 +71,11 @@ export default function TeacherAttendancePage() {
     setSelectedGroupId(value);
     setSelectedLessonId("");
     setAttendanceOverrides({});
-    if (typeof window !== "undefined") {
-      localStorage.setItem("attendance-selected-group-teacher", value);
-    }
+    localStorage.setItem(`attendance-selected-group-${teacher_id}`, value);
+    console.log("selected_group_id:", Number(groupId));
   };
 
-  const getDayShort = (value) => {
+  const getDayShort = (day) => {
     const map = {
       dushanba: "Du",
       seshanba: "Se",
@@ -91,9 +92,11 @@ export default function TeacherAttendancePage() {
       saturday: "Sat",
       sunday: "Sun",
     };
-    return map[String(value || "").toLowerCase()] || String(value || "").slice(0, 2);
+    return map[String(day || "").toLowerCase()] || String(day || "").slice(0, 2);
   };
-
+  const activeGroups = groups;
+  const isLoadingGroups = query.isLoading;
+  const isErrorGroups = query.isError;
   const lessonsQuery = useGetGroupLessons(activeGroupId || undefined, selectedMonth);
   const lessons = useMemo(() => {
     const payload = lessonsQuery.data;
@@ -121,12 +124,17 @@ export default function TeacherAttendancePage() {
       return /^\d{2}:\d{2}\s*-\s*\d{2}:\d{2}$/.test(time);
     };
 
+    // Backenddan bir sanaga bir nechta record (vaqtli + 00:00) kelganda vaqtlisi ustuvor bo'lsin.
     const byDate = new Map();
     sorted.forEach((lesson) => {
       const key = String(lesson?.date || lesson?.lesson_date || "");
       if (!key) return;
       const existing = byDate.get(key);
-      if (!existing || (!hasValidTime(existing) && hasValidTime(lesson))) {
+      if (!existing) {
+        byDate.set(key, lesson);
+        return;
+      }
+      if (!hasValidTime(existing) && hasValidTime(lesson)) {
         byDate.set(key, lesson);
       }
     });
@@ -137,20 +145,18 @@ export default function TeacherAttendancePage() {
       return aDate.localeCompare(bDate);
     });
   }, [lessonsQuery.data]);
-
   const activeLessonId = useMemo(() => {
     const exists = lessons.some((lesson) => String(lesson.id || lesson.lesson_id) === String(selectedLessonId));
     return exists ? String(selectedLessonId) : "";
   }, [lessons, selectedLessonId]);
-
   const lessonStudentsQuery = useGetLessonStudents(activeLessonId || undefined);
   const markMutation = useMarkLessonAttendance();
+  const monthlyStatusMutation = useUpdateStudentMonthlyStatus();
 
   const students = useMemo(() => {
     const payload = lessonStudentsQuery.data;
     if (Array.isArray(payload)) return payload;
     if (Array.isArray(payload?.data)) return payload.data;
-    if (Array.isArray(payload?.data?.students)) return payload.data.students;
     return [];
   }, [lessonStudentsQuery.data]);
 
@@ -162,7 +168,7 @@ export default function TeacherAttendancePage() {
   const getCurrentStudentStatus = (student) =>
     attendanceOverrides[student.attendance_id] ?? normalizeStatus(student.status);
 
-  const canStudentMark = (student) => Boolean(student.can_mark);
+  const canStudentMark = (student) => Boolean(student.can_mark) && student.monthly_status === "active";
 
   const hasAttendanceChanges = useMemo(
     () => Object.keys(attendanceOverrides).length > 0,
@@ -174,14 +180,16 @@ export default function TeacherAttendancePage() {
     const dateOnly = String(value).slice(0, 10);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dateOnly)) return "";
     const [y, m, d] = dateOnly.split("-").map(Number);
-    const dayIndex = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
-    return WEEKDAYS_UZ[dayIndex] || "";
+    const day = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+    return WEEKDAYS_UZ[day] || "";
   };
 
   const getDisplayTime = (lesson) => {
     const start = String(lesson?.start_time || "").trim();
     const end = String(lesson?.end_time || "").trim();
-    if (start && end && start !== "00:00" && end !== "00:00") return `${start} - ${end}`;
+    if (start && end && start !== "00:00" && end !== "00:00") {
+      return `${start} - ${end}`;
+    }
 
     const time = String(lesson?.time || "").trim();
     const match = time.match(/^(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})$/);
@@ -219,6 +227,7 @@ export default function TeacherAttendancePage() {
                 <th className="px-3 py-2 text-left font-semibold text-gray-600">Talaba</th>
                 <th className="px-3 py-2 text-left font-semibold text-gray-600">Monthly</th>
                 <th className="px-3 py-2 text-left font-semibold text-gray-600">Davomat</th>
+                <th className="px-3 py-2 text-left font-semibold text-gray-600">Monthly status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 bg-white">
@@ -236,7 +245,7 @@ export default function TeacherAttendancePage() {
                   </td>
                   <td className="px-3 py-2">
                     <div className="inline-flex rounded-xl border border-gray-200 bg-white p-1">
-                      {STATUS_OPTIONS.map((option) => {
+                      {["keldi", "kelmadi"].map((option) => {
                         const isActive = getCurrentStudentStatus(student) === option;
                         const disabled = !canStudentMark(student) || markMutation.isPending;
                         return (
@@ -265,6 +274,37 @@ export default function TeacherAttendancePage() {
                           </button>
                         );
                       })}
+                    </div>
+                  </td>
+                  <td className="px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <select
+                        defaultValue={student.monthly_status || "active"}
+                        onChange={(e) => {
+                          monthlyStatusMutation.mutate(
+                            {
+                                  student_id: student.student_id,
+                                  group_id: Number(activeGroupId),
+                                  month: selectedMonth,
+                                  monthly_status: e.target.value,
+                                },
+                            {
+                              onSuccess: (res) => {
+                                notify("ok", res?.message || "Monthly status yangilandi");
+                                lessonStudentsQuery.refetch();
+                              },
+                              onError: (err) => {
+                                notify("err", err?.response?.data?.message || "Monthly status yangilanmadi");
+                              },
+                            }
+                          );
+                        }}
+                        className="rounded-lg border border-gray-300 px-2 py-1 text-xs"
+                      >
+                        <option value="active">active</option>
+                        <option value="stopped">stopped</option>
+                        <option value="finished">finished</option>
+                      </select>
                     </div>
                   </td>
                 </tr>
@@ -316,10 +356,15 @@ export default function TeacherAttendancePage() {
   );
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Teacher Attendance</h1>
-        <p className="text-sm text-gray-600">Mening guruhlarim va darslarim</p>
+    <div className="space-y-4 p-3 sm:p-4 md:p-6">
+      <div className="flex items-center gap-3">
+        <Link href="/admin/attendance" className="rounded-lg border border-gray-300 bg-white p-2 text-gray-700">
+          <ArrowLeftIcon className="h-5 w-5" />
+        </Link>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">{teacher?.full_name || "Teacher Groups"}</h1>
+          <p className="text-sm text-gray-600">Teacher guruhlari ro&apos;yxati</p>
+        </div>
       </div>
 
       <div className="grid gap-3 rounded-xl border border-gray-200 bg-white p-4 md:grid-cols-4">
@@ -376,7 +421,7 @@ export default function TeacherAttendancePage() {
         </div>
       </div>
 
-      {groupsQuery.isLoading ? (
+      {isLoadingGroups ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="animate-pulse rounded-xl border border-gray-200 bg-white p-4">
@@ -388,23 +433,22 @@ export default function TeacherAttendancePage() {
         </div>
       ) : null}
 
-      {groupsQuery.isError ? (
+      {isErrorGroups ? (
         <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-          {groupsQuery.error?.response?.data?.message || groupsQuery.error?.message || "Guruhlar yuklanmadi"}
+          {query.error?.response?.data?.message || query.error?.message || "Guruhlar yuklanmadi"}
         </div>
       ) : null}
 
-      {!groupsQuery.isLoading && !groupsQuery.isError ? (
+      {!isLoadingGroups && !isErrorGroups ? (
         <div className="rounded-xl border border-gray-200 bg-white p-3">
           <div className="flex gap-2 overflow-x-auto pb-1">
-            {groups.map((group) => {
-              const groupId = group.group_id || group.id;
-              const isActive = String(groupId) === activeGroupId;
+            {activeGroups.map((group) => {
+              const isActive = String(group.group_id) === activeGroupId;
               return (
                 <button
                   type="button"
-                  key={groupId}
-                  onClick={() => handleSelectGroup(groupId)}
+                  key={group.group_id}
+                  onClick={() => handleSelectGroup(group.group_id)}
                   className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition ${
                     isActive
                       ? "border-[#A60E07] bg-[#A60E07] text-white"
@@ -412,7 +456,7 @@ export default function TeacherAttendancePage() {
                   }`}
                 >
                   <div className="text-left leading-tight">
-                    <div>{group.group_name || group.name}</div>
+                    <div>{group.group_name}</div>
                     <div className={`text-[11px] font-medium ${isActive ? "text-red-100" : "text-gray-500"}`}>
                       {Array.isArray(group.schedule?.days) && group.schedule.days.length
                         ? group.schedule.days.map(getDayShort).join(", ")
@@ -427,7 +471,7 @@ export default function TeacherAttendancePage() {
         </div>
       ) : null}
 
-      {!groupsQuery.isLoading && !groupsQuery.isError && groups.length === 0 ? (
+      {!isLoadingGroups && !isErrorGroups && activeGroups.length === 0 ? (
         <div className="rounded-xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-500">
           Guruh topilmadi.
         </div>
@@ -530,6 +574,7 @@ export default function TeacherAttendancePage() {
           ) : null}
         </div>
       ) : null}
+
     </div>
   );
 }

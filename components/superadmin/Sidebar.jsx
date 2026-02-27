@@ -32,7 +32,9 @@ function SuperAdminSidebar({ isOpen = false, onClose = () => {} }) {
       </div>
       <nav className="flex-1 px-4 py-6 space-y-2">
         {sidebarItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = item.href === "/super_admin"
+            ? pathname === item.href
+            : pathname === item.href || pathname.startsWith(`${item.href}/`);
           return (
             <Link
               key={item.name}

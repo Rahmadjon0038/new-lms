@@ -7,7 +7,7 @@ import { useGetAttendanceTeachers } from "../../../hooks/attendance";
 
 const MAIN_COLOR = "#A60E07";
 
-export default function AdminAttendancePage() {
+export default function SuperAdminAttendancePage() {
   const [search, setSearch] = useState("");
   const teachersQuery = useGetAttendanceTeachers();
 
@@ -73,7 +73,7 @@ export default function AdminAttendancePage() {
 
             return (
               <Link
-                href={`/admin/attendance/teachers/${item.teacher_id}`}
+                href={`/super_admin/attendance/teachers/${item.teacher_id}`}
                 key={item.teacher_id}
                 className="block rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition hover:border-red-200 hover:shadow-md"
               >

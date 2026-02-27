@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useMemo, useState } from "react";
 import {
   ArrowLeftIcon,
   CheckCircleIcon,
@@ -22,7 +22,10 @@ const MAIN_COLOR = "#A60E07";
 // API functions
 const getLessonStudents = async (lessonId) => {
   const response = await instance.get(`/api/attendance/lessons/${lessonId}/students`);
-  return response.data.data;
+  const payload = response.data?.data ?? response.data;
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.students)) return payload.students;
+  return [];
 };
 
 const saveAttendance = async ({ lesson_id, attendance_records }) => {
@@ -32,6 +35,11 @@ const saveAttendance = async ({ lesson_id, attendance_records }) => {
   return response.data;
 };
 
+const normalizeStatus = (status) => {
+  if (status === "keldi") return "keldi";
+  return "kelmadi";
+};
+
 // Attendance Select Component
 const AttendanceSelect = ({ student, currentStatus, onStatusChange, isLoading }) => {
   const handleChange = (e) => {
@@ -39,7 +47,8 @@ const AttendanceSelect = ({ student, currentStatus, onStatusChange, isLoading })
     onStatusChange(student.attendance_id, newStatus);
   };
 
-  const isDisabled = isLoading || !student.can_mark;
+  const isDisabled =
+    isLoading || !student.can_mark || student.monthly_status !== "active";
 
   return (
     <select
@@ -73,7 +82,6 @@ const TeacherLessonAttendance = () => {
   const lessonId = params.lesson_id;
 
   const [attendanceData, setAttendanceData] = useState({});
-  const [hasChanges, setHasChanges] = useState(false);
 
   // Fetch lesson students
   const { data: response, isLoading, error } = useQuery({
@@ -83,30 +91,24 @@ const TeacherLessonAttendance = () => {
   });
 
   // Safely extract students array from response
-  const students = Array.isArray(response) ? response : [];
+  const students = useMemo(() => (Array.isArray(response) ? response : []), [response]);
 
-  // Debug logging
-  console.log("API Response:", response);
-  console.log("Students array:", students);
-
-  // Initialize attendance data
-  useEffect(() => {
-    if (students.length > 0) {
-      const initialAttendance = {};
-      students.forEach((student) => {
-        initialAttendance[student.attendance_id] = student.status === "keldi" ? "keldi" : "kelmadi";
-      });
-      setAttendanceData(initialAttendance);
-      setHasChanges(false);
-    }
+  const initialAttendance = useMemo(() => {
+    const next = {};
+    students.forEach((student) => {
+      next[student.attendance_id] = normalizeStatus(student.status);
+    });
+    return next;
   }, [students]);
+
+  const hasChanges = useMemo(() => Object.keys(attendanceData).length > 0, [attendanceData]);
 
   // Save attendance mutation
   const saveAttendanceMutation = useMutation({
     mutationFn: saveAttendance,
     onSuccess: () => {
       toast.success("Davomat saqlandi!");
-      setHasChanges(false);
+      setAttendanceData({});
       queryClient.invalidateQueries(["lesson-students", lessonId]);
       queryClient.invalidateQueries(["group-lessons", groupId]);
     },
@@ -118,11 +120,16 @@ const TeacherLessonAttendance = () => {
 
   // Handle status change
   const handleStatusChange = (attendanceId, newStatus) => {
-    setAttendanceData(prev => ({
-      ...prev,
-      [attendanceId]: newStatus
-    }));
-    setHasChanges(true);
+    const initialStatus = initialAttendance[attendanceId] || "kelmadi";
+    setAttendanceData((prev) => {
+      const next = { ...prev };
+      if (newStatus === initialStatus) {
+        delete next[attendanceId];
+      } else {
+        next[attendanceId] = newStatus;
+      }
+      return next;
+    });
   };
 
   // Save attendance
@@ -132,9 +139,9 @@ const TeacherLessonAttendance = () => {
       return;
     }
 
-    const attendance_records = Object.entries(attendanceData).map(([attendance_id, status]) => ({
-      attendance_id: parseInt(attendance_id),
-      status
+    const attendance_records = students.map((student) => ({
+      attendance_id: parseInt(student.attendance_id),
+      status: attendanceData[student.attendance_id] || initialAttendance[student.attendance_id] || "kelmadi",
     }));
 
     saveAttendanceMutation.mutate({
@@ -297,7 +304,11 @@ const TeacherLessonAttendance = () => {
                         <div className="w-24 sm:w-32">
                           <AttendanceSelect
                             student={student}
-                            currentStatus={attendanceData[student.attendance_id] || "kelmadi"}
+                            currentStatus={
+                              attendanceData[student.attendance_id] ||
+                              initialAttendance[student.attendance_id] ||
+                              "kelmadi"
+                            }
                             onStatusChange={handleStatusChange}
                             isLoading={saveAttendanceMutation.isLoading}
                           />

@@ -359,13 +359,6 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
         </span>
       );
     }
-    if (status === "kechikdi") {
-      return (
-        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-yellow-100 text-sm font-bold text-yellow-700">
-          •
-        </span>
-      );
-    }
     return <span className="text-gray-400 text-xs">-</span>;
   };
 
