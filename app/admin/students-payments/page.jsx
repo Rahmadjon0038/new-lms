@@ -246,7 +246,8 @@ const StudentPayments = () => {
     };
 
     // Check if any filter is active
-    const hasActiveFilters = filters.payment_status !== 'all' || searchTerm.trim() || filters.teacher_id || filters.subject_id;
+    const hasActiveDropdownFilters = filters.payment_status !== 'all' || Boolean(filters.teacher_id) || Boolean(filters.subject_id);
+    const hasActiveFilters = hasActiveDropdownFilters || searchTerm.trim();
 
     // Clear student month data
     const handleClearStudentMonth = async () => {
@@ -604,7 +605,7 @@ const StudentPayments = () => {
                 {/* Filters */}
                 <div className="mb-6 rounded-lg bg-white p-4 shadow-md sm:p-6">
                     <div className="relative" ref={filterDropdownRef}>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                             <div className="relative flex-1">
                                 <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                                 <input
@@ -624,13 +625,25 @@ const StudentPayments = () => {
                                     </button>
                                 )}
                             </div>
+                            <div className="sm:w-[170px]">
+                                <input
+                                    type="month"
+                                    value={filters.month}
+                                    onChange={(e) => handleFilterChange('month', e.target.value)}
+                                    className="h-10 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2"
+                                    style={{ focusRingColor: MAIN_COLOR }}
+                                />
+                            </div>
                             <button
                                 type="button"
                                 onClick={() => setShowFilterDropdown((prev) => !prev)}
-                                className="inline-flex h-10 items-center justify-center gap-1 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                                className="relative inline-flex h-10 items-center justify-center gap-1 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
                             >
                                 <FunnelIcon className="h-4 w-4" />
                                 Filter
+                                {hasActiveDropdownFilters && (
+                                    <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-red-500" />
+                                )}
                             </button>
                         </div>
 
@@ -655,17 +668,7 @@ const StudentPayments = () => {
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                                    <div  >
-                                        {/* <label className="mb-1.5 block text-xs font-medium text-gray-700 sm:text-sm">Oy:</label> */}
-                                        <input
-                                            type="month"
-                                            value={filters.month}
-                                            onChange={(e) => handleFilterChange('month', e.target.value)}
-                                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2"
-                                            style={{ focusRingColor: MAIN_COLOR }}
-                                        />
-                                    </div>
+                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                     <div>
                                         {/* <label className="mb-1.5 block text-xs font-medium text-gray-700 sm:text-sm">O'qituvchi:</label> */}
                                         <select

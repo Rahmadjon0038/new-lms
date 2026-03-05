@@ -31,8 +31,28 @@ const createTeacherAdvance = async (payload) => {
   return extractData(res);
 };
 
+const createTeacherManualAdjustment = async (payload) => {
+  const res = await instance.post(`${baseUrl}/manual-adjustments`, payload);
+  return extractData(res);
+};
+
+const createTeacherPayout = async (payload) => {
+  const res = await instance.post(`${baseUrl}/payouts`, payload);
+  return extractData(res);
+};
+
 const getTeacherAdvances = async ({ teacher_id, month_name }) => {
   const res = await instance.get(`${baseUrl}/advances${buildQuery({ teacher_id, month_name })}`);
+  return extractData(res);
+};
+
+const getTeacherManualAdjustments = async ({ teacher_id, month_name }) => {
+  const res = await instance.get(`${baseUrl}/manual-adjustments${buildQuery({ teacher_id, month_name })}`);
+  return extractData(res);
+};
+
+const getTeacherPayouts = async ({ teacher_id, month_name }) => {
+  const res = await instance.get(`${baseUrl}/payouts${buildQuery({ teacher_id, month_name })}`);
   return extractData(res);
 };
 
@@ -91,6 +111,52 @@ export const useCreateTeacherAdvance = () => {
     mutationFn: createTeacherAdvance,
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ["teacher-salary-advances", vars?.teacher_id, vars?.month_name] });
+      queryClient.invalidateQueries({ queryKey: ["teacher-salary-summary", vars?.month_name, vars?.teacher_id] });
+      queryClient.invalidateQueries({ queryKey: ["teacher-salary-teachers", vars?.month_name] });
+      queryClient.invalidateQueries({ queryKey: ["teacher-salary-simple-list", vars?.month_name] });
+    },
+  });
+};
+
+export const useTeacherManualAdjustments = ({ teacher_id, month_name }, options = {}) =>
+  useQuery({
+    queryKey: ["teacher-salary-manual-adjustments", teacher_id, month_name],
+    queryFn: () => getTeacherManualAdjustments({ teacher_id, month_name }),
+    enabled: !!teacher_id && !!month_name,
+    ...options,
+  });
+
+export const useCreateTeacherManualAdjustment = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createTeacherManualAdjustment,
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({
+        queryKey: ["teacher-salary-manual-adjustments", vars?.teacher_id, vars?.month_name],
+      });
+      queryClient.invalidateQueries({ queryKey: ["teacher-salary-summary", vars?.month_name, vars?.teacher_id] });
+      queryClient.invalidateQueries({ queryKey: ["teacher-salary-teachers", vars?.month_name] });
+      queryClient.invalidateQueries({ queryKey: ["teacher-salary-simple-list", vars?.month_name] });
+    },
+  });
+};
+
+export const useTeacherPayouts = ({ teacher_id, month_name }, options = {}) =>
+  useQuery({
+    queryKey: ["teacher-salary-payouts", teacher_id, month_name],
+    queryFn: () => getTeacherPayouts({ teacher_id, month_name }),
+    enabled: !!teacher_id && !!month_name,
+    ...options,
+  });
+
+export const useCreateTeacherPayout = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createTeacherPayout,
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({
+        queryKey: ["teacher-salary-payouts", vars?.teacher_id, vars?.month_name],
+      });
       queryClient.invalidateQueries({ queryKey: ["teacher-salary-summary", vars?.month_name, vars?.teacher_id] });
       queryClient.invalidateQueries({ queryKey: ["teacher-salary-teachers", vars?.month_name] });
       queryClient.invalidateQueries({ queryKey: ["teacher-salary-simple-list", vars?.month_name] });

@@ -24,7 +24,16 @@ const StudentAttendanceModal = ({ isOpen, onClose, student, month }) => {
         return weekdays[date.getDay()] || '';
     };
 
-    const getStatusIcon = (status) => {
+    const getAttendanceStatus = (attendance) => {
+        if (!attendance) return null;
+        if (attendance.is_marked === false) return null;
+        const status = attendance.status;
+        if (status === 'keldi' || status === 'kelmadi') return status;
+        return null;
+    };
+
+    const getStatusIcon = (attendance) => {
+        const status = getAttendanceStatus(attendance);
         switch (status) {
             case 'keldi':
                 return <span className="text-green-600 text-xl font-bold">✓</span>;
@@ -36,7 +45,8 @@ const StudentAttendanceModal = ({ isOpen, onClose, student, month }) => {
         }
     };
 
-    const getStatusLabel = (status) => {
+    const getStatusLabel = (attendance) => {
+        const status = getAttendanceStatus(attendance);
         switch (status) {
             case 'keldi':
                 return "Keldi";
@@ -144,7 +154,7 @@ const StudentAttendanceModal = ({ isOpen, onClose, student, month }) => {
                                             </td>
                                             {attendanceData.data.daily_attendance?.map((attendance, index) => (
                                                 <td key={index} className="border border-gray-300 px-2 py-2 text-center sm:px-4 sm:py-3">
-                                                    {getStatusIcon(attendance.status)}
+                                                    {getStatusIcon(attendance)}
                                                 </td>
                                             ))}
                                         </tr>
@@ -164,8 +174,8 @@ const StudentAttendanceModal = ({ isOpen, onClose, student, month }) => {
                                                 </p>
                                             </div>
                                             <div className="flex items-center gap-2">
-                                                {getStatusIcon(attendance.status)}
-                                                <span className="text-sm font-medium text-gray-700">{getStatusLabel(attendance.status)}</span>
+                                                {getStatusIcon(attendance)}
+                                                <span className="text-sm font-medium text-gray-700">{getStatusLabel(attendance)}</span>
                                             </div>
                                         </div>
                                     </div>

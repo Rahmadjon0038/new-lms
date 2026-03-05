@@ -48,13 +48,8 @@ const MonthlyStatusModal = ({ isOpen, onClose, student, groupId, currentMonth, u
     } else if (updateType === 'multiple') {
       requestData.months = selectedMonths;
     } else if (updateType === 'fromMonth') {
-      // Keyingi oydan boshlash uchun currentMonth + 1
-      const [year, month] = currentMonth.split('-').map(Number);
-      const nextMonth = month + 1;
-      const nextYear = year + Math.floor((nextMonth - 1) / 12);
-      const finalMonth = ((nextMonth - 1) % 12) + 1;
-      const nextMonthStr = `${nextYear}-${String(finalMonth).padStart(2, '0')}`;
-      requestData.from_month = nextMonthStr;
+      // Joriy oydan boshlab qo'llash
+      requestData.from_month = currentMonth;
     }
 
     updateStatusMutation.mutate(requestData);
@@ -147,7 +142,7 @@ const MonthlyStatusModal = ({ isOpen, onClose, student, groupId, currentMonth, u
                   onChange={(e) => setUpdateType(e.target.value)}
                   className="mr-2"
                 />
-                <span className="text-sm">Keyingi oydan boshlab barcha oylar</span>
+                <span className="text-sm">Bu oydan boshlab barcha oylar</span>
               </label>
 
               <label className="flex items-center">
@@ -225,13 +220,46 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
     normalizedRole === "super_admin" ||
     normalizedRole === "superadmin";
   
-  const monthData = data?.data;
-  const lessons = [...(monthData?.lessons || [])].sort((a, b) => {
+  const extractMonthlyPayload = (response) => {
+    const root = response?.data ?? response ?? {};
+    const nestedCandidates = [
+      root,
+      root?.data,
+      root?.monthly_data,
+      root?.monthly_attendance,
+      root?.report,
+      root?.result,
+    ].filter(Boolean);
+
+    for (const candidate of nestedCandidates) {
+      const lessonsCandidate =
+        candidate?.lessons ||
+        candidate?.monthly_lessons ||
+        candidate?.lesson_list ||
+        candidate?.group_lessons;
+      const studentsCandidate =
+        candidate?.students ||
+        candidate?.monthly_students ||
+        candidate?.student_list ||
+        candidate?.group_students;
+
+      if (Array.isArray(lessonsCandidate) || Array.isArray(studentsCandidate)) {
+        return {
+          lessons: Array.isArray(lessonsCandidate) ? lessonsCandidate : [],
+          students: Array.isArray(studentsCandidate) ? studentsCandidate : [],
+        };
+      }
+    }
+
+    return { lessons: [], students: [] };
+  };
+
+  const { lessons: rawLessons, students } = extractMonthlyPayload(data);
+  const lessons = [...rawLessons].sort((a, b) => {
     const aDate = new Date(a?.date || 0).getTime();
     const bDate = new Date(b?.date || 0).getTime();
     return aDate - bDate; // Eski sana chapda, yangi sana o'ngda
   });
-  const students = monthData?.students || [];
 
   // Update status mutation
   const updateStatusMutation = useMutation({
@@ -291,7 +319,6 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
 
   if (isLoading) return <div className="text-center py-6 sm:py-8 text-sm sm:text-base">Oylik hisobot yuklanmoqda...</div>;
   if (error) return <div className="bg-red-50 border border-red-200 text-red-700 px-3 sm:px-4 py-2 sm:py-3 rounded-lg text-xs sm:text-sm">Oylik hisobotda xatolik: {error.message}</div>;
-  if (!lessons.length || !students.length) return null;
 
   // Format date from YYYY-MM-DD to DD.MM.YYYY
   const formatDate = (dateString) => {
@@ -375,86 +402,93 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
         </button>
       </div>
 
-      {/* Table (all devices) */}
-      <div className="mt-4 overflow-x-auto">
-        <table className="min-w-[980px] w-full">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="border border-gray-400 px-3 py-2 text-left text-xs font-semibold text-gray-700">#</th>
-              <th className="border border-gray-400 px-3 py-2 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">Talaba</th>
-              <th className="border border-gray-400 px-3 py-2 text-center text-xs font-semibold text-gray-700 whitespace-nowrap">Holati</th>
-              {lessons.map((lesson) => (
-                <th key={lesson.id} className="min-w-[100px] whitespace-nowrap border border-gray-400 px-3 py-2 text-center text-xs font-semibold text-gray-700">
-                  <div>{formatDate(lesson.date)}</div>
-                  <div className="text-[10px] font-medium text-gray-500">{getWeekdayFull(lesson.date)}</div>
-                </th>
-              ))}
-              <th className="border border-gray-400 px-3 py-2 text-center text-xs font-semibold text-gray-700 whitespace-nowrap">Statistika</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white">
-            {students.map((student, idx) => {
-              const attendanceMap = {};
-              student.attendance_records?.forEach((record) => {
-                attendanceMap[record.lesson_id] = record;
-              });
+      {!lessons.length || !students.length ? (
+        <div className="mt-4 rounded-md border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
+          Bu oy uchun oylik davomat jadvali ma&apos;lumotlari topilmadi.
+        </div>
+      ) : null}
 
-              return (
-                <tr key={`${student.student_id}-${idx}`} className="hover:bg-gray-50">
-                  <td className="border border-gray-400 px-3 py-2 text-xs text-gray-600">{idx + 1}</td>
-                  <td className="border border-gray-400 px-3 py-2 text-xs font-medium text-gray-900 whitespace-nowrap">
-                    <div>
-                      <div className="font-medium">{student.student_name}</div>
-                      <div className="mt-0.5 text-[10px] text-gray-500">{student.phone}</div>
-                    </div>
-                  </td>
-                  <td className="border border-gray-400 px-3 py-2 text-center text-xs">
-                    <div className="flex flex-col items-center justify-center gap-1">
-                      <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                        student.monthly_status === "active" ? "bg-green-100 text-green-800" :
-                        student.monthly_status === "stopped" ? "bg-orange-100 text-orange-800" :
-                        "bg-gray-100 text-gray-800"
-                      }`}>
-                        {student.monthly_status === "active" ? "Faol" : student.monthly_status === "stopped" ? "To'xtagan" : student.monthly_status}
-                      </span>
-                      {canChangeMonthlyStatus ? (
-                        <button
-                          onClick={() => setStatusModal({ isOpen: true, student })}
-                          className="rounded px-2 py-0.5 text-xs text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-800"
-                          title="Statusni o'zgartirish"
-                        >
-                          O&apos;zgartirish
-                        </button>
-                      ) : null}
-                    </div>
-                  </td>
-                  {lessons.map((lesson) => (
-                    <td key={lesson.id} className="border border-gray-400 px-3 py-2 text-center">
-                      {renderAttendanceSymbol(
-                        attendanceMap[lesson.id],
-                        lesson.date,
-                        student.membership_periods || []
-                      )}
-                    </td>
-                  ))}
-                  <td className="border border-gray-400 px-3 py-2 text-center text-xs">
-                    <div className="text-center">
-                      <div className="font-semibold text-green-600">{student.statistics?.total_attended || student.total_present || 0}</div>
-                      <div className="font-semibold text-red-600">{student.statistics?.total_missed || student.total_absent || 0}</div>
-                      <div className={`text-xs font-medium ${
-                        (student.statistics?.attendance_percentage || 0) >= 80 ? "text-green-600" :
-                        (student.statistics?.attendance_percentage || 0) >= 60 ? "text-orange-600" : "text-red-600"
-                      }`}>
-                        {student.statistics?.attendance_percentage || 0}%
+      {lessons.length && students.length ? (
+        <div className="mt-4 overflow-x-auto">
+          <table className="min-w-[980px] w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="border border-gray-400 px-3 py-2 text-left text-xs font-semibold text-gray-700">#</th>
+                <th className="border border-gray-400 px-3 py-2 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">Talaba</th>
+                <th className="border border-gray-400 px-3 py-2 text-center text-xs font-semibold text-gray-700 whitespace-nowrap">Holati</th>
+                {lessons.map((lesson) => (
+                  <th key={lesson.id} className="min-w-[100px] whitespace-nowrap border border-gray-400 px-3 py-2 text-center text-xs font-semibold text-gray-700">
+                    <div>{formatDate(lesson.date)}</div>
+                    <div className="text-[10px] font-medium text-gray-500">{getWeekdayFull(lesson.date)}</div>
+                  </th>
+                ))}
+                <th className="border border-gray-400 px-3 py-2 text-center text-xs font-semibold text-gray-700 whitespace-nowrap">Statistika</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white">
+              {students.map((student, idx) => {
+                const attendanceMap = {};
+                student.attendance_records?.forEach((record) => {
+                  attendanceMap[record.lesson_id] = record;
+                });
+
+                return (
+                  <tr key={`${student.student_id}-${idx}`} className="hover:bg-gray-50">
+                    <td className="border border-gray-400 px-3 py-2 text-xs text-gray-600">{idx + 1}</td>
+                    <td className="border border-gray-400 px-3 py-2 text-xs font-medium text-gray-900 whitespace-nowrap">
+                      <div>
+                        <div className="font-medium">{student.student_name}</div>
+                        <div className="mt-0.5 text-[10px] text-gray-500">{student.phone}</div>
                       </div>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+                    </td>
+                    <td className="border border-gray-400 px-3 py-2 text-center text-xs">
+                      <div className="flex flex-col items-center justify-center gap-1">
+                        <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
+                          student.monthly_status === "active" ? "bg-green-100 text-green-800" :
+                          student.monthly_status === "stopped" ? "bg-orange-100 text-orange-800" :
+                          "bg-gray-100 text-gray-800"
+                        }`}>
+                          {student.monthly_status === "active" ? "Faol" : student.monthly_status === "stopped" ? "To'xtagan" : student.monthly_status}
+                        </span>
+                        {canChangeMonthlyStatus ? (
+                          <button
+                            onClick={() => setStatusModal({ isOpen: true, student })}
+                            className="rounded px-2 py-0.5 text-xs text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-800"
+                            title="Statusni o'zgartirish"
+                          >
+                            O&apos;zgartirish
+                          </button>
+                        ) : null}
+                      </div>
+                    </td>
+                    {lessons.map((lesson) => (
+                      <td key={lesson.id} className="border border-gray-400 px-3 py-2 text-center">
+                        {renderAttendanceSymbol(
+                          attendanceMap[lesson.id],
+                          lesson.date,
+                          student.membership_periods || []
+                        )}
+                      </td>
+                    ))}
+                    <td className="border border-gray-400 px-3 py-2 text-center text-xs">
+                      <div className="text-center">
+                        <div className="font-semibold text-green-600">{student.statistics?.total_attended || student.total_present || 0}</div>
+                        <div className="font-semibold text-red-600">{student.statistics?.total_missed || student.total_absent || 0}</div>
+                        <div className={`text-xs font-medium ${
+                          (student.statistics?.attendance_percentage || 0) >= 80 ? "text-green-600" :
+                          (student.statistics?.attendance_percentage || 0) >= 60 ? "text-orange-600" : "text-red-600"
+                        }`}>
+                          {student.statistics?.attendance_percentage || 0}%
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
 
       {/* Monthly Status Modal */}
       <MonthlyStatusModal

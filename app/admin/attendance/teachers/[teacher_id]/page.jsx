@@ -4,14 +4,15 @@ import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetAttendanceTeacherGroups,
   useGetGroupLessons,
   useGetLessonStudents,
   useMarkLessonAttendance,
-  useUpdateStudentMonthlyStatus,
 } from "../../../../../hooks/attendance";
 import { useGetNotify } from "../../../../../hooks/notify";
+import MonthlyAttendanceInline from "../../../../../components/MonthlyAttendanceInline";
 
 const CURRENT_MONTH = new Date().toISOString().slice(0, 7);
 const WEEKDAYS_UZ = ["yakshanba", "dushanba", "seshanba", "chorshanba", "payshanba", "juma", "shanba"];
@@ -23,6 +24,7 @@ export default function AdminTeacherGroupsPage() {
   const searchParams = useSearchParams();
   const searchString = searchParams.toString();
   const notify = useGetNotify();
+  const queryClient = useQueryClient();
 
   const [date, setDate] = useState("");
   const [day, setDay] = useState("");
@@ -151,7 +153,6 @@ export default function AdminTeacherGroupsPage() {
   }, [lessons, selectedLessonId]);
   const lessonStudentsQuery = useGetLessonStudents(activeLessonId || undefined);
   const markMutation = useMarkLessonAttendance();
-  const monthlyStatusMutation = useUpdateStudentMonthlyStatus();
 
   const students = useMemo(() => {
     const payload = lessonStudentsQuery.data;
@@ -225,9 +226,8 @@ export default function AdminTeacherGroupsPage() {
             <thead className="bg-white">
               <tr>
                 <th className="px-3 py-2 text-left font-semibold text-gray-600">Talaba</th>
-                <th className="px-3 py-2 text-left font-semibold text-gray-600">Monthly</th>
+                <th className="px-3 py-2 text-left font-semibold text-gray-600">Talaba holati</th>
                 <th className="px-3 py-2 text-left font-semibold text-gray-600">Davomat</th>
-                <th className="px-3 py-2 text-left font-semibold text-gray-600">Monthly status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 bg-white">
@@ -276,37 +276,6 @@ export default function AdminTeacherGroupsPage() {
                       })}
                     </div>
                   </td>
-                  <td className="px-3 py-2">
-                    <div className="flex items-center gap-2">
-                      <select
-                        defaultValue={student.monthly_status || "active"}
-                        onChange={(e) => {
-                          monthlyStatusMutation.mutate(
-                            {
-                                  student_id: student.student_id,
-                                  group_id: Number(activeGroupId),
-                                  month: selectedMonth,
-                                  monthly_status: e.target.value,
-                                },
-                            {
-                              onSuccess: (res) => {
-                                notify("ok", res?.message || "Monthly status yangilandi");
-                                lessonStudentsQuery.refetch();
-                              },
-                              onError: (err) => {
-                                notify("err", err?.response?.data?.message || "Monthly status yangilanmadi");
-                              },
-                            }
-                          );
-                        }}
-                        className="rounded-lg border border-gray-300 px-2 py-1 text-xs"
-                      >
-                        <option value="active">active</option>
-                        <option value="stopped">stopped</option>
-                        <option value="finished">finished</option>
-                      </select>
-                    </div>
-                  </td>
                 </tr>
               ))}
             </tbody>
@@ -339,6 +308,9 @@ export default function AdminTeacherGroupsPage() {
                     setSelectedLessonId("");
                     lessonStudentsQuery.refetch();
                     lessonsQuery.refetch();
+                    queryClient.invalidateQueries({
+                      queryKey: ["monthly-attendance", activeGroupId, selectedMonth],
+                    });
                   },
                   onError: (err) => {
                     notify("err", err?.response?.data?.message || "Davomat saqlanmadi");
@@ -572,6 +544,8 @@ export default function AdminTeacherGroupsPage() {
               Tanlangan guruh uchun dars topilmadi.
             </div>
           ) : null}
+
+          <MonthlyAttendanceInline groupId={activeGroupId} selectedMonth={selectedMonth} />
         </div>
       ) : null}
 
