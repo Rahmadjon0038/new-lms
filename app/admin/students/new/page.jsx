@@ -72,7 +72,7 @@ export default function NewStudentPage() {
         e.preventDefault();
         
         // Validate required fields
-        if (!formData.name || !formData.surname || !formData.username || !formData.password || !formData.phone || !formData.father_name || !formData.age) {
+        if (!formData.name || !formData.surname || !formData.username || !formData.password || !formData.phone) {
             toast.error('Iltimos, barcha majburiy maydonlarni to\'ldiring!');
             return;
         }
@@ -218,15 +218,17 @@ export default function NewStudentPage() {
                                         />
                                     </div>
                                     <div>
+                                        <p className="text-xs text-gray-500 mb-1">
+                                            Ixtiyoriy
+                                        </p>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Otasining ismi *
+                                            Otasining ismi
                                         </label>
                                         <input
                                             type="text"
                                             name="father_name"
                                             value={formData.father_name}
                                             onChange={handleInputChange}
-                                            required
                                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition-all"
                                             style={{ focusRingColor: `${MAIN_COLOR}40` }}
                                             placeholder="Otasining ismini kiriting"
@@ -237,14 +239,13 @@ export default function NewStudentPage() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Yoshi *
+                                            Yoshi
                                         </label>
                                         <input
                                             type="number"
                                             name="age"
                                             value={formData.age}
                                             onChange={handleInputChange}
-                                            required
                                             min="1"
                                             max="100"
                                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition-all"
