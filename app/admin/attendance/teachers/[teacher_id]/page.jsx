@@ -26,7 +26,6 @@ export default function AdminTeacherGroupsPage() {
   const notify = useGetNotify();
   const queryClient = useQueryClient();
 
-  const [date, setDate] = useState("");
   const [day, setDay] = useState("");
   const [shift, setShift] = useState("");
   const [selectedMonth, setSelectedMonth] = useState(CURRENT_MONTH);
@@ -36,18 +35,17 @@ export default function AdminTeacherGroupsPage() {
   });
   const [selectedLessonId, setSelectedLessonId] = useState("");
   const [attendanceOverrides, setAttendanceOverrides] = useState({});
-  const hasActiveFilters = Boolean(date || day || shift);
+  const hasActiveFilters = Boolean(day || shift);
 
   useEffect(() => {
     const params = new URLSearchParams(searchString);
-    if (date) params.set("date", date); else params.delete("date");
+    params.delete("date");
     if (day) params.set("day", day); else params.delete("day");
     if (shift) params.set("shift", shift); else params.delete("shift");
     router.replace(`${pathname}?${params.toString()}`);
-  }, [date, day, shift, pathname, router, searchString]);
+  }, [day, shift, pathname, router, searchString]);
 
   const query = useGetAttendanceTeacherGroups(teacher_id, {
-    date: date || undefined,
     day: day || undefined,
     shift: shift || undefined,
   });
@@ -339,9 +337,9 @@ export default function AdminTeacherGroupsPage() {
         </div>
       </div>
 
-      <div className="grid gap-3 rounded-xl border border-gray-200 bg-white p-4 md:grid-cols-4">
+      <div className="grid gap-3 rounded-xl border border-gray-200 bg-white p-4 md:grid-cols-3">
         <label className="text-sm text-gray-700">
-          <span className="mb-1 block font-medium">Day (ixtiyoriy)</span>
+          <span className="mb-1 block font-medium">Kun (ixtiyoriy)</span>
           <select
             value={day}
             onChange={(e) => setDay(e.target.value)}
@@ -354,7 +352,7 @@ export default function AdminTeacherGroupsPage() {
         </label>
 
         <label className="text-sm text-gray-700">
-          <span className="mb-1 block font-medium">Shift (ixtiyoriy)</span>
+          <span className="mb-1 block font-medium">Smena (ixtiyoriy)</span>
           <select
             value={shift}
             onChange={(e) => setShift(e.target.value)}
@@ -366,22 +364,11 @@ export default function AdminTeacherGroupsPage() {
           </select>
         </label>
 
-        <label className="text-sm text-gray-700">
-          <span className="mb-1 block font-medium">Date (ixtiyoriy)</span>
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className={`w-full rounded-lg border px-3 py-2 ${date ? "border-[#A60E07] bg-red-50" : "border-gray-300"}`}
-          />
-        </label>
-
         <div className="flex items-end">
           {hasActiveFilters ? (
             <button
               type="button"
               onClick={() => {
-                setDate("");
                 setDay("");
                 setShift("");
               }}

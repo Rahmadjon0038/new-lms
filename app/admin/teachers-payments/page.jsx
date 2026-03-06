@@ -6,7 +6,7 @@ import { toast } from "react-hot-toast";
 import {
   useCloseTeacherSalaryMonth,
   useCreateTeacherAdvance,
-  useCreateTeacherPayout,
+  useCreateTeacherGiven,
   useTeacherSalaryMonthTeachers,
   useUpdateTeacherSalarySetting,
 } from "../../../hooks/teacher-salary";
@@ -79,10 +79,11 @@ const getRowToneClass = (teacher) => {
   return "bg-amber-50";
 };
 
-const resolveCanPayout = (teacher, payableNow) => {
-  if (typeof teacher?.can_payout === "boolean") return teacher.can_payout;
-  if (typeof teacher?.can_payout_after_close === "boolean") return teacher.can_payout_after_close;
-  return payableNow > 0;
+const resolveCanGive = (teacher, payableNow) => {
+  const hasPayableNow = payableNow > 0;
+  if (typeof teacher?.can_give === "boolean") return teacher.can_give || hasPayableNow;
+  if (typeof teacher?.can_give_after_close === "boolean") return teacher.can_give_after_close || hasPayableNow;
+  return hasPayableNow;
 };
 
 const TeacherPayments = () => {
@@ -90,14 +91,14 @@ const TeacherPayments = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [salaryPercentByTeacher, setSalaryPercentByTeacher] = useState({});
   const [advanceByTeacher, setAdvanceByTeacher] = useState({});
-  const [payoutByTeacher, setPayoutByTeacher] = useState({});
+  const [givenDoneByTeacher, setGivenDoneByTeacher] = useState({});
   const [openStudentsByTeacher, setOpenStudentsByTeacher] = useState({});
 
   const teachersMonthlyQuery = useTeacherSalaryMonthTeachers({ month_name: month });
 
   const updateSettingMutation = useUpdateTeacherSalarySetting();
   const createAdvanceMutation = useCreateTeacherAdvance();
-  const createPayoutMutation = useCreateTeacherPayout();
+  const createGivenMutation = useCreateTeacherGiven();
   const closeMutation = useCloseTeacherSalaryMonth();
 
   const monthlyTeachers = useMemo(() => asArray(teachersMonthlyQuery.data), [teachersMonthlyQuery.data]);
@@ -137,23 +138,14 @@ const TeacherPayments = () => {
       return next;
     });
 
-    setPayoutByTeacher((prev) => {
+    setGivenDoneByTeacher((prev) => {
       const next = { ...prev };
       monthlyTeachers.forEach((t) => {
         const teacherId = getTeacherId(t);
         if (!teacherId) return;
-        const extraAfterClose = num(t, ["extra_after_close"]);
-        const autoPayoutAmount = t?.is_closed && extraAfterClose > 0 ? String(Math.trunc(extraAfterClose)) : "";
-        if (!next[teacherId]) {
-          next[teacherId] = { amount: autoPayoutAmount, description: "" };
-          return;
-        }
-
-        // Agar foydalanuvchi hali qiymat kiritmagan bo'lsa, close dan keyingi summani payoutga qo'yib beramiz.
-        const currentAmount = String(next[teacherId]?.amount || "").trim();
-        if (!currentAmount && autoPayoutAmount) {
-          next[teacherId] = { ...next[teacherId], amount: autoPayoutAmount };
-        }
+        const payableNow = num(t, ["available_balance", "final_salary", "close_balance"]);
+        if (payableNow > 0) next[teacherId] = false;
+        else if (next[teacherId] === undefined) next[teacherId] = false;
       });
       return next;
     });
@@ -223,50 +215,31 @@ const TeacherPayments = () => {
     }
   };
 
-  const handleCreatePayout = async (teacherId, teacherRow) => {
-    const rowPayout = payoutByTeacher[String(teacherId)] || { amount: "", description: "" };
-    const rawAmount = String(rowPayout.amount || "").trim();
-    const hasAmount = rawAmount.length > 0;
-    const amount = Number(rawAmount);
-    const finalSalary = num(teacherRow, ["final_salary", "close_balance"]);
+  const handleCreateGiven = async (teacherId, teacherRow) => {
     const payableNow = num(teacherRow, ["available_balance", "final_salary", "close_balance"]);
-    const canPayout = resolveCanPayout(teacherRow, payableNow);
+    const canGive = resolveCanGive(teacherRow, payableNow);
 
-    if (!canPayout) {
-      toast.error("Hozir payout qilib bo'lmaydi");
+    if (!canGive) {
+      toast.error("Hozir berib bo'lmaydi");
       return;
-    }
-    if (hasAmount) {
-      if (!Number.isFinite(amount) || amount <= 0) {
-        toast.error("Payout summasi 0 dan katta bo'lishi kerak");
-        return;
-      }
-      if (amount > finalSalary) {
-        toast.error("Payout summasi hozir beriladigan summadan katta bo'lmasligi kerak");
-        return;
-      }
     }
 
     try {
       const payload = {
         teacher_id: Number(teacherId),
         month_name: month,
-        description: rowPayout.description || "",
       };
-      if (hasAmount) {
-        payload.amount = amount;
-      }
 
-      await createPayoutMutation.mutateAsync({
+      await createGivenMutation.mutateAsync({
         ...payload,
       });
-      setPayoutByTeacher((prev) => ({
+      setGivenDoneByTeacher((prev) => ({
         ...prev,
-        [String(teacherId)]: { amount: "", description: "" },
+        [String(teacherId)]: true,
       }));
-      toast.success("Payout muvaffaqiyatli qo'shildi");
+      toast.success("Berildi muvaffaqiyatli saqlandi");
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Payout qo'shishda xatolik");
+      toast.error(err?.response?.data?.message || "Berilgan summani saqlashda xatolik");
     }
   };
 
@@ -320,11 +293,11 @@ const TeacherPayments = () => {
                 const teacherId = getTeacherId(t);
                 const teacherName = getTeacherName(t, teacherId);
                 const rowAdvance = advanceByTeacher[teacherId] || { amount: "", description: "" };
-                const rowPayout = payoutByTeacher[teacherId] || { amount: "", description: "" };
                 const students = asArray(t.students);
                 const isStudentsOpen = !!openStudentsByTeacher[teacherId];
                 const payableNow = num(t, ["available_balance", "final_salary", "close_balance"]);
-                const canPayout = resolveCanPayout(t, payableNow);
+                const canGive = resolveCanGive(t, payableNow);
+                const isGivenDone = Boolean(givenDoneByTeacher[teacherId]);
 
                 return (
                   <div key={`${teacherId}-${i}`} className={`rounded-xl border border-gray-200 p-2.5 shadow-sm sm:p-3 ${getRowToneClass(t)}`}>
@@ -347,9 +320,8 @@ const TeacherPayments = () => {
                       <div className="col-span-2 rounded-lg bg-gray-50 p-2"><span className="text-gray-500">Jami tushum:</span> <span className="font-semibold">{fmtMoney(num(t, ["total_collected", "close_revenue"]))}</span></div>
                       <div className="col-span-2 rounded-lg bg-gray-50 p-2"><span className="text-gray-500">Kutilgan oylik:</span> <span className="font-semibold">{fmtMoney(num(t, ["expected_salary", "close_expected_salary"]))}</span></div>
                       <div className="col-span-2 rounded-lg bg-gray-50 p-2"><span className="text-gray-500">Jami avans:</span> <span className="font-semibold">{fmtMoney(num(t, ["total_advances"]))}</span></div>
-                      <div className="col-span-2 rounded-lg bg-gray-50 p-2"><span className="text-gray-500">Jami payout:</span> <span className="font-semibold">{fmtMoney(num(t, ["total_payouts"]))}</span></div>
-                      <div className="col-span-2 rounded-lg bg-gray-50 p-2"><span className="text-gray-500">Close dan keyingi qo'shimcha:</span> <span className="font-semibold">{fmtMoney(num(t, ["extra_after_close"]))}</span></div>
-                      <div className="col-span-2 rounded-lg bg-gray-50 p-2"><span className="text-gray-500">Hozir beriladigan summa:</span> <span className="font-semibold text-gray-900">{fmtMoney(payableNow)}</span></div>
+                      <div className="col-span-2 rounded-lg bg-gray-50 p-2"><span className="text-gray-500">Jami berildi:</span> <span className="font-semibold">{fmtMoney(num(t, ["total_given"]))}</span></div>
+                      <div className="col-span-2 rounded-lg bg-gray-50 p-2"><span className="text-gray-500">Yopilgandan keyin yig'ilgan:</span> <span className="font-semibold">{fmtMoney(num(t, ["post_close_collected_salary"]))}</span></div>
                     </div>
 
                     <div className="mt-3 space-y-2">
@@ -420,38 +392,17 @@ const TeacherPayments = () => {
                           </button>
                         </div>
                         <div className="grid grid-cols-1 gap-2">
-                          <input
-                            type="text"
-                            inputMode="numeric"
-                            value={fmtSumInput(rowPayout.amount)}
-                            onChange={(e) =>
-                              setPayoutByTeacher((prev) => ({
-                                ...prev,
-                                [teacherId]: { ...rowPayout, amount: digitsOnly(e.target.value) },
-                              }))
-                            }
-                            placeholder="Payout summasi (ixtiyoriy)"
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#A60E07]/20"
-                          />
-                          <input
-                            type="text"
-                            value={rowPayout.description}
-                            onChange={(e) =>
-                              setPayoutByTeacher((prev) => ({
-                                ...prev,
-                                [teacherId]: { ...rowPayout, description: e.target.value },
-                              }))
-                            }
-                            placeholder="Payout izohi"
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#A60E07]/20"
-                          />
-                          <button
-                            onClick={() => handleCreatePayout(teacherId, t)}
-                            disabled={createPayoutMutation.isPending || !canPayout}
-                            className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50 sm:text-sm"
-                          >
-                            Payout berish
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleCreateGiven(teacherId, t)}
+                              disabled={createGivenMutation.isPending || !canGive || isGivenDone}
+                              className={`rounded-lg px-4 py-2 text-xs font-semibold text-white sm:text-sm ${
+                                isGivenDone ? "bg-emerald-600" : "bg-blue-600"
+                              } disabled:opacity-50`}
+                            >
+                              {isGivenDone ? "Berilgan" : "Berish"}
+                            </button>
+                          </div>
                         </div>
                         <button
                           onClick={() => toggleStudents(teacherId)}
@@ -516,35 +467,34 @@ const TeacherPayments = () => {
                   <th className="whitespace-nowrap py-2 pr-2">Foiz</th>
                   <th className="whitespace-nowrap py-2 pr-2">Kutilgan oylik</th>
                   <th className="whitespace-nowrap py-2 pr-2">Jami avans</th>
-                  <th className="whitespace-nowrap py-2 pr-2">Jami payout</th>
-                  <th className="whitespace-nowrap py-2 pr-2">Close dan keyingi qo'shimcha</th>
-                  <th className="whitespace-nowrap py-2 pr-2">Hozir beriladigan summa</th>
                   <th className="whitespace-nowrap py-2 pr-2">Holat</th>
                   <th className="whitespace-nowrap py-2 pr-2">Foizni sozlash</th>
                   <th className="whitespace-nowrap py-2 pr-2">Avans berish</th>
-                  <th className="whitespace-nowrap py-2 pr-2">Payout berish</th>
+                  <th className="whitespace-nowrap py-2 pr-2">Berildi</th>
+                  <th className="whitespace-nowrap py-2 pr-2">Yopilgandan keyin yig'ilgan</th>
                   <th className="whitespace-nowrap py-2 pr-2">Oylikni yopish</th>
+                  <th className="whitespace-nowrap py-2 pr-2">Jami berildi</th>
                 </tr>
               </thead>
               <tbody>
                 {teachersMonthlyQuery.isLoading ? (
                   <tr>
-                    <td className="py-4 text-gray-500" colSpan={16}>Yuklanmoqda...</td>
+                    <td className="py-4 text-gray-500" colSpan={15}>Yuklanmoqda...</td>
                   </tr>
                 ) : filteredTeachers.length === 0 ? (
                   <tr>
-                    <td className="py-4 text-gray-500" colSpan={16}>Ma'lumot topilmadi</td>
+                    <td className="py-4 text-gray-500" colSpan={15}>Ma'lumot topilmadi</td>
                   </tr>
                 ) : (
                   filteredTeachers.map((t, i) => {
                     const teacherId = getTeacherId(t);
                     const teacherName = getTeacherName(t, teacherId);
                     const rowAdvance = advanceByTeacher[teacherId] || { amount: "", description: "" };
-                    const rowPayout = payoutByTeacher[teacherId] || { amount: "", description: "" };
                     const students = asArray(t.students);
                     const isStudentsOpen = !!openStudentsByTeacher[teacherId];
                     const payableNow = num(t, ["available_balance", "final_salary", "close_balance"]);
-                    const canPayout = resolveCanPayout(t, payableNow);
+                    const canGive = resolveCanGive(t, payableNow);
+                    const isGivenDone = Boolean(givenDoneByTeacher[teacherId]);
 
                     return (
                       <React.Fragment key={`${teacherId}-${i}`}>
@@ -570,9 +520,6 @@ const TeacherPayments = () => {
                           <td className="whitespace-nowrap py-3 pr-3">{num(t, ["salary_percentage"])}%</td>
                           <td className="whitespace-nowrap py-3 pr-3">{fmtMoney(num(t, ["expected_salary", "close_expected_salary"]))}</td>
                           <td className="whitespace-nowrap py-3 pr-3">{fmtMoney(num(t, ["total_advances"]))}</td>
-                          <td className="whitespace-nowrap py-3 pr-3">{fmtMoney(num(t, ["total_payouts"]))}</td>
-                          <td className="whitespace-nowrap py-3 pr-3">{fmtMoney(num(t, ["extra_after_close"]))}</td>
-                          <td className="whitespace-nowrap py-3 pr-3 font-semibold text-gray-900">{fmtMoney(payableNow)}</td>
                           <td className="whitespace-nowrap py-3 pr-3">
                             <span
                               className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${salaryStatusStyle(
@@ -645,40 +592,18 @@ const TeacherPayments = () => {
                           </td>
                           <td className="whitespace-nowrap py-3 pr-3">
                             <div className="flex items-center gap-2 whitespace-nowrap">
-                              <input
-                                type="text"
-                                inputMode="numeric"
-                                value={fmtSumInput(rowPayout.amount)}
-                                onChange={(e) =>
-                                  setPayoutByTeacher((prev) => ({
-                                    ...prev,
-                                    [teacherId]: { ...rowPayout, amount: digitsOnly(e.target.value) },
-                                  }))
-                                }
-                                placeholder="Payout summasi (ixtiyoriy)"
-                                className="w-44 rounded-xl border border-gray-300 px-3 py-2 text-sm outline-none transition focus:border-[#A60E07] focus:ring-2 focus:ring-[#A60E07]/20"
-                              />
-                              <input
-                                type="text"
-                                value={rowPayout.description}
-                                onChange={(e) =>
-                                  setPayoutByTeacher((prev) => ({
-                                    ...prev,
-                                    [teacherId]: { ...rowPayout, description: e.target.value },
-                                  }))
-                                }
-                                placeholder="Izoh"
-                                className="w-36 rounded-xl border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#A60E07]/20"
-                              />
                               <button
-                                onClick={() => handleCreatePayout(teacherId, t)}
-                                disabled={createPayoutMutation.isPending || !canPayout}
-                                className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                                onClick={() => handleCreateGiven(teacherId, t)}
+                                disabled={createGivenMutation.isPending || !canGive || isGivenDone}
+                                className={`rounded-xl px-4 py-2 text-sm font-semibold text-white ${
+                                  isGivenDone ? "bg-emerald-600" : "bg-blue-600"
+                                } disabled:opacity-50`}
                               >
-                                Payout
+                                {isGivenDone ? "Berilgan" : "Berish"}
                               </button>
                             </div>
                           </td>
+                          <td className="whitespace-nowrap py-3 pr-3">{fmtMoney(num(t, ["post_close_collected_salary"]))}</td>
                           <td className="whitespace-nowrap py-3 pr-3">
                             <button
                               onClick={() => handleCloseMonth(teacherId, t?.is_closed)}
@@ -688,10 +613,11 @@ const TeacherPayments = () => {
                               Yopish
                             </button>
                           </td>
+                          <td className="whitespace-nowrap py-3 pr-3">{fmtMoney(num(t, ["total_given"]))}</td>
                         </tr>
                         {isStudentsOpen && (
                           <tr className="border-b bg-gray-50/70">
-                            <td colSpan={16} className="px-3 py-3">
+                            <td colSpan={15} className="px-3 py-3">
                               <div className="overflow-x-auto">
                                 <table className="min-w-[900px] w-full text-sm">
                                   <thead>

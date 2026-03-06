@@ -359,7 +359,6 @@ function AdminDashboard() {
                   </ResponsiveContainer>
                 </div>
                 <div className="space-y-2">
-                  <p className="text-sm text-gray-500">Jami: <span className="font-semibold text-gray-800">{monthlyPaymentStatusTotal}</span></p>
                   {monthlyPaymentStatusDetails.map((item) => (
                     <div key={`monthly-legend-${item.name}`} className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2">
                       <div className="flex items-center gap-2 min-w-0">
