@@ -1,5 +1,5 @@
 "use client";
-import React, { useMemo, useState } from "react";
+import React, { Suspense, useMemo, useState } from "react";
 import {
   ArrowLeftIcon,
   CheckCircleIcon,
@@ -72,7 +72,7 @@ const AttendanceSelect = ({ student, currentStatus, onStatusChange, isLoading })
 };
 
 // Main Component
-const TeacherLessonAttendance = () => {
+const TeacherLessonAttendanceContent = () => {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -352,4 +352,10 @@ const TeacherLessonAttendance = () => {
   );
 };
 
-export default TeacherLessonAttendance;
+export default function TeacherLessonAttendance() {
+  return (
+    <Suspense fallback={<div className="p-4 text-sm text-gray-500">Yuklanmoqda...</div>}>
+      <TeacherLessonAttendanceContent />
+    </Suspense>
+  );
+}

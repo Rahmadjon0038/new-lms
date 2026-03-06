@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   useGetMyAttendanceGroups,
@@ -14,7 +14,7 @@ const CURRENT_MONTH = new Date().toISOString().slice(0, 7);
 const WEEKDAYS_UZ = ["yakshanba", "dushanba", "seshanba", "chorshanba", "payshanba", "juma", "shanba"];
 const STATUS_OPTIONS = ["keldi", "kelmadi"];
 
-export default function TeacherAttendancePage() {
+function TeacherAttendancePageContent() {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -531,5 +531,13 @@ export default function TeacherAttendancePage() {
         </div>
       ) : null}
     </div>
+  );
+}
+
+export default function TeacherAttendancePage() {
+  return (
+    <Suspense fallback={<div className="p-4 text-sm text-gray-500">Yuklanmoqda...</div>}>
+      <TeacherAttendancePageContent />
+    </Suspense>
   );
 }

@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 
-export default function TeacherAttendanceGroupRedirectPage() {
+function TeacherAttendanceGroupRedirectPageContent() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -21,5 +21,13 @@ export default function TeacherAttendanceGroupRedirectPage() {
     <div className="flex min-h-[40vh] items-center justify-center text-sm text-gray-500">
       Yo&apos;naltirilmoqda...
     </div>
+  );
+}
+
+export default function TeacherAttendanceGroupRedirectPage() {
+  return (
+    <Suspense fallback={<div className="p-4 text-sm text-gray-500">Yuklanmoqda...</div>}>
+      <TeacherAttendanceGroupRedirectPageContent />
+    </Suspense>
   );
 }
