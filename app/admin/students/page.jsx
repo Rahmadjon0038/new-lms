@@ -102,7 +102,7 @@ const StudentsPage = () => {
                     expandedStudents.push({
                         ...student,
                         group_id: null,
-                        group_name: 'Guruh biriktirilmagan',
+                        group_name: 'Guruhga biriktirilmagan',
                         group_status: null
                     });
                 }
@@ -250,7 +250,7 @@ const StudentsPage = () => {
                         name: String(editData.name).trim(),
                         surname: String(editData.surname).trim(),
                         registration_date: editData.registration_date,
-                        group_name: String(editData.group_name).trim() || 'Guruh biriktirilmagan',
+                        group_name: String(editData.group_name).trim() || 'Guruhga biriktirilmagan',
                         phone: String(editData.phone).trim(),
                         phone2: String(editData.phone2).trim(),
                         father_name: String(editData.father_name).trim(),
@@ -292,8 +292,13 @@ const StudentsPage = () => {
         setMobileExpandedRows((prev) => ({ ...prev, [rowKey]: !prev[rowKey] }));
     };
 
-    const getStudentSubjectName = (student) =>
-        student?.subject_name || student?.registered_subject_name || '-';
+    const getStudentSubjectName = (student) => {
+        const isUnassigned = !student?.group_id;
+        if (isUnassigned) {
+            return student?.registered_subject_name || student?.subject_name || '-';
+        }
+        return student?.subject_name || student?.registered_subject_name || '-';
+    };
 
     if (isLoading) return <div className="p-4 text-center sm:p-8">Yuklanmoqda...</div>;
 
@@ -512,7 +517,7 @@ const StudentsPage = () => {
 
                                         <div className="flex items-center justify-between gap-2">
                                             <span className="font-medium text-gray-500">Guruh:</span>
-                                            {student.group_id && student.group_name && student.group_name !== 'Guruh biriktirilmagan' ? (
+                                            {student.group_id && student.group_name ? (
                                                 <Link href={`/admin/groups/${student.group_id}`} className="truncate font-bold text-[#A60E07] underline">
                                                     {student.group_name}
                                                 </Link>
@@ -625,7 +630,7 @@ const StudentsPage = () => {
                             filteredStudents.map((student, index) => {
                                 const rowKey = `${student.id}-${student.group_id}-${index}`;
                                 const isEditing = editingId === rowKey;
-                                const isNotInGroup = !student.group_name || student.group_name === 'Guruh biriktirilmagan';
+                                const isNotInGroup = !student.group_name || student.group_name === 'Guruhga biriktirilmagan';
 
                                 return (
                                     <tr key={rowKey} className={`${isEditing ? 'bg-blue-50 border-l-4 border-blue-400' :
@@ -730,7 +735,7 @@ const StudentsPage = () => {
                                                 <div className="flex flex-col gap-1">
                                                     {/* Guruh nomi va tahrirlash tugmasi */}
                                                     <div className="flex items-center gap-2">
-                                                        {student.group_id && student.group_name && student.group_name !== 'Guruh biriktirilmagan' ? (
+                                                        {student.group_id && student.group_name ? (
                                                             <Link href={`/admin/groups/${student.group_id}`} className="font-bold text-[#A60E07] text-sm hover:underline">
                                                                 {student.group_name}
                                                             </Link>
@@ -748,7 +753,7 @@ const StudentsPage = () => {
                                                     </div>
 
                                                     {/* Guruhga biriktirilgan studentlar uchun ma'lumotlar */}
-                                                    {student.group_id && student.group_name !== 'Guruh biriktirilmagan' ? (
+                                                    {student.group_id ? (
                                                         <div className="space-y-1.5 mt-2">
                                                             <div className="flex items-center gap-1 text-xs">
                                                                 <GraduationCap className="h-3 w-3 text-blue-600" />

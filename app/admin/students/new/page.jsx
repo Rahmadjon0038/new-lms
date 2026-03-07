@@ -201,21 +201,6 @@ export default function NewStudentPage() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Ism *
-                                        </label>
-                                        <input
-                                            type="text"
-                                            name="name"
-                                            value={formData.name}
-                                            onChange={handleInputChange}
-                                            required
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition-all"
-                                            style={{ focusRingColor: `${MAIN_COLOR}40` }}
-                                            placeholder="Ismini kiriting"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
                                             Familiya *
                                         </label>
                                         <input
@@ -227,6 +212,21 @@ export default function NewStudentPage() {
                                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition-all"
                                             style={{ focusRingColor: `${MAIN_COLOR}40` }}
                                             placeholder="Familiyasini kiriting"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Ism *
+                                        </label>
+                                        <input
+                                            type="text"
+                                            name="name"
+                                            value={formData.name}
+                                            onChange={handleInputChange}
+                                            required
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition-all"
+                                            style={{ focusRingColor: `${MAIN_COLOR}40` }}
+                                            placeholder="Ismini kiriting"
                                         />
                                     </div>
                                     <div>
@@ -250,6 +250,9 @@ export default function NewStudentPage() {
                                 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
+                                        <p className="text-xs text-gray-500 mb-1">
+                                            Ixtiyoriy
+                                        </p>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
                                             Yoshi
                                         </label>
