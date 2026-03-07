@@ -292,6 +292,9 @@ const StudentsPage = () => {
         setMobileExpandedRows((prev) => ({ ...prev, [rowKey]: !prev[rowKey] }));
     };
 
+    const getStudentSubjectName = (student) =>
+        student?.subject_name || student?.registered_subject_name || '-';
+
     if (isLoading) return <div className="p-4 text-center sm:p-8">Yuklanmoqda...</div>;
 
     return (
@@ -455,7 +458,7 @@ const StudentsPage = () => {
                                         <Phone className="h-3 w-3 text-green-500" />
                                         <span><span className="font-medium text-gray-500">Telefon:</span> {student.phone || '-'}</span>
                                     </div>
-                                    <p><span className="font-medium text-gray-500">Fan:</span> {student.subject_name || '-'}</p>
+                                    <p><span className="font-medium text-gray-500">Fan:</span> {getStudentSubjectName(student)}</p>
                                     <p><span className="font-medium text-gray-500">O'qituvchi:</span> {student.teacher_name?.trim() || '-'}</p>
                                 </div>
 
@@ -756,7 +759,7 @@ const StudentsPage = () => {
                                                             <div className="flex items-center gap-1 text-xs">
                                                                 <BookOpen className="h-3 w-3 text-green-600" />
                                                                 <span className="font-medium text-gray-700">Fan:</span>
-                                                                <span className="text-gray-900">{student.subject_name || 'Belgilanmagan'}</span>
+                                                                <span className="text-gray-900">{getStudentSubjectName(student)}</span>
                                                             </div>
 
                                                             <div className="flex items-center gap-1 text-xs">
@@ -866,7 +869,13 @@ const StudentsPage = () => {
                                                                 })()}
                                                             </div>
                                                         </div>
-                                                    ) : null}
+                                                    ) : (
+                                                        <div className="mt-2 flex items-center gap-1 text-xs">
+                                                            <BookOpen className="h-3 w-3 text-green-600" />
+                                                            <span className="font-medium text-gray-700">Qabuldagi fan:</span>
+                                                            <span className="text-gray-900">{getStudentSubjectName(student)}</span>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
                                         </td>

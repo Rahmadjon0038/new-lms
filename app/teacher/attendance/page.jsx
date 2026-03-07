@@ -9,6 +9,7 @@ import {
   useMarkLessonAttendance,
 } from "../../../hooks/attendance";
 import { useGetNotify } from "../../../hooks/notify";
+import MonthlyAttendanceInline from "../../../components/MonthlyAttendanceInline";
 
 const CURRENT_MONTH = new Date().toISOString().slice(0, 7);
 const WEEKDAYS_UZ = ["yakshanba", "dushanba", "seshanba", "chorshanba", "payshanba", "juma", "shanba"];
@@ -434,101 +435,105 @@ function TeacherAttendancePageContent() {
       ) : null}
 
       {activeGroupId ? (
-        <div className="space-y-3 rounded-xl border border-gray-200 bg-white p-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-gray-900">Darslar ro&apos;yxati</h2>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-gray-500">Oy:</span>
-              <input
-                type="month"
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                className="rounded-lg border border-gray-300 px-2 py-1 text-xs"
-              />
+        <>
+          <div className="space-y-3 rounded-xl border border-gray-200 bg-white p-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-gray-900">Darslar ro&apos;yxati</h2>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-gray-500">Oy:</span>
+                <input
+                  type="month"
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  className="rounded-lg border border-gray-300 px-2 py-1 text-xs"
+                />
+              </div>
             </div>
+
+            {lessonsQuery.isLoading ? (
+              <div className="space-y-2">
+                {Array.from({ length: 5 }).map((_, idx) => (
+                  <div key={idx} className="h-14 animate-pulse rounded-lg bg-gray-100" />
+                ))}
+              </div>
+            ) : null}
+
+            {lessonsQuery.isError ? (
+              <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                {lessonsQuery.error?.response?.data?.message || lessonsQuery.error?.message || "Darslar yuklanmadi"}
+              </div>
+            ) : null}
+
+            {!lessonsQuery.isLoading && !lessonsQuery.isError ? (
+              <div className="space-y-2">
+                {lessons.map((lesson) => {
+                  const lessonId = String(lesson.id || lesson.lesson_id);
+                  const isActiveLesson = lessonId === String(activeLessonId);
+                  const isCompleted = lesson.attendance_completed === true;
+                  return (
+                    <div key={lessonId}>
+                      <div
+                        className={`flex items-center justify-between rounded-lg px-3 py-2 ${
+                          isCompleted
+                            ? "border border-emerald-300 bg-gradient-to-r from-emerald-50 to-emerald-100 shadow-sm"
+                            : "border border-gray-200 bg-white"
+                        }`}
+                      >
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">
+                            {lesson.formatted_date || lesson.date || lesson.lesson_date || "-"}
+                          </p>
+                          <p className="text-xs text-gray-600">
+                            {getWeekdayFromDate(lesson.date || lesson.lesson_date)}{" "}
+                            {getWeekdayFromDate(lesson.date || lesson.lesson_date) ? "• " : ""}
+                            {getDisplayTime(lesson)}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`rounded-full px-2 py-1 text-[10px] font-semibold ${
+                              isCompleted
+                                ? "bg-green-100 text-green-700"
+                                : "bg-gray-100 text-gray-700"
+                            }`}
+                          >
+                            {isCompleted ? "davomat qilingan" : "hali qilinmagan"}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (isActiveLesson) {
+                                setSelectedLessonId("");
+                                setAttendanceOverrides({});
+                              } else {
+                                setSelectedLessonId(lessonId);
+                                setAttendanceOverrides({});
+                              }
+                            }}
+                            className={`rounded-lg px-3 py-1.5 text-xs font-semibold text-white ${
+                              isActiveLesson ? "bg-gray-700" : "bg-[#A60E07]"
+                            }`}
+                          >
+                            Davom qilish
+                          </button>
+                        </div>
+                      </div>
+                      {isActiveLesson ? renderLessonStudentsDropdown() : null}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : null}
+
+            {!lessonsQuery.isLoading && !lessonsQuery.isError && lessons.length === 0 ? (
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-center text-sm text-gray-500">
+                Tanlangan guruh uchun dars topilmadi.
+              </div>
+            ) : null}
           </div>
 
-          {lessonsQuery.isLoading ? (
-            <div className="space-y-2">
-              {Array.from({ length: 5 }).map((_, idx) => (
-                <div key={idx} className="h-14 animate-pulse rounded-lg bg-gray-100" />
-              ))}
-            </div>
-          ) : null}
-
-          {lessonsQuery.isError ? (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-              {lessonsQuery.error?.response?.data?.message || lessonsQuery.error?.message || "Darslar yuklanmadi"}
-            </div>
-          ) : null}
-
-          {!lessonsQuery.isLoading && !lessonsQuery.isError ? (
-            <div className="space-y-2">
-              {lessons.map((lesson) => {
-                const lessonId = String(lesson.id || lesson.lesson_id);
-                const isActiveLesson = lessonId === String(activeLessonId);
-                const isCompleted = lesson.attendance_completed === true;
-                return (
-                  <div key={lessonId}>
-                    <div
-                      className={`flex items-center justify-between rounded-lg px-3 py-2 ${
-                        isCompleted
-                          ? "border border-emerald-300 bg-gradient-to-r from-emerald-50 to-emerald-100 shadow-sm"
-                          : "border border-gray-200 bg-white"
-                      }`}
-                    >
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900">
-                          {lesson.formatted_date || lesson.date || lesson.lesson_date || "-"}
-                        </p>
-                        <p className="text-xs text-gray-600">
-                          {getWeekdayFromDate(lesson.date || lesson.lesson_date)}{" "}
-                          {getWeekdayFromDate(lesson.date || lesson.lesson_date) ? "• " : ""}
-                          {getDisplayTime(lesson)}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`rounded-full px-2 py-1 text-[10px] font-semibold ${
-                            isCompleted
-                              ? "bg-green-100 text-green-700"
-                              : "bg-gray-100 text-gray-700"
-                          }`}
-                        >
-                          {isCompleted ? "davomat qilingan" : "hali qilinmagan"}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (isActiveLesson) {
-                              setSelectedLessonId("");
-                              setAttendanceOverrides({});
-                            } else {
-                              setSelectedLessonId(lessonId);
-                              setAttendanceOverrides({});
-                            }
-                          }}
-                          className={`rounded-lg px-3 py-1.5 text-xs font-semibold text-white ${
-                            isActiveLesson ? "bg-gray-700" : "bg-[#A60E07]"
-                          }`}
-                        >
-                          Davom qilish
-                        </button>
-                      </div>
-                    </div>
-                    {isActiveLesson ? renderLessonStudentsDropdown() : null}
-                  </div>
-                );
-              })}
-            </div>
-          ) : null}
-
-          {!lessonsQuery.isLoading && !lessonsQuery.isError && lessons.length === 0 ? (
-            <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-center text-sm text-gray-500">
-              Tanlangan guruh uchun dars topilmadi.
-            </div>
-          ) : null}
-        </div>
+          <MonthlyAttendanceInline groupId={activeGroupId} selectedMonth={selectedMonth} />
+        </>
       ) : null}
     </div>
   );

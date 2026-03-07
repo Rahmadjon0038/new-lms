@@ -213,6 +213,7 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
     queryFn: getUserProfile
   });
   
+  
   const rawRole = userProfile?.data?.role || userProfile?.role || "";
   const normalizedRole = String(rawRole).toLowerCase();
   const canChangeMonthlyStatus =
@@ -343,6 +344,15 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
     return new Date(year, month - 1, day);
   };
 
+  const isFutureLessonDate = (lessonDate) => {
+    const parsedLessonDate = parseYmdDate(lessonDate);
+    if (!parsedLessonDate) return false;
+
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return parsedLessonDate.getTime() > todayStart.getTime();
+  };
+
   const isLessonWithinMembership = (lessonDate, membershipPeriods = []) => {
     if (!Array.isArray(membershipPeriods) || membershipPeriods.length === 0) {
       return true;
@@ -365,8 +375,12 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
     const status = attendanceRecord?.status;
     const isMarked = attendanceRecord?.is_marked;
     const isInMembership = isLessonWithinMembership(lessonDate, membershipPeriods);
+    const isFutureLesson = isFutureLessonDate(lessonDate);
 
     if (!isInMembership) {
+      return <span className="text-gray-400 text-xs">-</span>;
+    }
+    if (isFutureLesson) {
       return <span className="text-gray-400 text-xs">-</span>;
     }
     if (!attendanceRecord || isMarked === false) {

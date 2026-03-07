@@ -35,7 +35,8 @@ export default function NewStudentPage() {
         father_name: '',
         father_phone: '',
         address: '',
-        age: ''
+        age: '',
+        subject_id: ''
     });
     
     const [selectedGroup, setSelectedGroup] = useState('');
@@ -44,6 +45,13 @@ export default function NewStudentPage() {
     
     const { data: groupsData, isLoading: groupsLoading } = usegetAllgroups();
     const { data: subjectsData, isLoading: subjectsLoading } = useGetAllSubjects();
+    const subjectOptions = Array.isArray(subjectsData?.subjects)
+        ? subjectsData.subjects
+        : Array.isArray(subjectsData?.data?.subjects)
+            ? subjectsData.data.subjects
+            : Array.isArray(subjectsData?.data)
+                ? subjectsData.data
+                : [];
     const registerMutation = useRegisterStudent();
     const joinGroupMutation = useJoinStudentToGroup();
     
@@ -63,7 +71,8 @@ export default function NewStudentPage() {
             father_name: '',
             father_phone: '',
             address: '',
-            age: ''
+            age: '',
+            subject_id: ''
         });
         localStorage.removeItem('studentFormData');
     };
@@ -72,7 +81,7 @@ export default function NewStudentPage() {
         e.preventDefault();
         
         // Validate required fields
-        if (!formData.name || !formData.surname || !formData.username || !formData.password || !formData.phone) {
+        if (!formData.name || !formData.surname || !formData.username || !formData.password || !formData.phone || !formData.subject_id) {
             toast.error('Iltimos, barcha majburiy maydonlarni to\'ldiring!');
             return;
         }
@@ -80,7 +89,10 @@ export default function NewStudentPage() {
         // Save to localStorage
         localStorage.setItem('studentFormData', JSON.stringify(formData));
         
-        registerMutation.mutate(formData, {
+        registerMutation.mutate({
+            ...formData,
+            subject_id: Number(formData.subject_id)
+        }, {
             onSuccess: (data) => {
                 setRegisteredStudent(data.user);
                 toast.success(data.message || 'Student muvaffaqiyatli ro\'yxatdan o\'tdi!');
@@ -272,6 +284,28 @@ export default function NewStudentPage() {
                                 
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Fan *
+                                    </label>
+                                    <select
+                                        name="subject_id"
+                                        value={formData.subject_id}
+                                        onChange={handleInputChange}
+                                        required
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition-all"
+                                        style={{ focusRingColor: `${MAIN_COLOR}40` }}
+                                        disabled={subjectsLoading}
+                                    >
+                                        <option value="">Fanni tanlang</option>
+                                        {subjectOptions.map((subject) => (
+                                            <option key={subject.id} value={subject.id}>
+                                                {subject.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
                                         Foydalanuvchi nomi *
                                     </label>
                                     <input
@@ -457,7 +491,7 @@ export default function NewStudentPage() {
                                             disabled={subjectsLoading}
                                         >
                                             <option value="">Barcha fanlar</option>
-                                            {subjectsData?.subjects?.map((subject) => (
+                                            {subjectOptions.map((subject) => (
                                                 <option key={subject.id} value={subject.id}>
                                                     {subject.name}
                                                 </option>

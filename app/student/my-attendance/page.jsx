@@ -25,6 +25,44 @@ const getAttendanceStatusStyle = (status) => {
   }
 };
 
+const parseAttendanceDate = (rawDate) => {
+  if (!rawDate) return null;
+  const value = String(rawDate).trim();
+
+  const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (isoMatch) {
+    const [, year, month, day] = isoMatch.map(Number);
+    return new Date(year, month - 1, day);
+  }
+
+  const dotMatch = value.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if (dotMatch) {
+    const [, day, month, year] = dotMatch.map(Number);
+    return new Date(year, month - 1, day);
+  }
+
+  return null;
+};
+
+const isFutureAttendanceItem = (item) => {
+  const date = parseAttendanceDate(item?.date || item?.lesson_date || item?.formatted_date);
+  if (!date) return false;
+
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return date.getTime() > todayStart.getTime();
+};
+
+const getNormalizedAttendanceStatus = (item) => {
+  if (!item) return null;
+  if (isFutureAttendanceItem(item)) return null;
+  if (item.is_marked === false) return null;
+  if (item.status === "keldi" || item.status === "kelmadi" || item.status === "kech_qoldi") {
+    return item.status;
+  }
+  return null;
+};
+
 const getCurrentMonth = () => {
   const today = new Date();
   const year = today.getFullYear();
@@ -215,7 +253,8 @@ function MyAttendance() {
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {dailyAttendance.map((item, index) => {
-                      const statusStyle = getAttendanceStatusStyle(item.status);
+                      const normalizedStatus = getNormalizedAttendanceStatus(item);
+                      const statusStyle = getAttendanceStatusStyle(normalizedStatus);
                       const StatusIcon = statusStyle.icon;
                       return (
                         <tr key={`${item.date || item.formatted_date || index}`} className="hover:bg-red-50 transition-colors duration-150">
@@ -227,7 +266,7 @@ function MyAttendance() {
                             <div className="flex items-center">
                               {StatusIcon ? <StatusIcon className={`h-5 w-5 mr-2 ${statusStyle.text}`} /> : null}
                               <span className={`px-3 py-1 text-xs font-bold rounded-full ${statusStyle.bg} ${statusStyle.text}`}>
-                                {item.status_description || statusStyle.label}
+                                {normalizedStatus ? (item.status_description || statusStyle.label) : "-"}
                               </span>
                             </div>
                           </td>

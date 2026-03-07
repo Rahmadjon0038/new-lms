@@ -9,7 +9,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { FiUserPlus } from 'react-icons/fi';
 import {
-  User, Phone, Calendar, AlertCircle
+  User, Phone, Calendar, AlertCircle, BookOpen
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -80,6 +80,9 @@ const filterRowsFromMonth = (rows = [], fromMonth = "2026-01") =>
     if (!match) return true;
     return match[0] >= fromMonth;
   });
+
+const getStudentSubjectName = (student) =>
+  student?.registered_subject_name || student?.subject_name || 'Belgilanmagan';
 
 // Stat Card Component
 const StatCard = ({ title, value, icon: Icon, color = MAIN_COLOR, bgColor = "from-[#A60E07]/10 to-[#A60E07]/5" }) => (
@@ -485,6 +488,10 @@ function AdminDashboard() {
                           <div className="flex items-center gap-1 text-[10px] sm:text-xs text-gray-600">
                             <User className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-purple-500" />
                             <span className="truncate"><strong>Ota-ona:</strong> {student.father_name} ({student.father_phone})</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-[10px] sm:text-xs text-gray-600">
+                            <BookOpen className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-emerald-500" />
+                            <span className="truncate"><strong>Fan:</strong> {getStudentSubjectName(student)}</span>
                           </div>
                           <div className="sm:hidden flex items-center gap-1 text-[10px] text-gray-600">
                             <Calendar className="h-2.5 w-2.5 text-orange-500" />

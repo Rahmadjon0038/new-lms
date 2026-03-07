@@ -10,6 +10,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { useRegisterStudent, useJoinStudentToGroup } from '../../hooks/students';
 import { usegetAllgroups } from '../../hooks/groups';
+import { useGetAllSubjects } from '../../hooks/subjects';
 import { toast } from 'react-hot-toast';
 
 const MAIN_COLOR = "#A60E07";
@@ -24,12 +25,21 @@ export default function RegisterStudent({ children }) {
         username: '',
         password: '',
         phone: '',
-        phone2: ''
+        phone2: '',
+        subject_id: ''
     });
     
     const [selectedGroup, setSelectedGroup] = useState('');
     
     const { data: groupsData, isLoading: groupsLoading } = usegetAllgroups();
+    const { data: subjectsData, isLoading: subjectsLoading } = useGetAllSubjects();
+    const subjectOptions = Array.isArray(subjectsData?.subjects)
+        ? subjectsData.subjects
+        : Array.isArray(subjectsData?.data?.subjects)
+            ? subjectsData.data.subjects
+            : Array.isArray(subjectsData?.data)
+                ? subjectsData.data
+                : [];
     const registerMutation = useRegisterStudent();
     const joinGroupMutation = useJoinStudentToGroup();
     
@@ -42,7 +52,8 @@ export default function RegisterStudent({ children }) {
             username: '',
             password: '',
             phone: '',
-            phone2: ''
+            phone2: '',
+            subject_id: ''
         });
         setSelectedGroup('');
         setRegisteredStudent(null);
@@ -57,7 +68,7 @@ export default function RegisterStudent({ children }) {
         e.preventDefault();
         
         // Validate required fields
-        if (!formData.name || !formData.surname || !formData.username || !formData.password || !formData.phone) {
+        if (!formData.name || !formData.surname || !formData.username || !formData.password || !formData.phone || !formData.subject_id) {
             toast.error('Iltimos, barcha majburiy maydonlarni to\'ldiring!');
             return;
         }
@@ -66,7 +77,10 @@ export default function RegisterStudent({ children }) {
         localStorage.setItem('studentFormData', JSON.stringify(formData));
         
         // First register student
-        registerMutation.mutate(formData, {
+        registerMutation.mutate({
+            ...formData,
+            subject_id: Number(formData.subject_id),
+        }, {
             onSuccess: (data) => {
                 setRegisteredStudent(data.user);
                 toast.success(data.message || 'Student muvaffaqiyatli ro\'yxatdan o\'tdi!');
@@ -262,6 +276,32 @@ export default function RegisterStudent({ children }) {
                                         />
                                     </div>
                                     
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            <AcademicCapIcon className="w-4 h-4 inline mr-1" />
+                                            Fan *
+                                        </label>
+                                        <select
+                                            name="subject_id"
+                                            value={formData.subject_id}
+                                            onChange={handleInputChange}
+                                            required
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition-all"
+                                            style={{ focusRingColor: `${MAIN_COLOR}40` }}
+                                            disabled={subjectsLoading}
+                                        >
+                                            <option value="">Fanni tanlang</option>
+                                            {subjectOptions.map((subject) => (
+                                                <option key={subject.id} value={subject.id}>
+                                                    {subject.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {subjectsLoading ? (
+                                            <p className="text-sm text-gray-500 mt-1">Fanlar yuklanmoqda...</p>
+                                        ) : null}
+                                    </div>
+
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
                                             <PhoneIcon className="w-4 h-4 inline mr-1" />

@@ -24,8 +24,39 @@ const StudentAttendanceModal = ({ isOpen, onClose, student, month }) => {
         return weekdays[date.getDay()] || '';
     };
 
+    const parseLessonDate = (rawDate) => {
+        if (!rawDate) return null;
+        const value = String(rawDate).trim();
+
+        const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (isoMatch) {
+            const [, year, monthNum, day] = isoMatch.map(Number);
+            return new Date(year, monthNum - 1, day);
+        }
+
+        const dotMatch = value.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+        if (dotMatch) {
+            const [, day, monthNum, year] = dotMatch.map(Number);
+            return new Date(year, monthNum - 1, day);
+        }
+
+        return null;
+    };
+
+    const isFutureAttendanceDate = (attendance) => {
+        const lessonDate = parseLessonDate(
+            attendance?.date || attendance?.lesson_date || attendance?.formatted_date
+        );
+        if (!lessonDate) return false;
+
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        return lessonDate.getTime() > todayStart.getTime();
+    };
+
     const getAttendanceStatus = (attendance) => {
         if (!attendance) return null;
+        if (isFutureAttendanceDate(attendance)) return null;
         if (attendance.is_marked === false) return null;
         const status = attendance.status;
         if (status === 'keldi' || status === 'kelmadi') return status;
