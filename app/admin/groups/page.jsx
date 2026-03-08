@@ -19,6 +19,7 @@ import AdminUpdateGroupModal from "../../../components/admistrator/AdminUpdateGr
 import { useChangeGroupStatus } from "../../../hooks/groups";
 import AdminNewGroupModal from "../../../components/admistrator/CreateGroup";
 import { usegetAllgroups } from "../../../hooks/groups";
+import { useGetAllSubjects } from "../../../hooks/subjects";
 import { Clock, Building2 } from "lucide-react";
 import TeacherSelect from "../../../components/teacher/Select";
 import SubjectsSelect from "../../../components/SubjectsSelect";
@@ -305,6 +306,7 @@ function AdminGroupsPage() {
     };
 
     const { data: backendData, isLoading, error } = usegetAllgroups(getIsActiveFilter(), selectedTeacher, selectedSubject);
+    const { data: subjectsData, isLoading: isSubjectsLoading } = useGetAllSubjects();
     
     // Filter groups based on current tab
     const filteredGroups = useMemo(() => {
@@ -324,6 +326,7 @@ function AdminGroupsPage() {
 
     const groups = filteredGroups;
     const hasActiveFilters = selectedTeacher !== 'all' || selectedSubject !== 'all';
+    const subjects = subjectsData?.subjects || [];
 
     useEffect(() => {
         if (!showMobileFilters) return undefined;
@@ -498,37 +501,67 @@ function AdminGroupsPage() {
                     </div>
                 </div>
 
-                <div className="hidden grid-cols-1 gap-3 md:grid xl:grid-cols-[minmax(260px,1fr)_minmax(260px,1fr)_auto] xl:items-end">
-                    <div className="space-y-1.5">
+                <div className="hidden gap-3 md:grid">
+                    <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(260px,1fr)_auto] xl:items-end">
+                        <div className="space-y-1.5">
                         <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">O&apos;qituvchi</label>
                         <TeacherSelect
                             value={selectedTeacher}
                             onChange={setSelectedTeacher}
                         />
+                        </div>
+
+                        {hasActiveFilters ? (
+                            <button
+                                onClick={() => {
+                                    setSelectedTeacher('all');
+                                    setSelectedSubject('all');
+                                }}
+                                className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                            >
+                                Filtrni tozalash
+                            </button>
+                        ) : null}
                     </div>
 
                     <div className="space-y-1.5">
                         <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">Fan</label>
-                        <SubjectsSelect
-                            value={selectedSubject}
-                            onChange={setSelectedSubject}
-                            placeholder="Fanni tanlang"
-                            showAll={true}
-                            className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold"
-                        />
-                    </div>
+                        <div className="flex flex-wrap gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setSelectedSubject('all')}
+                                className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${
+                                    selectedSubject === 'all'
+                                        ? 'border-[#A60E07] bg-[#A60E07] text-white'
+                                        : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
+                                }`}
+                            >
+                                Barcha fanlar
+                            </button>
 
-                    {hasActiveFilters ? (
-                        <button
-                            onClick={() => {
-                                setSelectedTeacher('all');
-                                setSelectedSubject('all');
-                            }}
-                            className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-                        >
-                            Filtrni tozalash
-                        </button>
-                    ) : null}
+                            {isSubjectsLoading ? (
+                                <span className="px-3 py-2 text-sm text-slate-500">Fanlar yuklanmoqda...</span>
+                            ) : (
+                                subjects.map((subject) => {
+                                    const subjectValue = String(subject.id);
+                                    return (
+                                        <button
+                                            key={subject.id}
+                                            type="button"
+                                            onClick={() => setSelectedSubject(subjectValue)}
+                                            className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${
+                                                selectedSubject === subjectValue
+                                                    ? 'border-[#A60E07] bg-[#A60E07] text-white'
+                                                    : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
+                                            }`}
+                                        >
+                                            {subject.name}
+                                        </button>
+                                    );
+                                })
+                            )}
+                        </div>
+                    </div>
                 </div>
             </div>
 
