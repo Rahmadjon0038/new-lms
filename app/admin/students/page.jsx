@@ -38,8 +38,10 @@ const StudentsPage = () => {
     const [selectedStatus, setSelectedStatus] = useState('all');
     const [showUnassigned, setShowUnassigned] = useState(false);
     const [showFiltersDropdown, setShowFiltersDropdown] = useState(false);
+    const [showDesktopFilterClear, setShowDesktopFilterClear] = useState(false);
     const [statusDropdownOpen, setStatusDropdownOpen] = useState(null); // Status dropdown state
     const filtersDropdownRef = useRef(null);
+    const desktopFilterRef = useRef(null);
 
     // Filter options uchun data
     const { data: teachersData } = usegetTeachers();
@@ -125,17 +127,21 @@ const StudentsPage = () => {
     }, []);
 
     useEffect(() => {
-        if (!showFiltersDropdown) return undefined;
+        if (!showFiltersDropdown && !showDesktopFilterClear) return undefined;
 
         const handleOutsideClick = (event) => {
             if (filtersDropdownRef.current && !filtersDropdownRef.current.contains(event.target)) {
                 setShowFiltersDropdown(false);
+            }
+            if (desktopFilterRef.current && !desktopFilterRef.current.contains(event.target)) {
+                setShowDesktopFilterClear(false);
             }
         };
 
         const handleEscape = (event) => {
             if (event.key === 'Escape') {
                 setShowFiltersDropdown(false);
+                setShowDesktopFilterClear(false);
             }
         };
 
@@ -148,7 +154,7 @@ const StudentsPage = () => {
             document.removeEventListener('touchstart', handleOutsideClick);
             document.removeEventListener('keydown', handleEscape);
         };
-    }, [showFiltersDropdown]);
+    }, [showFiltersDropdown, showDesktopFilterClear]);
 
     // --- Faqat local qidiruv (backend filter backend'da amalga oshiriladi) ---
     const filteredStudents = useMemo(() => {
@@ -237,6 +243,8 @@ const StudentsPage = () => {
         setSelectedStatus('all');
         setShowUnassigned(false);
         setSearchTerm('');
+        setShowDesktopFilterClear(false);
+        setShowFiltersDropdown(false);
     };
 
     const hasActiveFilters = selectedTeacher !== 'all' || selectedSubject !== 'all' || selectedStatus !== 'all' || showUnassigned || searchTerm;
@@ -308,8 +316,8 @@ const StudentsPage = () => {
 
             <div className="mb-5 rounded-lg bg-white p-3 shadow-md sm:mb-6 sm:p-4">
                 <div className="flex flex-col gap-3">
-                    <div className="flex items-center gap-2">
-                        <div className="flex flex-1 items-center rounded-lg border border-gray-300 bg-gray-50 px-2 py-1.5 sm:px-3 sm:py-2 focus-within:border-[#A60E07]">
+                    <div className="flex items-center gap-2 md:flex-wrap lg:flex-nowrap">
+                        <div className="flex flex-1 items-center rounded-lg border border-gray-300 bg-gray-50 px-2 py-1.5 sm:px-3 sm:py-2 focus-within:border-[#A60E07] md:order-1 md:w-full md:max-w-none md:flex-none lg:order-none lg:w-auto lg:max-w-md lg:flex-1">
                             <input
                                 type="text"
                                 placeholder="Ism, telefon bo'yicha qidiruv..."
@@ -319,7 +327,75 @@ const StudentsPage = () => {
                             />
                         </div>
 
-                        <div className="relative shrink-0" ref={filtersDropdownRef}>
+                        <select
+                            value={selectedTeacher}
+                            onChange={(e) => setSelectedTeacher(e.target.value)}
+                            className="hidden h-10 rounded-lg border border-gray-300 bg-white px-3 text-sm outline-none focus:border-[#A60E07] md:order-2 md:block lg:order-none"
+                        >
+                            <option value="all">Barcha o'qituvchilar</option>
+                            {teachersData?.teachers?.map(teacher => (
+                                <option key={teacher.id} value={teacher.id}>
+                                    {teacher.name} {teacher.surname}
+                                </option>
+                            ))}
+                        </select>
+
+                        <select
+                            value={selectedStatus}
+                            onChange={(e) => setSelectedStatus(e.target.value)}
+                            className="hidden h-10 rounded-lg border border-gray-300 bg-white px-3 text-sm outline-none focus:border-[#A60E07] md:order-2 md:block lg:order-none"
+                        >
+                            <option value="all">Barcha holatlar</option>
+                            <option value="active">Faol</option>
+                            <option value="stopped">To'xtatilgan</option>
+                            <option value="finished">Bitirgan</option>
+                        </select>
+
+                        <button
+                            type="button"
+                            onClick={() => setShowUnassigned(!showUnassigned)}
+                            className={`hidden h-10 shrink-0 items-center rounded-lg px-3 text-sm font-medium transition duration-200 md:order-2 md:inline-flex lg:order-none ${showUnassigned
+                                ? 'bg-orange-500 text-white hover:bg-orange-600'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                }`}
+                        >
+                            <Users className="mr-1 inline h-4 w-4" />
+                            {showUnassigned ? 'Hammasi' : 'Guruhlanmaganlar'}
+                        </button>
+
+                        <div className="relative hidden shrink-0 md:order-2 md:block lg:order-none" ref={desktopFilterRef}>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (hasActiveFilters) {
+                                        setShowDesktopFilterClear((prev) => !prev);
+                                    }
+                                }}
+                                className={`inline-flex h-10 w-10 items-center justify-center rounded-lg border transition ${
+                                    showDesktopFilterClear
+                                        ? 'border-[#A60E07] bg-red-100 text-[#A60E07]'
+                                        : 'border-gray-300 bg-white text-gray-700'
+                                } ${hasActiveFilters ? 'cursor-pointer hover:bg-gray-50' : 'cursor-default opacity-70'}`}
+                                aria-label="Filtrlarni ochish"
+                            >
+                                <FiFilter size={16} />
+                                {hasActiveFilters && <span className="h-2 w-2 rounded-full bg-[#A60E07]" />}
+                            </button>
+
+                            {hasActiveFilters && showDesktopFilterClear ? (
+                                <div className="absolute right-0 z-30 mt-2 w-max rounded-xl border border-gray-200 bg-white p-2 shadow-xl">
+                                    <button
+                                        onClick={clearAllFilters}
+                                        className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200"
+                                    >
+                                        <XCircle className="mr-1 inline h-4 w-4" />
+                                        Filtrni tozalash
+                                    </button>
+                                </div>
+                            ) : null}
+                        </div>
+
+                        <div className="relative shrink-0 md:hidden" ref={filtersDropdownRef}>
                             <button
                                 type="button"
                                 onClick={() => setShowFiltersDropdown((prev) => !prev)}
@@ -335,7 +411,7 @@ const StudentsPage = () => {
                                     <div className="space-y-3">
                                         <button
                                             onClick={() => setShowUnassigned(!showUnassigned)}
-                                            className={`w-full rounded-lg px-4 py-2 text-sm font-medium transition duration-200 ${showUnassigned
+                                            className={`w-full rounded-lg px-4 py-2 text-sm font-medium transition duration-200 md:hidden ${showUnassigned
                                                 ? 'bg-orange-500 text-white hover:bg-orange-600'
                                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                                 }`}
@@ -347,7 +423,7 @@ const StudentsPage = () => {
                                         <select
                                             value={selectedTeacher}
                                             onChange={(e) => setSelectedTeacher(e.target.value)}
-                                            className="w-full rounded-lg border border-gray-300 bg-white p-2 text-sm outline-none focus:border-[#A60E07]"
+                                            className="w-full rounded-lg border border-gray-300 bg-white p-2 text-sm outline-none focus:border-[#A60E07] md:hidden"
                                         >
                                             <option value="all">Barcha o'qituvchilar</option>
                                             {teachersData?.teachers?.map(teacher => (
@@ -360,7 +436,7 @@ const StudentsPage = () => {
                                         <select
                                             value={selectedSubject}
                                             onChange={(e) => setSelectedSubject(e.target.value)}
-                                            className="w-full rounded-lg border border-gray-300 bg-white p-2 text-sm outline-none focus:border-[#A60E07]"
+                                            className="w-full rounded-lg border border-gray-300 bg-white p-2 text-sm outline-none focus:border-[#A60E07] md:hidden"
                                         >
                                             <option value="all">Barcha fanlar</option>
                                             {subjectsData?.subjects?.map(subject => (
@@ -373,7 +449,7 @@ const StudentsPage = () => {
                                         <select
                                             value={selectedStatus}
                                             onChange={(e) => setSelectedStatus(e.target.value)}
-                                            className="w-full rounded-lg border border-gray-300 bg-white p-2 text-sm outline-none focus:border-[#A60E07]"
+                                            className="w-full rounded-lg border border-gray-300 bg-white p-2 text-sm outline-none focus:border-[#A60E07] md:hidden"
                                         >
                                             <option value="all">Barcha holatlar</option>
                                             <option value="active">Faol</option>
@@ -395,7 +471,7 @@ const StudentsPage = () => {
                             ) : null}
                         </div>
 
-                        <Link href="/admin/students/new" className="hidden md:block">
+                        <Link href="/admin/students/new" className="hidden md:order-2 md:block lg:order-none">
                             <button
                                 className="flex h-10 items-center justify-center gap-1 rounded-lg bg-[#A60E07] px-3 sm:px-4 text-sm font-semibold text-white shadow-md transition duration-200 hover:opacity-90">
                                 <FiUserPlus size={18} />
@@ -403,6 +479,39 @@ const StudentsPage = () => {
                             </button>
                         </Link>
                     </div>
+
+                    <div className="hidden md:flex md:flex-wrap md:items-center md:gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setSelectedSubject('all')}
+                            className={`rounded-lg border px-3 py-1.5 text-sm font-semibold transition ${
+                                selectedSubject === 'all'
+                                    ? 'border-[#A60E07] bg-[#A60E07] text-white'
+                                    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-100'
+                            }`}
+                        >
+                            Barcha fanlar
+                        </button>
+
+                        {subjectsData?.subjects?.map((subject) => {
+                            const subjectValue = String(subject.id);
+                            return (
+                                <button
+                                    key={subject.id}
+                                    type="button"
+                                    onClick={() => setSelectedSubject(subjectValue)}
+                                    className={`rounded-lg border px-3 py-1.5 text-sm font-semibold transition ${
+                                        selectedSubject === subjectValue
+                                            ? 'border-[#A60E07] bg-[#A60E07] text-white'
+                                            : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-100'
+                                    }`}
+                                >
+                                    {subject.name}
+                                </button>
+                            );
+                        })}
+                    </div>
+
                     <div className="flex items-center md:hidden">
                         <Link href="/admin/students/new">
                             <button

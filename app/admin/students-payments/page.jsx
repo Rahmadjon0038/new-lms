@@ -33,7 +33,6 @@ import { useGetAllSubjects } from "../../../hooks/subjects";
 import DiscountModal from "../../../components/admistrator/DiscountModal";
 import PaymentModal from "../../../components/admistrator/PaymentModal";
 import StudentAttendanceModal from "../../../components/modals/StudentAttendanceModal";
-import SubjectsSelect from "../../../components/SubjectsSelect";
 
 const MAIN_COLOR = "#A60E07";
 const STATS_VISIBILITY_KEY = "students_payments_stats_visibility";
@@ -85,6 +84,8 @@ const StudentPayments = () => {
     // Fetch teachers for filters
     const { data: teachersData } = usegetTeachers();
     const teachers = teachersData?.teachers || [];
+    const { data: subjectsData } = useGetAllSubjects();
+    const subjects = subjectsData?.subjects || [];
 
     // Fetch monthly payments
     const { data: paymentsData, isLoading, error } = useMonthlyPayments(filters);
@@ -330,7 +331,7 @@ const StudentPayments = () => {
 
     // Add "All" option to statuses
     const statusTabs = [
-        { value: 'all', label: 'Barchasi' },
+        { value: 'all', label: "To'lov holati" },
         { value: 'paid', label: "To'liq to'langan" },
         { value: 'partial', label: "Qisman to'langan" },
         { value: 'unpaid', label: "To'lanmagan" },
@@ -417,7 +418,7 @@ const StudentPayments = () => {
         <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6">
             <div className="px-2">
                 {/* Header */}
-                <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div className="max-w-2xl">
                         {/* <h1 className="mb-2 text-xl font-bold text-gray-900 sm:text-2xl">
                             Talabalar oylik to'lovlari
@@ -428,7 +429,7 @@ const StudentPayments = () => {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="grid w-full grid-cols-3 gap-2 sm:grid-cols-2 lg:w-auto lg:grid-cols-3 lg:gap-3">
+                    <div className="grid w-full grid-cols-3 gap-2 sm:grid-cols-2 md:w-auto md:grid-cols-3 md:gap-3">
                         <button
                             onClick={handleCreateSnapshot}
                             disabled={snapshotLoading}
@@ -534,7 +535,7 @@ const StudentPayments = () => {
                 )}
 
                 {stats.total_students > 0 && showStats && (
-                    <div className="mb-5 grid grid-cols-2 gap-2 sm:mb-6 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 lg:gap-4">
+                    <div className="mb-5 grid grid-cols-2 gap-2 sm:mb-6 sm:grid-cols-2 sm:gap-3 md:grid-cols-3 md:gap-4">
 
                         <div className="rounded-lg border-l-4 border-green-500 bg-white p-3 shadow-md sm:p-4">
                             <div className="flex items-center justify-between">
@@ -605,8 +606,8 @@ const StudentPayments = () => {
                 {/* Filters */}
                 <div className="mb-6 rounded-lg bg-white p-4 shadow-md sm:p-6">
                     <div className="relative" ref={filterDropdownRef}>
-                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                            <div className="relative flex-1">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center md:flex-wrap lg:flex-nowrap">
+                            <div className="relative flex-1 md:order-1 md:w-full md:flex-none lg:order-none lg:w-auto lg:flex-1">
                                 <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                                 <input
                                     type="text"
@@ -625,7 +626,36 @@ const StudentPayments = () => {
                                     </button>
                                 )}
                             </div>
-                            <div className="sm:w-[170px]">
+                            <div className="hidden md:order-2 md:w-[190px] md:block lg:order-none">
+                                <select
+                                    value={filters.teacher_id}
+                                    onChange={(e) => handleFilterChange('teacher_id', e.target.value)}
+                                    className="h-9 w-full rounded-lg border border-gray-300 px-2.5 py-1.5 text-xs focus:border-transparent focus:outline-none focus:ring-2"
+                                    style={{ focusRingColor: MAIN_COLOR }}
+                                >
+                                    <option value="">Barcha o'qituvchilar</option>
+                                    {teachers.map((teacher) => (
+                                        <option key={teacher.id} value={teacher.id}>
+                                            {teacher.name} {teacher.surname}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="hidden md:order-2 md:w-[150px] md:block lg:order-none">
+                                <select
+                                    value={filters.payment_status}
+                                    onChange={(e) => handleFilterChange('payment_status', e.target.value)}
+                                    className="h-9 w-full rounded-lg border border-gray-300 px-2.5 py-1.5 text-xs focus:border-transparent focus:outline-none focus:ring-2"
+                                    style={{ focusRingColor: MAIN_COLOR }}
+                                >
+                                    {statusTabs.map((status) => (
+                                        <option key={status.value} value={status.value}>
+                                            {status.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="sm:w-[170px] md:order-2 md:w-[140px] lg:order-none">
                                 <input
                                     type="month"
                                     value={filters.month}
@@ -637,7 +667,21 @@ const StudentPayments = () => {
                             <button
                                 type="button"
                                 onClick={() => setShowFilterDropdown((prev) => !prev)}
-                                className="relative inline-flex h-10 items-center justify-center gap-1 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                                className={`relative hidden h-10 w-10 items-center justify-center rounded-lg border transition md:order-2 md:inline-flex lg:order-none ${
+                                    showFilterDropdown
+                                        ? 'border-[#A60E07] bg-red-100 text-[#A60E07]'
+                                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                                }`}
+                            >
+                                <FunnelIcon className="h-4 w-4" />
+                                {hasActiveDropdownFilters && (
+                                    <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-red-500" />
+                                )}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setShowFilterDropdown((prev) => !prev)}
+                                className="relative inline-flex h-10 items-center justify-center gap-1 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:bg-gray-50 md:hidden"
                             >
                                 <FunnelIcon className="h-4 w-4" />
                                 Filter
@@ -647,30 +691,68 @@ const StudentPayments = () => {
                             </button>
                         </div>
 
+                        <div className="mt-2 hidden flex-wrap gap-2 md:flex">
+                            <button
+                                type="button"
+                                onClick={() => handleFilterChange('subject_id', '')}
+                                className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors ${
+                                    !filters.subject_id
+                                        ? 'text-white shadow-md'
+                                        : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-100'
+                                }`}
+                                style={!filters.subject_id ? { backgroundColor: MAIN_COLOR, borderColor: MAIN_COLOR } : {}}
+                            >
+                                Barcha fanlar
+                            </button>
+                            {subjects.map((subject) => {
+                                const subjectValue = String(subject.id);
+                                const isActive = String(filters.subject_id) === subjectValue;
+                                return (
+                                    <button
+                                        key={subject.id}
+                                        type="button"
+                                        onClick={() => handleFilterChange('subject_id', subjectValue)}
+                                        className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors ${
+                                            isActive
+                                                ? 'text-white shadow-md'
+                                                : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-100'
+                                        }`}
+                                        style={isActive ? { backgroundColor: MAIN_COLOR, borderColor: MAIN_COLOR } : {}}
+                                    >
+                                        {subject.name}
+                                    </button>
+                                );
+                            })}
+                        </div>
+
                         {showFilterDropdown && (
-                            <div className="absolute right-0 z-20 mt-2 w-full rounded-lg border border-gray-200 bg-white p-3 shadow-lg sm:w-[680px]">
-                                <div className="mb-4">
-                                    <label className="mb-2 block text-sm font-medium text-gray-700">To'lov holati:</label>
-                                    <div className="flex flex-wrap gap-2">
-                                        {statusTabs.map((status) => (
-                                            <button
-                                                key={status.value}
-                                                onClick={() => handleFilterChange('payment_status', status.value)}
-                                                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors sm:text-sm ${filters.payment_status === status.value
-                                                    ? 'text-white shadow-md'
-                                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                                    }`}
-                                                style={filters.payment_status === status.value ? { backgroundColor: MAIN_COLOR } : {}}
-                                            >
-                                                {status.label}
-                                            </button>
-                                        ))}
-                                    </div>
+                            <>
+                                <div className="absolute right-0 z-20 mt-2 hidden rounded-lg border border-gray-200 bg-white p-2 shadow-lg md:block">
+                                    <button
+                                        onClick={clearFilters}
+                                        disabled={!hasActiveFilters}
+                                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        <XCircleIcon className="h-4 w-4" />
+                                        Filtrni tozalash
+                                    </button>
                                 </div>
 
-                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                    <div>
-                                        {/* <label className="mb-1.5 block text-xs font-medium text-gray-700 sm:text-sm">O'qituvchi:</label> */}
+                                <div className="absolute right-0 z-20 mt-2 w-full rounded-lg border border-gray-200 bg-white p-3 shadow-lg sm:w-[680px] md:hidden">
+                                    <div className="space-y-3">
+                                        <select
+                                            value={filters.payment_status}
+                                            onChange={(e) => handleFilterChange('payment_status', e.target.value)}
+                                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2"
+                                            style={{ focusRingColor: MAIN_COLOR }}
+                                        >
+                                            {statusTabs.map((status) => (
+                                                <option key={status.value} value={status.value}>
+                                                    {status.label}
+                                                </option>
+                                            ))}
+                                        </select>
+
                                         <select
                                             value={filters.teacher_id}
                                             onChange={(e) => handleFilterChange('teacher_id', e.target.value)}
@@ -684,31 +766,35 @@ const StudentPayments = () => {
                                                 </option>
                                             ))}
                                         </select>
-                                    </div>
-                                    <div>
-                                        {/* <label className="mb-1.5 block text-xs font-medium text-gray-700 sm:text-sm">Fan:</label> */}
-                                        <SubjectsSelect
+
+                                        <select
                                             value={filters.subject_id}
-                                            onChange={(value) => handleFilterChange('subject_id', value)}
-                                            placeholder="Barcha fanlar"
-                                            className="w-full"
-                                            showAll={false}
-                                        />
+                                            onChange={(e) => handleFilterChange('subject_id', e.target.value)}
+                                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2"
+                                            style={{ focusRingColor: MAIN_COLOR }}
+                                        >
+                                            <option value="">Barcha fanlar</option>
+                                            {subjects.map((subject) => (
+                                                <option key={subject.id} value={subject.id}>
+                                                    {subject.name}
+                                                </option>
+                                            ))}
+                                        </select>
+
+                                        {hasActiveFilters && (
+                                            <div className="flex justify-end">
+                                                <button
+                                                    onClick={clearFilters}
+                                                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                                                >
+                                                    <XCircleIcon className="h-4 w-4" />
+                                                    Filtrlarni tozalash
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
-
-                                {hasActiveFilters && (
-                                    <div className="mt-3 flex justify-end">
-                                        <button
-                                            onClick={clearFilters}
-                                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
-                                        >
-                                            <XCircleIcon className="h-4 w-4" />
-                                            Filtrlarni tozalash
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
+                            </>
                         )}
                     </div>
                 </div>
@@ -741,7 +827,7 @@ const StudentPayments = () => {
                     <div className="overflow-x-auto">
                         {filteredStudents.length > 0 ? (
                             <>
-                            <div className="space-y-3 p-3 sm:p-4 lg:hidden">
+                            <div className="space-y-3 p-3 sm:p-4 md:hidden">
                                 {filteredStudents.map((student, index) => (
                                     <div key={`${student.student_id}-${student.group_id}-${index}`} className="rounded-lg border border-gray-200 p-3">
                                         <div className="mb-2 flex items-start justify-between gap-2">
@@ -816,7 +902,7 @@ const StudentPayments = () => {
                                 ))}
                             </div>
 
-                            <table className="hidden min-w-[1100px] w-full divide-y divide-gray-200 lg:table">
+                            <table className="hidden min-w-[1100px] w-full divide-y divide-gray-200 md:table">
                                 <thead className="bg-gray-50">
                                     <tr>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">

@@ -243,29 +243,18 @@ const GroupCard = ({ group, onToggleGroupStatus, onStartClass, updateGroupLoadin
             </div>
 
             <div className="mt-4 space-y-2">
-                <Link
-                    href={`/admin/groups/${group.id}`}
-                    className={`flex w-full items-center justify-center rounded-lg py-2.5 font-semibold text-white shadow-md transition duration-150
-                        ${group.status === 'blocked' ? 'bg-gray-400 hover:bg-gray-500' : 'bg-[#A60E07] hover:opacity-90'}`}
-                >
-                    <ArrowRightIcon className="h-5 w-5 mr-2" />
-                    Guruhga Kirish
-                </Link>
-
-                <div className="flex flex-wrap items-center justify-end gap-2">
-                    {isDraft && (
-                        <button
-                            onClick={() => onStartClass(group.id)}
-                            className="flex w-full items-center justify-center rounded-lg bg-green-600 px-4 py-2.5 font-semibold text-white shadow-md transition duration-150 hover:bg-green-700 sm:w-auto"
-                            disabled={updateGroupLoading}
-                        >
-                            <PlayIcon className="mr-2 h-5 w-5" />
-                            Darsni Boshlash
-                        </button>
-                    )}
+                <div className="flex items-stretch gap-2">
+                    <Link
+                        href={`/admin/groups/${group.id}`}
+                        className={`flex flex-1 items-center justify-center rounded-lg py-2.5 font-semibold text-white shadow-md transition duration-150
+                            ${group.status === 'blocked' ? 'bg-gray-400 hover:bg-gray-500' : 'bg-[#A60E07] hover:opacity-90'}`}
+                    >
+                        <ArrowRightIcon className="h-5 w-5 mr-2" />
+                        Guruhga Kirish
+                    </Link>
 
                     <AdminUpdateGroupModal initialData={group}>
-                        <button className="flex min-h-[42px] min-w-[42px] items-center justify-center rounded-lg bg-gray-600 p-2.5 text-white shadow-md transition duration-150 hover:bg-gray-700">
+                        <button className="flex min-h-[42px] min-w-[42px] items-center justify-center rounded-lg border border-slate-300 bg-white p-2.5 text-slate-700 shadow-sm transition duration-150 hover:bg-slate-100">
                             <PencilSquareIcon className="h-5 w-5" />
                         </button>
                     </AdminUpdateGroupModal>
@@ -278,10 +267,25 @@ const GroupCard = ({ group, onToggleGroupStatus, onStartClass, updateGroupLoadin
                             }`}
                             disabled={updateGroupLoading}
                         >
-                            {group.status === 'active' ? <LockClosedIcon className="h-5 w-5" /> : <CheckIcon className="h-5 w-5" />}
+                            {group.status === 'active' ? (
+                                <LockClosedIcon className="h-5 w-5" />
+                            ) : (
+                                <CheckIcon className="h-5 w-5" />
+                            )}
                         </button>
                     )}
                 </div>
+
+                {isDraft && (
+                    <button
+                        onClick={() => onStartClass(group.id)}
+                        className="flex w-full items-center justify-center rounded-lg bg-green-600 px-4 py-2.5 font-semibold text-white shadow-md transition duration-150 hover:bg-green-700 sm:w-auto"
+                        disabled={updateGroupLoading}
+                    >
+                        <PlayIcon className="mr-2 h-5 w-5" />
+                        Darsni Boshlash
+                    </button>
+                )}
             </div>
         </div>
     );
@@ -292,7 +296,9 @@ function AdminGroupsPage() {
     const [selectedSubject, setSelectedSubject] = useState('all');
     const [currentTab, setCurrentTab] = useState('active');
     const [showMobileFilters, setShowMobileFilters] = useState(false);
+    const [showDesktopFilterClear, setShowDesktopFilterClear] = useState(false);
     const mobileFilterRef = useRef(null);
+    const desktopFilterRef = useRef(null);
 
     // --- Modal State ---
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, groupId: null, newStatus: null });
@@ -327,19 +333,28 @@ function AdminGroupsPage() {
     const groups = filteredGroups;
     const hasActiveFilters = selectedTeacher !== 'all' || selectedSubject !== 'all';
     const subjects = subjectsData?.subjects || [];
+    const clearFilters = () => {
+        setSelectedTeacher('all');
+        setSelectedSubject('all');
+        setShowDesktopFilterClear(false);
+    };
 
     useEffect(() => {
-        if (!showMobileFilters) return undefined;
+        if (!showMobileFilters && !showDesktopFilterClear) return undefined;
 
         const handleOutsideClick = (event) => {
             if (mobileFilterRef.current && !mobileFilterRef.current.contains(event.target)) {
                 setShowMobileFilters(false);
+            }
+            if (desktopFilterRef.current && !desktopFilterRef.current.contains(event.target)) {
+                setShowDesktopFilterClear(false);
             }
         };
 
         const handleEscape = (event) => {
             if (event.key === 'Escape') {
                 setShowMobileFilters(false);
+                setShowDesktopFilterClear(false);
             }
         };
 
@@ -352,7 +367,13 @@ function AdminGroupsPage() {
             document.removeEventListener('touchstart', handleOutsideClick);
             document.removeEventListener('keydown', handleEscape);
         };
-    }, [showMobileFilters]);
+    }, [showMobileFilters, showDesktopFilterClear]);
+
+    useEffect(() => {
+        if (!hasActiveFilters) {
+            setShowDesktopFilterClear(false);
+        }
+    }, [hasActiveFilters]);
 
     // Darsni boshlash funksiyasi (draft -> active)
     const handleStartClass = (groupId) => {
@@ -417,8 +438,6 @@ function AdminGroupsPage() {
     return (
         <div className="min-h-full p-2 sm:p-4 md:p-6">
             {/* <h1 className="mb-1 text-xl font-bold text-gray-900 sm:text-3xl">Guruhlarni Boshqarish Paneli</h1> */}
-            <p className="mb-5 text-sm text-gray-500 sm:text-lg">Jami {backendData?.success ? backendData.count || 0 : 0} ta guruh mavjud</p>
-
             <div className="mb-6 overflow-x-auto border-b border-gray-200">
                 <div className="flex min-w-max">
                 <button onClick={() => setCurrentTab('active')} className={tabClass('active')}>
@@ -438,19 +457,49 @@ function AdminGroupsPage() {
 
             <div className="mb-8 rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-4 shadow-sm sm:p-5">
                 <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-center gap-2">
-                        <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-red-50 text-[#A60E07]">
-                            <FiFilter className="h-4 w-4" />
-                        </span>
-                        <div>
-                            <p className="text-sm font-semibold text-slate-900">Filtrlar</p>
-                            <p className="text-xs text-slate-500">O&apos;qituvchi va fan bo&apos;yicha guruhlarni saralang</p>
+                    <div className="flex w-full items-center gap-2 sm:max-w-md">
+                        <div className="relative shrink-0" ref={desktopFilterRef}>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (hasActiveFilters) {
+                                        setShowDesktopFilterClear((prev) => !prev);
+                                    }
+                                }}
+                                className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border text-[#A60E07] transition ${
+                                    showDesktopFilterClear
+                                        ? 'border-[#A60E07] bg-red-100'
+                                        : 'border-transparent bg-red-50'
+                                } ${hasActiveFilters ? 'cursor-pointer' : 'cursor-default opacity-70'}`}
+                                aria-label="Filter holati"
+                            >
+                                <FiFilter className="h-4 w-4" />
+                                {hasActiveFilters ? (
+                                    <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[#A60E07]" />
+                                ) : null}
+                            </button>
+
+                            {hasActiveFilters && showDesktopFilterClear ? (
+                                <button
+                                    type="button"
+                                    onClick={clearFilters}
+                                    className="absolute left-1/2 top-full z-20 mt-2 -translate-x-1/2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-lg transition hover:bg-slate-100"
+                                >
+                                    Filtrni tozalash
+                                </button>
+                            ) : null}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <TeacherSelect
+                                value={selectedTeacher}
+                                onChange={setSelectedTeacher}
+                            />
                         </div>
                     </div>
 
                     <AdminNewGroupModal onSuccess={() => setCurrentTab('draft')}>
                         <button className="flex w-full items-center justify-center rounded-xl bg-[#A60E07] px-5 py-2.5 text-sm font-bold text-white shadow-md transition hover:opacity-90 sm:w-auto">
-                            <PlusCircleIcon className="mr-1 h-5 w-5" /> Yangi Guruh Ochish
+                            <PlusCircleIcon className="mr-1 h-5 w-5" /> Yangi Guruh
                         </button>
                     </AdminNewGroupModal>
                 </div>
@@ -470,11 +519,6 @@ function AdminGroupsPage() {
                         {showMobileFilters ? (
                             <div className="absolute right-0 z-30 mt-2 w-[300px] max-w-[85vw] rounded-xl border border-slate-200 bg-white p-3 shadow-xl">
                                 <div className="space-y-3">
-                                    <TeacherSelect
-                                        value={selectedTeacher}
-                                        onChange={setSelectedTeacher}
-                                    />
-
                                     <SubjectsSelect
                                         value={selectedSubject}
                                         onChange={setSelectedSubject}
@@ -486,8 +530,7 @@ function AdminGroupsPage() {
                                     {hasActiveFilters ? (
                                         <button
                                             onClick={() => {
-                                                setSelectedTeacher('all');
-                                                setSelectedSubject('all');
+                                                clearFilters();
                                                 setShowMobileFilters(false);
                                             }}
                                             className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
@@ -503,29 +546,6 @@ function AdminGroupsPage() {
 
                 <div className="hidden gap-3 md:grid">
                     <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(260px,1fr)_auto] xl:items-end">
-                        <div className="space-y-1.5">
-                        <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">O&apos;qituvchi</label>
-                        <TeacherSelect
-                            value={selectedTeacher}
-                            onChange={setSelectedTeacher}
-                        />
-                        </div>
-
-                        {hasActiveFilters ? (
-                            <button
-                                onClick={() => {
-                                    setSelectedTeacher('all');
-                                    setSelectedSubject('all');
-                                }}
-                                className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-                            >
-                                Filtrni tozalash
-                            </button>
-                        ) : null}
-                    </div>
-
-                    <div className="space-y-1.5">
-                        <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">Fan</label>
                         <div className="flex flex-wrap gap-2">
                             <button
                                 type="button"
@@ -561,9 +581,20 @@ function AdminGroupsPage() {
                                 })
                             )}
                         </div>
+
+                        {hasActiveFilters ? (
+                            <button
+                                onClick={clearFilters}
+                                className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                            >
+                                Filtrni tozalash
+                            </button>
+                        ) : null}
                     </div>
                 </div>
             </div>
+
+            <p className="mb-5 text-sm text-gray-500 sm:text-lg">Jami {backendData?.success ? backendData.count || 0 : 0} ta guruh mavjud</p>
 
             <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-3">
                 {groups.map((group) => (

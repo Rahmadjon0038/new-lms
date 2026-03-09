@@ -251,16 +251,19 @@ const TeacherPayments = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-2 sm:p-3 md:p-4">
+    <div className="min-h-screen bg-slate-50 p-2 sm:p-3 md:p-5">
       <div className="w-full">
-        <div className="mb-5">
-          {/* <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">O'qituvchilar Oyligi</h1>
-          <p className="mt-1 text-sm text-gray-600 sm:text-base">Barcha o'qituvchilar bir jadvalda, har qatorida amallar mavjud</p> */}
-        </div>
+        <div className="mb-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">O'qituvchilar oyligi</h2>
+              <p className="text-sm text-slate-600">Qidiruv va oy bo'yicha filtr</p>
+            </div>
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{month}</span>
+          </div>
 
-        <div className="mb-4 rounded-2xl border border-slate-200 bg-white p-4 max-sm:p-2 shadow-sm">
-          <div className="flex gap-12 max-sm:gap-2">
-             <div className="w-full ">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center">
+             <div className="w-full">
               <input
                 type="text"
                 value={searchTerm}
@@ -269,7 +272,7 @@ const TeacherPayments = () => {
                 className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-[#A60E07] focus:ring-2 focus:ring-[#A60E07]/20 sm:px-4 sm:py-3 sm:text-base"
               />
             </div>
-            <div className="w-full sm:w-80">
+            <div className="w-full md:w-56">
               <input
                 type="month"
                 value={month}
@@ -277,7 +280,6 @@ const TeacherPayments = () => {
                 className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-[#A60E07] focus:ring-2 focus:ring-[#A60E07]/20 sm:px-4 sm:py-3 sm:text-base"
               />
             </div>
-           
           </div>
         </div>
 
@@ -459,7 +461,7 @@ const TeacherPayments = () => {
             <table className="min-w-[2050px] w-full text-base">
               <thead>
                 <tr className="border-b bg-gray-50/80 text-left text-sm font-semibold tracking-wide text-gray-600">
-                  <th className="whitespace-nowrap py-2xj pr-2">ID</th>
+                  <th className="whitespace-nowrap py-2 pr-2">ID</th>
                   <th className="whitespace-nowrap py-2 pr-2">O'qituvchi</th>
                   <th className="whitespace-nowrap py-2 pr-2">O'quvchilar</th>
                   <th className="whitespace-nowrap py-2 pr-2">To'lovlar</th>

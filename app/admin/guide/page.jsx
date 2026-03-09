@@ -202,7 +202,7 @@ const AdminGuidePage = () => {
         levels.length === 0 ? (
           <div className="bg-white rounded-xl p-8 shadow-md text-center text-gray-600">No levels found</div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
             {levels.map((level) => (
               <div
                 key={level.id}
