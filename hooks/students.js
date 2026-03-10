@@ -34,10 +34,11 @@ const getAllstudent = async (filters = {}) => {
     return response.data
 }
 
-export const useGetAllStudents = (filters = {}) => {
+export const useGetAllStudents = (filters = {}, options = {}) => {
     const { data, isLoading, error, refetch } = useQuery({
         queryKey: ['students', filters],
         queryFn: () => getAllstudent(filters),
+        ...options
     })
 
     return { data, isLoading, error, refetch }

@@ -203,6 +203,27 @@ export const useChangeStudentGroup = () => {
     return changeGroupMutation;
 }
 
+// ----------- bulk join students to group -----------------
+const bulkJoinStudentsToGroup = async ({ group_id, student_ids }) => {
+    const response = await instance.post('/api/groups/admin/bulk-join-students', {
+        group_id: Number(group_id),
+        student_ids: student_ids.map((id) => Number(id))
+    });
+    return response.data;
+}
+
+export const useBulkJoinStudentsToGroup = () => {
+    const queryClient = useQueryClient();
+    const bulkJoinMutation = useMutation({
+        mutationFn: bulkJoinStudentsToGroup,
+        onSuccess: () => {
+            queryClient.invalidateQueries(['students']);
+            queryClient.invalidateQueries(['groups']);
+        }
+    });
+    return bulkJoinMutation;
+}
+
 // ----------- remove student from group -----------------
 const removeStudentFromGroup = async ({ group_id, student_id }) => {
     const response = await instance.delete(`/api/groups/${group_id}/remove-student/${student_id}`);
@@ -219,6 +240,55 @@ export const useRemoveStudentFromGroup = () => {
         }
     });
     return removeStudentMutation;
+}
+
+// ----------- bulk remove students from group -----------------
+const bulkRemoveStudentsFromGroup = async ({ group_id, student_ids }) => {
+    const response = await instance.delete(`/api/groups/${group_id}/remove-students`, {
+        data: {
+            student_ids: student_ids.map((id) => Number(id))
+        }
+    });
+    return response.data;
+}
+
+export const useBulkRemoveStudentsFromGroup = () => {
+    const queryClient = useQueryClient();
+    const bulkRemoveMutation = useMutation({
+        mutationFn: bulkRemoveStudentsFromGroup,
+        onSuccess: () => {
+            queryClient.invalidateQueries(['students']);
+            queryClient.invalidateQueries(['groups']);
+        }
+    });
+    return bulkRemoveMutation;
+}
+
+// ----------- bulk change students group -----------------
+const bulkChangeStudentsGroup = async ({ from_group_id, new_group_id, student_ids }) => {
+    const payload = {
+        new_group_id: Number(new_group_id),
+        student_ids: student_ids.map((id) => Number(id))
+    };
+
+    if (from_group_id) {
+        payload.from_group_id = Number(from_group_id);
+    }
+
+    const response = await instance.post('/api/groups/change-students-group', payload);
+    return response.data;
+}
+
+export const useBulkChangeStudentsGroup = () => {
+    const queryClient = useQueryClient();
+    const bulkChangeMutation = useMutation({
+        mutationFn: bulkChangeStudentsGroup,
+        onSuccess: () => {
+            queryClient.invalidateQueries(['students']);
+            queryClient.invalidateQueries(['groups']);
+        }
+    });
+    return bulkChangeMutation;
 }
 
 // ----------- get teacher's groups -----------------

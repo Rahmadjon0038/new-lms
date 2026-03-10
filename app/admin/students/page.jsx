@@ -1111,6 +1111,7 @@ const StudentsPage = () => {
                     </tbody>
                 </table>
             </div>
+
         </div>
     );
 };
