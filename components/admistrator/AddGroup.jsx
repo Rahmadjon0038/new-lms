@@ -54,7 +54,9 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
 
     const { data: groupsData, isLoading: groupsLoading } = usegetAllgroups(
         undefined,
-        isTeacherRoute ? teacherId : undefined
+        isTeacherRoute ? teacherId : undefined,
+        undefined,
+        { enabled: !isTeacherRoute || Boolean(teacherId) }
     );
     const { data: allStudentsData, isLoading: studentsLoading } = useGetAllStudents(
         isTeacherRoute ? { teacher_id: teacherId } : {},

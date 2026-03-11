@@ -86,10 +86,11 @@ const getAllgroups = async (status, teacher_id, subject_id) => {
     return response.data;
 }
 
-export const usegetAllgroups = (status, teacher_id, subject_id) => {
+export const usegetAllgroups = (status, teacher_id, subject_id, options = {}) => {
     const { data, isLoading, error } = useQuery({
         queryKey: ['groups', status, teacher_id, subject_id],
         queryFn: () => getAllgroups(status, teacher_id, subject_id),
+        ...options,
     });
     return { data, isLoading, error };
 }

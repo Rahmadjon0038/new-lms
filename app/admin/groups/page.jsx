@@ -21,6 +21,7 @@ import { useChangeGroupStatus } from "../../../hooks/groups";
 import AdminNewGroupModal from "../../../components/admistrator/CreateGroup";
 import { usegetAllgroups } from "../../../hooks/groups";
 import { useGetAllSubjects } from "../../../hooks/subjects";
+import { usegetProfile } from "../../../hooks/user";
 import { Clock, Building2 } from "lucide-react";
 import TeacherSelect from "../../../components/teacher/Select";
 import SubjectsSelect from "../../../components/SubjectsSelect";
@@ -292,9 +293,20 @@ const GroupCard = ({ group, onToggleGroupStatus, onStartClass, updateGroupLoadin
     );
 };
 
+const getTeacherIdFromProfile = (profile) => {
+    const payload = profile?.data || profile;
+    return (
+        payload?.teacher_id ||
+        payload?.id ||
+        payload?.user_id ||
+        ''
+    );
+};
+
 function AdminGroupsPage() {
     const pathname = usePathname();
-    const basePath = pathname?.startsWith('/teacher') ? '/teacher' : '/admin';
+    const isTeacherRoute = pathname?.startsWith('/teacher');
+    const basePath = isTeacherRoute ? '/teacher' : '/admin';
     const [selectedTeacher, setSelectedTeacher] = useState('all');
     const [selectedSubject, setSelectedSubject] = useState('all');
     const [currentTab, setCurrentTab] = useState('active');
@@ -314,7 +326,17 @@ function AdminGroupsPage() {
         return undefined;
     };
 
-    const { data: backendData, isLoading, error } = usegetAllgroups(getIsActiveFilter(), selectedTeacher, selectedSubject);
+    const { data: profileData } = usegetProfile();
+    const teacherId = String(getTeacherIdFromProfile(profileData) || '');
+    const effectiveTeacherId = isTeacherRoute ? teacherId : selectedTeacher;
+    const effectiveSubjectId = isTeacherRoute ? undefined : selectedSubject;
+
+    const { data: backendData, isLoading, error } = usegetAllgroups(
+        getIsActiveFilter(),
+        effectiveTeacherId,
+        effectiveSubjectId,
+        { enabled: isTeacherRoute ? Boolean(teacherId) : true }
+    );
     const { data: subjectsData, isLoading: isSubjectsLoading } = useGetAllSubjects();
     
     // Filter groups based on current tab
@@ -334,11 +356,13 @@ function AdminGroupsPage() {
     const changeGroupStatusMutation = useChangeGroupStatus();
 
     const groups = filteredGroups;
-    const hasActiveFilters = selectedTeacher !== 'all' || selectedSubject !== 'all';
+    const hasActiveFilters = isTeacherRoute ? false : (selectedTeacher !== 'all' || selectedSubject !== 'all');
     const subjects = subjectsData?.subjects || [];
     const clearFilters = () => {
-        setSelectedTeacher('all');
-        setSelectedSubject('all');
+        if (!isTeacherRoute) {
+            setSelectedTeacher('all');
+            setSelectedSubject('all');
+        }
         setShowDesktopFilterClear(false);
     };
 
@@ -461,43 +485,47 @@ function AdminGroupsPage() {
             <div className="mb-8 rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-4 shadow-sm sm:p-5">
                 <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex w-full items-center gap-2 sm:max-w-md">
-                        <div className="relative shrink-0" ref={desktopFilterRef}>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    if (hasActiveFilters) {
-                                        setShowDesktopFilterClear((prev) => !prev);
-                                    }
-                                }}
-                                className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border text-[#A60E07] transition ${
-                                    showDesktopFilterClear
-                                        ? 'border-[#A60E07] bg-red-100'
-                                        : 'border-transparent bg-red-50'
-                                } ${hasActiveFilters ? 'cursor-pointer' : 'cursor-default opacity-70'}`}
-                                aria-label="Filter holati"
-                            >
-                                <FiFilter className="h-4 w-4" />
-                                {hasActiveFilters ? (
-                                    <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[#A60E07]" />
-                                ) : null}
-                            </button>
+                        {!isTeacherRoute ? (
+                            <>
+                                <div className="relative shrink-0" ref={desktopFilterRef}>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            if (hasActiveFilters) {
+                                                setShowDesktopFilterClear((prev) => !prev);
+                                            }
+                                        }}
+                                        className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border text-[#A60E07] transition ${
+                                            showDesktopFilterClear
+                                                ? 'border-[#A60E07] bg-red-100'
+                                                : 'border-transparent bg-red-50'
+                                        } ${hasActiveFilters ? 'cursor-pointer' : 'cursor-default opacity-70'}`}
+                                        aria-label="Filter holati"
+                                    >
+                                        <FiFilter className="h-4 w-4" />
+                                        {hasActiveFilters ? (
+                                            <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[#A60E07]" />
+                                        ) : null}
+                                    </button>
 
-                            {hasActiveFilters && showDesktopFilterClear ? (
-                                <button
-                                    type="button"
-                                    onClick={clearFilters}
-                                    className="absolute left-1/2 top-full z-20 mt-2 -translate-x-1/2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-lg transition hover:bg-slate-100"
-                                >
-                                    Filtrni tozalash
-                                </button>
-                            ) : null}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                            <TeacherSelect
-                                value={selectedTeacher}
-                                onChange={setSelectedTeacher}
-                            />
-                        </div>
+                                    {hasActiveFilters && showDesktopFilterClear ? (
+                                        <button
+                                            type="button"
+                                            onClick={clearFilters}
+                                            className="absolute left-1/2 top-full z-20 mt-2 -translate-x-1/2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-lg transition hover:bg-slate-100"
+                                        >
+                                            Filtrni tozalash
+                                        </button>
+                                    ) : null}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <TeacherSelect
+                                        value={selectedTeacher}
+                                        onChange={setSelectedTeacher}
+                                    />
+                                </div>
+                            </>
+                        ) : null}
                     </div>
 
                     <AdminNewGroupModal onSuccess={() => setCurrentTab('draft')}>
@@ -507,94 +535,98 @@ function AdminGroupsPage() {
                     </AdminNewGroupModal>
                 </div>
 
-                <div className="mb-3 flex items-center justify-end md:hidden" ref={mobileFilterRef}>
-                    <div className="relative">
-                        <button
-                            type="button"
-                            onClick={() => setShowMobileFilters((prev) => !prev)}
-                            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700"
-                            aria-label="Filtrlarni ochish"
-                        >
-                            <FiFilter className="h-4 w-4" />
-                            {hasActiveFilters ? <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[#A60E07]" /> : null}
-                        </button>
-
-                        {showMobileFilters ? (
-                            <div className="absolute right-0 z-30 mt-2 w-[300px] max-w-[85vw] rounded-xl border border-slate-200 bg-white p-3 shadow-xl">
-                                <div className="space-y-3">
-                                    <SubjectsSelect
-                                        value={selectedSubject}
-                                        onChange={setSelectedSubject}
-                                        placeholder="Fanni tanlang"
-                                        showAll={true}
-                                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold"
-                                    />
-
-                                    {hasActiveFilters ? (
-                                        <button
-                                            onClick={() => {
-                                                clearFilters();
-                                                setShowMobileFilters(false);
-                                            }}
-                                            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-                                        >
-                                            Filtrni tozalash
-                                        </button>
-                                    ) : null}
-                                </div>
-                            </div>
-                        ) : null}
-                    </div>
-                </div>
-
-                <div className="hidden gap-3 md:grid">
-                    <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(260px,1fr)_auto] xl:items-end">
-                        <div className="flex flex-wrap gap-2">
+                {!isTeacherRoute ? (
+                    <div className="mb-3 flex items-center justify-end md:hidden" ref={mobileFilterRef}>
+                        <div className="relative">
                             <button
                                 type="button"
-                                onClick={() => setSelectedSubject('all')}
-                                className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${
-                                    selectedSubject === 'all'
-                                        ? 'border-[#A60E07] bg-[#A60E07] text-white'
-                                        : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
-                                }`}
+                                onClick={() => setShowMobileFilters((prev) => !prev)}
+                                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700"
+                                aria-label="Filtrlarni ochish"
                             >
-                                Barcha fanlar
+                                <FiFilter className="h-4 w-4" />
+                                {hasActiveFilters ? <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[#A60E07]" /> : null}
                             </button>
 
-                            {isSubjectsLoading ? (
-                                <span className="px-3 py-2 text-sm text-slate-500">Fanlar yuklanmoqda...</span>
-                            ) : (
-                                subjects.map((subject) => {
-                                    const subjectValue = String(subject.id);
-                                    return (
-                                        <button
-                                            key={subject.id}
-                                            type="button"
-                                            onClick={() => setSelectedSubject(subjectValue)}
-                                            className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${
-                                                selectedSubject === subjectValue
-                                                    ? 'border-[#A60E07] bg-[#A60E07] text-white'
-                                                    : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
-                                            }`}
-                                        >
-                                            {subject.name}
-                                        </button>
-                                    );
-                                })
-                            )}
+                            {showMobileFilters ? (
+                                <div className="absolute right-0 z-30 mt-2 w-[300px] max-w-[85vw] rounded-xl border border-slate-200 bg-white p-3 shadow-xl">
+                                    <div className="space-y-3">
+                                        <SubjectsSelect
+                                            value={selectedSubject}
+                                            onChange={setSelectedSubject}
+                                            placeholder="Fanni tanlang"
+                                            showAll={true}
+                                            className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold"
+                                        />
+
+                                        {hasActiveFilters ? (
+                                            <button
+                                                onClick={() => {
+                                                    clearFilters();
+                                                    setShowMobileFilters(false);
+                                                }}
+                                                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                                            >
+                                                Filtrni tozalash
+                                            </button>
+                                        ) : null}
+                                    </div>
+                                </div>
+                            ) : null}
                         </div>
-
-                        {hasActiveFilters ? (
-                            <button
-                                onClick={clearFilters}
-                                className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-                            >
-                                Filtrni tozalash
-                            </button>
-                        ) : null}
                     </div>
-                </div>
+                ) : null}
+
+                {!isTeacherRoute ? (
+                    <div className="hidden gap-3 md:grid">
+                        <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(260px,1fr)_auto] xl:items-end">
+                            <div className="flex flex-wrap gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedSubject('all')}
+                                    className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${
+                                        selectedSubject === 'all'
+                                            ? 'border-[#A60E07] bg-[#A60E07] text-white'
+                                            : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
+                                    }`}
+                                >
+                                    Barcha fanlar
+                                </button>
+
+                                {isSubjectsLoading ? (
+                                    <span className="px-3 py-2 text-sm text-slate-500">Fanlar yuklanmoqda...</span>
+                                ) : (
+                                    subjects.map((subject) => {
+                                        const subjectValue = String(subject.id);
+                                        return (
+                                            <button
+                                                key={subject.id}
+                                                type="button"
+                                                onClick={() => setSelectedSubject(subjectValue)}
+                                                className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${
+                                                    selectedSubject === subjectValue
+                                                        ? 'border-[#A60E07] bg-[#A60E07] text-white'
+                                                        : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
+                                                }`}
+                                            >
+                                                {subject.name}
+                                            </button>
+                                        );
+                                    })
+                                )}
+                            </div>
+
+                            {hasActiveFilters ? (
+                                <button
+                                    onClick={clearFilters}
+                                    className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                                >
+                                    Filtrni tozalash
+                                </button>
+                            ) : null}
+                        </div>
+                    </div>
+                ) : null}
             </div>
 
             <p className="mb-5 text-sm text-gray-500 sm:text-lg">Jami {backendData?.success ? backendData.count || 0 : 0} ta guruh mavjud</p>
