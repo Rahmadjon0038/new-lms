@@ -136,13 +136,11 @@ const TeacherPaymentsInfo = () => {
             }
         };
 
-        document.addEventListener('mousedown', handleOutsideClick);
-        document.addEventListener('touchstart', handleOutsideClick);
+        document.addEventListener('pointerdown', handleOutsideClick);
         document.addEventListener('keydown', handleEscape);
 
         return () => {
-            document.removeEventListener('mousedown', handleOutsideClick);
-            document.removeEventListener('touchstart', handleOutsideClick);
+            document.removeEventListener('pointerdown', handleOutsideClick);
             document.removeEventListener('keydown', handleEscape);
         };
     }, [showFilterDropdown]);
@@ -182,8 +180,8 @@ const TeacherPaymentsInfo = () => {
             </div>
 
             {/* Filters */}
-            <div className="mb-4 rounded-lg bg-white p-3 shadow-md sm:mb-6 sm:p-4 md:p-6">
-                <div className="relative" ref={filterDropdownRef}>
+            <div className="mb-3 rounded-lg bg-white p-2.5 shadow-md sm:mb-6 sm:p-4 md:p-6">
+                <div className="relative z-30" ref={filterDropdownRef}>
                     <div className="flex items-center gap-2">
                         <div className="relative flex-1">
                             <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400 sm:h-4 sm:w-4" />
@@ -206,7 +204,7 @@ const TeacherPaymentsInfo = () => {
                         <button
                             type="button"
                             onClick={() => setShowFilterDropdown((prev) => !prev)}
-                            className="inline-flex h-10 items-center justify-center gap-1 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                            className="inline-flex h-9 items-center justify-center gap-1 rounded-lg border border-gray-300 px-2.5 text-xs font-medium text-gray-700 hover:bg-gray-50 sm:h-10 sm:px-3 sm:text-sm"
                         >
                             <FunnelIcon className="h-4 w-4" />
                             Filter
@@ -214,7 +212,7 @@ const TeacherPaymentsInfo = () => {
                     </div>
 
                     {showFilterDropdown && (
-                        <div className="absolute right-0 z-20 mt-2 w-full rounded-lg border border-gray-200 bg-white p-3 shadow-lg sm:w-[560px]">
+                        <div className="absolute right-0 z-50 mt-2 w-full rounded-lg border border-gray-200 bg-white p-2.5 shadow-lg sm:w-[560px] sm:p-3">
                             <div className="mb-3">
                                 <label className="mb-2 block text-xs font-medium text-gray-700 sm:text-sm">To'lov holati:</label>
                                 <div className="flex flex-wrap gap-2">
@@ -334,7 +332,7 @@ const TeacherPaymentsInfo = () => {
 
             {/* Results Table */}
             <div className="bg-white rounded-lg shadow-md">
-                <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b border-gray-200">
+                <div className="border-b border-gray-200 px-2.5 py-2.5 sm:px-4 sm:py-4 md:px-6">
                     <h2 className="text-base sm:text-lg font-semibold text-gray-800">
                         To'lov ma'lumotlari ({filteredStudents.length} ta)
                     </h2>

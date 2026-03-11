@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { ArrowLeftIcon, FunnelIcon } from "@heroicons/react/24/outline";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetAttendanceTeacherGroups,
@@ -35,6 +35,7 @@ export default function AdminTeacherGroupsPage() {
   });
   const [selectedLessonId, setSelectedLessonId] = useState("");
   const [attendanceOverrides, setAttendanceOverrides] = useState({});
+  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   const hasActiveFilters = Boolean(day || shift);
 
   useEffect(() => {
@@ -198,10 +199,10 @@ export default function AdminTeacherGroupsPage() {
   };
 
   const renderLessonStudentsDropdown = () => (
-    <div className="mt-2 space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
+    <div className="mt-2 space-y-2 rounded-lg border border-gray-200 bg-gray-50 p-2.5 sm:p-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-base font-bold text-gray-900">Dars studentlari</h3>
-        <span className="text-xs text-gray-500">Lesson ID: {activeLessonId}</span>
+        <h3 className="text-sm font-bold text-gray-900 sm:text-base">Dars studentlari</h3>
+        <span className="hidden text-[11px] text-gray-500 sm:inline">Lesson ID: {activeLessonId}</span>
       </div>
 
       {lessonStudentsQuery.isLoading ? (
@@ -220,29 +221,29 @@ export default function AdminTeacherGroupsPage() {
 
       {!lessonStudentsQuery.isLoading && !lessonStudentsQuery.isError ? (
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 text-sm">
+          <table className="min-w-full divide-y divide-gray-200 text-xs sm:text-sm">
             <thead className="bg-white">
               <tr>
-                <th className="px-3 py-2 text-left font-semibold text-gray-600">Talaba</th>
-                <th className="px-3 py-2 text-left font-semibold text-gray-600">Talaba holati</th>
-                <th className="px-3 py-2 text-left font-semibold text-gray-600">Davomat</th>
+                <th className="px-2 py-1.5 text-left font-semibold text-gray-600 sm:px-3 sm:py-2">Talaba</th>
+                <th className="px-2 py-1.5 text-left font-semibold text-gray-600 sm:px-3 sm:py-2">Talaba holati</th>
+                <th className="px-2 py-1.5 text-left font-semibold text-gray-600 sm:px-3 sm:py-2">Davomat</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 bg-white">
               {students.map((student) => (
                 <tr key={student.attendance_id}>
-                  <td className="px-3 py-2">
+                  <td className="px-2 py-1.5 sm:px-3 sm:py-2">
                     {student.student_name || `${student.name || ""} ${student.surname || ""}`.trim()}
                   </td>
-                  <td className="px-3 py-2">
-                    <span className={`rounded-full px-2 py-1 text-xs font-semibold ${
+                  <td className="px-2 py-1.5 sm:px-3 sm:py-2">
+                    <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold sm:px-2 sm:py-1 sm:text-xs ${
                       student.monthly_status === "active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"
                     }`}>
                       {student.monthly_status || "active"}
                     </span>
                   </td>
-                  <td className="px-3 py-2">
-                    <div className="inline-flex rounded-xl border border-gray-200 bg-white p-1">
+                  <td className="px-2 py-1.5 sm:px-3 sm:py-2">
+                    <div className="inline-flex rounded-xl border border-gray-200 bg-white p-0.5 sm:p-1">
                       {["keldi", "kelmadi"].map((option) => {
                         const isActive = getCurrentStudentStatus(student) === option;
                         const disabled = !canStudentMark(student) || markMutation.isPending;
@@ -260,7 +261,7 @@ export default function AdminTeacherGroupsPage() {
                                 return next;
                               });
                             }}
-                            className={`rounded-lg px-3 py-1 text-xs font-semibold transition ${
+                            className={`rounded-lg px-2 py-1 text-[11px] font-semibold transition sm:px-3 sm:text-xs ${
                               isActive
                                 ? option === "keldi"
                                   ? "bg-green-600 text-white"
@@ -316,7 +317,7 @@ export default function AdminTeacherGroupsPage() {
                 }
               );
             }}
-            className="rounded-lg bg-[#A60E07] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-lg bg-[#A60E07] px-3 py-1.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60 sm:px-4 sm:py-2 sm:text-sm"
           >
             {markMutation.isPending ? "Saqlanmoqda..." : "Davomatni saqlash"}
           </button>
@@ -337,13 +338,13 @@ export default function AdminTeacherGroupsPage() {
         </div>
       </div>
 
-      <div className="grid gap-3 rounded-xl border border-gray-200 bg-white p-4 md:grid-cols-3">
-        <label className="text-sm text-gray-700">
+      <div className="hidden gap-3 rounded-xl border border-gray-200 bg-white p-4 md:grid md:grid-cols-3">
+        <label className="text-xs text-gray-700 sm:text-sm">
           <span className="mb-1 block font-medium">Kun (ixtiyoriy)</span>
           <select
             value={day}
             onChange={(e) => setDay(e.target.value)}
-            className={`w-full rounded-lg border px-3 py-2 ${day ? "border-[#A60E07] bg-red-50" : "border-gray-300"}`}
+            className={`w-full rounded-lg border px-2.5 py-1.5 text-xs sm:px-3 sm:py-2 sm:text-sm ${day ? "border-[#A60E07] bg-red-50" : "border-gray-300"}`}
           >
             <option value="">Barchasi</option>
             <option value="dushanba">dushanba</option>
@@ -351,12 +352,12 @@ export default function AdminTeacherGroupsPage() {
           </select>
         </label>
 
-        <label className="text-sm text-gray-700">
+        <label className="text-xs text-gray-700 sm:text-sm">
           <span className="mb-1 block font-medium">Smena (ixtiyoriy)</span>
           <select
             value={shift}
             onChange={(e) => setShift(e.target.value)}
-            className={`w-full rounded-lg border px-3 py-2 ${shift ? "border-[#A60E07] bg-red-50" : "border-gray-300"}`}
+            className={`w-full rounded-lg border px-2.5 py-1.5 text-xs sm:px-3 sm:py-2 sm:text-sm ${shift ? "border-[#A60E07] bg-red-50" : "border-gray-300"}`}
           >
             <option value="">Barchasi</option>
             <option value="morning">kunduzgi</option>
@@ -364,7 +365,7 @@ export default function AdminTeacherGroupsPage() {
           </select>
         </label>
 
-        <div className="flex items-end">
+        <div className="col-span-2 flex items-end md:col-span-1">
           {hasActiveFilters ? (
             <button
               type="button"
@@ -372,7 +373,7 @@ export default function AdminTeacherGroupsPage() {
                 setDay("");
                 setShift("");
               }}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700"
+              className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 sm:w-auto sm:px-4 sm:py-2 sm:text-sm"
             >
               Filterlarni tozalash
             </button>
@@ -399,7 +400,7 @@ export default function AdminTeacherGroupsPage() {
       ) : null}
 
       {!isLoadingGroups && !isErrorGroups ? (
-        <div className="rounded-xl border border-gray-200 bg-white p-3">
+        <div className="rounded-xl border border-gray-200 bg-white p-2.5 sm:p-3">
           <div className="flex gap-2 overflow-x-auto pb-1">
             {activeGroups.map((group) => {
               const isActive = String(group.group_id) === activeGroupId;
@@ -408,7 +409,7 @@ export default function AdminTeacherGroupsPage() {
                   type="button"
                   key={group.group_id}
                   onClick={() => handleSelectGroup(group.group_id)}
-                  className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                  className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition sm:px-4 sm:py-2 sm:text-sm ${
                     isActive
                       ? "border-[#A60E07] bg-[#A60E07] text-white"
                       : "border-gray-300 bg-white text-gray-700 hover:border-[#A60E07]"
@@ -416,7 +417,7 @@ export default function AdminTeacherGroupsPage() {
                 >
                   <div className="text-left leading-tight">
                     <div>{group.group_name}</div>
-                    <div className={`text-[11px] font-medium ${isActive ? "text-red-100" : "text-gray-500"}`}>
+                    <div className={`text-[10px] font-medium sm:text-[11px] ${isActive ? "text-red-100" : "text-gray-500"}`}>
                       {Array.isArray(group.schedule?.days) && group.schedule.days.length
                         ? group.schedule.days.map(getDayShort).join(", ")
                         : "-"}{" "}
@@ -437,19 +438,68 @@ export default function AdminTeacherGroupsPage() {
       ) : null}
 
       {activeGroupId ? (
-        <div className="space-y-3 rounded-xl border border-gray-200 bg-white p-4">
+        <div className="space-y-2 rounded-xl border border-gray-200 bg-white p-3 sm:space-y-3 sm:p-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-gray-900">Darslar ro&apos;yxati</h2>
+            <h2 className="text-base font-bold text-gray-900 sm:text-lg">Darslar ro&apos;yxati</h2>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-gray-500">Oy:</span>
               <input
                 type="month"
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
-                className="rounded-lg border border-gray-300 px-2 py-1 text-xs"
+                className="rounded-lg border border-gray-300 px-2 py-1 text-[11px] sm:text-xs"
               />
+              <button
+                type="button"
+                onClick={() => setIsMobileFiltersOpen((prev) => !prev)}
+                className={`rounded-lg border p-1.5 md:hidden ${
+                  hasActiveFilters ? "border-[#A60E07] bg-red-50 text-[#A60E07]" : "border-gray-300 text-gray-600"
+                }`}
+                aria-label="Filterni ochish"
+              >
+                <FunnelIcon className="h-4 w-4" />
+              </button>
             </div>
           </div>
+          {isMobileFiltersOpen ? (
+            <div className="grid grid-cols-2 gap-2 rounded-lg border border-gray-200 bg-gray-50 p-2.5 md:hidden">
+              <label className="text-xs text-gray-700">
+                <span className="mb-1 block font-medium">Kun</span>
+                <select
+                  value={day}
+                  onChange={(e) => setDay(e.target.value)}
+                  className={`w-full rounded-lg border px-2.5 py-1.5 text-xs ${day ? "border-[#A60E07] bg-red-50" : "border-gray-300"}`}
+                >
+                  <option value="">Barchasi</option>
+                  <option value="dushanba">dushanba</option>
+                  <option value="seshanba">seshanba</option>
+                </select>
+              </label>
+              <label className="text-xs text-gray-700">
+                <span className="mb-1 block font-medium">Smena</span>
+                <select
+                  value={shift}
+                  onChange={(e) => setShift(e.target.value)}
+                  className={`w-full rounded-lg border px-2.5 py-1.5 text-xs ${shift ? "border-[#A60E07] bg-red-50" : "border-gray-300"}`}
+                >
+                  <option value="">Barchasi</option>
+                  <option value="morning">kunduzgi</option>
+                  <option value="evening">kechki</option>
+                </select>
+              </label>
+              {hasActiveFilters ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDay("");
+                    setShift("");
+                  }}
+                  className="col-span-2 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700"
+                >
+                  Filterlarni tozalash
+                </button>
+              ) : null}
+            </div>
+          ) : null}
 
           {lessonsQuery.isLoading ? (
             <div className="space-y-2">
@@ -474,32 +524,23 @@ export default function AdminTeacherGroupsPage() {
                 return (
                   <div key={lessonId}>
                     <div
-                      className={`flex items-center justify-between rounded-lg px-3 py-2 ${
+                      className={`flex items-start justify-between gap-2 rounded-lg px-2.5 py-1.5 sm:items-center sm:px-3 sm:py-2 ${
                         isCompleted
                           ? "border border-emerald-300 bg-gradient-to-r from-emerald-50 to-emerald-100 shadow-sm"
                           : "border border-gray-200 bg-white"
                       }`}
                     >
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900">
+                      <div className="min-w-0">
+                        <p className="truncate text-xs font-semibold text-gray-900 sm:text-sm">
                           {lesson.formatted_date || lesson.date || lesson.lesson_date || "-"}
                         </p>
-                        <p className="text-xs text-gray-600">
+                        <p className="truncate text-[11px] text-gray-600 sm:text-xs">
                           {getWeekdayFromDate(lesson.date || lesson.lesson_date)}{" "}
                           {getWeekdayFromDate(lesson.date || lesson.lesson_date) ? "• " : ""}
                           {getDisplayTime(lesson)}
                         </p>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`rounded-full px-2 py-1 text-[10px] font-semibold ${
-                            isCompleted
-                              ? "bg-green-100 text-green-700"
-                              : "bg-gray-100 text-gray-700"
-                          }`}
-                        >
-                          {isCompleted ? "davomat qilingan" : "hali qilinmagan"}
-                        </span>
+                      <div className="flex flex-col items-end gap-1.5 sm:flex-row sm:items-center sm:gap-2">
                         <button
                           type="button"
                           onClick={() => {
@@ -511,7 +552,7 @@ export default function AdminTeacherGroupsPage() {
                               setAttendanceOverrides({});
                             }
                           }}
-                          className={`rounded-lg px-3 py-1.5 text-xs font-semibold text-white ${
+                          className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold text-white sm:px-3 sm:py-1.5 sm:text-xs ${
                             isActiveLesson ? "bg-gray-700" : "bg-[#A60E07]"
                           }`}
                         >

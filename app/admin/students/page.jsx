@@ -164,13 +164,11 @@ const StudentsPage = () => {
             }
         };
 
-        document.addEventListener('mousedown', handleOutsideClick);
-        document.addEventListener('touchstart', handleOutsideClick);
+        document.addEventListener('pointerdown', handleOutsideClick);
         document.addEventListener('keydown', handleEscape);
 
         return () => {
-            document.removeEventListener('mousedown', handleOutsideClick);
-            document.removeEventListener('touchstart', handleOutsideClick);
+            document.removeEventListener('pointerdown', handleOutsideClick);
             document.removeEventListener('keydown', handleEscape);
         };
     }, [showFiltersDropdown, showDesktopFilterClear]);
@@ -418,7 +416,7 @@ const StudentsPage = () => {
                             ) : null}
                         </div>
 
-                        <div className="relative shrink-0 md:hidden" ref={filtersDropdownRef}>
+                        <div className="relative z-30 shrink-0 md:hidden" ref={filtersDropdownRef}>
                             <button
                                 type="button"
                                 onClick={() => setShowFiltersDropdown((prev) => !prev)}
@@ -430,7 +428,7 @@ const StudentsPage = () => {
                             </button>
 
                             {showFiltersDropdown ? (
-                                <div className="absolute right-0 z-30 mt-2 w-[300px] max-w-[88vw] rounded-xl border border-gray-200 bg-white p-3 shadow-xl sm:w-[380px]">
+                                <div className="absolute right-0 z-50 mt-2 w-[300px] max-w-[88vw] rounded-xl border border-gray-200 bg-white p-3 shadow-xl sm:w-[380px]">
                                     <div className="space-y-3">
                                         <button
                                             onClick={() => setShowUnassigned(!showUnassigned)}

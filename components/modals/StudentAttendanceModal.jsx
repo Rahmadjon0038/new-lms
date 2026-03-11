@@ -1,6 +1,6 @@
 "use client";
 import React from 'react';
-import { XMarkIcon, CheckCircleIcon, XCircleIcon, ClockIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 import { useGetStudentAttendanceSnapshot } from '../../hooks/attendance';
 
 const StudentAttendanceModal = ({ isOpen, onClose, student, month }) => {
@@ -155,7 +155,7 @@ const StudentAttendanceModal = ({ isOpen, onClose, student, month }) => {
                                     <thead className="bg-gray-50">
                                         <tr>
                                             <th className="w-10 border border-gray-300 px-2 py-2 text-left text-xs font-medium text-gray-700 sm:w-12 sm:px-4 sm:py-3 sm:text-sm">#</th>
-                                            <th className="border border-gray-300 px-2 py-2 text-left text-xs font-medium text-gray-700 sm:px-4 sm:py-3 sm:text-sm">Talaba</th>
+                                            <th className="min-w-[220px] border border-gray-300 px-2 py-2 text-left text-xs font-medium text-gray-700 sm:px-4 sm:py-3 sm:text-sm">Talaba</th>
                                             <th className="w-20 border border-gray-300 px-2 py-2 text-center text-xs font-medium text-gray-700 sm:w-24 sm:px-4 sm:py-3 sm:text-sm">Holati</th>
                                             {attendanceData.data.daily_attendance?.map((attendance, index) => (
                                                 <th key={index} className="min-w-[100px] border border-gray-300 px-2 py-2 text-center text-xs font-medium text-gray-700 sm:px-4 sm:py-3 sm:text-sm">
@@ -171,13 +171,8 @@ const StudentAttendanceModal = ({ isOpen, onClose, student, month }) => {
                                         <tr className="hover:bg-gray-50">
                                             <td className="border border-gray-300 px-2 py-2 text-center text-xs text-gray-900 sm:px-4 sm:py-3 sm:text-sm">1</td>
                                             <td className="border border-gray-300 px-2 py-2 sm:px-4 sm:py-3">
-                                                <div>
-                                                    <div className="text-xs font-medium text-gray-900 sm:text-sm">
-                                                        {attendanceData.data.student_info.name} {attendanceData.data.student_info.surname}
-                                                    </div>
-                                                    <div className="text-[11px] text-gray-500">
-                                                        {attendanceData.data.student_info.phone}
-                                                    </div>
+                                                <div className="max-w-[360px] truncate whitespace-nowrap text-xs font-medium text-gray-900 sm:text-sm">
+                                                    {attendanceData.data.student_info.name} {attendanceData.data.student_info.surname} • {attendanceData.data.student_info.phone}
                                                 </div>
                                             </td>
                                             <td className="border border-gray-300 px-2 py-2 text-center sm:px-4 sm:py-3">
@@ -213,27 +208,6 @@ const StudentAttendanceModal = ({ isOpen, onClose, student, month }) => {
                                 ))}
                             </div>
 
-                            {/* Statistics Summary */}
-                            <div className="mt-4 grid grid-cols-2 gap-2 sm:mt-6 sm:gap-4 md:grid-cols-4">
-                                <div className="rounded-lg bg-gray-50 p-3 text-center sm:p-4">
-                                    <div className="text-xl font-bold text-blue-600 sm:text-2xl">{attendanceData.data.attendance_statistics.total_lessons}</div>
-                                    <div className="text-xs text-gray-600 sm:text-sm">Jami darslar</div>
-                                </div>
-                                <div className="rounded-lg bg-green-50 p-3 text-center sm:p-4">
-                                    <div className="text-xl font-bold text-green-600 sm:text-2xl">{attendanceData.data.attendance_breakdown.keldi}</div>
-                                    <div className="text-xs text-gray-600 sm:text-sm">Keldi</div>
-                                </div>
-                                <div className="rounded-lg bg-red-50 p-3 text-center sm:p-4">
-                                    <div className="text-xl font-bold text-red-600 sm:text-2xl">{attendanceData.data.attendance_breakdown.kelmadi}</div>
-                                    <div className="text-xs text-gray-600 sm:text-sm">Kelmadi</div>
-                                </div>
-                                <div className="rounded-lg bg-indigo-50 p-3 text-center sm:p-4">
-                                    <div className="text-xl font-bold text-indigo-600 sm:text-2xl">
-                                        {attendanceData.data.attendance_statistics.attendance_percentage || 0}%
-                                    </div>
-                                    <div className="text-xs text-gray-600 sm:text-sm">Davomat foizi</div>
-                                </div>
-                            </div>
                         </div>
                     ) : (
                         <div className="p-6 text-center">

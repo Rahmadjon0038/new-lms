@@ -362,13 +362,11 @@ const StudentPayments = () => {
             }
         };
 
-        document.addEventListener('mousedown', handleOutsideClick);
-        document.addEventListener('touchstart', handleOutsideClick);
+        document.addEventListener('pointerdown', handleOutsideClick);
         document.addEventListener('keydown', handleEscape);
 
         return () => {
-            document.removeEventListener('mousedown', handleOutsideClick);
-            document.removeEventListener('touchstart', handleOutsideClick);
+            document.removeEventListener('pointerdown', handleOutsideClick);
             document.removeEventListener('keydown', handleEscape);
         };
     }, [showFilterDropdown]);
@@ -390,7 +388,7 @@ const StudentPayments = () => {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6">
+            <div className="min-h-screen bg-gray-50 p-2.5 sm:p-4 md:p-6">
                 <div className="max-w-7xl mx-auto">
                     <div className="text-center py-12">
                         <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: MAIN_COLOR }}></div>
@@ -403,7 +401,7 @@ const StudentPayments = () => {
 
     if (error) {
         return (
-            <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6">
+            <div className="min-h-screen bg-gray-50 p-2.5 sm:p-4 md:p-6">
                 <div className="max-w-7xl mx-auto">
                     <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
                         <p className="font-semibold">Xatolik yuz berdi:</p>
@@ -415,10 +413,10 @@ const StudentPayments = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6">
-            <div className="px-2">
+        <div className="min-h-screen bg-gray-50 p-2.5 sm:p-4 md:p-6">
+            <div className="px-1 sm:px-2">
                 {/* Header */}
-                <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div className="mb-4 flex flex-col gap-3 md:mb-6 md:flex-row md:items-center md:justify-between">
                     <div className="max-w-2xl">
                         {/* <h1 className="mb-2 text-xl font-bold text-gray-900 sm:text-2xl">
                             Talabalar oylik to'lovlari
@@ -429,11 +427,11 @@ const StudentPayments = () => {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="grid w-full grid-cols-3 gap-2 sm:grid-cols-2 md:w-auto md:grid-cols-3 md:gap-3">
+                    <div className="grid w-full grid-cols-3 gap-1.5 sm:grid-cols-2 md:w-auto md:grid-cols-3 md:gap-3">
                         <button
                             onClick={handleCreateSnapshot}
                             disabled={snapshotLoading}
-                            className="inline-flex w-full items-center justify-center gap-1 rounded-lg bg-green-600 px-2 py-2 text-xs font-medium text-white transition-colors hover:opacity-90 focus:ring-2 focus:ring-offset-2 disabled:opacity-50 sm:gap-2 sm:px-4 sm:text-sm"
+                            className="inline-flex w-full items-center justify-center gap-1 rounded-lg bg-green-600 px-2 py-1.5 text-xs font-medium text-white transition-colors hover:opacity-90 focus:ring-2 focus:ring-offset-2 disabled:opacity-50 sm:gap-2 sm:px-4 sm:py-2 sm:text-sm"
                             title="Yangi oy uchun to'lov jadvali yaratish"
                         >
                             {snapshotLoading ? (
@@ -453,7 +451,7 @@ const StudentPayments = () => {
                             <button
                                 onClick={handleCreateSnapshotsForNew}
                                 disabled={!filters.month || createSnapshotsMutation.isPending}
-                                className="group relative inline-flex w-full items-center justify-center gap-1 rounded-lg bg-green-600 px-2 py-2 text-xs font-medium text-white transition-all duration-300 hover:scale-[1.01] hover:opacity-90 hover:shadow-lg focus:ring-2 focus:ring-offset-2 disabled:opacity-50 sm:gap-2 sm:px-4 sm:text-sm"
+                                className="group relative inline-flex w-full items-center justify-center gap-1 rounded-lg bg-green-600 px-2 py-1.5 text-xs font-medium text-white transition-all duration-300 hover:scale-[1.01] hover:opacity-90 hover:shadow-lg focus:ring-2 focus:ring-offset-2 disabled:opacity-50 sm:gap-2 sm:px-4 sm:py-2 sm:text-sm"
                                 title="Yangi qo'shilgan talabalar uchun snapshot yaratish"
                             >
                                 {createSnapshotsMutation.isPending ? (
@@ -510,7 +508,7 @@ const StudentPayments = () => {
                         </div>
                         <button
                             onClick={handleExport}
-                            className="inline-flex w-full items-center justify-center gap-1 rounded-lg px-2 py-2 text-xs font-medium text-white transition-colors hover:opacity-90 focus:ring-2 focus:ring-offset-2 sm:gap-2 sm:px-4 sm:text-sm"
+                            className="inline-flex w-full items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-white transition-colors hover:opacity-90 focus:ring-2 focus:ring-offset-2 sm:gap-2 sm:px-4 sm:py-2 sm:text-sm"
                             style={{ backgroundColor: MAIN_COLOR, focusRingColor: MAIN_COLOR }}
                         >
                             <ArrowDownTrayIcon className="h-4 w-4" />
@@ -522,7 +520,7 @@ const StudentPayments = () => {
 
                 {/* Statistics Cards - Display Only */}
                 {stats.total_students > 0 && (
-                    <div className="mb-3 flex items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 sm:px-4">
+                    <div className="mb-3 flex items-center justify-between rounded-lg border border-gray-200 bg-white px-2.5 py-2 sm:px-4">
                         <p className="text-sm font-semibold text-gray-800">Statistika</p>
                         <button
                             type="button"
@@ -604,8 +602,8 @@ const StudentPayments = () => {
                 )}
 
                 {/* Filters */}
-                <div className="mb-6 rounded-lg bg-white p-4 shadow-md sm:p-6">
-                    <div className="relative" ref={filterDropdownRef}>
+                <div className="mb-4 rounded-lg bg-white p-3 shadow-md sm:mb-6 sm:p-6">
+                    <div className="relative z-30" ref={filterDropdownRef}>
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-center md:flex-wrap lg:flex-nowrap">
                             <div className="relative flex-1 md:order-1 md:w-full md:flex-none lg:order-none lg:w-auto lg:flex-1">
                                 <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -681,7 +679,7 @@ const StudentPayments = () => {
                             <button
                                 type="button"
                                 onClick={() => setShowFilterDropdown((prev) => !prev)}
-                                className="relative inline-flex h-10 items-center justify-center gap-1 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:bg-gray-50 md:hidden"
+                                className="relative inline-flex h-9 items-center justify-center gap-1 rounded-lg border border-gray-300 px-2.5 text-xs font-medium text-gray-700 hover:bg-gray-50 md:hidden"
                             >
                                 <FunnelIcon className="h-4 w-4" />
                                 Filter
@@ -738,7 +736,7 @@ const StudentPayments = () => {
                                     </button>
                                 </div>
 
-                                <div className="absolute right-0 z-20 mt-2 w-full rounded-lg border border-gray-200 bg-white p-3 shadow-lg sm:w-[680px] md:hidden">
+                                <div className="absolute right-0 z-50 mt-2 w-full rounded-lg border border-gray-200 bg-white p-2.5 shadow-lg sm:w-[680px] md:hidden">
                                     <div className="space-y-3">
                                         <select
                                             value={filters.payment_status}
@@ -801,7 +799,7 @@ const StudentPayments = () => {
 
                 {/* Results */}
                 <div className="bg-white rounded-lg shadow-md">
-                    <div className="flex flex-col gap-2 border-b border-gray-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                    <div className="flex flex-col gap-2 border-b border-gray-200 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4">
                         <h2 className="text-base font-semibold text-gray-800 sm:text-lg">
                             To'lov ma'lumotlari ({students.length} ta)
                         </h2>
@@ -827,9 +825,9 @@ const StudentPayments = () => {
                     <div className="overflow-x-auto">
                         {filteredStudents.length > 0 ? (
                             <>
-                            <div className="space-y-3 p-3 sm:p-4 md:hidden">
+                            <div className="space-y-2.5 p-2.5 sm:p-4 md:hidden">
                                 {filteredStudents.map((student, index) => (
-                                    <div key={`${student.student_id}-${student.group_id}-${index}`} className="rounded-lg border border-gray-200 p-3">
+                                    <div key={`${student.student_id}-${student.group_id}-${index}`} className="rounded-lg border border-gray-200 p-2.5">
                                         <div className="mb-2 flex items-start justify-between gap-2">
                                             <div className="min-w-0">
                                                 <p className="text-xs text-gray-400">#{index + 1}</p>

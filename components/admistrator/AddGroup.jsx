@@ -395,25 +395,25 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
 
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center">
-                    <div className="w-full max-h-[94vh] overflow-y-auto rounded-t-2xl bg-white p-4 sm:mx-4 sm:max-w-5xl sm:rounded-lg sm:p-6">
-                        <div className="mb-4 flex items-center justify-between">
-                            <h3 className="flex items-center text-lg font-semibold text-gray-800 sm:text-xl">
+                    <div className="w-full max-h-[96vh] overflow-y-auto rounded-t-xl bg-white p-3 sm:mx-4 sm:max-w-5xl sm:rounded-lg sm:p-6">
+                        <div className="mb-3 flex items-center justify-between sm:mb-4">
+                            <h3 className="flex items-center text-base font-semibold text-gray-800 sm:text-xl">
                                 <UserGroupIcon className="mr-2 h-5 w-5 text-[#A60E07] sm:h-6 sm:w-6" />
                                 Talaba guruh boshqaruvi
                             </h3>
                             <button
                                 onClick={handleModalClose}
-                                className="rounded-md p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                                className="rounded-md p-0.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 sm:p-1"
                             >
-                                <XMarkIcon className="h-6 w-6" />
+                                <XMarkIcon className="h-5 w-5 sm:h-6 sm:w-6" />
                             </button>
                         </div>
 
-                        <div className="mb-5 flex gap-2 border-b border-gray-200 pb-3">
+                        <div className="mb-4 flex gap-2 border-b border-gray-200 pb-2.5 sm:mb-5 sm:pb-3">
                             <button
                                 type="button"
                                 onClick={() => setActiveTab('single')}
-                                className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+                                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition sm:px-4 sm:py-2 sm:text-sm ${
                                     activeTab === 'single'
                                         ? 'bg-[#A60E07] text-white'
                                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -424,7 +424,7 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
                             <button
                                 type="button"
                                 onClick={() => setActiveTab('bulk')}
-                                className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+                                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition sm:px-4 sm:py-2 sm:text-sm ${
                                     activeTab === 'bulk'
                                         ? 'bg-[#A60E07] text-white'
                                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -436,17 +436,17 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
 
                         {activeTab === 'single' ? (
                             <>
-                                <div className="mb-4 rounded-lg bg-gray-50 p-3 sm:mb-6 sm:p-4">
+                                <div className="mb-3 rounded-lg bg-gray-50 p-2.5 sm:mb-6 sm:p-4">
                                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                         <div>
-                                            <p className="text-base font-medium text-gray-800 sm:text-lg">
+                                            <p className="text-sm font-medium text-gray-800 sm:text-lg">
                                                 {student?.name} {student?.surname}
                                             </p>
                                         </div>
                                         <div className="sm:text-right">
                                             {hasGroup ? (
                                                 <div>
-                                                    <p className="text-sm font-medium text-blue-600">
+                                                    <p className="text-xs font-medium text-blue-600 sm:text-sm">
                                                         Hozirgi guruh: {student?.group_name}
                                                     </p>
                                                     <p className="text-xs text-gray-500">
@@ -454,28 +454,28 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
                                                     </p>
                                                 </div>
                                             ) : (
-                                                <p className="text-sm text-orange-600">Guruh biriktirilmagan</p>
+                                                <p className="text-xs text-orange-600 sm:text-sm">Guruh biriktirilmagan</p>
                                             )}
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="mb-4 sm:mb-6">
-                                    <h4 className="mb-3 text-sm font-medium text-gray-700">Amalni tanlang:</h4>
+                                <div className="mb-3 sm:mb-6">
+                                    <h4 className="mb-2 text-xs font-medium text-gray-700 sm:mb-3 sm:text-sm">Amalni tanlang:</h4>
                                     <div className="grid grid-cols-1 gap-2 sm:gap-3 md:grid-cols-3">
                                         {!isInGroup && (
                                             <button
                                                 type="button"
                                                 onClick={() => handleActionTypeChange('join')}
                                                 disabled={isSingleLoading}
-                                                className={`rounded-lg border-2 p-3 text-left transition-all disabled:cursor-not-allowed disabled:opacity-50 sm:p-4 sm:text-center ${
+                                                className={`rounded-lg border-2 p-2.5 text-left transition-all disabled:cursor-not-allowed disabled:opacity-50 sm:p-4 sm:text-center ${
                                                     actionType === 'join'
                                                         ? 'border-green-500 bg-green-50 text-green-700'
                                                         : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
                                                 }`}
                                             >
-                                                <UserGroupIcon className="mb-1 h-5 w-5 sm:mx-auto sm:mb-2 sm:h-6 sm:w-6" />
-                                                <p className="text-sm font-medium">Guruhga qo&apos;shish</p>
+                                                <UserGroupIcon className="mb-1 h-4 w-4 sm:mx-auto sm:mb-2 sm:h-6 sm:w-6" />
+                                                <p className="text-xs font-medium sm:text-sm">Guruhga qo&apos;shish</p>
                                                 <p className="text-xs opacity-75">Yangi guruhga biriktirish</p>
                                             </button>
                                         )}
@@ -485,14 +485,14 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
                                                 type="button"
                                                 onClick={() => handleActionTypeChange('change')}
                                                 disabled={isSingleLoading}
-                                                className={`rounded-lg border-2 p-3 text-left transition-all disabled:cursor-not-allowed disabled:opacity-50 sm:p-4 sm:text-center ${
+                                                className={`rounded-lg border-2 p-2.5 text-left transition-all disabled:cursor-not-allowed disabled:opacity-50 sm:p-4 sm:text-center ${
                                                     actionType === 'change'
                                                         ? 'border-blue-500 bg-blue-50 text-blue-700'
                                                         : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
                                                 }`}
                                             >
-                                                <ArrowRightOnRectangleIcon className="mb-1 h-5 w-5 sm:mx-auto sm:mb-2 sm:h-6 sm:w-6" />
-                                                <p className="text-sm font-medium">Guruhni o&apos;zgartirish</p>
+                                                <ArrowRightOnRectangleIcon className="mb-1 h-4 w-4 sm:mx-auto sm:mb-2 sm:h-6 sm:w-6" />
+                                                <p className="text-xs font-medium sm:text-sm">Guruhni o&apos;zgartirish</p>
                                                 <p className="text-xs opacity-75">Boshqa guruhga ko&apos;chirish</p>
                                             </button>
                                         )}
@@ -502,14 +502,14 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
                                                 type="button"
                                                 onClick={() => handleActionTypeChange('remove')}
                                                 disabled={isSingleLoading}
-                                                className={`rounded-lg border-2 p-3 text-left transition-all disabled:cursor-not-allowed disabled:opacity-50 sm:p-4 sm:text-center ${
+                                                className={`rounded-lg border-2 p-2.5 text-left transition-all disabled:cursor-not-allowed disabled:opacity-50 sm:p-4 sm:text-center ${
                                                     actionType === 'remove'
                                                         ? 'border-red-500 bg-red-50 text-red-700'
                                                         : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
                                                 }`}
                                             >
-                                                <UserMinusIcon className="mb-1 h-5 w-5 sm:mx-auto sm:mb-2 sm:h-6 sm:w-6" />
-                                                <p className="text-sm font-medium">Guruhdan chiqarish</p>
+                                                <UserMinusIcon className="mb-1 h-4 w-4 sm:mx-auto sm:mb-2 sm:h-6 sm:w-6" />
+                                                <p className="text-xs font-medium sm:text-sm">Guruhdan chiqarish</p>
                                                 <p className="text-xs opacity-75">Hozirgi guruhdan olib tashlash</p>
                                             </button>
                                         )}
@@ -518,14 +518,14 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
 
                                 <form onSubmit={handleSingleSubmit}>
                                     {actionType !== 'remove' && (
-                                        <div className="mb-4 sm:mb-6">
-                                            <label className="mb-2 block text-sm font-medium text-gray-700">
+                                        <div className="mb-3 sm:mb-6">
+                                            <label className="mb-1.5 block text-xs font-medium text-gray-700 sm:mb-2 sm:text-sm">
                                                 {actionType === 'change' ? 'Yangi guruhni tanlang' : 'Guruhni tanlang'} *
                                             </label>
                                             <select
                                                 value={selectedGroupId}
                                                 onChange={(e) => setSelectedGroupId(e.target.value)}
-                                                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-[#A60E07]"
+                                                className="w-full rounded-lg border border-gray-300 px-2.5 py-1.5 text-sm focus:border-transparent focus:ring-2 focus:ring-[#A60E07] sm:px-3 sm:py-2"
                                                 disabled={groupsLoading || isSingleLoading}
                                                 required
                                             >
@@ -540,14 +540,14 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
                                     )}
 
                                     {actionType === 'remove' && (
-                                        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 sm:mb-6 sm:p-4">
+                                        <div className="mb-3 rounded-lg border border-red-200 bg-red-50 p-2.5 sm:mb-6 sm:p-4">
                                             <div className="flex items-start">
-                                                <TrashIcon className="mr-3 mt-0.5 h-5 w-5 flex-shrink-0 text-red-500" />
+                                                <TrashIcon className="mr-2 mt-0.5 h-4 w-4 flex-shrink-0 text-red-500 sm:mr-3 sm:h-5 sm:w-5" />
                                                 <div className="flex-1 min-w-0">
-                                                    <h4 className="truncate text-sm font-medium text-red-800">
+                                                    <h4 className="truncate text-xs font-medium text-red-800 sm:text-sm">
                                                         Talabani guruhdan chiqarish
                                                     </h4>
-                                                    <p className="mt-1 text-sm text-red-700">
+                                                    <p className="mt-1 text-xs text-red-700 sm:text-sm">
                                                         Talaba <strong>{student?.group_name}</strong> guruhidan chiqariladi.
                                                     </p>
                                                 </div>
@@ -559,14 +559,14 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
                                         <button
                                             type="button"
                                             onClick={handleModalClose}
-                                            className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-700 transition-colors hover:bg-gray-50"
+                                            className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 sm:px-4 sm:py-2"
                                         >
                                             Bekor qilish
                                         </button>
                                         <button
                                             type="submit"
                                             disabled={isSingleLoading || (actionType !== 'remove' && !selectedGroupId)}
-                                            className={`flex w-full items-center justify-center rounded-lg px-4 py-2 text-white transition-colors disabled:opacity-50 ${
+                                            className={`flex w-full items-center justify-center rounded-lg px-3 py-1.5 text-sm text-white transition-colors disabled:opacity-50 sm:px-4 sm:py-2 ${
                                                 actionType === 'remove'
                                                     ? 'bg-red-600 hover:bg-red-700'
                                                     : actionType === 'change'
@@ -587,12 +587,12 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
                             </>
                         ) : (
                             <>
-                                <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                                <div className="mb-3 rounded-lg border border-gray-200 bg-gray-50 p-2.5 sm:mb-4 sm:p-3">
                                     <div className="grid gap-2 md:grid-cols-3">
                                         <button
                                             type="button"
                                             onClick={() => setBulkActionType('join')}
-                                            className={`rounded-lg border px-3 py-2 text-sm font-semibold ${
+                                            className={`rounded-lg border px-2.5 py-1.5 text-xs font-semibold sm:px-3 sm:py-2 sm:text-sm ${
                                                 bulkActionType === 'join'
                                                     ? 'border-green-500 bg-green-50 text-green-700'
                                                     : 'border-gray-300 bg-white text-gray-700'
@@ -603,7 +603,7 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
                                         <button
                                             type="button"
                                             onClick={() => setBulkActionType('change')}
-                                            className={`rounded-lg border px-3 py-2 text-sm font-semibold ${
+                                            className={`rounded-lg border px-2.5 py-1.5 text-xs font-semibold sm:px-3 sm:py-2 sm:text-sm ${
                                                 bulkActionType === 'change'
                                                     ? 'border-blue-500 bg-blue-50 text-blue-700'
                                                     : 'border-gray-300 bg-white text-gray-700'
@@ -614,7 +614,7 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
                                         <button
                                             type="button"
                                             onClick={() => setBulkActionType('remove')}
-                                            className={`rounded-lg border px-3 py-2 text-sm font-semibold ${
+                                            className={`rounded-lg border px-2.5 py-1.5 text-xs font-semibold sm:px-3 sm:py-2 sm:text-sm ${
                                                 bulkActionType === 'remove'
                                                     ? 'border-red-500 bg-red-50 text-red-700'
                                                     : 'border-gray-300 bg-white text-gray-700'
@@ -629,7 +629,7 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
                                             <select
                                                 value={bulkSourceGroupId}
                                                 onChange={(e) => setBulkSourceGroupId(e.target.value)}
-                                                className="h-10 rounded-lg border border-gray-300 bg-white px-3 text-sm outline-none focus:border-[#A60E07]"
+                                                className="h-9 rounded-lg border border-gray-300 bg-white px-2.5 text-xs outline-none focus:border-[#A60E07] sm:h-10 sm:px-3 sm:text-sm"
                                             >
                                                 <option value="">
                                                     {bulkActionType === 'remove' ? 'Source guruh (ixtiyoriy)' : 'Source guruh (ixtiyoriy)'}
@@ -646,7 +646,7 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
                                             <select
                                                 value={bulkTargetGroupId}
                                                 onChange={(e) => setBulkTargetGroupId(e.target.value)}
-                                                className="h-10 rounded-lg border border-gray-300 bg-white px-3 text-sm outline-none focus:border-[#A60E07]"
+                                                className="h-9 rounded-lg border border-gray-300 bg-white px-2.5 text-xs outline-none focus:border-[#A60E07] sm:h-10 sm:px-3 sm:text-sm"
                                             >
                                                 <option value="">Target guruhni tanlang *</option>
                                                 {availableGroups.map((group) => (
@@ -662,7 +662,7 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
                                         <button
                                             type="button"
                                             onClick={() => setBulkOnlyUnassigned((prev) => !prev)}
-                                            className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                                            className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition sm:px-3 sm:text-xs ${
                                                 bulkOnlyUnassigned
                                                     ? 'border-[#A60E07] bg-[#A60E07] text-white'
                                                     : 'border-gray-300 bg-white text-gray-700'
@@ -673,7 +673,7 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
                                         <button
                                             type="button"
                                             onClick={() => setBulkSubjectFilter('all')}
-                                            className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                                            className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition sm:px-3 sm:text-xs ${
                                                 bulkSubjectFilter === 'all'
                                                     ? 'border-[#A60E07] bg-[#A60E07] text-white'
                                                     : 'border-gray-300 bg-white text-gray-700'
@@ -686,7 +686,7 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
                                                 key={subject}
                                                 type="button"
                                                 onClick={() => setBulkSubjectFilter(subject)}
-                                                className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                                                className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition sm:px-3 sm:text-xs ${
                                                     bulkSubjectFilter === subject
                                                         ? 'border-[#A60E07] bg-[#A60E07] text-white'
                                                         : 'border-gray-300 bg-white text-gray-700'
@@ -703,10 +703,10 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
                                             value={bulkSearchTerm}
                                             onChange={(e) => setBulkSearchTerm(e.target.value)}
                                             placeholder="Qidiruv: ID, ism, telefon"
-                                            className="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm outline-none focus:border-[#A60E07] sm:max-w-xs"
+                                            className="h-9 w-full rounded-lg border border-gray-300 bg-white px-2.5 text-xs outline-none focus:border-[#A60E07] sm:h-10 sm:max-w-xs sm:px-3 sm:text-sm"
                                         />
-                                        <div className="text-sm text-gray-600">
-                                            Ko'rinayotgan: <strong>{filteredBulkStudents.length}</strong> ta | Tanlangan: <strong>{bulkSelectedIds.length}</strong> ta
+                                        <div className="text-xs text-gray-600 sm:text-sm">
+                                            Ko&apos;rinayotgan: <strong>{filteredBulkStudents.length}</strong> ta | Tanlangan: <strong>{bulkSelectedIds.length}</strong> ta
                                         </div>
                                     </div>
                                 </div>
@@ -716,7 +716,7 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
                                         <table className="min-w-full divide-y divide-gray-200">
                                             <thead className="sticky top-0 bg-gray-100">
                                                 <tr>
-                                                    <th className="px-3 py-2 text-left text-xs font-semibold uppercase text-gray-700">
+                                                    <th className="px-2 py-1.5 text-left text-[11px] font-semibold uppercase text-gray-700 sm:px-3 sm:py-2 sm:text-xs">
                                                         <input
                                                             type="checkbox"
                                                             checked={allVisibleSelected}
@@ -729,11 +729,11 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
                                                             className="h-4 w-4 rounded border-gray-300 text-[#A60E07] focus:ring-[#A60E07]"
                                                         />
                                                     </th>
-                                                    <th className="px-3 py-2 text-left text-xs font-semibold uppercase text-gray-700">ID</th>
-                                                    <th className="px-3 py-2 text-left text-xs font-semibold uppercase text-gray-700">Talaba</th>
-                                                    <th className="px-3 py-2 text-left text-xs font-semibold uppercase text-gray-700">Telefon</th>
-                                                    <th className="px-3 py-2 text-left text-xs font-semibold uppercase text-gray-700">Fan</th>
-                                                    <th className="px-3 py-2 text-left text-xs font-semibold uppercase text-gray-700">Hozirgi guruhlar</th>
+                                                    <th className="px-2 py-1.5 text-left text-[11px] font-semibold uppercase text-gray-700 sm:px-3 sm:py-2 sm:text-xs">ID</th>
+                                                    <th className="px-2 py-1.5 text-left text-[11px] font-semibold uppercase text-gray-700 sm:px-3 sm:py-2 sm:text-xs">Talaba</th>
+                                                    <th className="px-2 py-1.5 text-left text-[11px] font-semibold uppercase text-gray-700 sm:px-3 sm:py-2 sm:text-xs">Telefon</th>
+                                                    <th className="px-2 py-1.5 text-left text-[11px] font-semibold uppercase text-gray-700 sm:px-3 sm:py-2 sm:text-xs">Fan</th>
+                                                    <th className="px-2 py-1.5 text-left text-[11px] font-semibold uppercase text-gray-700 sm:px-3 sm:py-2 sm:text-xs">Hozirgi guruhlar</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-gray-100 bg-white">
@@ -753,7 +753,7 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
                                                                     : 'hover:bg-gray-50'
                                                             }`}
                                                         >
-                                                            <td className="px-3 py-2">
+                                                            <td className="px-2 py-1.5 sm:px-3 sm:py-2">
                                                                 <input
                                                                     type="checkbox"
                                                                     checked={bulkSelectedIds.includes(item.id)}
@@ -761,12 +761,12 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
                                                                     className="h-4 w-4 rounded border-gray-300 text-[#A60E07] focus:ring-[#A60E07]"
                                                                 />
                                                             </td>
-                                                            <td className="px-3 py-2 text-sm text-gray-700">#{item.id}</td>
-                                                            <td className="px-3 py-2 text-sm font-medium text-gray-800">
+                                                            <td className="px-2 py-1.5 text-xs text-gray-700 sm:px-3 sm:py-2 sm:text-sm">#{item.id}</td>
+                                                            <td className="px-2 py-1.5 text-xs font-medium text-gray-800 sm:px-3 sm:py-2 sm:text-sm">
                                                                 {item.name} {item.surname}
                                                             </td>
-                                                            <td className="px-3 py-2 text-sm text-gray-700">{item.phone || '-'}</td>
-                                                            <td className="px-3 py-2 text-sm text-gray-700">
+                                                            <td className="px-2 py-1.5 text-xs text-gray-700 sm:px-3 sm:py-2 sm:text-sm">{item.phone || '-'}</td>
+                                                            <td className="px-2 py-1.5 text-xs text-gray-700 sm:px-3 sm:py-2 sm:text-sm">
                                                                 {item.groups.length > 0 ? (
                                                                     <p className="font-medium text-green-700">
                                                                         {item.currentSubjects.join(', ') || '-'}
@@ -777,7 +777,7 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
                                                                     </p>
                                                                 )}
                                                             </td>
-                                                            <td className="px-3 py-2 text-sm text-gray-600">
+                                                            <td className="px-2 py-1.5 text-xs text-gray-600 sm:px-3 sm:py-2 sm:text-sm">
                                                                 {item.groups.length
                                                                     ? item.groups.map((group) => group.group_name).join(', ')
                                                                     : 'Guruhsiz'}
@@ -796,11 +796,11 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
                                     </div>
                                 </div>
 
-                                <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3">
+                                <div className="mt-3 grid grid-cols-1 gap-2 sm:mt-4 sm:grid-cols-2 sm:gap-3">
                                     <button
                                         type="button"
                                         onClick={handleModalClose}
-                                        className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-700 transition-colors hover:bg-gray-50"
+                                        className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 sm:px-4 sm:py-2"
                                     >
                                         Bekor qilish
                                     </button>
@@ -808,7 +808,7 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
                                         type="button"
                                         onClick={handleBulkAction}
                                         disabled={isBulkLoading}
-                                        className="w-full rounded-lg bg-[#A60E07] px-4 py-2 text-white transition-colors hover:opacity-90 disabled:opacity-50"
+                                        className="w-full rounded-lg bg-[#A60E07] px-3 py-1.5 text-sm text-white transition-colors hover:opacity-90 disabled:opacity-50 sm:px-4 sm:py-2"
                                     >
                                         {isBulkLoading ? 'Bajarilmoqda...' : 'Ommaviy amalni bajarish'}
                                     </button>

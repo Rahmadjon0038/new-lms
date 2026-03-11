@@ -385,13 +385,11 @@ function AdminGroupsPage() {
             }
         };
 
-        document.addEventListener('mousedown', handleOutsideClick);
-        document.addEventListener('touchstart', handleOutsideClick);
+        document.addEventListener('pointerdown', handleOutsideClick);
         document.addEventListener('keydown', handleEscape);
 
         return () => {
-            document.removeEventListener('mousedown', handleOutsideClick);
-            document.removeEventListener('touchstart', handleOutsideClick);
+            document.removeEventListener('pointerdown', handleOutsideClick);
             document.removeEventListener('keydown', handleEscape);
         };
     }, [showMobileFilters, showDesktopFilterClear]);
@@ -482,11 +480,11 @@ function AdminGroupsPage() {
                 </div>
             </div>
 
-            <div className="mb-8 rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-4 shadow-sm sm:p-5">
-                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mb-4 p-0 sm:mb-8 sm:rounded-2xl sm:border sm:border-slate-200 sm:bg-gradient-to-br sm:from-white sm:to-slate-50 sm:p-5 sm:shadow-sm">
+                <div className="mb-3 flex flex-col gap-2.5 sm:mb-4 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                     <div className="flex w-full items-center gap-2 sm:max-w-md">
                         {!isTeacherRoute ? (
-                            <>
+                            <div className="hidden w-full items-center gap-2 md:flex">
                                 <div className="relative shrink-0" ref={desktopFilterRef}>
                                     <button
                                         type="button"
@@ -524,24 +522,31 @@ function AdminGroupsPage() {
                                         onChange={setSelectedTeacher}
                                     />
                                 </div>
-                            </>
+                            </div>
                         ) : null}
                     </div>
 
                     <AdminNewGroupModal onSuccess={() => setCurrentTab('draft')}>
-                        <button className="flex w-full items-center justify-center rounded-xl bg-[#A60E07] px-5 py-2.5 text-sm font-bold text-white shadow-md transition hover:opacity-90 sm:w-auto">
-                            <PlusCircleIcon className="mr-1 h-5 w-5" /> Yangi Guruh
+                        <button className="hidden w-full items-center justify-center rounded-xl bg-[#A60E07] px-4 py-2 text-sm font-bold text-white shadow-md transition hover:opacity-90 md:flex md:w-auto md:px-5 md:py-2.5">
+                            <PlusCircleIcon className="mr-1 h-5 w-5" />
+                            <span>Yangi Guruh</span>
                         </button>
                     </AdminNewGroupModal>
                 </div>
 
                 {!isTeacherRoute ? (
-                    <div className="mb-3 flex items-center justify-end md:hidden" ref={mobileFilterRef}>
-                        <div className="relative">
+                    <div className="mb-3 flex items-center gap-2 md:hidden" ref={mobileFilterRef}>
+                        <div className="min-w-0 flex-1">
+                            <TeacherSelect
+                                value={selectedTeacher}
+                                onChange={setSelectedTeacher}
+                            />
+                        </div>
+                        <div className="relative shrink-0">
                             <button
                                 type="button"
                                 onClick={() => setShowMobileFilters((prev) => !prev)}
-                                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700"
+                                className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700"
                                 aria-label="Filtrlarni ochish"
                             >
                                 <FiFilter className="h-4 w-4" />
@@ -549,14 +554,14 @@ function AdminGroupsPage() {
                             </button>
 
                             {showMobileFilters ? (
-                                <div className="absolute right-0 z-30 mt-2 w-[300px] max-w-[85vw] rounded-xl border border-slate-200 bg-white p-3 shadow-xl">
-                                    <div className="space-y-3">
+                                <div className="absolute right-0 z-30 mt-2 w-[300px] max-w-[85vw] rounded-xl border border-slate-200 bg-white p-2.5 shadow-xl">
+                                    <div className="space-y-2.5">
                                         <SubjectsSelect
                                             value={selectedSubject}
                                             onChange={setSelectedSubject}
                                             placeholder="Fanni tanlang"
                                             showAll={true}
-                                            className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold"
+                                            className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm font-semibold"
                                         />
 
                                         {hasActiveFilters ? (
@@ -565,7 +570,7 @@ function AdminGroupsPage() {
                                                     clearFilters();
                                                     setShowMobileFilters(false);
                                                 }}
-                                                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                                                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
                                             >
                                                 Filtrni tozalash
                                             </button>
@@ -574,6 +579,16 @@ function AdminGroupsPage() {
                                 </div>
                             ) : null}
                         </div>
+
+                        <AdminNewGroupModal onSuccess={() => setCurrentTab('draft')}>
+                            <button
+                                type="button"
+                                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#A60E07] text-white shadow-md transition hover:opacity-90"
+                                aria-label="Yangi guruh"
+                            >
+                                <PlusCircleIcon className="h-5 w-5" />
+                            </button>
+                        </AdminNewGroupModal>
                     </div>
                 ) : null}
 

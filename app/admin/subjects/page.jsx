@@ -22,8 +22,8 @@ const StatsModal = ({ isOpen, onClose, subjectId }) => {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 p-2 backdrop-blur-sm sm:items-center sm:p-4">
-            <div className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-white p-4 shadow-2xl animate-in fade-in zoom-in duration-200 sm:rounded-2xl sm:p-6">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-3 backdrop-blur-sm sm:p-4">
+            <div className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-4 shadow-2xl animate-in fade-in zoom-in duration-200 sm:p-6">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-xl font-bold text-gray-800">Fan statistikasi</h3>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
@@ -95,8 +95,8 @@ const DeleteConfirmModal = ({ isOpen, onClose, onConfirm, subjectName, isLoading
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 p-2 backdrop-blur-sm sm:items-center sm:p-4">
-            <div className="w-full max-w-sm rounded-t-2xl bg-white p-4 shadow-2xl animate-in fade-in zoom-in duration-200 sm:rounded-2xl sm:p-6">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-3 backdrop-blur-sm sm:p-4">
+            <div className="w-full max-w-sm rounded-2xl bg-white p-4 shadow-2xl animate-in fade-in zoom-in duration-200 sm:p-6">
                 <div className="flex justify-center mb-4">
                     <ExclamationTriangleIcon className="h-14 w-14 text-red-500" />
                 </div>
@@ -179,8 +179,8 @@ const SubjectFormModal = ({ isOpen, onClose, editData = null }) => {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 p-2 backdrop-blur-sm sm:items-center sm:p-4">
-            <div className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-white p-4 shadow-2xl animate-in fade-in zoom-in duration-200 sm:rounded-2xl sm:p-6">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-3 backdrop-blur-sm sm:p-4">
+            <div className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-4 shadow-2xl animate-in fade-in zoom-in duration-200 sm:p-6">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-xl font-bold text-gray-800">
                         {isEditing ? "Fanni tahrirlash" : "Yangi fan yaratish"}
@@ -295,22 +295,17 @@ export default function SubjectsPage() {
         <div className="flex-1 bg-gray-50 p-2 sm:p-4 md:p-8">
             {/* Header */}
             <div className="mb-6 sm:mb-8">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                        <h1 className="flex items-center text-xl font-bold text-gray-800 sm:text-3xl">
-                            <BookOpenIcon className="mr-2 h-7 w-7 text-[#A60E07] sm:mr-3 sm:h-8 sm:w-8" />
-                            Fanlar
-                        </h1>
-                        <p className="mt-1 text-sm text-gray-600 sm:mt-2 sm:text-base">
-                            Barcha fanlar va ularning statistikasini boshqaring
-                        </p>
-                    </div>
+                <div className="flex items-center justify-between gap-2">
+                    <h1 className="flex items-center text-xl font-bold text-gray-800 sm:text-3xl">
+                        <BookOpenIcon className="mr-2 h-7 w-7 text-[#A60E07] sm:mr-3 sm:h-8 sm:w-8" />
+                        Fanlar
+                    </h1>
                     <button
                         onClick={() => setShowFormModal(true)}
-                        className="flex w-full items-center justify-center rounded-xl bg-[#A60E07] px-3 py-2 text-sm font-semibold text-white shadow-lg transition duration-150 hover:opacity-90 sm:w-auto sm:px-6 sm:py-3 sm:text-base"
+                        className="inline-flex h-9 items-center justify-center rounded-xl bg-[#A60E07] px-3 text-sm font-semibold text-white shadow-lg transition duration-150 hover:opacity-90 sm:h-auto sm:px-6 sm:py-3 sm:text-base"
                     >
-                        <PlusCircleIcon className="h-5 w-5 mr-2" />
-                        Yangi fan yaratish
+                        <PlusCircleIcon className="h-5 w-5 sm:mr-2" />
+                        <span className="hidden sm:inline">Yangi fan yaratish</span>
                     </button>
                 </div>
             </div>
