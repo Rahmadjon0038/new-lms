@@ -1,5 +1,6 @@
 'use client'
 import React, { useMemo, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import {
     XMarkIcon,
     UserGroupIcon,
@@ -16,9 +17,25 @@ import {
     usegetAllgroups
 } from '../../hooks/groups';
 import { useGetAllStudents, useJoinStudentToGroup } from '../../hooks/students';
+import { usegetProfile } from '../../hooks/user';
 import { toast } from 'react-hot-toast';
 
+const getTeacherIdFromProfile = (profile) => {
+    const payload = profile?.data || profile;
+    return (
+        payload?.teacher_id ||
+        payload?.id ||
+        payload?.user_id ||
+        ''
+    );
+};
+
 const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
+    const pathname = usePathname();
+    const isTeacherRoute = pathname?.startsWith('/teacher');
+    const { data: profileData } = usegetProfile();
+    const teacherId = String(getTeacherIdFromProfile(profileData) || '');
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('single'); // 'single' | 'bulk'
 
@@ -35,10 +52,13 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
     const [bulkSubjectFilter, setBulkSubjectFilter] = useState('all');
     const [bulkOnlyUnassigned, setBulkOnlyUnassigned] = useState(true);
 
-    const { data: groupsData, isLoading: groupsLoading } = usegetAllgroups();
+    const { data: groupsData, isLoading: groupsLoading } = usegetAllgroups(
+        undefined,
+        isTeacherRoute ? teacherId : undefined
+    );
     const { data: allStudentsData, isLoading: studentsLoading } = useGetAllStudents(
-        {},
-        { enabled: isModalOpen && activeTab === 'bulk' }
+        isTeacherRoute ? { teacher_id: teacherId } : {},
+        { enabled: isModalOpen && activeTab === 'bulk' && (!isTeacherRoute || Boolean(teacherId)) }
     );
 
     const joinStudentMutation = useJoinStudentToGroup();

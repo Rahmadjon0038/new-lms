@@ -13,6 +13,7 @@ import { usePathname } from "next/navigation";
 import { useGetAllStudents, useUpdateStudentStatus } from '../../../hooks/students';
 import { usegetTeachers } from '../../../hooks/teacher';
 import { useGetAllSubjects } from '../../../hooks/subjects';
+import { usegetProfile } from '../../../hooks/user';
 import { useGetNotify } from '../../../hooks/notify';
 import { getAllStatusOptions, getStatusInfo } from '../../../utils/studentStatus';
 import AddGroup from '../../../components/admistrator/AddGroup';
@@ -31,9 +32,20 @@ const EditableCellComponent = ({ name, value, onChange, type = 'text', placehold
 
 const EditableCell = memo(EditableCellComponent);
 
+const getTeacherIdFromProfile = (profile) => {
+    const payload = profile?.data || profile;
+    return (
+        payload?.teacher_id ||
+        payload?.id ||
+        payload?.user_id ||
+        ''
+    );
+};
+
 const StudentsPage = () => {
     const pathname = usePathname();
-    const basePath = pathname?.startsWith('/teacher') ? '/teacher' : '/admin';
+    const isTeacherRoute = pathname?.startsWith('/teacher');
+    const basePath = isTeacherRoute ? '/teacher' : '/admin';
     // Filter state'lari
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedTeacher, setSelectedTeacher] = useState('all');
@@ -49,17 +61,21 @@ const StudentsPage = () => {
     // Filter options uchun data
     const { data: teachersData } = usegetTeachers();
     const { data: subjectsData } = useGetAllSubjects();
+    const { data: profileData } = usegetProfile();
+    const teacherId = String(getTeacherIdFromProfile(profileData) || '');
 
     // Filterlarni backend uchun tayyorlash
     const filters = {
-        teacher_id: selectedTeacher,
+        teacher_id: isTeacherRoute ? teacherId : selectedTeacher,
         subject_id: selectedSubject,
         group_status: selectedStatus,
         unassigned: showUnassigned ? 'true' : undefined
     };
 
     // Backenddan ma'lumotlarni olish
-    const { data: backendData, isLoading, error, refetch } = useGetAllStudents(filters);
+    const { data: backendData, isLoading, error, refetch } = useGetAllStudents(filters, {
+        enabled: isTeacherRoute ? Boolean(teacherId) : true
+    });
 
     // Student status o'zgartirish hook
     const updateStatusMutation = useUpdateStudentStatus();
@@ -241,8 +257,10 @@ const StudentsPage = () => {
 
     // Barcha filterlarni tozalash
     const clearAllFilters = () => {
-        setSelectedTeacher('all');
-        setSelectedSubject('all');
+        if (!isTeacherRoute) {
+            setSelectedTeacher('all');
+            setSelectedSubject('all');
+        }
         setSelectedStatus('all');
         setShowUnassigned(false);
         setSearchTerm('');
@@ -250,7 +268,7 @@ const StudentsPage = () => {
         setShowFiltersDropdown(false);
     };
 
-    const hasActiveFilters = selectedTeacher !== 'all' || selectedSubject !== 'all' || selectedStatus !== 'all' || showUnassigned || searchTerm;
+    const hasActiveFilters = (isTeacherRoute ? false : (selectedTeacher !== 'all' || selectedSubject !== 'all')) || selectedStatus !== 'all' || showUnassigned || searchTerm;
 
     const handleSave = (uniqueId) => {
         setStudents(prevStudents =>
@@ -330,18 +348,20 @@ const StudentsPage = () => {
                             />
                         </div>
 
-                        <select
-                            value={selectedTeacher}
-                            onChange={(e) => setSelectedTeacher(e.target.value)}
-                            className="hidden h-10 rounded-lg border border-gray-300 bg-white px-3 text-sm outline-none focus:border-[#A60E07] md:order-2 md:block lg:order-none"
-                        >
-                            <option value="all">Barcha o'qituvchilar</option>
-                            {teachersData?.teachers?.map(teacher => (
-                                <option key={teacher.id} value={teacher.id}>
-                                    {teacher.name} {teacher.surname}
-                                </option>
-                            ))}
-                        </select>
+                        {!isTeacherRoute ? (
+                            <select
+                                value={selectedTeacher}
+                                onChange={(e) => setSelectedTeacher(e.target.value)}
+                                className="hidden h-10 rounded-lg border border-gray-300 bg-white px-3 text-sm outline-none focus:border-[#A60E07] md:order-2 md:block lg:order-none"
+                            >
+                                <option value="all">Barcha o'qituvchilar</option>
+                                {teachersData?.teachers?.map(teacher => (
+                                    <option key={teacher.id} value={teacher.id}>
+                                        {teacher.name} {teacher.surname}
+                                    </option>
+                                ))}
+                            </select>
+                        ) : null}
 
                         <select
                             value={selectedStatus}
@@ -423,31 +443,35 @@ const StudentsPage = () => {
                                             {showUnassigned ? 'Hammasi' : 'Guruhlanmaganlar'}
                                         </button>
 
-                                        <select
-                                            value={selectedTeacher}
-                                            onChange={(e) => setSelectedTeacher(e.target.value)}
-                                            className="w-full rounded-lg border border-gray-300 bg-white p-2 text-sm outline-none focus:border-[#A60E07] md:hidden"
-                                        >
-                                            <option value="all">Barcha o'qituvchilar</option>
-                                            {teachersData?.teachers?.map(teacher => (
-                                                <option key={teacher.id} value={teacher.id}>
-                                                    {teacher.name} {teacher.surname}
-                                                </option>
-                                            ))}
-                                        </select>
+                                        {!isTeacherRoute ? (
+                                            <select
+                                                value={selectedTeacher}
+                                                onChange={(e) => setSelectedTeacher(e.target.value)}
+                                                className="w-full rounded-lg border border-gray-300 bg-white p-2 text-sm outline-none focus:border-[#A60E07] md:hidden"
+                                            >
+                                                <option value="all">Barcha o'qituvchilar</option>
+                                                {teachersData?.teachers?.map(teacher => (
+                                                    <option key={teacher.id} value={teacher.id}>
+                                                        {teacher.name} {teacher.surname}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        ) : null}
 
-                                        <select
-                                            value={selectedSubject}
-                                            onChange={(e) => setSelectedSubject(e.target.value)}
-                                            className="w-full rounded-lg border border-gray-300 bg-white p-2 text-sm outline-none focus:border-[#A60E07] md:hidden"
-                                        >
-                                            <option value="all">Barcha fanlar</option>
-                                            {subjectsData?.subjects?.map(subject => (
-                                                <option key={subject.id} value={subject.id}>
-                                                    {subject.name}
-                                                </option>
-                                            ))}
-                                        </select>
+                                        {!isTeacherRoute ? (
+                                            <select
+                                                value={selectedSubject}
+                                                onChange={(e) => setSelectedSubject(e.target.value)}
+                                                className="w-full rounded-lg border border-gray-300 bg-white p-2 text-sm outline-none focus:border-[#A60E07] md:hidden"
+                                            >
+                                                <option value="all">Barcha fanlar</option>
+                                                {subjectsData?.subjects?.map(subject => (
+                                                    <option key={subject.id} value={subject.id}>
+                                                        {subject.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        ) : null}
 
                                         <select
                                             value={selectedStatus}
@@ -483,37 +507,39 @@ const StudentsPage = () => {
                         </Link>
                     </div>
 
-                    <div className="hidden md:flex md:flex-wrap md:items-center md:gap-2">
-                        <button
-                            type="button"
-                            onClick={() => setSelectedSubject('all')}
-                            className={`rounded-lg border px-3 py-1.5 text-sm font-semibold transition ${
-                                selectedSubject === 'all'
-                                    ? 'border-[#A60E07] bg-[#A60E07] text-white'
-                                    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-100'
-                            }`}
-                        >
-                            Barcha fanlar
-                        </button>
+                    {!isTeacherRoute ? (
+                        <div className="hidden md:flex md:flex-wrap md:items-center md:gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setSelectedSubject('all')}
+                                className={`rounded-lg border px-3 py-1.5 text-sm font-semibold transition ${
+                                    selectedSubject === 'all'
+                                        ? 'border-[#A60E07] bg-[#A60E07] text-white'
+                                        : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-100'
+                                }`}
+                            >
+                                Barcha fanlar
+                            </button>
 
-                        {subjectsData?.subjects?.map((subject) => {
-                            const subjectValue = String(subject.id);
-                            return (
-                                <button
-                                    key={subject.id}
-                                    type="button"
-                                    onClick={() => setSelectedSubject(subjectValue)}
-                                    className={`rounded-lg border px-3 py-1.5 text-sm font-semibold transition ${
-                                        selectedSubject === subjectValue
-                                            ? 'border-[#A60E07] bg-[#A60E07] text-white'
-                                            : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-100'
-                                    }`}
-                                >
-                                    {subject.name}
-                                </button>
-                            );
-                        })}
-                    </div>
+                            {subjectsData?.subjects?.map((subject) => {
+                                const subjectValue = String(subject.id);
+                                return (
+                                    <button
+                                        key={subject.id}
+                                        type="button"
+                                        onClick={() => setSelectedSubject(subjectValue)}
+                                        className={`rounded-lg border px-3 py-1.5 text-sm font-semibold transition ${
+                                            selectedSubject === subjectValue
+                                                ? 'border-[#A60E07] bg-[#A60E07] text-white'
+                                                : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-100'
+                                        }`}
+                                    >
+                                        {subject.name}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    ) : null}
 
                     <div className="flex items-center md:hidden">
                         <Link href={`${basePath}/students/new`}>
