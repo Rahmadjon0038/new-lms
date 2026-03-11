@@ -42,6 +42,23 @@ const getTeacherIdFromProfile = (profile) => {
     );
 };
 
+const getTeacherSubjectIdFromProfile = (profile) => {
+    const payload = profile?.data || profile || {};
+    const nestedTeacher = payload?.teacher || {};
+
+    return (
+        payload?.subject_id ||
+        payload?.primary_subject_id ||
+        nestedTeacher?.subject_id ||
+        nestedTeacher?.primary_subject_id ||
+        payload?.subjects?.[0]?.id ||
+        payload?.subject_ids?.[0] ||
+        nestedTeacher?.subjects?.[0]?.id ||
+        nestedTeacher?.subject_ids?.[0] ||
+        ''
+    );
+};
+
 const StudentsPage = () => {
     const pathname = usePathname();
     const isTeacherRoute = pathname?.startsWith('/teacher');
@@ -63,18 +80,24 @@ const StudentsPage = () => {
     const { data: subjectsData } = useGetAllSubjects();
     const { data: profileData } = usegetProfile();
     const teacherId = String(getTeacherIdFromProfile(profileData) || '');
+    const teacherSubjectId = String(getTeacherSubjectIdFromProfile(profileData) || '');
+    const teacherScopedBySubject = isTeacherRoute && Boolean(teacherSubjectId);
 
     // Filterlarni backend uchun tayyorlash
     const filters = {
-        teacher_id: isTeacherRoute ? teacherId : selectedTeacher,
-        subject_id: selectedSubject,
+        teacher_id: isTeacherRoute
+            ? (teacherScopedBySubject ? undefined : teacherId)
+            : selectedTeacher,
+        subject_id: isTeacherRoute
+            ? (teacherScopedBySubject ? teacherSubjectId : undefined)
+            : selectedSubject,
         group_status: selectedStatus,
         unassigned: showUnassigned ? 'true' : undefined
     };
 
     // Backenddan ma'lumotlarni olish
     const { data: backendData, isLoading, error, refetch } = useGetAllStudents(filters, {
-        enabled: isTeacherRoute ? Boolean(teacherId) : true
+        enabled: isTeacherRoute ? Boolean(teacherSubjectId || teacherId) : true
     });
 
     // Student status o'zgartirish hook
