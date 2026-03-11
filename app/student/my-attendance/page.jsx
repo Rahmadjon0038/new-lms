@@ -11,6 +11,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { useGetStudentMonthlyAttendance } from "../../../hooks/attendance";
 import { useGetStudentGroups } from "../../../hooks/groups";
+import { useGetProfile } from "../../../hooks/user";
 
 const getAttendanceStatusStyle = (status) => {
   switch (status) {
@@ -75,7 +76,22 @@ function MyAttendance() {
   const [selectedGroupId, setSelectedGroupId] = useState(null);
 
   const { data: groupsData, isLoading: groupsLoading, error: groupsError } = useGetStudentGroups();
+  const { data: profileData } = useGetProfile();
   const groups = useMemo(() => groupsData?.data?.groups || [], [groupsData]);
+  const plannedSubject =
+    groupsData?.data?.register_subject ||
+    groupsData?.data?.register_subject_name ||
+    groupsData?.data?.registered_subject_name ||
+    groupsData?.data?.student?.register_subject ||
+    groupsData?.data?.student?.register_subject_name ||
+    groupsData?.data?.student?.registered_subject_name ||
+    profileData?.register_subject ||
+    profileData?.register_subject_name ||
+    profileData?.registered_subject_name ||
+    profileData?.data?.register_subject ||
+    profileData?.data?.register_subject_name ||
+    profileData?.data?.registered_subject_name ||
+    "";
   const getGroupId = (group) => group?.group_id ?? group?.group_info?.id ?? null;
 
   const activeGroupId = selectedGroupId ?? getGroupId(groups[0]) ?? null;
@@ -191,6 +207,11 @@ function MyAttendance() {
           <CalendarDaysIcon className="h-16 w-16 mx-auto text-gray-300 mb-4" />
           <h3 className="text-lg font-bold text-gray-800 mb-2">Guruh topilmadi</h3>
           <p className="text-sm text-gray-500">Siz hali guruhga biriktirilmagansiz.</p>
+          {plannedSubject && (
+            <p className="text-sm text-gray-700 mt-2">
+              Ro&apos;yxatdan o&apos;tgan fan: <span className="font-semibold">{plannedSubject}</span>
+            </p>
+          )}
         </div>
       )}
 

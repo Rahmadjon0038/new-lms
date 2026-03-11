@@ -59,6 +59,21 @@ const getTeacherSubjectIdFromProfile = (profile) => {
     );
 };
 
+const getTeacherSubjectIdFromTeacherRecord = (teacher = {}) => {
+    const nestedTeacher = teacher?.teacher || {};
+    return (
+        teacher?.subject_id ||
+        teacher?.primary_subject_id ||
+        teacher?.subjects?.[0]?.id ||
+        teacher?.subject_ids?.[0] ||
+        nestedTeacher?.subject_id ||
+        nestedTeacher?.primary_subject_id ||
+        nestedTeacher?.subjects?.[0]?.id ||
+        nestedTeacher?.subject_ids?.[0] ||
+        ''
+    );
+};
+
 const StudentsPage = () => {
     const pathname = usePathname();
     const isTeacherRoute = pathname?.startsWith('/teacher');
@@ -80,7 +95,14 @@ const StudentsPage = () => {
     const { data: subjectsData } = useGetAllSubjects();
     const { data: profileData } = usegetProfile();
     const teacherId = String(getTeacherIdFromProfile(profileData) || '');
-    const teacherSubjectId = String(getTeacherSubjectIdFromProfile(profileData) || '');
+    const teacherFromList = useMemo(() => {
+        if (!isTeacherRoute || !teacherId) return null;
+        const list = teachersData?.teachers || [];
+        return list.find((teacher) => String(teacher?.id || teacher?.teacher_id || teacher?.user_id || '') === teacherId) || null;
+    }, [isTeacherRoute, teacherId, teachersData]);
+    const teacherSubjectId = String(
+        getTeacherSubjectIdFromProfile(profileData) || getTeacherSubjectIdFromTeacherRecord(teacherFromList) || ''
+    );
     const teacherScopedBySubject = isTeacherRoute && Boolean(teacherSubjectId);
 
     // Filterlarni backend uchun tayyorlash

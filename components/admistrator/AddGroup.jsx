@@ -17,6 +17,7 @@ import {
     usegetAllgroups
 } from '../../hooks/groups';
 import { useGetAllStudents, useJoinStudentToGroup } from '../../hooks/students';
+import { usegetTeachers } from '../../hooks/teacher';
 import { usegetProfile } from '../../hooks/user';
 import { toast } from 'react-hot-toast';
 
@@ -30,11 +31,53 @@ const getTeacherIdFromProfile = (profile) => {
     );
 };
 
+const getTeacherSubjectIdFromProfile = (profile) => {
+    const payload = profile?.data || profile || {};
+    const nestedTeacher = payload?.teacher || {};
+
+    return (
+        payload?.subject_id ||
+        payload?.primary_subject_id ||
+        nestedTeacher?.subject_id ||
+        nestedTeacher?.primary_subject_id ||
+        payload?.subjects?.[0]?.id ||
+        payload?.subject_ids?.[0] ||
+        nestedTeacher?.subjects?.[0]?.id ||
+        nestedTeacher?.subject_ids?.[0] ||
+        ''
+    );
+};
+
+const getTeacherSubjectIdFromTeacherRecord = (teacher = {}) => {
+    const nestedTeacher = teacher?.teacher || {};
+    return (
+        teacher?.subject_id ||
+        teacher?.primary_subject_id ||
+        teacher?.subjects?.[0]?.id ||
+        teacher?.subject_ids?.[0] ||
+        nestedTeacher?.subject_id ||
+        nestedTeacher?.primary_subject_id ||
+        nestedTeacher?.subjects?.[0]?.id ||
+        nestedTeacher?.subject_ids?.[0] ||
+        ''
+    );
+};
+
 const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
     const pathname = usePathname();
     const isTeacherRoute = pathname?.startsWith('/teacher');
     const { data: profileData } = usegetProfile();
+    const { data: teachersData } = usegetTeachers();
     const teacherId = String(getTeacherIdFromProfile(profileData) || '');
+    const teacherFromList = useMemo(() => {
+        if (!isTeacherRoute || !teacherId) return null;
+        const list = teachersData?.teachers || [];
+        return list.find((teacher) => String(teacher?.id || teacher?.teacher_id || teacher?.user_id || '') === teacherId) || null;
+    }, [isTeacherRoute, teacherId, teachersData]);
+    const teacherSubjectId = String(
+        getTeacherSubjectIdFromProfile(profileData) || getTeacherSubjectIdFromTeacherRecord(teacherFromList) || ''
+    );
+    const teacherScopedBySubject = isTeacherRoute && Boolean(teacherSubjectId);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('single'); // 'single' | 'bulk'
@@ -59,8 +102,10 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
         { enabled: !isTeacherRoute || Boolean(teacherId) }
     );
     const { data: allStudentsData, isLoading: studentsLoading } = useGetAllStudents(
-        isTeacherRoute ? { teacher_id: teacherId } : {},
-        { enabled: isModalOpen && activeTab === 'bulk' && (!isTeacherRoute || Boolean(teacherId)) }
+        isTeacherRoute
+            ? (teacherScopedBySubject ? { subject_id: teacherSubjectId } : { teacher_id: teacherId })
+            : {},
+        { enabled: isModalOpen && activeTab === 'bulk' && (!isTeacherRoute || Boolean(teacherSubjectId || teacherId)) }
     );
 
     const joinStudentMutation = useJoinStudentToGroup();

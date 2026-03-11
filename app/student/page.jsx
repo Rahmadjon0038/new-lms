@@ -10,6 +10,7 @@ import {
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { useGetStudentGroups, useJoinGroupByCode } from '../../hooks/groups';
+import { useGetProfile } from '../../hooks/user';
 import { toast } from 'react-hot-toast';
 
 // --- Guruh Kartochkasi Komponenti ---
@@ -155,6 +156,7 @@ function StudetGroup() {
   
   // API hooks
   const { data: studentGroupsData, isLoading, error } = useGetStudentGroups();
+  const { data: profileData } = useGetProfile();
   const joinGroupMutation = useJoinGroupByCode();
 
   const handleJoin = async (e) => {
@@ -209,6 +211,20 @@ function StudetGroup() {
   }
 
   const groups = studentGroupsData?.data?.groups || [];
+  const plannedSubject =
+    studentGroupsData?.data?.register_subject ||
+    studentGroupsData?.data?.register_subject_name ||
+    studentGroupsData?.data?.registered_subject_name ||
+    studentGroupsData?.data?.student?.register_subject ||
+    studentGroupsData?.data?.student?.register_subject_name ||
+    studentGroupsData?.data?.student?.registered_subject_name ||
+    profileData?.register_subject ||
+    profileData?.register_subject_name ||
+    profileData?.registered_subject_name ||
+    profileData?.data?.register_subject ||
+    profileData?.data?.register_subject_name ||
+    profileData?.data?.registered_subject_name ||
+    "";
 
   return (
     <div className="min-h-full">
@@ -233,6 +249,11 @@ function StudetGroup() {
           <p className="text-base sm:text-lg font-bold" style={{ color: '#A60E07' }}>
             Siz hali birorta guruhga a'zo emassiz.
           </p>
+          {plannedSubject && (
+            <p className="text-sm sm:text-base text-gray-700 mt-2">
+              Ro&apos;yxatdan o&apos;tgan fan: <span className="font-semibold">{plannedSubject}</span>
+            </p>
+          )}
           <p className="text-xs sm:text-sm text-gray-500 mt-2">
             Yuqoridagi maydonga kodni kiritib, yangi guruhga qo'shiling.
           </p>
