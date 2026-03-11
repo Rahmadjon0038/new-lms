@@ -15,6 +15,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { FiFilter } from 'react-icons/fi';
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import AdminUpdateGroupModal from "../../../components/admistrator/AdminUpdateGroup";
 import { useChangeGroupStatus } from "../../../hooks/groups";
 import AdminNewGroupModal from "../../../components/admistrator/CreateGroup";
@@ -61,7 +62,7 @@ const ConfirmToggleModal = ({ isOpen, onClose, onConfirm, isClosing, isLoading }
     );
 };
 
-const GroupCard = ({ group, onToggleGroupStatus, onStartClass, updateGroupLoading = false }) => {
+const GroupCard = ({ group, onToggleGroupStatus, onStartClass, updateGroupLoading = false, basePath = "/admin" }) => {
     const [showStudentDetails, setShowStudentDetails] = useState(false);
 
     // Dropdown ni yopish uchun outside click
@@ -245,7 +246,7 @@ const GroupCard = ({ group, onToggleGroupStatus, onStartClass, updateGroupLoadin
             <div className="mt-4 space-y-2">
                 <div className="flex items-stretch gap-2">
                     <Link
-                        href={`/admin/groups/${group.id}`}
+                        href={`${basePath}/groups/${group.id}`}
                         className={`flex flex-1 items-center justify-center rounded-lg py-2.5 font-semibold text-white shadow-md transition duration-150
                             ${group.status === 'blocked' ? 'bg-gray-400 hover:bg-gray-500' : 'bg-[#A60E07] hover:opacity-90'}`}
                     >
@@ -292,6 +293,8 @@ const GroupCard = ({ group, onToggleGroupStatus, onStartClass, updateGroupLoadin
 };
 
 function AdminGroupsPage() {
+    const pathname = usePathname();
+    const basePath = pathname?.startsWith('/teacher') ? '/teacher' : '/admin';
     const [selectedTeacher, setSelectedTeacher] = useState('all');
     const [selectedSubject, setSelectedSubject] = useState('all');
     const [currentTab, setCurrentTab] = useState('active');
@@ -604,6 +607,7 @@ function AdminGroupsPage() {
                         onToggleGroupStatus={handleOpenConfirm}
                         onStartClass={handleStartClass}
                         updateGroupLoading={changeGroupStatusMutation.isLoading}
+                        basePath={basePath}
                     />
                 ))}
             </div>

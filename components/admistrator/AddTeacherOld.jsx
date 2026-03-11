@@ -453,19 +453,11 @@ export default function AddTeacherModal({ children, onClose }) {
                                 </label>
                             </div>
                             {formData.has_experience && (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <input
-                                        type="number"
-                                        name="experience_years"
-                                        placeholder="Tajriba yillari"
-                                        value={formData.experience_years}
-                                        onChange={handleChange}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                                    />
+                                <div className="grid grid-cols-1 gap-4">
                                     <input
                                         type="text"
                                         name="experience_place"
-                                        placeholder="Ish joyi"
+                                        placeholder="Tajriba"
                                         value={formData.experience_place}
                                         onChange={handleChange}
                                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
@@ -481,14 +473,6 @@ export default function AddTeacherModal({ children, onClose }) {
                                 Ish Vaqti
                             </h3>
                             <div className="grid grid-cols-1 gap-4">
-                                <input
-                                    type="text"
-                                    name="available_times"
-                                    placeholder="Mavjud vaqtlar (masalan: 09:00-18:00)"
-                                    value={formData.available_times}
-                                    onChange={handleChange}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                                />
                                 <textarea
                                     name="work_days_hours"
                                     placeholder="Ish kunlari va soatlari (masalan: Dushanba-Juma: 09:00-18:00)"

@@ -7,6 +7,8 @@ import { useQuery } from "@tanstack/react-query";
 import { instance } from "../../hooks/api";
 import {
   BookOpenIcon,
+  UserGroupIcon,
+  AcademicCapIcon,
   ClipboardDocumentListIcon, // Davomat uchun
   BriefcaseIcon,
   BookmarkIcon, // Qo'llanma uchun
@@ -33,6 +35,16 @@ const getTeacherSidebarItems = (isEnglishTeacher) => {
       name: "Mening Guruhlarim",
       icon: BookOpenIcon,
       href: "/teacher",
+    },
+    {
+      name: "Guruhlar",
+      icon: UserGroupIcon,
+      href: "/teacher/groups",
+    },
+    {
+      name: "Talabalar",
+      icon: AcademicCapIcon,
+      href: "/teacher/students",
     },
     {
       name: "Davomat",

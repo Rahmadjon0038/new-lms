@@ -9,6 +9,7 @@ import {
     Shield, ShieldBan, Award, UserX, Settings, Building2, ChevronDown, ChevronUp
 } from 'lucide-react';
 import Link from 'next/link';
+import { usePathname } from "next/navigation";
 import { useGetAllStudents, useUpdateStudentStatus } from '../../../hooks/students';
 import { usegetTeachers } from '../../../hooks/teacher';
 import { useGetAllSubjects } from '../../../hooks/subjects';
@@ -31,6 +32,8 @@ const EditableCellComponent = ({ name, value, onChange, type = 'text', placehold
 const EditableCell = memo(EditableCellComponent);
 
 const StudentsPage = () => {
+    const pathname = usePathname();
+    const basePath = pathname?.startsWith('/teacher') ? '/teacher' : '/admin';
     // Filter state'lari
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedTeacher, setSelectedTeacher] = useState('all');
@@ -471,7 +474,7 @@ const StudentsPage = () => {
                             ) : null}
                         </div>
 
-                        <Link href="/admin/students/new" className="hidden md:order-2 md:block lg:order-none">
+                        <Link href={`${basePath}/students/new`} className="hidden md:order-2 md:block lg:order-none">
                             <button
                                 className="flex h-10 items-center justify-center gap-1 rounded-lg bg-[#A60E07] px-3 sm:px-4 text-sm font-semibold text-white shadow-md transition duration-200 hover:opacity-90">
                                 <FiUserPlus size={18} />
@@ -513,7 +516,7 @@ const StudentsPage = () => {
                     </div>
 
                     <div className="flex items-center md:hidden">
-                        <Link href="/admin/students/new">
+                        <Link href={`${basePath}/students/new`}>
                             <button
                                 className="flex h-10 items-center justify-center gap-1 rounded-lg bg-[#A60E07] px-3 sm:px-4 text-sm font-semibold text-white shadow-md transition duration-200 hover:opacity-90">
                                 <FiUserPlus size={18} />
@@ -627,7 +630,7 @@ const StudentsPage = () => {
                                         <div className="flex items-center justify-between gap-2">
                                             <span className="font-medium text-gray-500">Guruh:</span>
                                             {student.group_id && student.group_name ? (
-                                                <Link href={`/admin/groups/${student.group_id}`} className="truncate font-bold text-[#A60E07] underline">
+                                                <Link href={`${basePath}/groups/${student.group_id}`} className="truncate font-bold text-[#A60E07] underline">
                                                     {student.group_name}
                                                 </Link>
                                             ) : (
@@ -845,7 +848,7 @@ const StudentsPage = () => {
                                                     {/* Guruh nomi va tahrirlash tugmasi */}
                                                     <div className="flex items-center gap-2">
                                                         {student.group_id && student.group_name ? (
-                                                            <Link href={`/admin/groups/${student.group_id}`} className="font-bold text-[#A60E07] text-sm hover:underline">
+                                                            <Link href={`${basePath}/groups/${student.group_id}`} className="font-bold text-[#A60E07] text-sm hover:underline">
                                                                 {student.group_name}
                                                             </Link>
                                                         ) : (

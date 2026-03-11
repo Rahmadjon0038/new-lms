@@ -12,7 +12,6 @@ import {
   MapPinIcon,
   CheckIcon,
   XMarkIcon,
-  FunnelIcon,
   PencilIcon,
   TrashIcon,
   PauseIcon,
@@ -21,6 +20,7 @@ import {
   EllipsisVerticalIcon,
   ExclamationTriangleIcon,
   ClipboardDocumentIcon,
+  MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
 import {
   usegetTeachers,
@@ -311,18 +311,7 @@ const EditTeacherModal = ({ isOpen, onClose, teacher, onUpdate, isLoading }) => 
           </div>
 
           {formData.has_experience && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Tajriba yillari</label>
-                <input
-                  type="number"
-                  name="experience_years"
-                  value={formData.experience_years}
-                  onChange={handleChange}
-                  min="0"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A60E07] focus:border-transparent"
-                />
-              </div>
+            <div className="grid grid-cols-1 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Tajriba joyi</label>
                 <input
@@ -330,6 +319,7 @@ const EditTeacherModal = ({ isOpen, onClose, teacher, onUpdate, isLoading }) => 
                   name="experience_place"
                   value={formData.experience_place}
                   onChange={handleChange}
+                  placeholder="Tajriba"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A60E07] focus:border-transparent"
                 />
               </div>
@@ -762,6 +752,7 @@ function TeacherCard({ teacher, onEdit, onDelete, onStatusChange, notify }) {
 export default function TeachersPage() {
   const [selectedSubject, setSelectedSubject] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
   const [editingTeacher, setEditingTeacher] = useState(null);
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
@@ -782,6 +773,20 @@ export default function TeachersPage() {
   const updateTeacherMutation = useUpdateTeacher();
 
   const teachers = teachersData?.teachers || [];
+  const filteredTeachers = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) return teachers;
+
+    return teachers.filter((teacher) => {
+      const fullName = `${teacher?.name || ''} ${teacher?.surname || ''}`.toLowerCase();
+      const subjectsList = String(teacher?.subjects_list || '').toLowerCase();
+      const subjectsFromArray = Array.isArray(teacher?.subjects)
+        ? teacher.subjects.map((subject) => subject?.name || '').join(' ').toLowerCase()
+        : '';
+
+      return fullName.includes(query) || subjectsList.includes(query) || subjectsFromArray.includes(query);
+    });
+  }, [teachers, searchTerm]);
 
   // Handler functions
   const handleEdit = (teacher) => {
@@ -912,9 +917,16 @@ export default function TeachersPage() {
         </div>
 
         {/* Filter */}
-        <div className="mb-8 grid grid-cols-1 gap-2 rounded-xl border border-gray-100 bg-white p-3 sm:gap-3 sm:p-4 md:grid-cols-3 lg:grid-cols-4">
-          <div className="hidden items-center md:flex">
-            <FunnelIcon className="h-5 w-5 text-[#A60E07]" />
+        <div className="mb-8 grid grid-cols-1 gap-2 rounded-xl border border-gray-100 bg-white p-3 sm:gap-3 sm:p-4 md:grid-cols-4">
+          <div className="relative">
+            <MagnifyingGlassIcon className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Ism yoki fan bo'yicha qidirish"
+              className="w-full rounded border border-gray-300 py-2 pl-8 pr-2 text-sm focus:border-transparent focus:outline-none focus:ring-1 focus:ring-[#A60E07]"
+            />
           </div>
 
           <SubjectsSelect
@@ -935,11 +947,12 @@ export default function TeachersPage() {
             <option value="terminated">Ishdan boshatilgan</option>
           </select>
 
-          {(selectedSubject !== 'all' || selectedStatus !== 'all') && (
+          {(selectedSubject !== 'all' || selectedStatus !== 'all' || searchTerm.trim()) && (
             <button
               onClick={() => {
                 setSelectedSubject('all');
                 setSelectedStatus('all');
+                setSearchTerm('');
               }}
               className="w-full rounded bg-gray-100 px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-200 md:w-auto"
             >
@@ -949,9 +962,9 @@ export default function TeachersPage() {
         </div>
 
         {/* Teachers Grid */}
-        {teachers.length > 0 ? (
+        {filteredTeachers.length > 0 ? (
           <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2 xl:grid-cols-3">
-            {teachers.map((teacher) => (
+            {filteredTeachers.map((teacher) => (
               <TeacherCard
                 key={teacher.id}
                 teacher={teacher}
@@ -967,9 +980,11 @@ export default function TeachersPage() {
             <UserIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">O'qituvchilar topilmadi</h3>
             <p className="text-gray-500 mb-6">
-              {selectedSubject === 'all'
-                ? "Hali hech qanday o'qituvchi ro'yxatdan o'tmagan."
-                : "Tanlangan fan bo'yicha o'qituvchilar topilmadi."}
+              {searchTerm.trim()
+                ? "Qidiruv bo'yicha mos o'qituvchi topilmadi."
+                : selectedSubject === 'all'
+                  ? "Hali hech qanday o'qituvchi ro'yxatdan o'tmagan."
+                  : "Tanlangan fan bo'yicha o'qituvchilar topilmadi."}
             </p>
             <AddTeacherModal>
               <button className="inline-flex items-center px-4 py-2 bg-[#A60E07] text-white rounded-lg hover:opacity-90 transition duration-200">

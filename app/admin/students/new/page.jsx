@@ -12,7 +12,7 @@ import {
   EyeIcon,
   EyeSlashIcon,
 } from "@heroicons/react/24/outline";
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useRegisterStudent, useJoinStudentToGroup } from '../../../../hooks/students';
 import { usegetAllgroups } from '../../../../hooks/groups';
 import { useGetAllSubjects } from '../../../../hooks/subjects';
@@ -22,6 +22,8 @@ const MAIN_COLOR = "#A60E07";
 
 export default function NewStudentPage() {
     const router = useRouter();
+    const pathname = usePathname();
+    const basePath = pathname?.startsWith('/teacher') ? '/teacher' : '/admin';
     const [step, setStep] = useState(1); // 1: registration, 2: group selection
     const [registeredStudent, setRegisteredStudent] = useState(null);
     
@@ -119,7 +121,7 @@ export default function NewStudentPage() {
             onSuccess: (data) => {
                 toast.success('Student muvaffaqiyatli guruhga qo\'shildi!');
                 localStorage.removeItem('studentFormData');
-                router.push('/admin/students');
+                router.push(`${basePath}/students`);
             },
             onError: (error) => {
                 toast.error(error.response?.data?.message || 'Guruhga qo\'shishda xatolik!');
@@ -130,14 +132,14 @@ export default function NewStudentPage() {
     const handleFinish = () => {
         toast.success('Student ro\'yxatdan o\'tdi. Guruhni keyinroq tanlashingiz mumkin.');
         localStorage.removeItem('studentFormData');
-        router.push('/admin/students');
+        router.push(`${basePath}/students`);
     };
     
     const goBack = () => {
         if (step === 2) {
             setStep(1);
         } else {
-            router.push('/admin/students');
+            router.push(`${basePath}/students`);
         }
     };
     
