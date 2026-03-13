@@ -590,7 +590,19 @@ function AdminGroupsPage() {
                             </button>
                         </AdminNewGroupModal>
                     </div>
-                ) : null}
+                ) : (
+                    <div className="mb-3 flex items-center justify-end md:hidden">
+                        <AdminNewGroupModal onSuccess={() => setCurrentTab('draft')}>
+                            <button
+                                type="button"
+                                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#A60E07] text-white shadow-md transition hover:opacity-90"
+                                aria-label="Yangi guruh"
+                            >
+                                <PlusCircleIcon className="h-5 w-5" />
+                            </button>
+                        </AdminNewGroupModal>
+                    </div>
+                )}
 
                 {!isTeacherRoute ? (
                     <div className="hidden gap-3 md:grid">
