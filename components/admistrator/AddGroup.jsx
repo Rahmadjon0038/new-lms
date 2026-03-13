@@ -439,8 +439,8 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
             </div>
 
             {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center">
-                    <div className="w-full max-h-[96vh] overflow-y-auto rounded-t-xl bg-white p-3 sm:mx-4 sm:max-w-5xl sm:rounded-lg sm:p-6">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-2 sm:p-4">
+                    <div className="w-full max-h-[92vh] max-w-5xl overflow-y-auto rounded-xl bg-white p-3 sm:p-6">
                         <div className="mb-3 flex items-center justify-between sm:mb-4">
                             <h3 className="flex items-center text-base font-semibold text-gray-800 sm:text-xl">
                                 <UserGroupIcon className="mr-2 h-5 w-5 text-[#A60E07] sm:h-6 sm:w-6" />
@@ -623,8 +623,8 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
                                                 actionType === 'remove'
                                                     ? 'Talabani guruhdan chiqarish'
                                                     : actionType === 'change'
-                                                        ? 'Talabani boshqa guruhga o&apos;tkazish'
-                                                        : 'Talabani guruhga qo&apos;shish'
+                                                        ? "Talabani boshqa guruhga o'tkazish"
+                                                        : "Talabani guruhga qo'shish"
                                             )}
                                         </button>
                                     </div>
@@ -674,7 +674,7 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
                                             <select
                                                 value={bulkSourceGroupId}
                                                 onChange={(e) => setBulkSourceGroupId(e.target.value)}
-                                                className="h-9 rounded-lg border border-gray-300 bg-white px-2.5 text-xs outline-none focus:border-[#A60E07] sm:h-10 sm:px-3 sm:text-sm"
+                                                className="h-10 w-full min-w-0 rounded-lg border border-gray-300 bg-white px-3 text-sm outline-none focus:border-[#A60E07]"
                                             >
                                                 <option value="">
                                                     {bulkActionType === 'remove' ? 'Source guruh (ixtiyoriy)' : 'Source guruh (ixtiyoriy)'}
@@ -691,9 +691,9 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
                                             <select
                                                 value={bulkTargetGroupId}
                                                 onChange={(e) => setBulkTargetGroupId(e.target.value)}
-                                                className="h-9 rounded-lg border border-gray-300 bg-white px-2.5 text-xs outline-none focus:border-[#A60E07] sm:h-10 sm:px-3 sm:text-sm"
+                                                className="h-10 w-full min-w-0 rounded-lg border border-gray-300 bg-white px-3 text-sm outline-none focus:border-[#A60E07]"
                                             >
-                                                <option value="">Target guruhni tanlang *</option>
+                                                <option value="">Kerakli guruhni tanlang *</option>
                                                 {availableGroups.map((group) => (
                                                     <option key={group.id} value={group.id}>
                                                         {getGroupOptionLabel(group)}
