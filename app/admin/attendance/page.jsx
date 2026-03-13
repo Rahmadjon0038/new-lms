@@ -29,10 +29,7 @@ export default function AdminAttendancePage() {
 
   return (
     <div className="space-y-4 p-3 sm:p-4 md:p-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Teachers Attendance</h1>
-        <p className="text-sm text-gray-600">Teacherlar ro&apos;yxati</p>
-      </div>
+      
 
       <div className="rounded-xl border border-gray-200 bg-white p-4">
         <input

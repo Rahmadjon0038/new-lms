@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React from "react";
 import { useParams } from "next/navigation";
 import {
   ChevronLeftIcon,
@@ -9,8 +9,6 @@ import {
   BuildingOfficeIcon,
   ClockIcon,
   PhoneIcon,
-  DocumentDuplicateIcon,
-  CheckIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { useGetTeacherGroupById } from "../../../../hooks/groups";
@@ -30,13 +28,11 @@ function TeacherGroupDetail() {
   const params = useParams();
   const groupId = params.id;
   const { data: groupData, isLoading, error } = useGetTeacherGroupById(groupId);
-  const [isCopied, setIsCopied] = useState(false);
-
   
 
   if (isLoading) {
     return (
-      <div className="min-h-full p-8 flex items-center justify-center">
+      <div className="min-h-full p-4 sm:p-8 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-pulse text-[#A60E07] text-xl font-bold">Yuklanmoqda...</div>
         </div>
@@ -46,7 +42,7 @@ function TeacherGroupDetail() {
 
   if (error) {
     return (
-      <div className="min-h-full p-8 flex items-center justify-center">
+      <div className="min-h-full p-4 sm:p-8 flex items-center justify-center">
         <div className="text-center">
           <div className="text-red-500 mb-4 text-xl font-bold">❌ Xatolik yuz berdi</div>
           <p className="text-gray-600">{error.message}</p>
@@ -57,7 +53,7 @@ function TeacherGroupDetail() {
 
   if (!groupData?.success || !groupData?.data) {
     return (
-      <div className="min-h-full p-8 flex items-center justify-center">
+      <div className="min-h-full p-4 sm:p-8 flex items-center justify-center">
         <div className="text-center">
           <div className="text-yellow-500 mb-4 text-xl font-bold">⚠️ Guruh topilmadi</div>
         </div>
@@ -72,32 +68,32 @@ function TeacherGroupDetail() {
   const students = groupData.data.students || [];
 
   return (
-    <div className="min-h-full bg-gradient-to-br from-gray-50 to-gray-100 p-3 sm:p-4 md:p-6 lg:p-0">
+    <div className="min-h-full bg-gradient-to-br from-gray-50 to-gray-100 p-2.5 sm:p-4 md:p-6 lg:p-0">
       <div className="">
         {/* Orqaga Qaytish Tugmasi */}
         <Link
           href="/teacher"
-          className="inline-flex items-center text-[#A60E07] hover:opacity-80 mb-4 sm:mb-6 font-bold transition duration-150 text-xs sm:text-sm"
+          className="inline-flex items-center text-[#A60E07] hover:opacity-80 mb-3 sm:mb-6 font-bold transition duration-150 text-xs sm:text-sm"
         >
           <ChevronLeftIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
           Orqaga qaytish
         </Link>
 
         {/* Header */}
-        <div className="mb-4 sm:mb-6 lg:mb-8 flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3 sm:gap-4 lg:gap-6">
+        <div className="mb-3 sm:mb-6 lg:mb-8 flex flex-col lg:flex-row lg:items-start lg:justify-between gap-2.5 sm:gap-4 lg:gap-6">
           <div className="flex-1 min-w-0">
             <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 mb-1 sm:mb-2 flex items-center">
               <BookOpenIcon className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 lg:h-8 lg:w-8 mr-2 sm:mr-3 text-[#A60E07] flex-shrink-0" />
               <span className="break-words truncate">{groupInfo.name}</span>
             </h1>
-            <p className="text-xs sm:text-sm md:text-base lg:text-lg text-gray-500">Guruh tafsilotlari va talabalar ro'yxati</p>
-            <p className="text-[10px] sm:text-xs md:text-sm text-gray-400 mt-0.5 sm:mt-1">Fan: {subjectInfo.name}</p>
+            <p className="hidden sm:block text-xs sm:text-sm md:text-base lg:text-lg text-gray-500">Guruh tafsilotlari va talabalar ro'yxati</p>
+            <p className="hidden sm:block text-[10px] sm:text-xs md:text-sm text-gray-400 mt-0.5 sm:mt-1">Fan: {subjectInfo.name}</p>
             
            
           </div>
           
           {/* Guruh Holati */}
-          <div className="bg-white px-3 sm:px-4 lg:px-5 py-3 sm:py-4 rounded-xl shadow-lg border border-gray-100 w-full sm:w-auto sm:min-w-[160px] lg:min-w-[180px]">
+          <div className="bg-white px-3 sm:px-4 lg:px-5 py-2.5 sm:py-4 rounded-xl shadow-lg border border-gray-100 w-full sm:w-auto sm:min-w-[160px] lg:min-w-[180px]">
             <div className="text-center">
               <h3 className="text-[10px] sm:text-xs font-bold text-gray-500 mb-1.5 sm:mb-2 uppercase tracking-wide">Guruh Holati</h3>
               <span className={`inline-flex px-3 sm:px-4 py-1 sm:py-1.5 text-[10px] sm:text-xs font-bold rounded-full ${
@@ -124,9 +120,9 @@ function TeacherGroupDetail() {
         </div>
 
         {/* 1. Asosiy Ma'lumotlar Bloki */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 lg:gap-6 mb-4 sm:mb-8">
           {/* Guruh Narxi */}
-          <div className="bg-white p-4 sm:p-5 lg:p-6 rounded-xl sm:rounded-2xl shadow-lg border-t-4 border-[#A60E07]">
+          <div className="bg-white p-3 sm:p-5 lg:p-6 rounded-xl sm:rounded-2xl shadow-lg border-t-4 border-[#A60E07]">
             <h3 className="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 sm:mb-3">
               Guruh Narxi
             </h3>
@@ -139,7 +135,7 @@ function TeacherGroupDetail() {
           </div>
 
           {/* O'quv xonasi */}
-          <div className="bg-white p-4 sm:p-5 lg:p-6 rounded-xl sm:rounded-2xl shadow-lg border-t-4 border-purple-500">
+          <div className="bg-white p-3 sm:p-5 lg:p-6 rounded-xl sm:rounded-2xl shadow-lg border-t-4 border-purple-500">
             <h3 className="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 sm:mb-3 flex items-center">
               <BuildingOfficeIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-purple-500" />
               O'quv xonasi
@@ -155,7 +151,7 @@ function TeacherGroupDetail() {
           </div>
 
           {/* Talabalar Statistikasi */}
-          <div className="bg-white p-4 sm:p-5 lg:p-6 rounded-xl sm:rounded-2xl shadow-lg border-t-4 border-green-500">
+          <div className="bg-white p-3 sm:p-5 lg:p-6 rounded-xl sm:rounded-2xl shadow-lg border-t-4 border-green-500">
             <h3 className="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 sm:mb-3 flex items-center">
               <UsersIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-green-500" />
               Talabalar
@@ -171,7 +167,7 @@ function TeacherGroupDetail() {
           </div>
 
           {/* Yaratilgan sana */}
-          <div className="bg-white p-4 sm:p-5 lg:p-6 rounded-xl sm:rounded-2xl shadow-lg border-t-4 border-blue-500">
+          <div className="bg-white p-3 sm:p-5 lg:p-6 rounded-xl sm:rounded-2xl shadow-lg border-t-4 border-blue-500">
             <h3 className="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 sm:mb-3 flex items-center">
               <CalendarDaysIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-blue-500" />
               Sana
@@ -187,7 +183,7 @@ function TeacherGroupDetail() {
 
         {/* 2. Dars jadvali */}
         {groupInfo.schedule && (
-          <div className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 mb-6 sm:mb-8">
+          <div className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 mb-4 sm:mb-8">
             <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 sm:mb-4 flex items-center">
               <CalendarDaysIcon className="h-5 w-5 sm:h-6 sm:w-6 mr-2 sm:mr-3 text-[#A60E07]" />
               Dars jadvali
@@ -216,13 +212,13 @@ function TeacherGroupDetail() {
 
         {/* 3. Talabalar Ro'yxati - TABLE FORMAT */}
         <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-          <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+          <div className="px-3 sm:px-6 py-3 sm:py-5 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <h2 className="text-lg sm:text-xl font-bold text-gray-800 flex items-center">
+              <h2 className="text-base sm:text-xl font-bold text-gray-800 flex items-center">
                 <UsersIcon className="h-5 w-5 sm:h-6 sm:w-6 mr-2 sm:mr-3 text-[#A60E07]" />
                 <span>Talabalar ro'yxati</span>
               </h2>
-              <span className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm bg-[#A60E07] text-white rounded-xl font-bold shadow-md w-fit">
+              <span className="px-2.5 sm:px-4 py-1 sm:py-2 text-[11px] sm:text-sm bg-[#A60E07] text-white rounded-xl font-bold shadow-md w-fit">
                 {students.length} ta talaba
               </span>
             </div>
@@ -313,7 +309,7 @@ function TeacherGroupDetail() {
                 </tbody>
               </table>
             ) : (
-              <div className="text-center py-12">
+              <div className="text-center py-8 sm:py-12">
                 <div className="mx-auto h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
                   <UsersIcon className="h-8 w-8 text-gray-400" />
                 </div>

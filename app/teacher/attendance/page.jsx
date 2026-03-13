@@ -320,10 +320,10 @@ function TeacherAttendancePageContent() {
 
   return (
     <div className="space-y-4">
-      <div>
+      {/* <div>
         <h1 className="text-2xl font-bold text-gray-900">Teacher Attendance</h1>
         <p className="text-sm text-gray-600">Mening guruhlarim va darslarim</p>
-      </div>
+      </div> */}
 
       <div className="hidden gap-3 rounded-xl border border-gray-200 bg-white p-4 md:grid md:grid-cols-4">
         <label className="text-xs text-gray-700 sm:text-sm">
@@ -352,7 +352,7 @@ function TeacherAttendancePageContent() {
           </select>
         </label>
 
-        <label className="col-span-2 text-xs text-gray-700 sm:text-sm md:col-span-1">
+        {/* <label className="col-span-2 text-xs text-gray-700 sm:text-sm md:col-span-1">
           <span className="mb-1 block font-medium">Date (ixtiyoriy)</span>
           <input
             type="date"
@@ -360,7 +360,7 @@ function TeacherAttendancePageContent() {
             onChange={(e) => setDate(e.target.value)}
             className={`w-full rounded-lg border px-2.5 py-1.5 text-xs sm:px-3 sm:py-2 sm:text-sm ${date ? "border-[#A60E07] bg-red-50" : "border-gray-300"}`}
           />
-        </label>
+        </label> */}
 
         <div className="col-span-2 flex items-end md:col-span-1">
           {hasActiveFilters ? (

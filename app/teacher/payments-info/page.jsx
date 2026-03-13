@@ -170,14 +170,14 @@ const TeacherPaymentsInfo = () => {
     return (
         <div className="min-h-full">
             {/* Header */}
-            <div className="mb-4 sm:mb-6">
+            {/* <div className="mb-4 sm:mb-6">
                 <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
                     Talabalar to'lovlari
                 </h1>
                 <p className="text-sm sm:text-base text-gray-600">
                     O'quvchilaringizning oylik to'lov ma'lumotlari
                 </p>
-            </div>
+            </div> */}
 
             {/* Filters */}
             <div className="mb-3 rounded-lg bg-white p-2.5 shadow-md sm:mb-6 sm:p-4 md:p-6">
