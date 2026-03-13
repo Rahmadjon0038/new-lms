@@ -611,7 +611,7 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
                                         <button
                                             type="submit"
                                             disabled={isSingleLoading || (actionType !== 'remove' && !selectedGroupId)}
-                                            className={`flex w-full items-center justify-center rounded-lg px-3 py-1.5 text-sm text-white transition-colors disabled:opacity-50 sm:px-4 sm:py-2 ${
+                                            className={`flex w-full items-center justify-center rounded-lg px-3 py-1.5 text-sm font-semibold text-white transition-colors disabled:opacity-50 sm:px-4 sm:py-2 ${
                                                 actionType === 'remove'
                                                     ? 'bg-red-600 hover:bg-red-700'
                                                     : actionType === 'change'
@@ -621,10 +621,10 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
                                         >
                                             {isSingleLoading ? 'Bajarilmoqda...' : (
                                                 actionType === 'remove'
-                                                    ? 'Guruhdan chiqarish'
+                                                    ? 'Talabani guruhdan chiqarish'
                                                     : actionType === 'change'
-                                                        ? 'Guruhni o&apos;zgartirish'
-                                                        : 'Guruhga qo&apos;shish'
+                                                        ? 'Talabani boshqa guruhga o&apos;tkazish'
+                                                        : 'Talabani guruhga qo&apos;shish'
                                             )}
                                         </button>
                                     </div>

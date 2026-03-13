@@ -23,13 +23,16 @@ const modalStyle = {
   top: "50%",
   left: "50%",
   transform: "translate(-50%, -50%)",
-  width: { xs: "90%", sm: 550 },
+  width: { xs: "95%", sm: 550 },
+  maxHeight: "92vh",
   bgcolor: "white",
   borderRadius: "16px",
   boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1)",
   p: 0,
   outline: "none",
   overflow: "hidden",
+  display: "flex",
+  flexDirection: "column",
 };
 
 export default function ProfileModal({ children, onLogout }) {
@@ -132,26 +135,26 @@ export default function ProfileModal({ children, onLogout }) {
       <Modal open={isOpen} onClose={handleClose}>
         <Box sx={modalStyle}>
           {/* MODAL HEADER - #A60E07 Rangida */}
-          <div className="p-6 text-white relative" style={{ backgroundColor: '#A60E07' }}>
+          <div className="relative p-4 text-white sm:p-6" style={{ backgroundColor: '#A60E07' }}>
             <button onClick={handleClose} className="absolute top-4 right-4 text-red-200 hover:text-white transition-colors">
               <XMarkIcon className="h-6 w-6" />
             </button>
             
-            <div className="flex items-center space-x-4">
-              <div className="bg-white/10 p-3 rounded-2xl shadow-inner border border-white/20">
-                <UserIcon className="h-10 w-10 text-white" />
+            <div className="flex items-center gap-3 pr-8 sm:gap-4">
+              <div className="rounded-2xl border border-white/20 bg-white/10 p-2.5 shadow-inner sm:p-3">
+                <UserIcon className="h-8 w-8 text-white sm:h-10 sm:w-10" />
               </div>
               <div>
-                <h3 className="text-xl font-bold tracking-tight">Profil Sozlamalari</h3>
-                <p className="text-red-100 text-sm font-medium opacity-80">@{user?.username}</p>
+                <h3 className="text-lg font-bold tracking-tight sm:text-xl">Profil Sozlamalari</h3>
+                <p className="text-xs font-medium text-red-100 opacity-80 sm:text-sm">@{user?.username}</p>
               </div>
             </div>
           </div>
 
-          <div className="p-6 bg-gray-50/50">
+          <div className="flex-1 overflow-y-auto bg-gray-50/50 p-4 sm:p-6">
             <form className="space-y-5">
               {/* TOP INFO CARDS */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
                 <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center mb-1">
                     <AcademicCapIcon className="h-3 w-3 mr-1" style={{ color: '#A60E07' }} /> Rol
@@ -186,7 +189,7 @@ export default function ProfileModal({ children, onLogout }) {
 
               {/* INPUTS GROUP */}
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
                   <div className="flex flex-col">
                     <label className="text-xs font-bold text-gray-500 ml-1 mb-1">Ism</label>
                     <input
@@ -281,7 +284,7 @@ export default function ProfileModal({ children, onLogout }) {
                     </button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3">
                     <button
                       type="button"
                       onClick={() => setIsEditing(false)}
