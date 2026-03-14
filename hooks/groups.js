@@ -4,7 +4,11 @@ import { useGetNotify } from './notify';
 
 // ----------- update group -----------------
 const updateGroup = async ({ id, groupdata }) => {
-    const response = await instance.patch(`/api/groups/${id}`, groupdata);
+    const payload = { ...groupdata };
+    if (typeof window !== "undefined" && window.location.pathname.startsWith("/teacher")) {
+        delete payload.teacher_id;
+    }
+    const response = await instance.patch(`/api/groups/${id}`, payload);
     return response.data;
 }
 

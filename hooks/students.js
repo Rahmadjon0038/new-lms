@@ -111,3 +111,28 @@ export const useUpdateStudentStatus = () => {
     });
     return updateStatusMutation;
 }
+
+// -------------- Update student info ----------
+const updateStudentInfo = async ({ studentId, data }) => {
+    const response = await instance.patch(`/api/users/students/${studentId}`, data);
+    return response.data;
+};
+
+export const useUpdateStudentInfo = () => {
+    const queryClient = useQueryClient();
+    const updateStudentMutation = useMutation({
+        mutationFn: updateStudentInfo,
+        onSuccess: (data, vars) => {
+            queryClient.invalidateQueries(['students']);
+            if (vars.onSuccess) {
+                vars.onSuccess(data);
+            }
+        },
+        onError: (err, vars) => {
+            if (vars.onError) {
+                vars.onError(err);
+            }
+        }
+    });
+    return updateStudentMutation;
+};

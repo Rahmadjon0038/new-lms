@@ -6,11 +6,11 @@ import {
     User, Phone, MapPin, Calendar, GraduationCap,
     CheckCircle, XCircle, Clock, BookOpen, Users,
     Home, UserCheck, AlertCircle, PlayCircle, PauseCircle, MoreVertical,
-    Shield, ShieldBan, Award, UserX, Settings, Building2, ChevronDown, ChevronUp
+    Shield, ShieldBan, Award, UserX, Settings, Building2, ChevronDown, ChevronUp, Pencil, X
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from "next/navigation";
-import { useGetAllStudents, useUpdateStudentStatus } from '../../../hooks/students';
+import { useGetAllStudents, useUpdateStudentStatus, useUpdateStudentInfo } from '../../../hooks/students';
 import { usegetTeachers } from '../../../hooks/teacher';
 import { useGetAllSubjects } from '../../../hooks/subjects';
 import { usegetProfile } from '../../../hooks/user';
@@ -31,6 +31,138 @@ const EditableCellComponent = ({ name, value, onChange, type = 'text', placehold
 );
 
 const EditableCell = memo(EditableCellComponent);
+
+const StudentEditModal = ({ isOpen, onClose, student, formData, onChange, onSubmit, isLoading }) => {
+    if (!isOpen || !student) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3">
+            <div className="w-full max-w-2xl rounded-xl bg-white shadow-xl">
+                <div className="flex items-start justify-between gap-4 border-b border-gray-200 p-4">
+                    <div>
+                        <h3 className="text-lg font-semibold text-gray-900">Talaba ma'lumotlarini yangilash</h3>
+                        <p className="text-xs text-gray-500">
+                            ID: #{student.id} {student.group_name ? `• ${student.group_name}` : ''}
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="rounded-lg border border-gray-200 p-2 text-gray-600 transition hover:bg-gray-50"
+                        aria-label="Modalni yopish"
+                    >
+                        <X className="h-4 w-4" />
+                    </button>
+                </div>
+
+                <form onSubmit={onSubmit} className="p-4">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <label className="text-sm font-medium text-gray-700">
+                            Ism
+                            <input
+                                name="name"
+                                value={formData.name}
+                                onChange={onChange}
+                                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#A60E07]"
+                                required
+                            />
+                        </label>
+
+                        <label className="text-sm font-medium text-gray-700">
+                            Familiya
+                            <input
+                                name="surname"
+                                value={formData.surname}
+                                onChange={onChange}
+                                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#A60E07]"
+                                required
+                            />
+                        </label>
+
+                        <label className="text-sm font-medium text-gray-700">
+                            Telefon
+                            <input
+                                name="phone"
+                                value={formData.phone}
+                                onChange={onChange}
+                                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#A60E07]"
+                            />
+                        </label>
+
+                        <label className="text-sm font-medium text-gray-700">
+                            Qo'shimcha telefon
+                            <input
+                                name="phone2"
+                                value={formData.phone2}
+                                onChange={onChange}
+                                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#A60E07]"
+                            />
+                        </label>
+
+                        <label className="text-sm font-medium text-gray-700">
+                            Otasining ismi
+                            <input
+                                name="father_name"
+                                value={formData.father_name}
+                                onChange={onChange}
+                                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#A60E07]"
+                            />
+                        </label>
+
+                        <label className="text-sm font-medium text-gray-700">
+                            Otasining telefoni
+                            <input
+                                name="father_phone"
+                                value={formData.father_phone}
+                                onChange={onChange}
+                                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#A60E07]"
+                            />
+                        </label>
+
+                        <label className="text-sm font-medium text-gray-700">
+                            Yoshi
+                            <input
+                                name="age"
+                                type="number"
+                                value={formData.age}
+                                onChange={onChange}
+                                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#A60E07]"
+                            />
+                        </label>
+
+                        <label className="text-sm font-medium text-gray-700 sm:col-span-2">
+                            Manzil
+                            <textarea
+                                name="address"
+                                value={formData.address}
+                                onChange={onChange}
+                                rows={3}
+                                className="mt-1 w-full resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#A60E07]"
+                            />
+                        </label>
+                    </div>
+
+                    <div className="mt-4 flex items-center justify-end gap-2">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50"
+                        >
+                            Bekor qilish
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isLoading}
+                            className="rounded-lg bg-[#A60E07] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
+                        >
+                            {isLoading ? "Saqlanmoqda..." : "Saqlash"}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
 
 const getTeacherIdFromProfile = (profile) => {
     const payload = profile?.data || profile;
@@ -124,6 +256,7 @@ const StudentsPage = () => {
 
     // Student status o'zgartirish hook
     const updateStatusMutation = useUpdateStudentStatus();
+    const updateStudentMutation = useUpdateStudentInfo();
     const notify = useGetNotify();
 
     // Backenddan ma'lumotlarni boshqarish uchun lokal state
@@ -134,6 +267,17 @@ const StudentsPage = () => {
     const [visibleRecoveryKeys, setVisibleRecoveryKeys] = useState({});
     const [copiedRecoveryRow, setCopiedRecoveryRow] = useState(null);
     const [mobileExpandedRows, setMobileExpandedRows] = useState({});
+    const [studentEditModal, setStudentEditModal] = useState({ open: false, student: null });
+    const [studentEditForm, setStudentEditForm] = useState({
+        name: '',
+        surname: '',
+        phone: '',
+        phone2: '',
+        father_name: '',
+        father_phone: '',
+        address: '',
+        age: '',
+    });
 
     // Ma'lumot kelganda state-ni yangilash
     useEffect(() => {
@@ -273,7 +417,7 @@ const StudentsPage = () => {
             return;
         }
 
-        const loadingToast = notify('load');
+        notify('load');
         try {
             await updateStatusMutation.mutateAsync({
                 studentId: studentId,
@@ -342,6 +486,94 @@ const StudentsPage = () => {
     const handleCancel = () => {
         setEditingId(null);
         setEditData({});
+    };
+
+    const openStudentEditModal = useCallback((student) => {
+        setStudentEditModal({ open: true, student });
+        setStudentEditForm({
+            name: student?.name || '',
+            surname: student?.surname || '',
+            phone: student?.phone || '',
+            phone2: student?.phone2 || '',
+            father_name: student?.father_name || '',
+            father_phone: student?.father_phone || '',
+            address: student?.address || '',
+            age: student?.age ?? '',
+        });
+    }, []);
+
+    const closeStudentEditModal = useCallback(() => {
+        setStudentEditModal({ open: false, student: null });
+        setStudentEditForm({
+            name: '',
+            surname: '',
+            phone: '',
+            phone2: '',
+            father_name: '',
+            father_phone: '',
+            address: '',
+            age: '',
+        });
+    }, []);
+
+    const handleStudentEditChange = useCallback((event) => {
+        const { name, value } = event.target;
+        setStudentEditForm((prev) => ({ ...prev, [name]: value }));
+    }, []);
+
+    const handleStudentEditSubmit = async (event) => {
+        event.preventDefault();
+        if (!studentEditModal.student) return;
+
+        const name = String(studentEditForm.name || '').trim();
+        const surname = String(studentEditForm.surname || '').trim();
+        if (!name || !surname) {
+            notify('err', "Ism va familiya majburiy.");
+            return;
+        }
+
+        let ageValue;
+        if (studentEditForm.age !== '' && studentEditForm.age !== null && studentEditForm.age !== undefined) {
+            ageValue = Number(studentEditForm.age);
+            if (!Number.isInteger(ageValue)) {
+                notify('err', "Yosh butun son bo'lishi kerak.");
+                return;
+            }
+        }
+
+        const payload = {
+            name,
+            surname,
+            phone: String(studentEditForm.phone || '').trim() || undefined,
+            phone2: String(studentEditForm.phone2 || '').trim() || undefined,
+            father_name: String(studentEditForm.father_name || '').trim() || undefined,
+            father_phone: String(studentEditForm.father_phone || '').trim() || undefined,
+            address: String(studentEditForm.address || '').trim() || undefined,
+            age: ageValue
+        };
+
+        const loadingToast = notify('load');
+        try {
+            await updateStudentMutation.mutateAsync({
+                studentId: studentEditModal.student.id,
+                data: payload,
+                onSuccess: () => {
+                    notify('dismiss');
+                    notify('ok', "Talaba ma'lumotlari yangilandi");
+                    closeStudentEditModal();
+                    refetch();
+                },
+                onError: (error) => {
+                    notify('dismiss');
+                    const message = error?.response?.data?.message || "Yangilashda xatolik yuz berdi";
+                    notify('err', message);
+                }
+            });
+        } catch (error) {
+            notify('dismiss');
+            const message = error?.response?.data?.message || "Yangilashda xatolik yuz berdi";
+            notify('err', message);
+        }
     };
 
     const toggleRecoveryKey = (rowKey) => {
@@ -656,14 +888,24 @@ const StudentsPage = () => {
                                         </div>
                                     </AddGroup>
 
-                                    <button
-                                        type="button"
-                                        onClick={() => toggleMobileCard(rowKey)}
-                                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 text-gray-600"
-                                        aria-label={isExpanded ? "Qo'shimcha ma'lumotlarni yopish" : "Qo'shimcha ma'lumotlarni ochish"}
-                                    >
-                                        {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                                    </button>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => openStudentEditModal(student)}
+                                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50"
+                                            aria-label="Talaba ma'lumotlarini yangilash"
+                                        >
+                                            <Pencil className="h-4 w-4" />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => toggleMobileCard(rowKey)}
+                                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 text-gray-600"
+                                            aria-label={isExpanded ? "Qo'shimcha ma'lumotlarni yopish" : "Qo'shimcha ma'lumotlarni ochish"}
+                                        >
+                                            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                        </button>
+                                    </div>
                                 </div>
 
                                 {isExpanded ? (
@@ -836,6 +1078,14 @@ const StudentsPage = () => {
                                                         <span className='text-lg font-bold text-red-500'>#{student.id}</span>
                                                         <User className="h-4 w-4 text-blue-500" />
                                                         <span className="font-semibold text-gray-900">{student.name} {student.surname}</span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => openStudentEditModal(student)}
+                                                            className="ml-auto inline-flex items-center justify-center rounded-lg border border-gray-200 p-1.5 text-gray-600 transition hover:bg-gray-50"
+                                                            aria-label="Talaba ma'lumotlarini yangilash"
+                                                        >
+                                                            <Pencil className="h-4 w-4" />
+                                                        </button>
                                                     </div>
 
                                                     <div className="space-y-1">
@@ -1183,6 +1433,16 @@ const StudentsPage = () => {
                     </tbody>
                 </table>
             </div>
+
+            <StudentEditModal
+                isOpen={studentEditModal.open}
+                onClose={closeStudentEditModal}
+                student={studentEditModal.student}
+                formData={studentEditForm}
+                onChange={handleStudentEditChange}
+                onSubmit={handleStudentEditSubmit}
+                isLoading={updateStudentMutation.isLoading}
+            />
 
         </div>
     );
