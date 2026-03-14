@@ -206,6 +206,14 @@ const getTeacherSubjectIdFromTeacherRecord = (teacher = {}) => {
     );
 };
 
+const getStudentUsername = (student) => (
+    student?.username ||
+    student?.user_name ||
+    student?.user?.username ||
+    student?.user?.user_name ||
+    ''
+);
+
 const StudentsPage = () => {
     const pathname = usePathname();
     const isTeacherRoute = pathname?.startsWith('/teacher');
@@ -936,6 +944,13 @@ const StudentsPage = () => {
                                             </div>
                                         ) : null}
 
+                                        {getStudentUsername(student) ? (
+                                            <div className="flex items-start gap-1">
+                                                <UserCheck className="mt-0.5 h-3 w-3 text-blue-500" />
+                                                <span className="break-words"><span className="font-medium text-gray-500">Foydalanuvchi nomi:</span> {getStudentUsername(student)}</span>
+                                            </div>
+                                        ) : null}
+
                                         <p><span className="font-medium text-gray-500">Ro'yxatdan sana:</span> {student.registration_date?.split('T')[0] || '-'}</p>
 
                                         <div className="flex items-center justify-between gap-2">
@@ -1115,6 +1130,13 @@ const StudentsPage = () => {
                                                             <div className="flex items-start gap-1 text-xs text-gray-600">
                                                                 <Home className="h-3 w-3 text-indigo-500 mt-0.5" />
                                                                 <span className="break-words" title={student.address}><strong>Manzil:</strong> {student.address}</span>
+                                                            </div>
+                                                        )}
+
+                                                        {getStudentUsername(student) && (
+                                                            <div className="flex items-start gap-1 text-xs text-gray-600">
+                                                                <UserCheck className="h-3 w-3 text-blue-500 mt-0.5" />
+                                                                <span className="break-words"><strong>Foydalanuvchi nomi:</strong> {getStudentUsername(student)}</span>
                                                             </div>
                                                         )}
 

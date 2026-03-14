@@ -103,6 +103,66 @@ function MyAttendance() {
   const dailyAttendance = attendancePayload.daily_attendance || [];
   const monthlyStatus = attendancePayload.monthly_status;
 
+  const computedStats = useMemo(() => {
+    if (!Array.isArray(dailyAttendance) || dailyAttendance.length === 0) return null;
+
+    const counts = {
+      keldi: 0,
+      kelmadi: 0,
+      kech_qoldi: 0,
+    };
+
+    dailyAttendance.forEach((item) => {
+      const status = getNormalizedAttendanceStatus(item);
+      if (status && Object.prototype.hasOwnProperty.call(counts, status)) {
+        counts[status] += 1;
+      }
+    });
+
+    const totalLessons = counts.keldi + counts.kelmadi + counts.kech_qoldi;
+    const attendedLessons = counts.keldi + counts.kech_qoldi;
+    const attendancePercentage = totalLessons > 0 ? Math.round((attendedLessons / totalLessons) * 100) : 0;
+
+    return {
+      total_lessons: totalLessons,
+      attended_lessons: attendedLessons,
+      missed_lessons: counts.kelmadi,
+      late_lessons: counts.kech_qoldi,
+      attendance_percentage: attendancePercentage,
+      breakdown: counts,
+    };
+  }, [dailyAttendance]);
+
+  const effectiveStats = useMemo(() => {
+    if (Array.isArray(dailyAttendance) && dailyAttendance.length > 0) {
+      return computedStats || {
+        total_lessons: 0,
+        attended_lessons: 0,
+        missed_lessons: 0,
+        late_lessons: 0,
+        attendance_percentage: 0,
+        breakdown: { keldi: 0, kelmadi: 0, kech_qoldi: 0 },
+      };
+    }
+
+    const attendedFallback = attendanceBreakdown.keldi ?? attendanceStats.attended_lessons ?? 0;
+    const missedFallback = attendanceBreakdown.kelmadi ?? attendanceStats.missed_lessons ?? 0;
+    const lateFallback = attendanceBreakdown.kech_qoldi ?? attendanceStats.late_lessons ?? 0;
+
+    return {
+      total_lessons: attendanceStats.total_lessons || 0,
+      attended_lessons: attendedFallback,
+      missed_lessons: missedFallback,
+      late_lessons: lateFallback,
+      attendance_percentage: attendanceStats.attendance_percentage || 0,
+      breakdown: {
+        keldi: attendanceBreakdown.keldi ?? attendanceStats.attended_lessons ?? 0,
+        kelmadi: attendanceBreakdown.kelmadi ?? attendanceStats.missed_lessons ?? 0,
+        kech_qoldi: attendanceBreakdown.kech_qoldi ?? attendanceStats.late_lessons ?? 0,
+      },
+    };
+  }, [attendanceBreakdown, attendanceStats, computedStats, dailyAttendance]);
+
   const selectedGroup = groups.find((g) => Number(getGroupId(g)) === Number(activeGroupId));
   const groupName =
     attendancePayload.group_info?.name ||
@@ -220,23 +280,23 @@ function MyAttendance() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div className="bg-white rounded-2xl shadow-lg p-4 border-t-4 border-blue-500">
               <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Jami darslar</div>
-              <div className="text-2xl font-extrabold text-blue-600">{attendanceStats.total_lessons || 0}</div>
+              <div className="text-2xl font-extrabold text-blue-600">{effectiveStats.total_lessons || 0}</div>
             </div>
             <div className="bg-white rounded-2xl shadow-lg p-4 border-t-4 border-green-500">
               <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Keldi</div>
               <div className="text-2xl font-extrabold text-green-600">
-                {attendanceBreakdown.keldi ?? attendanceStats.attended_lessons ?? 0}
+                {effectiveStats.breakdown?.keldi ?? effectiveStats.attended_lessons ?? 0}
               </div>
             </div>
             <div className="bg-white rounded-2xl shadow-lg p-4 border-t-4 border-red-500">
               <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Kelmadi</div>
               <div className="text-2xl font-extrabold text-red-600">
-                {attendanceBreakdown.kelmadi ?? attendanceStats.missed_lessons ?? 0}
+                {effectiveStats.breakdown?.kelmadi ?? effectiveStats.missed_lessons ?? 0}
               </div>
             </div>
             <div className="bg-white rounded-2xl shadow-lg p-4 border-t-4 border-[#A60E07]">
               <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Davomat %</div>
-              <div className="text-2xl font-extrabold text-[#A60E07]">{attendanceStats.attendance_percentage || 0}%</div>
+              <div className="text-2xl font-extrabold text-[#A60E07]">{effectiveStats.attendance_percentage || 0}%</div>
             </div>
           </div>
 
