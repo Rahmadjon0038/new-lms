@@ -111,8 +111,14 @@ const CreateLessonModal = ({ isOpen, onClose, groupId }) => {
   if (!isOpen) return null;
   
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 bg-opacity-30 p-3 sm:p-4">
-      <div className="mx-0 w-full max-w-md rounded-lg bg-white p-4 shadow-lg sm:mx-4 sm:p-6">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 bg-opacity-30 p-3 sm:p-4"
+      onClick={onClose}
+    >
+      <div
+        className="mx-0 w-full max-w-md rounded-lg bg-white p-4 shadow-lg sm:mx-4 sm:p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
         <h3 className="text-lg font-semibold text-gray-800 mb-4">Yangi Dars Yaratish</h3>
         
         <form onSubmit={handleSubmit}>
@@ -170,8 +176,14 @@ const EditLessonDateModal = ({ isOpen, onClose, lesson, selectedDate, setSelecte
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 sm:p-4">
-      <div className="mx-0 w-full max-w-md rounded-lg bg-white p-4 shadow-lg sm:mx-4 sm:p-6">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 sm:p-4"
+      onClick={onClose}
+    >
+      <div
+        className="mx-0 w-full max-w-md rounded-lg bg-white p-4 shadow-lg sm:mx-4 sm:p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
         <h3 className="text-lg font-semibold text-gray-800 mb-4">Dars sanasini o&apos;zgartirish</h3>
 
         <form onSubmit={handleSubmit}>
@@ -229,8 +241,14 @@ const RegenerateLessonsModal = ({ isOpen, onClose, month, fromDate, setFromDate,
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="mx-0 w-full max-w-md rounded-lg bg-white p-4 shadow-lg sm:mx-4 sm:p-6">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="mx-0 w-full max-w-md rounded-lg bg-white p-4 shadow-lg sm:mx-4 sm:p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
         <h3 className="text-lg font-semibold text-gray-800 mb-4">Darslarni qayta yaratish</h3>
         <form onSubmit={handleSubmit}>
           <div className="space-y-3">

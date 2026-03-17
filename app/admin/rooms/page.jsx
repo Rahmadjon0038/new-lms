@@ -47,8 +47,14 @@ const AddRoomModal = ({ isOpen, onClose, onSubmit, isLoading }) => {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-            <div className="w-full max-w-2xl rounded-2xl bg-white p-4 shadow-2xl sm:p-6">
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+            onClick={onClose}
+        >
+            <div
+                className="w-full max-w-2xl rounded-2xl bg-white p-4 shadow-2xl sm:p-6"
+                onClick={(e) => e.stopPropagation()}
+            >
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-xl font-bold text-gray-800">Yangi Xona Qo'shish</h3>
                     <button
@@ -141,6 +147,172 @@ const AddRoomModal = ({ isOpen, onClose, onSubmit, isLoading }) => {
     );
 };
 
+// Xona tahrirlash modali
+const EditRoomModal = ({ isOpen, onClose, onSubmit, isLoading, initialData }) => {
+    const [formData, setFormData] = useState({
+        room_number: '',
+        capacity: '',
+        description: '',
+        has_projector: false,
+        building: '',
+        floor: '',
+    });
+
+    useEffect(() => {
+        if (isOpen && initialData) {
+            setFormData({
+                room_number: initialData.room_number || '',
+                capacity: initialData.capacity ?? '',
+                description: initialData.description || '',
+                has_projector: Boolean(initialData.has_projector),
+                building: initialData.building || '',
+                floor: initialData.floor || '',
+            });
+        }
+    }, [isOpen, initialData]);
+
+    const handleChange = (e) => {
+        const { name, value, type, checked } = e.target;
+        setFormData((prev) => ({
+            ...prev,
+            [name]: type === 'checkbox' ? checked : value,
+        }));
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (!initialData?.id) return;
+        onSubmit(initialData.id, formData);
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+            onClick={onClose}
+        >
+            <div
+                className="w-full max-w-2xl rounded-2xl bg-white p-4 shadow-2xl sm:p-6"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xl font-bold text-gray-800">Xonani yangilash</h3>
+                    <button
+                        onClick={onClose}
+                        className="p-1 hover:bg-gray-100 rounded-lg transition"
+                    >
+                        <XMarkIcon className="h-6 w-6 text-gray-600" />
+                    </button>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Xona Raqami *
+                        </label>
+                        <input
+                            type="text"
+                            name="room_number"
+                            value={formData.room_number}
+                            onChange={handleChange}
+                            placeholder="101"
+                            required
+                            className="w-full p-2 border border-[#A60E07] rounded-lg outline-none focus:ring-1 focus:ring-[#A60E07]"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Sig'imi (o'rinlik) *
+                        </label>
+                        <input
+                            type="number"
+                            name="capacity"
+                            value={formData.capacity}
+                            onChange={handleChange}
+                            placeholder="20"
+                            required
+                            className="w-full p-2 border border-[#A60E07] rounded-lg outline-none focus:ring-1 focus:ring-[#A60E07]"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Tavsif
+                        </label>
+                        <textarea
+                            name="description"
+                            value={formData.description}
+                            onChange={handleChange}
+                            placeholder="Xona tavsifi..."
+                            rows="3"
+                            className="w-full p-2 border border-gray-300 rounded-lg outline-none focus:ring-1 focus:ring-[#A60E07] resize-none"
+                        />
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="checkbox"
+                            name="has_projector"
+                            checked={formData.has_projector}
+                            onChange={handleChange}
+                            id="edit_has_projector"
+                            className="w-4 h-4 rounded border-gray-300"
+                        />
+                        <label htmlFor="edit_has_projector" className="text-sm font-medium text-gray-700">
+                            Proyektor mavjud
+                        </label>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Bino</label>
+                            <input
+                                type="text"
+                                name="building"
+                                value={formData.building}
+                                onChange={handleChange}
+                                placeholder="A blok"
+                                className="w-full p-2 border border-gray-300 rounded-lg outline-none focus:ring-1 focus:ring-[#A60E07]"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Qavat</label>
+                            <input
+                                type="text"
+                                name="floor"
+                                value={formData.floor}
+                                onChange={handleChange}
+                                placeholder="2"
+                                className="w-full p-2 border border-gray-300 rounded-lg outline-none focus:ring-1 focus:ring-[#A60E07]"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
+                        >
+                            Bekor qilish
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isLoading}
+                            className="px-4 py-2 text-sm font-medium text-white rounded-lg hover:opacity-90 transition"
+                            style={{ backgroundColor: MAIN_COLOR }}
+                        >
+                            {isLoading ? "Saqlanmoqda..." : "Yangilash"}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
 // Dars jadvali modali
 const ScheduleModal = ({ isOpen, onClose, roomId }) => {
     const { data: scheduleData, isLoading } = useGetRoomSchedule(roomId);
@@ -151,8 +323,14 @@ const ScheduleModal = ({ isOpen, onClose, roomId }) => {
     const groups = scheduleData?.groups || [];
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-            <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-4 shadow-2xl sm:p-6">
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+            onClick={onClose}
+        >
+            <div
+                className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-4 shadow-2xl sm:p-6"
+                onClick={(e) => e.stopPropagation()}
+            >
                 <div className="mb-6 flex items-start justify-between gap-3">
                     <div>
                         <h3 className="text-xl font-bold text-gray-800 sm:text-2xl">
@@ -327,6 +505,7 @@ const RoomsPage = () => {
     const [selectedRoomId, setSelectedRoomId] = useState(null);
     const { data: roomsData, isLoading, refetch } = useGetAllRooms();
     const createRoomMutation = useCreateRoom();
+    const updateRoomMutation = useUpdateRoom();
     const deleteRoomMutation = useDeleteRoom();
     const notify = useGetNotify();
 
@@ -358,6 +537,9 @@ const RoomsPage = () => {
         });
     };
 
+    const [editRoom, setEditRoom] = useState(null);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
     const handleDeleteRoom = async (roomId) => {
         notify('load');
         
@@ -372,6 +554,35 @@ const RoomsPage = () => {
                 notify('err', errorMessage);
             }
         });
+    };
+
+    const handleEditRoom = (room) => {
+        setEditRoom(room);
+        setIsEditModalOpen(true);
+    };
+
+    const handleUpdateRoom = (roomId, formData) => {
+        notify('load');
+        updateRoomMutation.mutate(
+            { id: roomId, roomData: formData },
+            {
+                onSuccess: (data) => {
+                    notify('dismiss');
+                    if (data.success) {
+                        notify('ok', 'Xona muvaffaqiyatli yangilandi');
+                        setIsEditModalOpen(false);
+                        setEditRoom(null);
+                    } else {
+                        notify('err', data.message || 'Xona yangilashda xatolik yuz berdi');
+                    }
+                },
+                onError: (error) => {
+                    notify('dismiss');
+                    const errorMessage = error?.response?.data?.message || 'Xona yangilashda xatolik yuz berdi';
+                    notify('err', errorMessage);
+                },
+            }
+        );
     };
 
     return (
@@ -399,6 +610,16 @@ const RoomsPage = () => {
                     onClose={() => setIsModalOpen(false)}
                     onSubmit={handleAddRoom}
                     isLoading={createRoomMutation.isPending}
+                />
+                <EditRoomModal
+                    isOpen={isEditModalOpen}
+                    onClose={() => {
+                        setIsEditModalOpen(false);
+                        setEditRoom(null);
+                    }}
+                    onSubmit={handleUpdateRoom}
+                    isLoading={updateRoomMutation.isPending}
+                    initialData={editRoom}
                 />
 
                 {/* Schedule Modal */}
@@ -438,7 +659,7 @@ const RoomsPage = () => {
                                 key={room.id}
                                 room={room}
                                 onDelete={handleDeleteRoom}
-                                onEdit={() => console.log('Edit room', room)}
+                                onEdit={() => handleEditRoom(room)}
                                 onViewSchedule={() => handleViewSchedule(room.id)}
                             />
                         ))}

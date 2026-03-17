@@ -22,6 +22,12 @@ const prettyMonthlyStatus = (value) => {
   return value;
 };
 
+const formatMoney = (value) => {
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return "-";
+  return `${amount.toLocaleString("uz-UZ")} so'm`;
+};
+
 function LessonMarkPage({ role = "teacher" }) {
   const params = useParams();
   const router = useRouter();
@@ -174,6 +180,8 @@ function LessonMarkPage({ role = "teacher" }) {
                 <th className="px-4 py-3 text-left font-semibold text-gray-600">Talaba</th>
                 <th className="px-4 py-3 text-left font-semibold text-gray-600">Telefon</th>
                 <th className="px-4 py-3 text-left font-semibold text-gray-600">Monthly status</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-600">To&apos;langan</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-600">Qarz</th>
                 <th className="px-4 py-3 text-left font-semibold text-gray-600">Status</th>
               </tr>
             </thead>
@@ -202,6 +210,12 @@ function LessonMarkPage({ role = "teacher" }) {
                       }`}>
                         {student.monthly_status_description || prettyMonthlyStatus(student.monthly_status)}
                       </span>
+                    </td>
+                    <td className="px-4 py-3 text-gray-700">
+                      {formatMoney(student.paid_amount)}
+                    </td>
+                    <td className={`px-4 py-3 ${Number(student.debt_amount) > 0 ? "text-rose-700" : "text-gray-700"}`}>
+                      {formatMoney(student.debt_amount)}
                     </td>
                     <td className="px-4 py-3">
                       <select

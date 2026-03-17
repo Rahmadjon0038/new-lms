@@ -45,6 +45,22 @@ const RoomsSelect = ({ value, onChange, placeholder = "Xona tanlang..." }) => {
                     />
 
                     <div className="max-h-64 overflow-y-auto">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                onChange(null);
+                                setIsOpen(false);
+                                setSearchTerm('');
+                            }}
+                            className={`w-full text-left p-3 transition border-b border-gray-100 ${
+                                !value ? 'bg-orange-50 border-l-4 border-l-[#A60E07]' : 'hover:bg-gray-100'
+                            }`}
+                        >
+                            <div className="flex items-center justify-between">
+                                <span className="font-semibold text-gray-800">Xona tanlanmagan</span>
+                                {!value ? <span className="text-xs text-[#A60E07]">tanlangan</span> : null}
+                            </div>
+                        </button>
                         {isLoading ? (
                             <div className="p-3 text-center text-gray-500">Yuklangan...</div>
                         ) : filteredRooms.length === 0 ? (

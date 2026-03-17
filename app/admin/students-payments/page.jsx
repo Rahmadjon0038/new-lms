@@ -519,7 +519,7 @@ const StudentPayments = () => {
                 </div>
 
                 {/* Statistics Cards - Display Only */}
-                {stats.total_students > 0 && (
+                {/* {stats.total_students > 0 && (
                     <div className="mb-3 flex items-center justify-between rounded-lg border border-gray-200 bg-white px-2.5 py-2 sm:px-4">
                         <p className="text-sm font-semibold text-gray-800">Statistika</p>
                         <button
@@ -599,7 +599,7 @@ const StudentPayments = () => {
                             </div>
                         </div>
                     </div>
-                )}
+                )} */}
 
                 {/* Filters */}
                 <div className="mb-4 rounded-lg bg-white p-3 shadow-md sm:mb-6 sm:p-6">
@@ -800,9 +800,9 @@ const StudentPayments = () => {
                 {/* Results */}
                 <div className="bg-white rounded-lg shadow-md">
                     <div className="flex flex-col gap-2 border-b border-gray-200 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4">
-                        <h2 className="text-base font-semibold text-gray-800 sm:text-lg">
+                        {/* <h2 className="text-base font-semibold text-gray-800 sm:text-lg">
                             To'lov ma'lumotlari ({students.length} ta)
-                        </h2>
+                        </h2> */}
                         {/* {stats.total_expected > 0 && (
               <div className="text-sm text-gray-600">
                 Yig'ilgan: <span className="font-semibold text-green-600">{formatCurrency(stats.total_collected)}</span>
@@ -826,8 +826,15 @@ const StudentPayments = () => {
                         {filteredStudents.length > 0 ? (
                             <>
                             <div className="space-y-2.5 p-2.5 sm:p-4 md:hidden">
-                                {filteredStudents.map((student, index) => (
-                                    <div key={`${student.student_id}-${student.group_id}-${index}`} className="rounded-lg border border-gray-200 p-2.5">
+                                {filteredStudents.map((student, index) => {
+                                    const rowTint =
+                                        student.payment_status === 'paid'
+                                            ? 'border-l-[6px] border-green-400'
+                                            : student.payment_status === 'partial'
+                                                ? 'border-l-[6px] border-orange-400'
+                                                : 'border-l-[6px] border-red-400';
+                                    return (
+                                    <div key={`${student.student_id}-${student.group_id}-${index}`} className={`rounded-lg border border-gray-200 p-2.5 ${rowTint}`}>
                                         <div className="mb-2 flex items-start justify-between gap-2">
                                             <div className="min-w-0">
                                                 <p className="text-xs text-gray-400">#{index + 1}</p>
@@ -897,7 +904,7 @@ const StudentPayments = () => {
                                             </button>
                                         </div>
                                     </div>
-                                ))}
+                                )})}
                             </div>
 
                             <table className="hidden min-w-[1100px] w-full divide-y divide-gray-200 md:table">
@@ -927,9 +934,16 @@ const StudentPayments = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {filteredStudents.map((student, index) => (
+                                    {filteredStudents.map((student, index) => {
+                                    const rowTint =
+                                        student.payment_status === 'paid'
+                                            ? 'border-l-[6px] border-green-400'
+                                            : student.payment_status === 'partial'
+                                                ? 'border-l-[6px] border-orange-400'
+                                                : 'border-l-[6px] border-red-400';
+                                        return (
                                         <tr key={`${student.student_id}-${student.group_id}-${index}`} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            <td className={`px-6 py-4 whitespace-nowrap text-sm text-gray-900 ${rowTint}`}>
                                                 {index + 1}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
@@ -1137,7 +1151,7 @@ const StudentPayments = () => {
                                                 </div>
                                             </td>
                                         </tr>
-                                    ))}
+                                    )})}
                                 </tbody>
                             </table>
                             </>
@@ -1191,8 +1205,23 @@ const StudentPayments = () => {
 
                 {/* Payment History Modal */}
                 {showPaymentHistoryModal && selectedStudent && (
-                    <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center z-50 p-4">
-                            <div className="max-h-[85vh] w-full max-w-4xl overflow-hidden rounded-xl bg-white shadow-2xl">
+                    <div
+                        className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center z-50 p-4"
+                        onClick={() => {
+                            setShowPaymentHistoryModal(false);
+                            setSelectedStudent(null);
+                            setHistoryFilters({
+                                month: null,
+                                groupId: null,
+                                studentId: null,
+                                limit: 20
+                            });
+                        }}
+                    >
+                            <div
+                                className="max-h-[85vh] w-full max-w-4xl overflow-hidden rounded-xl bg-white shadow-2xl"
+                                onClick={(e) => e.stopPropagation()}
+                            >
                             {/* Header */}
                             <div className="px-6 py-4 border-b border-gray-200" style={{ backgroundColor: `${MAIN_COLOR}10` }}>
                                 <div className="flex items-start justify-between gap-3">

@@ -226,6 +226,8 @@ export default function AdminTeacherGroupsPage() {
               <tr>
                 <th className="px-2 py-1.5 text-left font-semibold text-gray-600 sm:px-3 sm:py-2">Talaba</th>
                 <th className="px-2 py-1.5 text-left font-semibold text-gray-600 sm:px-3 sm:py-2">Talaba holati</th>
+                <th className="px-2 py-1.5 text-left font-semibold text-gray-600 sm:px-3 sm:py-2">To&apos;langan</th>
+                <th className="px-2 py-1.5 text-left font-semibold text-gray-600 sm:px-3 sm:py-2">Qarz</th>
                 <th className="px-2 py-1.5 text-left font-semibold text-gray-600 sm:px-3 sm:py-2">Davomat</th>
               </tr>
             </thead>
@@ -241,6 +243,18 @@ export default function AdminTeacherGroupsPage() {
                     }`}>
                       {student.monthly_status || "active"}
                     </span>
+                  </td>
+                  <td className="px-2 py-1.5 text-gray-700 sm:px-3 sm:py-2">
+                    {Number.isFinite(Number(student.paid_amount))
+                      ? `${Number(student.paid_amount).toLocaleString("uz-UZ")} so'm`
+                      : "-"}
+                  </td>
+                  <td className={`px-2 py-1.5 sm:px-3 sm:py-2 ${
+                    Number(student.debt_amount) > 0 ? "text-red-600" : "text-gray-700"
+                  }`}>
+                    {Number.isFinite(Number(student.debt_amount))
+                      ? `${Number(student.debt_amount).toLocaleString("uz-UZ")} so'm`
+                      : "-"}
                   </td>
                   <td className="px-2 py-1.5 sm:px-3 sm:py-2">
                     <div className="inline-flex rounded-xl border border-gray-200 bg-white p-0.5 sm:p-1">

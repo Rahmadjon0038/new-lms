@@ -484,8 +484,15 @@ const TeacherGuideLessonPage = () => {
       </div>
 
       {imageViewer.open ? (
-        <div className="fixed inset-0 z-[9999] bg-black/80 p-3 sm:p-6">
-          <div ref={viewerRef} className="h-full w-full rounded-xl bg-black p-3 sm:p-4">
+        <div
+          className="fixed inset-0 z-[9999] bg-black/80 p-3 sm:p-6"
+          onClick={closeImageViewer}
+        >
+          <div
+            ref={viewerRef}
+            className="h-full w-full rounded-xl bg-black p-3 sm:p-4"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="mb-3 flex items-center justify-between">
               <p className="truncate text-sm font-semibold text-white">{imageViewer.title}</p>
               <div className="flex items-center gap-2">

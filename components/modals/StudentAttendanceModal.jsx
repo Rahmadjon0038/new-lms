@@ -97,8 +97,14 @@ const StudentAttendanceModal = ({ isOpen, onClose, student, month }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-1 sm:items-center sm:p-4">
-            <div className="mx-auto h-[95vh] w-full max-w-6xl overflow-hidden rounded-t-2xl bg-white shadow-md sm:h-auto sm:max-h-[92vh] sm:rounded-xl">
+        <div
+            className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-1 sm:items-center sm:p-4"
+            onClick={onClose}
+        >
+            <div
+                className="mx-auto h-[95vh] w-full max-w-6xl overflow-hidden rounded-t-2xl bg-white shadow-md sm:h-auto sm:max-h-[92vh] sm:rounded-xl"
+                onClick={(e) => e.stopPropagation()}
+            >
                 {/* Header */}
                 <div className="sticky top-0 z-20 flex items-start justify-between border-b border-gray-200 bg-white p-3 sm:items-center sm:p-6">
                     <div>

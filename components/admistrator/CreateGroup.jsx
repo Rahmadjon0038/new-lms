@@ -224,7 +224,7 @@ export default function AdminNewGroupModal({ children, onSuccess }) {
                 </label>
                 <RoomsSelect
                   value={groupData.room_id ? Number(groupData.room_id) : ""}
-                  onChange={(roomId) => setGroupData(prev => ({ ...prev, room_id: String(roomId) }))}
+                  onChange={(roomId) => setGroupData(prev => ({ ...prev, room_id: roomId ? String(roomId) : "" }))}
                   placeholder="Xona tanlang"
                 />
               </div>

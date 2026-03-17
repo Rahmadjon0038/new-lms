@@ -129,30 +129,35 @@ const AdminMainPdfPage = () => {
       </div>
 
       {isFullScreenMode ? (
-        <div className="fixed inset-0 z-[9999] bg-[#0f172a]">
-          <div className="h-12 border-b border-white/10 px-3 sm:px-4 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-white">Main PDF - Full screen</h2>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setIsFullScreenMode(false)}
-                className="inline-flex items-center gap-1 rounded-md bg-white/10 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/20"
-              >
-                <ArrowsPointingInIcon className="h-4 w-4" />
-                Exit
-              </button>
-              <button onClick={() => setIsFullScreenMode(false)} className="rounded-md bg-white/10 p-2 text-white hover:bg-white/20">
-                <XMarkIcon className="h-4 w-4" />
-              </button>
+        <div
+          className="fixed inset-0 z-[9999] bg-[#0f172a]"
+          onClick={() => setIsFullScreenMode(false)}
+        >
+          <div className="h-full" onClick={(e) => e.stopPropagation()}>
+            <div className="h-12 border-b border-white/10 px-3 sm:px-4 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-white">Main PDF - Full screen</h2>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsFullScreenMode(false)}
+                  className="inline-flex items-center gap-1 rounded-md bg-white/10 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/20"
+                >
+                  <ArrowsPointingInIcon className="h-4 w-4" />
+                  Exit
+                </button>
+                <button onClick={() => setIsFullScreenMode(false)} className="rounded-md bg-white/10 p-2 text-white hover:bg-white/20">
+                  <XMarkIcon className="h-4 w-4" />
+                </button>
+              </div>
             </div>
-          </div>
-          <div className="h-[calc(100vh-48px)] overflow-auto bg-[#0b1220] p-3 sm:p-4">
-            <div className="mx-auto w-full max-w-6xl">
-              <div className="mx-auto w-full max-w-[960px] overflow-hidden rounded-xl border border-white/10 bg-white">
-                <iframe
-                  title="Main PDF Full Screen"
-                  src={`${pdfUrl}#toolbar=0&navpanes=0&view=FitH&zoom=page-width`}
-                  className="h-[calc(100vh-80px)] min-h-[540px] w-full"
-                />
+            <div className="h-[calc(100vh-48px)] overflow-auto bg-[#0b1220] p-3 sm:p-4">
+              <div className="mx-auto w-full max-w-6xl">
+                <div className="mx-auto w-full max-w-[960px] overflow-hidden rounded-xl border border-white/10 bg-white">
+                  <iframe
+                    title="Main PDF Full Screen"
+                    src={`${pdfUrl}#toolbar=0&navpanes=0&view=FitH&zoom=page-width`}
+                    className="h-[calc(100vh-80px)] min-h-[540px] w-full"
+                  />
+                </div>
               </div>
             </div>
           </div>

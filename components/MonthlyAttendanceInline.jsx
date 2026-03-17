@@ -83,8 +83,14 @@ const MonthlyStatusModal = ({ isOpen, onClose, student, groupId, currentMonth, u
   const monthOptions = generateMonthOptions();
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 bg-opacity-50">
-      <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 bg-opacity-50"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
           Oylik Statusni O&apos;zgartirish
         </h3>
@@ -403,6 +409,12 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
     return <span className="text-gray-400 text-xs">-</span>;
   };
 
+  const formatMoney = (value) => {
+    const amount = Number(value);
+    if (!Number.isFinite(amount)) return "-";
+    return `${amount.toLocaleString("uz-UZ")} so'm`;
+  };
+
   return (
     <div className="mt-6 rounded-lg bg-white p-3 sm:mt-8 sm:p-4 md:mt-12 md:p-6">
       <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center sm:gap-4">
@@ -430,6 +442,8 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
                 <th className="border border-gray-400 px-3 py-2 text-left text-xs font-semibold text-gray-700">#</th>
                 <th className="border border-gray-400 px-3 py-2 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">Talaba</th>
                 <th className="border border-gray-400 px-3 py-2 text-center text-xs font-semibold text-gray-700 whitespace-nowrap">Holati</th>
+                <th className="border border-gray-400 px-3 py-2 text-center text-xs font-semibold text-gray-700 whitespace-nowrap">To&apos;langan</th>
+                <th className="border border-gray-400 px-3 py-2 text-center text-xs font-semibold text-gray-700 whitespace-nowrap">Qarz</th>
                 {lessons.map((lesson) => (
                   <th key={lesson.id} className="min-w-[100px] whitespace-nowrap border border-gray-400 px-3 py-2 text-center text-xs font-semibold text-gray-700">
                     <div>{formatDate(lesson.date)}</div>
@@ -474,6 +488,14 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
                           </button>
                         ) : null}
                       </div>
+                    </td>
+                    <td className="border border-gray-400 px-3 py-2 text-center text-xs text-gray-700 whitespace-nowrap">
+                      {formatMoney(student.paid_amount)}
+                    </td>
+                    <td className={`border border-gray-400 px-3 py-2 text-center text-xs whitespace-nowrap ${
+                      Number(student.debt_amount) > 0 ? "text-red-600" : "text-gray-700"
+                    }`}>
+                      {formatMoney(student.debt_amount)}
                     </td>
                     {lessons.map((lesson) => (
                       <td key={lesson.id} className="border border-gray-400 px-3 py-2 text-center">

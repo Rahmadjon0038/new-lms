@@ -1,12 +1,13 @@
 'use client'
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import {
     XMarkIcon,
     UserGroupIcon,
     TrashIcon,
     UserMinusIcon,
-    ArrowRightOnRectangleIcon
+    ArrowRightOnRectangleIcon,
+    ChevronDownIcon
 } from '@heroicons/react/24/outline';
 import {
     useBulkChangeStudentsGroup,
@@ -146,10 +147,93 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
     const getGroupOptionLabel = (group) => {
         const groupName = group?.name || group?.group_name || `Guruh #${group?.id || '-'}`;
         const subjectName = group?.subject_name || group?.subject?.name || group?.subject || '-';
-        const teacherName = group?.teacher_name || group?.teacher || "Noma'lum";
+        const teacherName = group?.teacher_name || group?.teacher || "-";
         const scheduleText = getScheduleText(group) || '-';
 
         return `${groupName} | Fan: ${subjectName} | Jadval: ${scheduleText} | O'qituvchi: ${teacherName}`;
+    };
+
+    const GroupSelect = ({ value, onChange, options, placeholder = "Guruhni tanlang...", disabled = false }) => {
+        const [isOpen, setIsOpen] = useState(false);
+        const [searchTerm, setSearchTerm] = useState('');
+        const wrapperRef = useRef(null);
+
+        useEffect(() => {
+            if (!isOpen) return undefined;
+            const handleOutside = (event) => {
+                if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+                    setIsOpen(false);
+                }
+            };
+            document.addEventListener('mousedown', handleOutside);
+            return () => document.removeEventListener('mousedown', handleOutside);
+        }, [isOpen]);
+
+        const selectedGroup = options.find((group) => String(group.id) === String(value));
+        const query = searchTerm.trim().toLowerCase();
+        const filteredOptions = query
+            ? options.filter((group) => {
+                const groupName = String(group?.name || group?.group_name || '').toLowerCase();
+                const teacherName = String(group?.teacher_name || group?.teacher || '').toLowerCase();
+                const subjectName = String(group?.subject_name || group?.subject?.name || group?.subject || '').toLowerCase();
+                return groupName.includes(query) || teacherName.includes(query) || subjectName.includes(query);
+            })
+            : options;
+
+        return (
+            <div ref={wrapperRef} className="relative w-full">
+                <button
+                    type="button"
+                    onClick={() => !disabled && setIsOpen((prev) => !prev)}
+                    className={`flex w-full items-center justify-between rounded-lg border px-2.5 py-1.5 text-left text-sm sm:px-3 sm:py-2 ${
+                        disabled
+                            ? 'cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400'
+                            : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                    }`}
+                >
+                    <span className="truncate">
+                        {selectedGroup ? getGroupOptionLabel(selectedGroup) : placeholder}
+                    </span>
+                    <ChevronDownIcon className={`h-4 w-4 text-gray-400 transition ${isOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {isOpen ? (
+                    <div className="absolute z-50 mt-2 w-full rounded-lg border border-gray-200 bg-white shadow-lg">
+                        <div className="border-b border-gray-100 p-2">
+                            <input
+                                type="text"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                placeholder="Guruh yoki o'qituvchi nomi..."
+                                className="w-full rounded-md border border-gray-200 px-2.5 py-1.5 text-sm outline-none focus:border-[#A60E07]"
+                            />
+                        </div>
+                        <div className="max-h-64 overflow-y-auto">
+                            {filteredOptions.length === 0 ? (
+                                <div className="p-3 text-center text-xs text-gray-500">Guruh topilmadi</div>
+                            ) : (
+                                filteredOptions.map((group) => (
+                                    <button
+                                        type="button"
+                                        key={group.id}
+                                        onClick={() => {
+                                            onChange(String(group.id));
+                                            setIsOpen(false);
+                                            setSearchTerm('');
+                                        }}
+                                        className={`w-full px-3 py-2 text-left text-xs sm:text-sm transition hover:bg-gray-50 ${
+                                            String(value) === String(group.id) ? 'bg-orange-50 border-l-4 border-l-[#A60E07]' : ''
+                                        }`}
+                                    >
+                                        {getGroupOptionLabel(group)}
+                                    </button>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                ) : null}
+            </div>
+        );
     };
 
     const bulkStudents = useMemo(() => {
@@ -439,8 +523,14 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
             </div>
 
             {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-2 sm:p-4">
-                    <div className="w-full max-h-[92vh] max-w-5xl overflow-y-auto rounded-xl bg-white p-3 sm:p-6">
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-2 sm:p-4"
+                    onClick={handleModalClose}
+                >
+                    <div
+                        className="w-full max-h-[92vh] max-w-5xl overflow-y-auto rounded-xl bg-white p-3 sm:p-6"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <div className="mb-3 flex items-center justify-between sm:mb-4">
                             <h3 className="flex items-center text-base font-semibold text-gray-800 sm:text-xl">
                                 <UserGroupIcon className="mr-2 h-5 w-5 text-[#A60E07] sm:h-6 sm:w-6" />
@@ -495,7 +585,7 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
                                                         Hozirgi guruh: {student?.group_name}
                                                     </p>
                                                     <p className="text-xs text-gray-500">
-                                                        O&apos;qituvchi: {student?.teacher_name || 'Noma&apos;lum'}
+                                                        O&apos;qituvchi: {student?.teacher_name || '-'}
                                                     </p>
                                                 </div>
                                             ) : (
@@ -567,20 +657,13 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
                                             <label className="mb-1.5 block text-xs font-medium text-gray-700 sm:mb-2 sm:text-sm">
                                                 {actionType === 'change' ? 'Yangi guruhni tanlang' : 'Guruhni tanlang'} *
                                             </label>
-                                            <select
+                                            <GroupSelect
                                                 value={selectedGroupId}
-                                                onChange={(e) => setSelectedGroupId(e.target.value)}
-                                                className="w-full rounded-lg border border-gray-300 px-2.5 py-1.5 text-sm focus:border-transparent focus:ring-2 focus:ring-[#A60E07] sm:px-3 sm:py-2"
+                                                onChange={(value) => setSelectedGroupId(value)}
+                                                options={availableGroups}
+                                                placeholder="Guruhni tanlang..."
                                                 disabled={groupsLoading || isSingleLoading}
-                                                required
-                                            >
-                                                <option value="">Guruhni tanlang...</option>
-                                                {availableGroups.map((group) => (
-                                                    <option key={group.id} value={group.id}>
-                                                        {getGroupOptionLabel(group)}
-                                                    </option>
-                                                ))}
-                                            </select>
+                                            />
                                         </div>
                                     )}
 
@@ -688,18 +771,13 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
                                         ) : null}
 
                                         {(bulkActionType === 'join' || bulkActionType === 'change') ? (
-                                            <select
+                                            <GroupSelect
                                                 value={bulkTargetGroupId}
-                                                onChange={(e) => setBulkTargetGroupId(e.target.value)}
-                                                className="h-10 w-full min-w-0 rounded-lg border border-gray-300 bg-white px-3 text-sm outline-none focus:border-[#A60E07]"
-                                            >
-                                                <option value="">Kerakli guruhni tanlang *</option>
-                                                {availableGroups.map((group) => (
-                                                    <option key={group.id} value={group.id}>
-                                                        {getGroupOptionLabel(group)}
-                                                    </option>
-                                                ))}
-                                            </select>
+                                                onChange={(value) => setBulkTargetGroupId(value)}
+                                                options={availableGroups}
+                                                placeholder="Kerakli guruhni tanlang *"
+                                                disabled={groupsLoading || isBulkLoading}
+                                            />
                                         ) : null}
                                     </div>
 

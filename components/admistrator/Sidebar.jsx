@@ -54,6 +54,11 @@ const primarySidebarItems = [
     icon: BookOpenIcon,
     href: "/admin/groups",
   },
+  {
+    name: "Xonalar",
+    icon: BuildingLibraryIcon,
+    href: "/admin/rooms",
+  },
 ];
 
 // Qo'shimcha bo'limlar
@@ -74,15 +79,10 @@ const secondarySidebarItems = [
     href: "/admin/expenses",
   },
   
-   {
+  {
     name: "O'qituvchilar",
     icon: UserGroupIcon,
     href: "/admin/teachers",
-  },
-  {
-    name: "Xonalar",
-    icon: BuildingLibraryIcon,
-    href: "/admin/rooms",
   },
 ];
 

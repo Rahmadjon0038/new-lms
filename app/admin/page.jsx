@@ -84,6 +84,29 @@ const filterRowsFromMonth = (rows = [], fromMonth = "2026-01") =>
 const getStudentSubjectName = (student) =>
   student?.registered_subject_name || student?.subject_name || 'Belgilanmagan';
 
+const formatDateTime = (value) => {
+  if (!value) return "-";
+  const normalized = String(value).replace(" ", "T");
+  const date = new Date(normalized);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleString("uz-UZ", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const formatPaymentMethod = (value) => {
+  const key = String(value || "").toLowerCase().trim();
+  if (!key) return "-";
+  if (["cash", "naqd", "naqd pul"].includes(key)) return "Naqd";
+  if (["card", "kart", "kartochka", "plastik"].includes(key)) return "Karta";
+  if (["transfer", "otkazma", "o'tkazma", "bank"].includes(key)) return "O‘tkazma";
+  return value;
+};
+
 // Stat Card Component
 const StatCard = ({ title, value, icon: Icon, color = MAIN_COLOR, bgColor = "from-[#A60E07]/10 to-[#A60E07]/5" }) => (
   <div className="bg-white p-3 sm:p-4 rounded-xl shadow-md border border-gray-200 flex items-center gap-3 hover:shadow-lg transition group">
@@ -136,6 +159,10 @@ function AdminDashboard() {
   const monthly = monthlyQuery.data;
   const dailySummary = daily?.summary || {};
   const monthlyCurrent = monthly?.current_month || {};
+  const dailyPayload = daily?.data?.daily || daily?.daily || {};
+  const dailyPayments = Array.isArray(dailyPayload?.payments) ? dailyPayload.payments : [];
+  const dailyNewStudents = Array.isArray(dailyPayload?.new_students) ? dailyPayload.new_students : [];
+  const dailyPaymentsTotal = toNumber(dailyPayload?.payments_total_amount);
 
   const dailyStats = {
     payments_count: getStatValue(dailySummary, "payments_count"),
@@ -284,6 +311,148 @@ function AdminDashboard() {
               bgColor="from-red-100 to-red-50"
             />
           </div>
+
+          <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <ChartCard title={`Bugun to'lov qilganlar (${dailyPayments.length} ta)`}>
+              <div className="mb-3 flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 text-xs text-gray-600">
+                <span>Umumiy summa</span>
+                <span className="font-semibold text-gray-900">{formatCurrency(dailyPaymentsTotal)}</span>
+              </div>
+              {dailyPayments.length > 0 ? (
+                <div className="space-y-2">
+                  {dailyPayments.map((payment) => (
+                    <div key={payment.payment_id || `${payment.student_id}-${payment.payment_time}`} className="rounded-lg border border-gray-200 px-3 py-2 text-xs sm:text-sm">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="font-semibold text-gray-900 truncate">
+                            {payment.name || ""} {payment.surname || ""} {payment.username ? `(@${payment.username})` : ""}
+                          </div>
+                          <div className="text-[11px] text-gray-500 truncate">
+                            {payment.group_name || payment.student_group_name || "Guruh"} • {payment.subject_name || payment.subject || "Fan"} • {payment.teacher_name || payment.student_teacher_name || "O'qituvchi"}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-semibold text-emerald-600">{formatCurrency(payment.amount)}</div>
+                          <div className="text-[11px] text-gray-500">{formatDateTime(payment.payment_time)}</div>
+                        </div>
+                      </div>
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-gray-500">
+                        <span className="flex items-center gap-1">
+                          <Phone className="h-3 w-3" />
+                          Tel1: {payment.phone || "-"}
+                        </span>
+                        {payment.phone2 ? (
+                          <span className="flex items-center gap-1">
+                            <Phone className="h-3 w-3" />
+                            Tel2: {payment.phone2}
+                          </span>
+                        ) : null}
+                        {payment.father_name || payment.father_phone ? (
+                          <span className="flex items-center gap-1">
+                            <AlertCircle className="h-3 w-3" />
+                            Ota: {payment.father_name || "-"} {payment.father_phone ? `(${payment.father_phone})` : ""}
+                          </span>
+                        ) : null}
+                        {payment.payment_method ? (
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {formatPaymentMethod(payment.payment_method)}
+                          </span>
+                        ) : null}
+                      </div>
+                      {payment.address ? (
+                        <div className="mt-1 text-[11px] text-gray-500 truncate">
+                          Manzil: {payment.address}
+                        </div>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50 p-4 text-center text-xs text-gray-500">
+                  Bugun to'lov qilgan talaba yo'q.
+                </div>
+              )}
+            </ChartCard>
+
+            <ChartCard title={`Bugun registratsiya qilinganlar (${dailyNewStudents.length} ta)`}>
+              {dailyNewStudents.length > 0 ? (
+                <div className="space-y-2">
+                  {dailyNewStudents.map((student) => (
+                    <div key={student.student_id || `${student.name}-${student.created_time}`} className="rounded-lg border border-gray-200 px-3 py-2 text-xs sm:text-sm">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 space-y-1">
+                          <div className="flex flex-wrap items-center gap-2 text-[11px] text-gray-700">
+                            <span className="flex items-center gap-1 text-gray-500">
+                              <User className="h-3 w-3" />
+                              Ism:
+                            </span>
+                            <span className="font-semibold text-gray-900 truncate">
+                              {student.name || "-"} {student.surname || ""}
+                            </span>
+
+                            <span className="text-gray-400">•</span>
+                            <span className="flex items-center gap-1 text-gray-500">
+                              <User className="h-3 w-3" />
+                              Username:
+                            </span>
+                            <span className="text-gray-800 truncate">
+                              {student.username ? `@${student.username}` : "-"}
+                            </span>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-2 text-[11px] text-gray-700">
+                            <span className="flex items-center gap-1 text-gray-500">
+                              <BookOpen className="h-3 w-3" />
+                              Fan:
+                            </span>
+                            <span className="text-gray-800 truncate">
+                              {student.subject_name || student.subject || "-"}
+                            </span>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-2 text-[11px] text-gray-700">
+                            <span className="flex items-center gap-1 text-gray-500">
+                              <Phone className="h-3 w-3" />
+                              Tel 1:
+                            </span>
+                            <span className="text-gray-800 truncate">
+                              {student.phone || "-"}
+                            </span>
+                            <span className="text-gray-400">•</span>
+                            <span className="flex items-center gap-1 text-gray-500">
+                              <Phone className="h-3 w-3" />
+                              Tel 2:
+                            </span>
+                            <span className="text-gray-800 truncate">
+                              {student.phone2 || "-"}
+                            </span>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-2 text-[11px] text-gray-700">
+                            <span className="flex items-center gap-1 text-gray-500">
+                              <AlertCircle className="h-3 w-3" />
+                              Ota/ona:
+                            </span>
+                            <span className="text-gray-800 truncate">
+                              {student.father_name || "-"} {student.father_phone ? `(${student.father_phone})` : ""}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right text-[11px] text-gray-500">
+                          {formatDateTime(student.created_time)}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50 p-4 text-center text-xs text-gray-500">
+                  Bugun yangi talaba yo'q.
+                </div>
+              )}
+            </ChartCard>
+          </div>
         </div>
       )}
 
@@ -302,13 +471,13 @@ function AdminDashboard() {
             subtitle={`${monthly?.period?.from_month || selectedMonth} - ${monthly?.period?.to_month || selectedMonth}`}
           />
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-            <StatCard 
+            {/* <StatCard 
               title="To'lovlar soni" 
               value={monthlyStats.payments_count}
               icon={BanknotesIcon}
               color="#059669"
               bgColor="from-emerald-100 to-emerald-50"
-            />
+            /> */}
             <StatCard 
               title="Yangi talabalar" 
               value={monthlyStats.new_students_count}
@@ -330,20 +499,20 @@ function AdminDashboard() {
               color="#DC2626"
               bgColor="from-red-100 to-red-50"
             />
-            <StatCard 
+            {/* <StatCard 
               title="Qarzdorlar soni" 
               value={monthlyStats.debtors_count}
               icon={AlertCircle}
               color="#B45309"
               bgColor="from-amber-100 to-amber-50"
-            />
-            <StatCard 
+            /> */}
+            {/* <StatCard 
               title="Qarz summasi" 
               value={formatCurrency(monthlyStats.debt_amount)}
               icon={CurrencyDollarIcon}
               color="#B91C1C"
               bgColor="from-rose-100 to-rose-50"
-            />
+            /> */}
           </div>
           {monthlyPaymentStatusDetails.length > 0 ? (
             <div className="mt-4">
@@ -357,7 +526,12 @@ function AdminDashboard() {
                           <Cell key={`mps-${entry.name}`} fill={entry.color} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(value, _name, ctx) => [`${value} ta`, ctx?.payload?.label || "Status"]} />
+                      <Tooltip
+                        formatter={(_value, _name, ctx) => {
+                          const percent = ctx?.payload?.percent ?? 0;
+                          return [`${percent}%`, ctx?.payload?.label || "Status"];
+                        }}
+                      />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -369,7 +543,6 @@ function AdminDashboard() {
                         <span className="text-sm text-gray-700 truncate">{item.label}</span>
                       </div>
                       <div className="text-right">
-                        <div className="text-sm font-semibold text-gray-900">{item.value}</div>
                         <div className="text-xs text-gray-500">{item.percent}%</div>
                       </div>
                     </div>
@@ -404,7 +577,7 @@ function AdminDashboard() {
           />
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
             <StatCard title="Faol o'qituvchilar" value={toNumber(overviewOverall.active_teachers_count)} icon={UsersIcon} color="#059669" bgColor="from-emerald-100 to-emerald-50" />
-            <StatCard title="Faol guruhlar" value={toNumber(overviewOverall.active_groups_count)} icon={CalendarIcon} color="#7C3AED" bgColor="from-violet-100 to-violet-50" />
+            {/* <StatCard title="Faol guruhlar" value={toNumber(overviewOverall.active_groups_count)} icon={CalendarIcon} color="#7C3AED" bgColor="from-violet-100 to-violet-50" /> */}
             <StatCard title="Fanlar soni" value={toNumber(overviewOverall.subjects_count)} icon={ChartBarIcon} color="#0EA5E9" bgColor="from-sky-100 to-sky-50" />
           </div>
           {admissionsRows.length > 0 ? (

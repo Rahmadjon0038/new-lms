@@ -808,8 +808,14 @@ const AdminGuideLessonPage = () => {
       </div>
 
       {showOverviewModal ? (
-        <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/50 p-3">
-          <div className="w-full max-w-2xl rounded-2xl bg-white p-4 shadow-2xl sm:p-5">
+        <div
+          className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/50 p-3"
+          onClick={() => setShowOverviewModal(false)}
+        >
+          <div
+            className="w-full max-w-2xl rounded-2xl bg-white p-4 shadow-2xl sm:p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="mb-3 flex items-center justify-between">
               <h3 className="text-base font-bold text-slate-900">{noteForm.id ? 'Overview yangilash' : 'Overview qo&apos;shish'}</h3>
               <button onClick={() => setShowOverviewModal(false)} className="rounded-lg bg-gray-100 p-2 hover:bg-gray-200"><XMarkIcon className="h-4 w-4" /></button>
@@ -838,8 +844,14 @@ const AdminGuideLessonPage = () => {
       ) : null}
 
       {showPdfModal ? (
-        <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/50 p-3">
-          <div className="w-full max-w-xl rounded-2xl bg-white p-4 shadow-2xl sm:p-5">
+        <div
+          className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/50 p-3"
+          onClick={() => setShowPdfModal(false)}
+        >
+          <div
+            className="w-full max-w-xl rounded-2xl bg-white p-4 shadow-2xl sm:p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="mb-3 flex items-center justify-between">
               <h3 className="text-base font-bold text-slate-900">PDF material yuklash</h3>
               <button onClick={() => setShowPdfModal(false)} className="rounded-lg bg-gray-100 p-2 hover:bg-gray-200"><XMarkIcon className="h-4 w-4" /></button>
@@ -865,8 +877,14 @@ const AdminGuideLessonPage = () => {
       ) : null}
 
       {showAssignmentModal ? (
-        <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/50 p-3">
-          <div className="w-full max-w-2xl rounded-2xl bg-white p-4 shadow-2xl sm:p-5">
+        <div
+          className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/50 p-3"
+          onClick={() => setShowAssignmentModal(false)}
+        >
+          <div
+            className="w-full max-w-2xl rounded-2xl bg-white p-4 shadow-2xl sm:p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="mb-3 flex items-center justify-between">
               <h3 className="text-base font-bold text-slate-900">{assignmentForm.id ? 'Assignment yangilash' : 'Assignment qo&apos;shish'}</h3>
               <button onClick={() => setShowAssignmentModal(false)} className="rounded-lg bg-gray-100 p-2 hover:bg-gray-200"><XMarkIcon className="h-4 w-4" /></button>
@@ -886,8 +904,14 @@ const AdminGuideLessonPage = () => {
       ) : null}
 
       {showVocabularyModal ? (
-        <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/50 p-3">
-          <div className="w-full max-w-2xl rounded-2xl bg-white p-4 shadow-2xl sm:p-5">
+        <div
+          className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/50 p-3"
+          onClick={() => setShowVocabularyModal(false)}
+        >
+          <div
+            className="w-full max-w-2xl rounded-2xl bg-white p-4 shadow-2xl sm:p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="mb-3 flex items-center justify-between">
               <h3 className="text-base font-bold text-slate-900">Vocabulary yuklash</h3>
               <button onClick={() => setShowVocabularyModal(false)} className="rounded-lg bg-gray-100 p-2 hover:bg-gray-200"><XMarkIcon className="h-4 w-4" /></button>
@@ -947,8 +971,14 @@ const AdminGuideLessonPage = () => {
       ) : null}
 
       {showVideoModal ? (
-        <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/50 p-3">
-          <div className="w-full max-w-xl rounded-2xl bg-white p-4 shadow-2xl sm:p-5">
+        <div
+          className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/50 p-3"
+          onClick={() => setShowVideoModal(false)}
+        >
+          <div
+            className="w-full max-w-xl rounded-2xl bg-white p-4 shadow-2xl sm:p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="mb-3 flex items-center justify-between">
               <h3 className="text-base font-bold text-slate-900">Video qo&apos;shish</h3>
               <button onClick={() => setShowVideoModal(false)} className="rounded-lg bg-gray-100 p-2 hover:bg-gray-200"><XMarkIcon className="h-4 w-4" /></button>
@@ -965,8 +995,15 @@ const AdminGuideLessonPage = () => {
       ) : null}
 
       {imageViewer.open ? (
-        <div className="fixed inset-0 z-[9999] bg-black/80 p-3 sm:p-6">
-          <div ref={viewerRef} className="h-full w-full rounded-xl bg-black p-3 sm:p-4">
+        <div
+          className="fixed inset-0 z-[9999] bg-black/80 p-3 sm:p-6"
+          onClick={closeImageViewer}
+        >
+          <div
+            ref={viewerRef}
+            className="h-full w-full rounded-xl bg-black p-3 sm:p-4"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="mb-3 flex items-center justify-between">
               <p className="truncate text-sm font-semibold text-white">{imageViewer.title}</p>
               <div className="flex items-center gap-2">

@@ -30,8 +30,14 @@ import SubjectsSelect from "../../../components/SubjectsSelect";
 const ConfirmToggleModal = ({ isOpen, onClose, onConfirm, isClosing, isLoading }) => {
     if (!isOpen) return null;
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-            <div className="bg-white p-6 rounded-2xl shadow-2xl max-w-sm w-full animate-in fade-in zoom-in duration-200">
+        <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+            onClick={onClose}
+        >
+            <div
+                className="bg-white p-6 rounded-2xl shadow-2xl max-w-sm w-full animate-in fade-in zoom-in duration-200"
+                onClick={(e) => e.stopPropagation()}
+            >
                 <div className="flex justify-center mb-4">
                     {isClosing ?
                         <ArchiveBoxXMarkIcon className="h-14 w-14 text-orange-500" /> :

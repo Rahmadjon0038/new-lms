@@ -13,8 +13,14 @@ const BannerModal = ({ isOpen, onClose, title, bannerFile, setBannerFile, onSave
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-lg rounded-xl bg-white p-5 shadow-xl">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-lg rounded-xl bg-white p-5 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
           <button onClick={onClose} className="rounded-md p-1 hover:bg-gray-100">
@@ -275,8 +281,11 @@ const AdminGuidePage = () => {
       />
 
       {bannerViewer.open ? (
-        <div className="fixed inset-0 z-[9999] bg-black/90 p-3 sm:p-6">
-          <div className="mb-3 flex justify-end">
+        <div
+          className="fixed inset-0 z-[9999] bg-black/90 p-3 sm:p-6"
+          onClick={() => setBannerViewer({ open: false, url: '' })}
+        >
+          <div className="mb-3 flex justify-end" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={() => setBannerViewer({ open: false, url: '' })}
               className="rounded-lg bg-white/15 p-2 text-white hover:bg-white/25"
@@ -284,7 +293,7 @@ const AdminGuidePage = () => {
               <XMarkIcon className="h-5 w-5" />
             </button>
           </div>
-          <div className="flex h-[calc(100%-52px)] items-center justify-center overflow-auto rounded-xl bg-black/40 p-4">
+          <div className="flex h-[calc(100%-52px)] items-center justify-center overflow-auto rounded-xl bg-black/40 p-4" onClick={(e) => e.stopPropagation()}>
             {bannerViewer.url ? <img src={bannerViewer.url} alt="Banner full screen" className="max-h-full w-auto max-w-full object-contain" /> : null}
           </div>
         </div>

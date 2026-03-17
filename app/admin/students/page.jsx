@@ -36,8 +36,14 @@ const StudentEditModal = ({ isOpen, onClose, student, formData, onChange, onSubm
     if (!isOpen || !student) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3">
-            <div className="w-full max-w-2xl rounded-xl bg-white shadow-xl">
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3"
+            onClick={onClose}
+        >
+            <div
+                className="w-full max-w-2xl rounded-xl bg-white shadow-xl"
+                onClick={(e) => e.stopPropagation()}
+            >
                 <div className="flex items-start justify-between gap-4 border-b border-gray-200 p-4">
                     <div>
                         <h3 className="text-lg font-semibold text-gray-900">Talaba ma'lumotlarini yangilash</h3>
@@ -871,8 +877,14 @@ const StudentsPage = () => {
                         const rowKey = `${student.id}-${student.group_id}-${index}`;
                         const statusInfo = getStatusInfo(student.group_status);
                         const isExpanded = !!mobileExpandedRows[rowKey];
+                        const isNotInGroup = !student.group_name || student.group_name === 'Guruhga biriktirilmagan';
                         return (
-                            <div key={rowKey} className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
+                            <div
+                                key={rowKey}
+                                className={`rounded-xl border p-3 shadow-sm ${
+                                    isNotInGroup ? 'border-orange-400 bg-orange-100' : 'border-gray-200 bg-white'
+                                }`}
+                            >
                                 <div className="mb-2">
                                     <div className="min-w-0">
                                         <p className="text-sm font-semibold text-gray-900">{student.name} {student.surname}</p>
@@ -1072,7 +1084,7 @@ const StudentsPage = () => {
 
                                 return (
                                     <tr key={rowKey} className={`${isEditing ? 'bg-blue-50 border-l-4 border-blue-400' :
-                                            isNotInGroup ? 'bg-orange-50 border-l-4 border-orange-300' :
+                                            isNotInGroup ? 'bg-orange-100 border-l-4 border-orange-400' :
                                                 (index % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50 hover:bg-gray-100')
                                         } transition duration-150 border-b border-gray-200`}>
                                         <td className="px-4 py-3 border-r border-gray-200 text-sm">

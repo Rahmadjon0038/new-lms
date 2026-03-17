@@ -116,8 +116,11 @@ const TeacherGuidePage = () => {
       </div>
 
       {bannerViewer.open ? (
-        <div className="fixed inset-0 z-[9999] bg-black/90 p-3 sm:p-6">
-          <div className="mb-3 flex justify-end">
+        <div
+          className="fixed inset-0 z-[9999] bg-black/90 p-3 sm:p-6"
+          onClick={() => setBannerViewer({ open: false, url: '' })}
+        >
+          <div className="mb-3 flex justify-end" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={() => setBannerViewer({ open: false, url: '' })}
               className="rounded-lg bg-white/15 p-2 text-white hover:bg-white/25"
@@ -125,7 +128,7 @@ const TeacherGuidePage = () => {
               <XMarkIcon className="h-5 w-5" />
             </button>
           </div>
-          <div className="flex h-[calc(100%-52px)] items-center justify-center overflow-auto rounded-xl bg-black/40 p-4">
+          <div className="flex h-[calc(100%-52px)] items-center justify-center overflow-auto rounded-xl bg-black/40 p-4" onClick={(e) => e.stopPropagation()}>
             {bannerViewer.url ? <img src={bannerViewer.url} alt="Banner full screen" className="max-h-full w-auto max-w-full object-contain" /> : null}
           </div>
         </div>

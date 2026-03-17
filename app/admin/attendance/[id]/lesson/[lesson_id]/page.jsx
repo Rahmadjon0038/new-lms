@@ -18,6 +18,11 @@ import { instance } from "../../../../../../hooks/api";
 import { toast } from "react-hot-toast";
 
 const MAIN_COLOR = "#A60E07";
+const formatMoney = (value) => {
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return "-";
+  return `${amount.toLocaleString("uz-UZ")} so'm`;
+};
 
 // API functions
 const getLessonStudents = async (lessonId) => {
@@ -255,6 +260,12 @@ const LessonAttendancePage = () => {
                       Status
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      To&apos;langan
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Qarz
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Davomat
                     </th>
                   </tr>
@@ -293,6 +304,14 @@ const LessonAttendancePage = () => {
                         }`}>
                           {student.monthly_status_description}
                         </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        {formatMoney(student.paid_amount)}
+                      </td>
+                      <td className={`px-6 py-4 whitespace-nowrap text-sm ${
+                        Number(student.debt_amount) > 0 ? "text-red-600" : "text-gray-700"
+                      }`}>
+                        {formatMoney(student.debt_amount)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="w-32">

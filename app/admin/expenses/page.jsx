@@ -261,8 +261,14 @@ const AdminExpensesPage = () => {
       </div>
 
       {isAddModalOpen ? (
-        <div className="fixed inset-0 z-[9999] bg-black/50 p-3 sm:p-6">
-          <div className="mx-auto mt-8 w-full max-w-xl rounded-2xl bg-white p-5 shadow-2xl sm:p-7">
+        <div
+          className="fixed inset-0 z-[9999] bg-black/50 p-3 sm:p-6"
+          onClick={closeModal}
+        >
+          <div
+            className="mx-auto mt-8 w-full max-w-xl rounded-2xl bg-white p-5 shadow-2xl sm:p-7"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="mb-5 flex items-center justify-between">
               <h3 className="text-xl font-bold text-gray-900">Rasxod qo‘shish</h3>
               <button onClick={closeModal} className="rounded-md p-1 text-gray-600 hover:bg-gray-100">
@@ -308,8 +314,14 @@ const AdminExpensesPage = () => {
       ) : null}
 
       {editingExpense ? (
-        <div className="fixed inset-0 z-[9999] bg-black/50 p-3 sm:p-6">
-          <div className="mx-auto mt-8 w-full max-w-xl rounded-2xl bg-white p-5 shadow-2xl sm:p-7">
+        <div
+          className="fixed inset-0 z-[9999] bg-black/50 p-3 sm:p-6"
+          onClick={closeEditModal}
+        >
+          <div
+            className="mx-auto mt-8 w-full max-w-xl rounded-2xl bg-white p-5 shadow-2xl sm:p-7"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="mb-5 flex items-center justify-between">
               <h3 className="text-xl font-bold text-gray-900">Rasxodni tahrirlash</h3>
               <button onClick={closeEditModal} className="rounded-md p-1 text-gray-600 hover:bg-gray-100">
