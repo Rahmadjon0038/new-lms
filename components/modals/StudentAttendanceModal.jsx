@@ -142,7 +142,7 @@ const StudentAttendanceModal = ({ isOpen, onClose, student, month }) => {
                                 <div className="text-xs text-gray-700">
                                     <span className="text-gray-500">Talaba:</span>{" "}
                                     <span className="font-medium">
-                                        {attendanceData.data.student_info.name} {attendanceData.data.student_info.surname}
+                                        {attendanceData.data.student_info.surname} {attendanceData.data.student_info.name}
                                     </span>
                                 </div>
                                 <div className="text-xs text-gray-700">
@@ -178,7 +178,7 @@ const StudentAttendanceModal = ({ isOpen, onClose, student, month }) => {
                                             <td className="border border-gray-300 px-2 py-2 text-center text-xs text-gray-900 sm:px-4 sm:py-3 sm:text-sm">1</td>
                                             <td className="border border-gray-300 px-2 py-2 sm:px-4 sm:py-3">
                                                 <div className="max-w-[360px] truncate whitespace-nowrap text-xs font-medium text-gray-900 sm:text-sm">
-                                                    {attendanceData.data.student_info.name} {attendanceData.data.student_info.surname} • {attendanceData.data.student_info.phone}
+                                                    {attendanceData.data.student_info.surname} {attendanceData.data.student_info.name} • {attendanceData.data.student_info.phone}
                                                 </div>
                                             </td>
                                             <td className="border border-gray-300 px-2 py-2 text-center sm:px-4 sm:py-3">

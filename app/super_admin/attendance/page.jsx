@@ -21,7 +21,7 @@ export default function SuperAdminAttendancePage() {
     const key = search.trim().toLowerCase();
     if (!key) return teachers;
     return teachers.filter((item) =>
-      String(item.full_name || `${item.name || ""} ${item.surname || ""}`)
+      String(item.full_name || `${item.surname || ""} ${item.name || ""}`)
         .toLowerCase()
         .includes(key)
     );
@@ -66,7 +66,7 @@ export default function SuperAdminAttendancePage() {
       {!teachersQuery.isLoading && !teachersQuery.isError ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filteredTeachers.map((item) => {
-            const fullName = item.full_name || `${item.name || ""} ${item.surname || ""}`.trim();
+            const fullName = item.full_name || `${item.surname || ""} ${item.name || ""}`.trim();
             const subjects = Array.isArray(item.subjects) ? item.subjects.join(", ") : "-";
             const rooms = Array.isArray(item.room_numbers) ? item.room_numbers.join(", ") : "-";
             const groupsCount = Number(item.groups_count) || 0;

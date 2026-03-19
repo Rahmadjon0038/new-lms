@@ -42,7 +42,7 @@ const TeacherPaymentsInfo = () => {
         
         const lowerSearchTerm = searchTerm.toLowerCase().trim();
         return students.filter(student => {
-            const fullName = `${student.student_name || ''} ${student.student_surname || ''}`.toLowerCase();
+            const fullName = `${student.student_surname || ''} ${student.student_name || ''}`.toLowerCase();
             const phone = (student.student_phone || '').replace(/\s+/g, '');
             const searchPhone = lowerSearchTerm.replace(/\s+/g, '');
             
@@ -371,7 +371,7 @@ const TeacherPaymentsInfo = () => {
                                                 <div className="min-w-0 flex-1">
                                                     <div className="flex items-center gap-1 sm:gap-2 mb-1">
                                                         <div className="text-xs sm:text-sm font-medium text-gray-900 truncate">
-                                                            {student.student_name} {student.student_surname}
+                                                            {student.student_surname} {student.student_name}
                                                         </div>
                                                         <span className={`inline-flex items-center px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium ${
                                                             student.monthly_status === 'active'

@@ -272,7 +272,7 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
 
             if (!bulkSearchTerm.trim()) return true;
             const search = bulkSearchTerm.trim().toLowerCase();
-            const fullName = `${item.name} ${item.surname}`.trim().toLowerCase();
+            const fullName = `${item.surname} ${item.name}`.trim().toLowerCase();
             return (
                 fullName.includes(search) ||
                 String(item.id).includes(search) ||
@@ -575,7 +575,7 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
                                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                         <div>
                                             <p className="text-sm font-medium text-gray-800 sm:text-lg">
-                                                {student?.name} {student?.surname}
+                                                {student?.surname} {student?.name}
                                             </p>
                                         </div>
                                         <div className="sm:text-right">
@@ -886,7 +886,7 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
                                                             </td>
                                                             <td className="px-2 py-1.5 text-xs text-gray-700 sm:px-3 sm:py-2 sm:text-sm">#{item.id}</td>
                                                             <td className="px-2 py-1.5 text-xs font-medium text-gray-800 sm:px-3 sm:py-2 sm:text-sm">
-                                                                {item.name} {item.surname}
+                                                                {item.surname} {item.name}
                                                             </td>
                                                             <td className="px-2 py-1.5 text-xs text-gray-700 sm:px-3 sm:py-2 sm:text-sm">{item.phone || '-'}</td>
                                                             <td className="px-2 py-1.5 text-xs text-gray-700 sm:px-3 sm:py-2 sm:text-sm">

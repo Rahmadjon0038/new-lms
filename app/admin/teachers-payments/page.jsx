@@ -41,7 +41,7 @@ const getTeacherName = (t, teacherId = "") =>
   t?.teacher_name ||
   t?.full_name ||
   t?.teacher?.full_name ||
-  `${t?.name || t?.teacher?.name || ""} ${t?.surname || t?.teacher?.surname || ""}`.trim() ||
+  `${t?.surname || t?.teacher?.surname || ""} ${t?.name || t?.teacher?.name || ""}`.trim() ||
   `#${teacherId || "-"}`;
 
 const digitsOnly = (v) => String(v || "").replace(/\D/g, "");
@@ -436,7 +436,7 @@ const TeacherPayments = () => {
                               students.map((s) => (
                                 <tr key={String(s.student_id)} className="border-b border-gray-100">
                                   <td className="py-2 pr-2 pl-2">{s.student_id}</td>
-                                  <td className="py-2 pr-2">{s.full_name || `${s.name || ""} ${s.surname || ""}`.trim()}</td>
+                                  <td className="py-2 pr-2">{s.full_name || `${s.surname || ""} ${s.name || ""}`.trim()}</td>
                                   <td className="py-2 pr-2">
                                     <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${paymentStateStyle(s.payment_state)}`}>
                                       {paymentStateLabel(s.payment_state)}
@@ -640,7 +640,7 @@ const TeacherPayments = () => {
                                       students.map((s) => (
                                         <tr key={String(s.student_id)} className="border-b border-gray-100">
                                           <td className="py-1.5 pr-2">{s.student_id}</td>
-                                          <td className="py-1.5 pr-2">{s.full_name || `${s.name || ""} ${s.surname || ""}`.trim()}</td>
+                                          <td className="py-1.5 pr-2">{s.full_name || `${s.surname || ""} ${s.name || ""}`.trim()}</td>
                                           <td className="py-1.5 pr-2">
                                             <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${paymentStateStyle(s.payment_state)}`}>
                                               {paymentStateLabel(s.payment_state)}

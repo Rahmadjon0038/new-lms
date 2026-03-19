@@ -386,10 +386,10 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
     if (!isInMembership) {
       return <span className="text-gray-400 text-xs">-</span>;
     }
-    if (isFutureLesson) {
+    if (!attendanceRecord || isMarked === false) {
       return <span className="text-gray-400 text-xs">-</span>;
     }
-    if (!attendanceRecord || isMarked === false) {
+    if (isFutureLesson) {
       return <span className="text-gray-400 text-xs">-</span>;
     }
     if (status === "keldi") {
@@ -456,8 +456,11 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
             <tbody className="bg-white">
               {students.map((student, idx) => {
                 const attendanceMap = {};
+                const attendanceByDate = {};
                 student.attendance_records?.forEach((record) => {
                   attendanceMap[record.lesson_id] = record;
+                  const dateKey = String(record?.date || "").slice(0, 10);
+                  if (dateKey) attendanceByDate[dateKey] = record;
                 });
 
                 return (
@@ -500,7 +503,9 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
                     {lessons.map((lesson) => (
                       <td key={lesson.id} className="border border-gray-400 px-3 py-2 text-center">
                         {renderAttendanceSymbol(
-                          attendanceMap[lesson.id],
+                          attendanceMap[lesson.id] ||
+                            attendanceMap[lesson.lesson_id] ||
+                            attendanceByDate[String(lesson?.date || "").slice(0, 10)],
                           lesson.date,
                           student.membership_periods || []
                         )}

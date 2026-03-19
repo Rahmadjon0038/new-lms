@@ -2,12 +2,26 @@
 import React, { useState, useMemo } from 'react';
 import { ChevronDownIcon, UserGroupIcon } from '@heroicons/react/24/outline';
 
+const getScheduleText = (group) => {
+  const schedule = group?.schedule;
+
+  if (typeof schedule === 'string' && schedule.trim()) return schedule;
+  if (schedule && typeof schedule === 'object') {
+    const days = Array.isArray(schedule.days) ? schedule.days.join(', ') : schedule.days;
+    const time = schedule.time || group?.time || '';
+    return [days, time].filter(Boolean).join(' ');
+  }
+
+  return group?.time || group?.class_time || '';
+};
+
 const getGroupLabel = (group) => {
   const classStatus = group.class_status === 'started' ? 'Dars boshlangan' : 'Dars boshlanmagan';
   const statusIndicator = group.status === 'draft' ? ' (Draft)' : '';
   const price = Number(group.price || 0).toLocaleString();
   const teacherName = group.teacher_name || "O'qituvchisiz";
-  return `${group.name} - ${teacherName} - ${price} so'm - ${classStatus}${statusIndicator}`;
+  const scheduleText = getScheduleText(group) || '-';
+  return `${group.name} - ${teacherName} - ${scheduleText} - ${price} so'm - ${classStatus}${statusIndicator}`;
 };
 
 const GroupsSelect = ({ value, onChange, groups = [], loading = false, placeholder = 'Guruh tanlash (ixtiyoriy)' }) => {
@@ -97,9 +111,8 @@ const GroupsSelect = ({ value, onChange, groups = [], loading = false, placehold
                   <div className="flex justify-between items-start">
                     <div className="pr-3">
                       <p className="font-semibold text-gray-900">{group.name}</p>
-                      <p className="text-sm text-gray-600">
-                        {group.teacher_name || "O'qituvchisiz"}
-                      </p>
+                      <p className="text-sm text-gray-600">{group.teacher_name || "O'qituvchisiz"}</p>
+                      <p className="text-xs text-gray-500">{getScheduleText(group) || 'Jadval belgilanmagan'}</p>
                     </div>
                     <div className="text-right text-sm">
                       <p className="text-gray-700">{Number(group.price || 0).toLocaleString()} so'm</p>

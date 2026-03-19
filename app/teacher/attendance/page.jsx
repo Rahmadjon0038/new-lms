@@ -24,7 +24,7 @@ function TeacherAttendancePageContent() {
   const searchString = searchParams.toString();
   const notify = useGetNotify();
 
-  const [date, setDate] = useState(searchParams.get("date") || TODAY_DATE);
+  const [date, setDate] = useState(searchParams.get("date") || "");
   const [shift, setShift] = useState(searchParams.get("shift") || "");
   const [selectedMonth, setSelectedMonth] = useState(searchParams.get("month") || CURRENT_MONTH);
   const [selectedGroupId, setSelectedGroupId] = useState(() => {
@@ -265,7 +265,7 @@ function TeacherAttendancePageContent() {
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <div className="text-sm font-semibold text-gray-900">
-                        {student.student_name || `${student.name || ""} ${student.surname || ""}`.trim()}
+                        {student.student_name || `${student.surname || ""} ${student.name || ""}`.trim()}
                       </div>
                       <div className="mt-1 flex flex-wrap gap-1.5 text-[10px]">
                         <span className={`rounded-full px-2 py-0.5 font-semibold ${
@@ -332,7 +332,7 @@ function TeacherAttendancePageContent() {
                 {students.map((student) => (
                   <tr key={student.attendance_id}>
                     <td className="px-2 py-1.5 sm:px-3 sm:py-2">
-                      {student.student_name || `${student.name || ""} ${student.surname || ""}`.trim()}
+                      {student.student_name || `${student.surname || ""} ${student.name || ""}`.trim()}
                     </td>
                     <td className="px-2 py-1.5 sm:px-3 sm:py-2">
                       <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold sm:px-2 sm:py-1 sm:text-xs ${

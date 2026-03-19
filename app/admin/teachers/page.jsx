@@ -540,7 +540,7 @@ function TeacherCard({ teacher, onEdit, onDelete, onStatusChange, notify }) {
           </div>
           <div className="min-w-0">
             <h3 className="text-base font-bold text-gray-900 sm:text-lg break-words">
-              {teacher.name} {teacher.surname}
+              {teacher.surname} {teacher.name}
             </h3>
             <p className="text-sm text-gray-600">ID: {teacher.id}</p>
           </div>
@@ -778,7 +778,7 @@ export default function TeachersPage() {
     if (!query) return teachers;
 
     return teachers.filter((teacher) => {
-      const fullName = `${teacher?.name || ''} ${teacher?.surname || ''}`.toLowerCase();
+      const fullName = `${teacher?.surname || ''} ${teacher?.name || ''}`.toLowerCase();
       const subjectsList = String(teacher?.subjects_list || '').toLowerCase();
       const subjectsFromArray = Array.isArray(teacher?.subjects)
         ? teacher.subjects.map((subject) => subject?.name || '').join(' ').toLowerCase()

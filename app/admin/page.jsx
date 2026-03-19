@@ -325,7 +325,7 @@ function AdminDashboard() {
                       <div className="flex items-center justify-between gap-2">
                         <div className="min-w-0">
                           <div className="font-semibold text-gray-900 truncate">
-                            {payment.name || ""} {payment.surname || ""} {payment.username ? `(@${payment.username})` : ""}
+                            {payment.surname || ""} {payment.name || ""} {payment.username ? `(@${payment.username})` : ""}
                           </div>
                           <div className="text-[11px] text-gray-500 truncate">
                             {payment.group_name || payment.student_group_name || "Guruh"} • {payment.subject_name || payment.subject || "Fan"} • {payment.teacher_name || payment.student_teacher_name || "O'qituvchi"}
@@ -388,7 +388,7 @@ function AdminDashboard() {
                               Ism:
                             </span>
                             <span className="font-semibold text-gray-900 truncate">
-                              {student.name || "-"} {student.surname || ""}
+                              {student.surname || "-"} {student.name || ""}
                             </span>
 
                             <span className="text-gray-400">•</span>
@@ -645,7 +645,7 @@ function AdminDashboard() {
                         <div className="flex items-center gap-2 mb-2">
                           <span className="text-base sm:text-lg font-bold text-red-500">#{student.id}</span>
                           <User className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500" />
-                          <span className="font-semibold text-gray-900 truncate">{student.name} {student.surname}</span>
+                          <span className="font-semibold text-gray-900 truncate">{student.surname} {student.name}</span>
                         </div>
                         <div className="space-y-1">
                           <div className="flex items-center gap-1 text-[10px] sm:text-xs text-gray-600">

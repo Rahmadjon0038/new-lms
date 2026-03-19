@@ -185,7 +185,7 @@ const StudentDeleteModal = ({ isOpen, onClose, student, onConfirm, isLoading }) 
                 <div className="border-b border-gray-200 p-4">
                     <h3 className="text-lg font-semibold text-gray-900">Talabani o'chirish</h3>
                     <p className="mt-1 text-xs text-gray-500">
-                        {student.name} {student.surname} • ID: #{student.id}
+                        {student.surname} {student.name} • ID: #{student.id}
                     </p>
                 </div>
                 <div className="space-y-3 p-4">
@@ -432,7 +432,7 @@ const StudentsPage = () => {
         if (searchTerm) {
             const lowerCaseSearch = searchTerm.toLowerCase();
             currentList = currentList.filter(student =>
-                `${student.name} ${student.surname}`.toLowerCase().includes(lowerCaseSearch) ||
+                `${student.surname} ${student.name}`.toLowerCase().includes(lowerCaseSearch) ||
                 (student.phone && student.phone.replace(/[\s\+]/g, '').includes(searchTerm.replace(/[\s\+]/g, ''))) ||
                 (student.group_name && student.group_name.toLowerCase().includes(lowerCaseSearch))
             );
@@ -717,7 +717,7 @@ const StudentsPage = () => {
                                 <option value="all">Barcha o'qituvchilar</option>
                                 {teachersData?.teachers?.map(teacher => (
                                     <option key={teacher.id} value={teacher.id}>
-                                        {teacher.name} {teacher.surname}
+                                        {teacher.surname} {teacher.name}
                                     </option>
                                 ))}
                             </select>
@@ -812,7 +812,7 @@ const StudentsPage = () => {
                                                 <option value="all">Barcha o'qituvchilar</option>
                                                 {teachersData?.teachers?.map(teacher => (
                                                     <option key={teacher.id} value={teacher.id}>
-                                                        {teacher.name} {teacher.surname}
+                                                        {teacher.surname} {teacher.name}
                                                     </option>
                                                 ))}
                                             </select>
@@ -958,7 +958,7 @@ const StudentsPage = () => {
                             >
                                 <div className="mb-2">
                                     <div className="min-w-0">
-                                        <p className="text-sm font-semibold text-gray-900">{student.name} {student.surname}</p>
+                                        <p className="text-sm font-semibold text-gray-900">{student.surname} {student.name}</p>
                                     </div>
                                 </div>
 
@@ -1187,7 +1187,7 @@ const StudentsPage = () => {
                                                     <div className="flex items-center gap-2 mb-2">
                                                         <span className='text-lg font-bold text-red-500'>#{student.id}</span>
                                                         <User className="h-4 w-4 text-blue-500" />
-                                                        <span className="font-semibold text-gray-900">{student.name} {student.surname}</span>
+                                                        <span className="font-semibold text-gray-900">{student.surname} {student.name}</span>
                                                         <button
                                                             type="button"
                                                             onClick={() => openStudentEditModal(student)}

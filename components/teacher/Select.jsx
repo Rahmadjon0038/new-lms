@@ -42,7 +42,7 @@ const TeacherSelect = ({ value, onChange, showAll = true }) => {
             {showAll && <option value="all">Barcha O'qituvchilar</option>}
             {activeTeachers.map((teacher) => (
                 <option key={teacher.id} value={teacher.id}>
-                    {teacher.name} {teacher.surname} - {teacher.subjects_list}
+                    {teacher.surname} {teacher.name} - {teacher.subjects_list}
                 </option>
             ))}
         </select>

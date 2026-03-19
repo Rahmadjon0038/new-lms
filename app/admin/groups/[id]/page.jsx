@@ -141,7 +141,7 @@ const GroupDetailPage = () => {
                                 <div>
                                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Boshlanish sanasi</p>
                                     <p className="text-xs sm:text-sm font-semibold text-gray-800">
-                                        {group.start_date ? formatDate(group.start_date) : 'Belgilanmagan'}
+                                        {group.class_start_date ? formatDate(group.class_start_date) : 'Belgilanmagan'}
                                     </p>
                                 </div>
                             </div>
@@ -265,7 +265,7 @@ const GroupDetailPage = () => {
                                         <tr key={`${student.id}-${index}`} className="hover:bg-gray-50 transition-colors border-b border-gray-200">
                                             <td className="px-2.5 sm:px-3 py-2 text-xs text-gray-700">
                                                 <div className="text-xs sm:text-sm font-semibold text-gray-900">
-                                                    {student.full_name || `${student.name} ${student.surname}`}
+                                                    {student.full_name || `${student.surname} ${student.name}`}
                                                 </div>
                                                 <div className="mt-0.5">{student.phone || '-'}</div>
                                                 {student.phone2 && <div className="text-[11px] text-gray-500">{student.phone2}</div>}

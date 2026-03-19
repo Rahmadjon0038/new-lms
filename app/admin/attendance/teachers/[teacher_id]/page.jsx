@@ -33,7 +33,7 @@ export default function AdminTeacherGroupsPage() {
   const notify = useGetNotify();
   const queryClient = useQueryClient();
 
-  const [date, setDate] = useState(getTodayYmd());
+  const [date, setDate] = useState(searchParams.get("date") || "");
   const [shift, setShift] = useState("");
   const [selectedMonth, setSelectedMonth] = useState(CURRENT_MONTH);
   const [selectedGroupId, setSelectedGroupId] = useState(() => {
@@ -43,7 +43,7 @@ export default function AdminTeacherGroupsPage() {
   const [selectedLessonId, setSelectedLessonId] = useState("");
   const [attendanceOverrides, setAttendanceOverrides] = useState({});
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
-  const hasActiveFilters = Boolean(shift);
+  const hasActiveFilters = Boolean(date || shift);
 
   useEffect(() => {
     const params = new URLSearchParams(searchString);
@@ -241,7 +241,7 @@ export default function AdminTeacherGroupsPage() {
               {students.map((student) => (
                 <tr key={student.attendance_id}>
                   <td className="px-2 py-1.5 sm:px-3 sm:py-2">
-                    {student.student_name || `${student.name || ""} ${student.surname || ""}`.trim()}
+                    {student.student_name || `${student.surname || ""} ${student.name || ""}`.trim()}
                   </td>
                   <td className="px-2 py-1.5 sm:px-3 sm:py-2">
                     <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold sm:px-2 sm:py-1 sm:text-xs ${

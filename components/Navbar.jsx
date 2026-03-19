@@ -57,7 +57,7 @@ function Navbar() {
 
   // Faqat ismni olish (mobil uchun qisqaroq ko'rinish)
   const firstName = user?.name || "";
-  const fullName = user ? `${user.name} ${user.surname}` : "";
+  const fullName = user ? `${user.surname} ${user.name}` : "";
   const userRole = user?.role || "Foydalanuvchi";
   const roleColorClass = getRoleColor(userRole);
 

@@ -207,7 +207,7 @@ export default function NewStudentPage() {
                 </div>
 
                 {/* Content Card */}
-                <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+                <div className="bg-white rounded-2xl shadow-lg overflow-visible">
                     {step === 1 ? (
                         <div className="p-4 sm:p-6">
 
@@ -487,7 +487,7 @@ export default function NewStudentPage() {
                                             Student muvaffaqiyatli ro'yxatdan o'tdi!
                                         </h3>
                                         <p className="text-sm text-gray-600">
-                                            {registeredStudent?.name} {registeredStudent?.surname}
+                                            {registeredStudent?.surname} {registeredStudent?.name}
                                         </p>
                                     </div>
                                 </div>

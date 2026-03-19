@@ -195,7 +195,7 @@ function GroupDetails() {
                         <div className="flex items-center">
                           <div className="h-10 w-10 rounded-full bg-[#A60E07] flex items-center justify-center mr-3">
                             <span className="text-white font-bold text-sm">
-                              {member.name.charAt(0)}{member.surname.charAt(0)}
+                              {member.surname.charAt(0)}{member.name.charAt(0)}
                             </span>
                           </div>
                           <span className="text-sm font-semibold text-gray-800">{member.full_name}</span>
@@ -233,7 +233,7 @@ function GroupDetails() {
                     <div className="flex items-start gap-3">
                       <div className="h-10 w-10 shrink-0 rounded-full bg-[#A60E07] flex items-center justify-center">
                         <span className="text-white font-bold text-sm">
-                          {member.name.charAt(0)}{member.surname.charAt(0)}
+                          {member.surname.charAt(0)}{member.name.charAt(0)}
                         </span>
                       </div>
                       <div className="min-w-0 flex-1">

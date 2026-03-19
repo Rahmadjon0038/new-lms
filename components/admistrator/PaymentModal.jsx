@@ -45,10 +45,10 @@ const PaymentModal = ({ isOpen, onClose, student, month }) => {
       
       // Show toast notification with student name
       if (response?.message) {
-        const studentName = `${student.student_name} ${student.student_surname}`;
+        const studentName = `${student.student_surname} ${student.student_name}`;
         toast.success(`${studentName} - ${response.message}`);
       } else {
-        const studentName = `${student.student_name} ${student.student_surname}`;
+        const studentName = `${student.student_surname} ${student.student_name}`;
         toast.success(`${studentName} - To'lov muvaffaqiyatli qabul qilindi!`);
       }
       
@@ -137,7 +137,7 @@ const PaymentModal = ({ isOpen, onClose, student, month }) => {
         {student && (
           <div className="mb-4 rounded-lg bg-gray-50 p-3 sm:p-4">
               <h4 className="mb-3 text-center text-base font-medium text-gray-900 sm:text-lg">
-                {student.student_name || student.name} {student.student_surname || student.surname}
+                {student.student_surname || student.surname} {student.student_name || student.name}
               </h4>
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between gap-2">

@@ -43,10 +43,10 @@ const DiscountModal = ({ isOpen, onClose, student, month }) => {
       
       // Show toast notification with student name
       if (response?.message) {
-        const studentName = `${student.student_name} ${student.student_surname}`;
+        const studentName = `${student.student_surname} ${student.student_name}`;
         toast.success(`${studentName} - ${response.message}`);
       } else {
-        const studentName = `${student.student_name} ${student.student_surname}`;
+        const studentName = `${student.student_surname} ${student.student_name}`;
         toast.success(`${studentName} - Chegirma muvaffaqiyatli berildi!`);
       }
       

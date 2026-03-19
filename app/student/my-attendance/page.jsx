@@ -175,7 +175,7 @@ function MyAttendance() {
     "";
   const teacherName =
     selectedGroup?.teacher_info?.name
-      ? `${selectedGroup.teacher_info.name} ${selectedGroup.teacher_info.surname || ""}`.trim()
+      ? `${selectedGroup.teacher_info.surname || ""} ${selectedGroup.teacher_info.name}`.trim()
       : "";
 
   if (groupsLoading) {

@@ -101,7 +101,7 @@ const StudentPayments = () => {
 
         const lowerSearchTerm = searchTerm.toLowerCase().trim();
         return students.filter(student => {
-            const fullName = `${student.student_name || ''} ${student.student_surname || ''}`.toLowerCase();
+            const fullName = `${student.student_surname || ''} ${student.student_name || ''}`.toLowerCase();
             const phone = (student.student_phone || '').replace(/\s+/g, '');
             const searchPhone = lowerSearchTerm.replace(/\s+/g, '');
 
@@ -634,7 +634,7 @@ const StudentPayments = () => {
                                     <option value="">Barcha o'qituvchilar</option>
                                     {teachers.map((teacher) => (
                                         <option key={teacher.id} value={teacher.id}>
-                                            {teacher.name} {teacher.surname}
+                                            {teacher.surname} {teacher.name}
                                         </option>
                                     ))}
                                 </select>
@@ -760,7 +760,7 @@ const StudentPayments = () => {
                                             <option value="">Barcha o'qituvchilar</option>
                                             {teachers.map((teacher) => (
                                                 <option key={teacher.id} value={teacher.id}>
-                                                    {teacher.name} {teacher.surname}
+                                                    {teacher.surname} {teacher.name}
                                                 </option>
                                             ))}
                                         </select>
@@ -839,7 +839,7 @@ const StudentPayments = () => {
                                             <div className="min-w-0">
                                                 <p className="text-xs text-gray-400">#{index + 1}</p>
                                                 <p className="text-sm font-semibold text-gray-900">
-                                                    {student.student_name} {student.student_surname}
+                                                    {student.student_surname} {student.student_name}
                                                 </p>
                                                 <p className="text-xs text-gray-500">{student.student_phone}</p>
                                             </div>
@@ -951,7 +951,7 @@ const StudentPayments = () => {
                                                     <div className="min-w-0 flex-1">
                                                         <div className="flex items-center gap-2 mb-1">
                                                             <div className="text-sm font-medium text-gray-900">
-                                                                {student.student_name} {student.student_surname}
+                                                                {student.student_surname} {student.student_name}
                                                             </div>
                                                             <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${student.monthly_status === 'active'
                                                                 ? 'bg-green-100 text-green-800'
@@ -1231,7 +1231,7 @@ const StudentPayments = () => {
                                             To'lov tarixi - {filters.month}
                                         </h3>
                                         <p className="text-sm text-gray-600 mt-1">
-                                            {selectedStudent.student_name} {selectedStudent.student_surname}
+                                            {selectedStudent.student_surname} {selectedStudent.student_name}
                                         </p>
                                     </div>
                                     <button
@@ -1420,7 +1420,7 @@ const StudentPayments = () => {
                                         <div className="flex gap-2">
                                             <span className="text-gray-500">Talaba:</span>
                                             <p className="font-medium text-gray-900">
-                                                {selectedStudent.student_name} {selectedStudent.student_surname}
+                                                {selectedStudent.student_surname} {selectedStudent.student_name}
                                             </p>
                                         </div>
                                         <div className="flex gap-2">

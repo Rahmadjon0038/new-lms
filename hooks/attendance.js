@@ -342,6 +342,7 @@ export const useMarkLessonAttendance = () => {
             queryClient.invalidateQueries({ queryKey: ['attendance-my-groups'] });
             queryClient.invalidateQueries({ queryKey: ['attendance-admin-teacher-lessons'] });
             queryClient.invalidateQueries({ queryKey: ['attendance-admin-teachers'] });
+            queryClient.invalidateQueries({ queryKey: ['monthly-attendance'] });
         },
     });
 };

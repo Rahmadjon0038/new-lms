@@ -258,7 +258,7 @@ function TeacherGroupDetail() {
                         <div className="flex items-center">
                           <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-[#A60E07] flex items-center justify-center mr-2 sm:mr-3">
                             <span className="text-white font-bold text-xs sm:text-sm">
-                              {student.name?.charAt(0)}{student.surname?.charAt(0)}
+                              {student.surname?.charAt(0)}{student.name?.charAt(0)}
                             </span>
                           </div>
                           <div className="min-w-0 flex-1">
