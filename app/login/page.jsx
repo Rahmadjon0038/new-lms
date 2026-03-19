@@ -172,6 +172,9 @@ function Login() {
                 onChange={(e) => setForgotForm((p) => ({ ...p, recovery_key: e.target.value }))}
                 className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-[#A60E07]"
               />
+              <p className="text-[11px] text-gray-500">
+                Recovery keyni olish uchun adminga murojaat qiling.
+              </p>
               <input
                 type="password"
                 placeholder="Yangi parol"
