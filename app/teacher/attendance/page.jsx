@@ -13,6 +13,7 @@ import { useGetNotify } from "../../../hooks/notify";
 import MonthlyAttendanceInline from "../../../components/MonthlyAttendanceInline";
 
 const CURRENT_MONTH = new Date().toISOString().slice(0, 7);
+const TODAY_DATE = new Date().toISOString().slice(0, 10);
 const WEEKDAYS_UZ = ["yakshanba", "dushanba", "seshanba", "chorshanba", "payshanba", "juma", "shanba"];
 const STATUS_OPTIONS = ["keldi", "kelmadi"];
 
@@ -23,7 +24,7 @@ function TeacherAttendancePageContent() {
   const searchString = searchParams.toString();
   const notify = useGetNotify();
 
-  const [date, setDate] = useState(searchParams.get("date") || "");
+  const [date, setDate] = useState(searchParams.get("date") || TODAY_DATE);
   const [shift, setShift] = useState(searchParams.get("shift") || "");
   const [selectedMonth, setSelectedMonth] = useState(searchParams.get("month") || CURRENT_MONTH);
   const [selectedGroupId, setSelectedGroupId] = useState(() => {
@@ -52,9 +53,16 @@ function TeacherAttendancePageContent() {
 
   const groups = useMemo(() => {
     const payload = groupsQuery.data?.data ?? groupsQuery.data;
-    if (Array.isArray(payload)) return payload;
-    if (Array.isArray(payload?.groups)) return payload.groups;
-    if (Array.isArray(payload?.data)) return payload.data;
+    const normalizeItem = (item) => {
+      if (item?.group) {
+        return { ...item.group, students: item.students ?? item.group?.students };
+      }
+      return item;
+    };
+    if (Array.isArray(payload)) return payload.map(normalizeItem);
+    if (Array.isArray(payload?.groups)) return payload.groups.map(normalizeItem);
+    if (Array.isArray(payload?.data)) return payload.data.map(normalizeItem);
+    if (payload?.group) return [normalizeItem(payload)];
     return [];
   }, [groupsQuery.data]);
 
@@ -191,10 +199,45 @@ function TeacherAttendancePageContent() {
     return "Vaqt belgilanmagan";
   };
 
+  const formatMoney = (value) => {
+    if (!Number.isFinite(value)) return "-";
+    return `${value.toLocaleString("uz-UZ")} so'm`;
+  };
+
+  const getPaymentBadge = (student) => {
+    const paid = Number(student?.paid_amount);
+    const debt = Number(student?.debt_amount);
+    if (Number.isFinite(debt) && debt > 0) {
+      return { label: `Qarz: ${formatMoney(debt)}`, className: "bg-red-100 text-red-700" };
+    }
+    if (Number.isFinite(paid) && paid > 0) {
+      return { label: `To'langan: ${formatMoney(paid)}`, className: "bg-green-100 text-green-700" };
+    }
+    if (Number.isFinite(debt) && debt === 0) {
+      return { label: `To'langan: ${formatMoney(paid)}`, className: "bg-green-100 text-green-700" };
+    }
+    return { label: "Ma'lumot yo'q", className: "bg-gray-100 text-gray-700" };
+  };
+
+  const isGroupAttendanceDone = (group, targetDate) => {
+    const dateOnly = String(targetDate || "").slice(0, 10);
+    if (!dateOnly) return false;
+    const students = Array.isArray(group?.students)
+      ? group.students
+      : Array.isArray(group?.group?.students)
+        ? group.group.students
+        : [];
+    return students.some((student) => {
+      const records = Array.isArray(student?.attendance_records) ? student.attendance_records : [];
+      return records.some(
+        (record) => String(record?.date || "").slice(0, 10) === dateOnly && record?.is_marked === true
+      );
+    });
+  };
+
   const renderLessonStudentsDropdown = () => (
     <div className="mt-2 space-y-2 rounded-lg border border-gray-200 bg-gray-50 p-2.5 sm:p-3">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-bold text-gray-900 sm:text-base">Dars studentlari</h3>
+      <div className="flex items-center justify-end">
         <span className="hidden text-[11px] text-gray-500 sm:inline">Lesson ID: {activeLessonId}</span>
       </div>
 
@@ -213,30 +256,32 @@ function TeacherAttendancePageContent() {
       ) : null}
 
       {!lessonStudentsQuery.isLoading && !lessonStudentsQuery.isError ? (
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 text-xs sm:text-sm">
-            <thead className="bg-white">
-              <tr>
-                <th className="px-2 py-1.5 text-left font-semibold text-gray-600 sm:px-3 sm:py-2">Talaba</th>
-                <th className="px-2 py-1.5 text-left font-semibold text-gray-600 sm:px-3 sm:py-2">Monthly</th>
-                <th className="px-2 py-1.5 text-left font-semibold text-gray-600 sm:px-3 sm:py-2">Davomat</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 bg-white">
-              {students.map((student) => (
-                <tr key={student.attendance_id}>
-                  <td className="px-2 py-1.5 sm:px-3 sm:py-2">
-                    {student.student_name || `${student.name || ""} ${student.surname || ""}`.trim()}
-                  </td>
-                  <td className="px-2 py-1.5 sm:px-3 sm:py-2">
-                    <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold sm:px-2 sm:py-1 sm:text-xs ${
-                      student.monthly_status === "active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"
-                    }`}>
-                      {student.monthly_status || "active"}
-                    </span>
-                  </td>
-                  <td className="px-2 py-1.5 sm:px-3 sm:py-2">
-                    <div className="inline-flex rounded-xl border border-gray-200 bg-white p-0.5 sm:p-1">
+        <div className="space-y-2">
+          <div className="space-y-2 sm:hidden">
+            {students.map((student) => {
+              const badge = getPaymentBadge(student);
+              return (
+                <div key={student.attendance_id} className="rounded-lg border border-gray-200 bg-white p-2.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="text-sm font-semibold text-gray-900">
+                        {student.student_name || `${student.name || ""} ${student.surname || ""}`.trim()}
+                      </div>
+                      <div className="mt-1 flex flex-wrap gap-1.5 text-[10px]">
+                        <span className={`rounded-full px-2 py-0.5 font-semibold ${
+                          student.monthly_status === "active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"
+                        }`}>
+                          {student.monthly_status || "active"}
+                        </span>
+                        <span className={`rounded-full px-2 py-0.5 font-semibold ${badge.className}`}>
+                          {badge.label}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-[10px] text-gray-500">ID: {student.attendance_id}</div>
+                  </div>
+                  <div className="mt-2">
+                    <div className="inline-flex w-full justify-between rounded-xl border border-gray-200 bg-white p-1">
                       {STATUS_OPTIONS.map((option) => {
                         const isActive = getCurrentStudentStatus(student) === option;
                         const disabled = !canStudentMark(student) || markMutation.isPending;
@@ -254,7 +299,7 @@ function TeacherAttendancePageContent() {
                                 return next;
                               });
                             }}
-                            className={`rounded-lg px-2 py-1 text-[11px] font-semibold transition sm:px-3 sm:text-xs ${
+                            className={`flex-1 rounded-lg px-2 py-1 text-[11px] font-semibold transition ${
                               isActive
                                 ? option === "keldi"
                                   ? "bg-green-600 text-white"
@@ -267,11 +312,83 @@ function TeacherAttendancePageContent() {
                         );
                       })}
                     </div>
-                  </td>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="hidden overflow-x-auto sm:block">
+            <table className="min-w-full divide-y divide-gray-200 text-xs sm:text-sm">
+              <thead className="bg-white">
+                <tr>
+                  <th className="px-2 py-1.5 text-left font-semibold text-gray-600 sm:px-3 sm:py-2">Talaba</th>
+                  <th className="px-2 py-1.5 text-left font-semibold text-gray-600 sm:px-3 sm:py-2">Monthly</th>
+                  <th className="px-2 py-1.5 text-left font-semibold text-gray-600 sm:px-3 sm:py-2">To'lov</th>
+                  <th className="px-2 py-1.5 text-left font-semibold text-gray-600 sm:px-3 sm:py-2">Davomat</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-100 bg-white">
+                {students.map((student) => (
+                  <tr key={student.attendance_id}>
+                    <td className="px-2 py-1.5 sm:px-3 sm:py-2">
+                      {student.student_name || `${student.name || ""} ${student.surname || ""}`.trim()}
+                    </td>
+                    <td className="px-2 py-1.5 sm:px-3 sm:py-2">
+                      <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold sm:px-2 sm:py-1 sm:text-xs ${
+                        student.monthly_status === "active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"
+                      }`}>
+                        {student.monthly_status || "active"}
+                      </span>
+                    </td>
+                    <td className="px-2 py-1.5 sm:px-3 sm:py-2">
+                      {(() => {
+                        const badge = getPaymentBadge(student);
+                        return (
+                          <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold sm:px-2 sm:py-1 sm:text-xs ${badge.className}`}>
+                            {badge.label}
+                          </span>
+                        );
+                      })()}
+                    </td>
+                    <td className="px-2 py-1.5 sm:px-3 sm:py-2">
+                      <div className="inline-flex rounded-xl border border-gray-200 bg-white p-0.5 sm:p-1">
+                        {STATUS_OPTIONS.map((option) => {
+                          const isActive = getCurrentStudentStatus(student) === option;
+                          const disabled = !canStudentMark(student) || markMutation.isPending;
+                          return (
+                            <button
+                              key={option}
+                              type="button"
+                              disabled={disabled}
+                              onClick={() => {
+                                const initial = normalizeStatus(student.status);
+                                setAttendanceOverrides((prev) => {
+                                  const next = { ...prev };
+                                  if (option === initial) delete next[student.attendance_id];
+                                  else next[student.attendance_id] = option;
+                                  return next;
+                                });
+                              }}
+                              className={`rounded-lg px-2 py-1 text-[11px] font-semibold transition sm:px-3 sm:text-xs ${
+                                isActive
+                                  ? option === "keldi"
+                                    ? "bg-green-600 text-white"
+                                    : "bg-red-600 text-white"
+                                  : "text-gray-600 hover:bg-gray-100"
+                              } disabled:cursor-not-allowed disabled:opacity-60`}
+                            >
+                              {option}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : null}
 
@@ -387,35 +504,24 @@ function TeacherAttendancePageContent() {
             {groups.map((group) => {
               const groupId = group.group_id || group.id;
               const isActive = String(groupId) === activeGroupId;
-              const markedCount = Number(
-                group.today_marked_students_count ??
-                group.marked_students_count ??
-                group.today_marked_count ??
-                0
-              );
-              const totalCount = Number(
-                group.today_active_students_count ??
-                group.active_students_count ??
-                group.total_students ??
-                group.students_count ??
-                0
-              );
-              const hasProgress = totalCount > 0;
-              const attendancePercent = hasProgress ? Math.min(100, Math.round((markedCount / totalCount) * 100)) : 0;
+              const markedCount = Number(group.today_marked_students_count ?? 0);
+              const activeCount = Number(group.today_active_students_count ?? 0);
               const hasTodayAttendance =
-                group.today_attendance_completed === true || markedCount > 0;
+                group.today_attendance_completed === true ||
+                group.today_attendance_fully_completed === true ||
+                (activeCount > 0 && markedCount >= activeCount);
               return (
                 <button
                   type="button"
                   key={groupId}
                   onClick={() => handleSelectGroup(groupId)}
                   className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition sm:px-4 sm:py-2 sm:text-sm ${
-                    isActive
-                      ? hasTodayAttendance
+                    hasTodayAttendance
+                      ? isActive
                         ? "border-emerald-500 bg-emerald-600 text-white"
-                        : "border-[#A60E07] bg-[#A60E07] text-white"
-                      : hasTodayAttendance
-                        ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                        : "border-emerald-300 bg-emerald-50 text-emerald-700"
+                      : isActive
+                        ? "border-[#A60E07] bg-[#A60E07] text-white"
                         : "border-gray-300 bg-white text-gray-700 hover:border-[#A60E07]"
                   }`}
                 >
@@ -423,11 +529,13 @@ function TeacherAttendancePageContent() {
                     <div>{group.group_name || group.name}</div>
                     <div
                       className={`text-[10px] font-medium sm:text-[11px] ${
-                        isActive
-                          ? hasTodayAttendance
+                        hasTodayAttendance
+                          ? isActive
                             ? "text-emerald-100"
-                            : "text-red-100"
-                          : "text-gray-500"
+                            : "text-emerald-700"
+                          : isActive
+                            ? "text-red-100"
+                            : "text-gray-500"
                       }`}
                     >
                       {Array.isArray(group.schedule?.days) && group.schedule.days.length
@@ -435,35 +543,21 @@ function TeacherAttendancePageContent() {
                         : "-"}{" "}
                       {group.schedule?.time ? `• ${group.schedule.time}` : ""}
                     </div>
-                    {hasProgress ? (
-                      <div
-                        className={`mt-1 text-[10px] ${
-                          isActive
-                            ? hasTodayAttendance
-                              ? "text-emerald-100"
-                              : "text-red-100"
-                            : hasTodayAttendance
-                              ? "text-emerald-700"
-                              : "text-gray-500"
-                        }`}
-                      >
-                        Davomat: {markedCount}/{totalCount} ({attendancePercent}%)
-                        <div
-                          className={`mt-1 h-1 w-full rounded-full ${
-                            isActive
-                              ? hasTodayAttendance
-                                ? "bg-emerald-200/40"
-                                : "bg-red-200/40"
-                              : "bg-gray-200"
-                          }`}
-                        >
-                          <div
-                            className={`h-1 rounded-full ${hasTodayAttendance ? "bg-emerald-500" : "bg-[#A60E07]"}`}
-                            style={{ width: `${attendancePercent}%` }}
-                          />
-                        </div>
-                      </div>
-                    ) : null}
+                    <div
+                      className={`mt-1 text-[10px] ${
+                        hasTodayAttendance
+                          ? isActive
+                            ? "text-emerald-100"
+                            : "text-emerald-700"
+                          : isActive
+                            ? "text-red-100"
+                            : "text-gray-500"
+                      }`}
+                    >
+                      {group.subject_name ? `${group.subject_name}` : ""}
+                      {group.subject_name ? " • " : ""}
+                      {group.room_number ? `Xona ${group.room_number}` : "Xona -"}
+                    </div>
                   </div>
                 </button>
               );

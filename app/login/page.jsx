@@ -5,11 +5,13 @@ import { useAddUser, useResetPasswordWithKey } from "../../hooks/user";
 import { useGetNotify } from "../../hooks/notify";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
+import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 
 function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showForgot, setShowForgot] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [forgotForm, setForgotForm] = useState({
     username: "",
     recovery_key: "",
@@ -106,14 +108,28 @@ function Login() {
 
           <div className="space-y-1">
             <label className="text-[10px] sm:text-xs font-bold text-gray-500 uppercase ml-1">Parol</label>
-            <input
-              type="password"
-              placeholder="•••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full px-4 py-3 sm:py-3.5 bg-gray-50 border border-gray-200 rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-[#A60E07]/20 focus:border-[#A60E07] outline-none transition-all text-gray-700 text-sm sm:text-base"
-            />
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute inset-y-0 left-0 flex items-center px-3 text-gray-400 hover:text-gray-600"
+                aria-label={showPassword ? "Parolni yashirish" : "Parolni ko'rsatish"}
+              >
+                {showPassword ? (
+                  <EyeSlashIcon className="h-5 w-5" />
+                ) : (
+                  <EyeIcon className="h-5 w-5" />
+                )}
+              </button>
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="•••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full pl-11 pr-4 py-3 sm:py-3.5 bg-gray-50 border border-gray-200 rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-[#A60E07]/20 focus:border-[#A60E07] outline-none transition-all text-gray-700 text-sm sm:text-base"
+              />
+            </div>
           </div>
 
           <button

@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   XMarkIcon,
   UserIcon,
@@ -17,6 +17,7 @@ import { useRegisterStudent, useJoinStudentToGroup } from '../../../../hooks/stu
 import { usegetAllgroups } from '../../../../hooks/groups';
 import { useGetAllSubjects } from '../../../../hooks/subjects';
 import { toast } from 'react-hot-toast';
+import GroupsSelect from '../../../../components/admistrator/GroupsSelect';
 
 const MAIN_COLOR = "#A60E07";
 
@@ -56,6 +57,19 @@ export default function NewStudentPage() {
                 : [];
     const registerMutation = useRegisterStudent();
     const joinGroupMutation = useJoinStudentToGroup();
+
+    const availableGroups = useMemo(() => {
+        const groups = groupsData?.groups || [];
+        return groups.filter(group => {
+            if (subjectFilter && String(group.subject_id) !== String(subjectFilter)) {
+                return false;
+            }
+            if (group.status === 'blocked') {
+                return false;
+            }
+            return true;
+        });
+    }, [groupsData?.groups, subjectFilter]);
     
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -510,36 +524,13 @@ export default function NewStudentPage() {
                                         <UserGroupIcon className="w-4 h-4 inline mr-1" />
                                         Guruh tanlash (ixtiyoriy)
                                     </label>
-                                    <select
+                                    <GroupsSelect
                                         value={selectedGroup}
-                                        onChange={(e) => setSelectedGroup(e.target.value)}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition-all"
-                                        style={{ focusRingColor: `${MAIN_COLOR}40` }}
-                                        disabled={groupsLoading}
-                                    >
-                                        <option value="">Guruh tanlash (ixtiyoriy)</option>
-                                        {groupsData?.groups
-                                            ?.filter(group => {
-                                                // Filter by subject
-                                                if (subjectFilter && group.subject_id != subjectFilter) {
-                                                    return false;
-                                                }
-                                                // Filter out blocked groups
-                                                if (group.status === 'blocked') {
-                                                    return false;
-                                                }
-                                                return true;
-                                            })
-                                            ?.map((group) => {
-                                                const classStatus = group.class_status === 'started' ? 'Dars boshlangan' : 'Dars boshlanmagan';
-                                                const statusIndicator = group.status === 'draft' ? ' (Draft)' : '';
-                                                return (
-                                                    <option key={group.id} value={group.id}>
-                                                        {group.name} - {group.teacher_name || 'O\'qituvchisiz'} - {Number(group.price).toLocaleString()} so'm - {classStatus}{statusIndicator}
-                                                    </option>
-                                                );
-                                            })}
-                                    </select>
+                                        onChange={setSelectedGroup}
+                                        groups={availableGroups}
+                                        loading={groupsLoading}
+                                        placeholder="Guruh tanlash (ixtiyoriy)"
+                                    />
                                     {groupsLoading && (
                                         <p className="text-sm text-gray-500 mt-1">Guruhlar yuklanmoqda...</p>
                                     )}

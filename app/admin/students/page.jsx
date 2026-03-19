@@ -6,11 +6,11 @@ import {
     User, Phone, MapPin, Calendar, GraduationCap,
     CheckCircle, XCircle, Clock, BookOpen, Users,
     Home, UserCheck, AlertCircle, PlayCircle, PauseCircle, MoreVertical,
-    Shield, ShieldBan, Award, UserX, Settings, Building2, ChevronDown, ChevronUp, Pencil, X
+    Shield, ShieldBan, Award, UserX, Trash2, Settings, Building2, ChevronDown, ChevronUp, Pencil, X
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from "next/navigation";
-import { useGetAllStudents, useUpdateStudentStatus, useUpdateStudentInfo } from '../../../hooks/students';
+import { useGetAllStudents, useUpdateStudentStatus, useUpdateStudentInfo, useDeleteStudent } from '../../../hooks/students';
 import { usegetTeachers } from '../../../hooks/teacher';
 import { useGetAllSubjects } from '../../../hooks/subjects';
 import { usegetProfile } from '../../../hooks/user';
@@ -170,6 +170,51 @@ const StudentEditModal = ({ isOpen, onClose, student, formData, onChange, onSubm
     );
 };
 
+const StudentDeleteModal = ({ isOpen, onClose, student, onConfirm, isLoading }) => {
+    if (!isOpen || !student) return null;
+
+    return (
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3"
+            onClick={onClose}
+        >
+            <div
+                className="w-full max-w-md rounded-xl bg-white shadow-xl"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="border-b border-gray-200 p-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Talabani o'chirish</h3>
+                    <p className="mt-1 text-xs text-gray-500">
+                        {student.name} {student.surname} • ID: #{student.id}
+                    </p>
+                </div>
+                <div className="space-y-3 p-4">
+                    <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+                        Agar studentni o'chirsangiz unga tegishli barcha ma'lumotlar o'chib ketadi va qayta tiklab bo'lmaydi.
+                    </div>
+                    <div className="flex items-center justify-end gap-2">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50"
+                        >
+                            Bekor qilish
+                        </button>
+                        <button
+                            type="button"
+                            onClick={onConfirm}
+                            disabled={isLoading}
+                            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
+                        >
+                            {isLoading ? "O'chirilmoqda..." : "O'chirish"}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const getTeacherIdFromProfile = (profile) => {
     const payload = profile?.data || profile;
     return (
@@ -273,6 +318,7 @@ const StudentsPage = () => {
     // Student status o'zgartirish hook
     const updateStatusMutation = useUpdateStudentStatus();
     const updateStudentMutation = useUpdateStudentInfo();
+    const deleteStudentMutation = useDeleteStudent();
     const notify = useGetNotify();
 
     // Backenddan ma'lumotlarni boshqarish uchun lokal state
@@ -284,6 +330,7 @@ const StudentsPage = () => {
     const [copiedRecoveryRow, setCopiedRecoveryRow] = useState(null);
     const [mobileExpandedRows, setMobileExpandedRows] = useState({});
     const [studentEditModal, setStudentEditModal] = useState({ open: false, student: null });
+    const [studentDeleteModal, setStudentDeleteModal] = useState({ open: false, student: null });
     const [studentEditForm, setStudentEditForm] = useState({
         name: '',
         surname: '',
@@ -531,6 +578,28 @@ const StudentsPage = () => {
             age: '',
         });
     }, []);
+
+    const openStudentDeleteModal = useCallback((student) => {
+        setStudentDeleteModal({ open: true, student });
+    }, []);
+
+    const closeStudentDeleteModal = useCallback(() => {
+        setStudentDeleteModal({ open: false, student: null });
+    }, []);
+
+    const handleStudentDelete = useCallback(() => {
+        if (!studentDeleteModal.student) return;
+        deleteStudentMutation.mutate(studentDeleteModal.student.id, {
+            onSuccess: (data) => {
+                notify('ok', data?.message || "Talaba o'chirildi");
+                closeStudentDeleteModal();
+                refetch();
+            },
+            onError: (err) => {
+                notify('err', err?.response?.data?.message || "Talabani o'chirishda xatolik");
+            }
+        });
+    }, [studentDeleteModal.student, deleteStudentMutation, notify, closeStudentDeleteModal, refetch]);
 
     const handleStudentEditChange = useCallback((event) => {
         const { name, value } = event.target;
@@ -921,6 +990,14 @@ const StudentsPage = () => {
                                         </button>
                                         <button
                                             type="button"
+                                            onClick={() => openStudentDeleteModal(student)}
+                                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-red-200 text-red-600 hover:bg-red-50"
+                                            aria-label="Talabani o'chirish"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </button>
+                                        <button
+                                            type="button"
                                             onClick={() => toggleMobileCard(rowKey)}
                                             className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 text-gray-600"
                                             aria-label={isExpanded ? "Qo'shimcha ma'lumotlarni yopish" : "Qo'shimcha ma'lumotlarni ochish"}
@@ -1118,6 +1195,14 @@ const StudentsPage = () => {
                                                             aria-label="Talaba ma'lumotlarini yangilash"
                                                         >
                                                             <Pencil className="h-4 w-4" />
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => openStudentDeleteModal(student)}
+                                                            className="inline-flex items-center justify-center rounded-lg border border-red-200 p-1.5 text-red-600 transition hover:bg-red-50"
+                                                            aria-label="Talabani o'chirish"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
                                                         </button>
                                                     </div>
 
@@ -1488,6 +1573,13 @@ const StudentsPage = () => {
                 onChange={handleStudentEditChange}
                 onSubmit={handleStudentEditSubmit}
                 isLoading={updateStudentMutation.isLoading}
+            />
+            <StudentDeleteModal
+                isOpen={studentDeleteModal.open}
+                onClose={closeStudentDeleteModal}
+                student={studentDeleteModal.student}
+                onConfirm={handleStudentDelete}
+                isLoading={deleteStudentMutation.isLoading}
             />
 
         </div>

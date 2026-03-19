@@ -339,6 +339,7 @@ export const useMarkLessonAttendance = () => {
         onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({ queryKey: ['lesson-students', variables.lesson_id] });
             queryClient.invalidateQueries({ queryKey: ['attendance-my-lessons'] });
+            queryClient.invalidateQueries({ queryKey: ['attendance-my-groups'] });
             queryClient.invalidateQueries({ queryKey: ['attendance-admin-teacher-lessons'] });
             queryClient.invalidateQueries({ queryKey: ['attendance-admin-teachers'] });
         },

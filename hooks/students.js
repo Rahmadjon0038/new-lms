@@ -136,3 +136,27 @@ export const useUpdateStudentInfo = () => {
     });
     return updateStudentMutation;
 };
+
+// -------------- Delete student ----------
+const deleteStudent = async (studentId) => {
+    const response = await instance.delete(`/api/students/${studentId}`);
+    return response.data;
+};
+
+export const useDeleteStudent = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: deleteStudent,
+        onSuccess: (data, vars) => {
+            queryClient.invalidateQueries(['students']);
+            if (vars?.onSuccess) {
+                vars.onSuccess(data);
+            }
+        },
+        onError: (err, vars) => {
+            if (vars?.onError) {
+                vars.onError(err);
+            }
+        }
+    });
+};
