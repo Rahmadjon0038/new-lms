@@ -24,7 +24,6 @@ function TeacherAttendancePageContent() {
   const notify = useGetNotify();
 
   const [date, setDate] = useState(searchParams.get("date") || "");
-  const [day, setDay] = useState(searchParams.get("day") || "");
   const [shift, setShift] = useState(searchParams.get("shift") || "");
   const [selectedMonth, setSelectedMonth] = useState(searchParams.get("month") || CURRENT_MONTH);
   const [selectedGroupId, setSelectedGroupId] = useState(() => {
@@ -34,21 +33,20 @@ function TeacherAttendancePageContent() {
   const [selectedLessonId, setSelectedLessonId] = useState("");
   const [attendanceOverrides, setAttendanceOverrides] = useState({});
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
-  const hasActiveFilters = Boolean(date || day || shift);
+  const hasActiveFilters = Boolean(date || shift);
 
   useEffect(() => {
     const params = new URLSearchParams(searchString);
     if (date) params.set("date", date); else params.delete("date");
-    if (day) params.set("day", day); else params.delete("day");
+    params.delete("day");
     if (shift) params.set("shift", shift); else params.delete("shift");
     if (selectedMonth) params.set("month", selectedMonth); else params.delete("month");
     if (selectedGroupId) params.set("group_id", String(selectedGroupId)); else params.delete("group_id");
     router.replace(`${pathname}?${params.toString()}`);
-  }, [date, day, shift, selectedMonth, selectedGroupId, pathname, router, searchString]);
+  }, [date, shift, selectedMonth, selectedGroupId, pathname, router, searchString]);
 
   const groupsQuery = useGetMyAttendanceGroups({
     date: date || undefined,
-    day: day || undefined,
     shift: shift || undefined,
   });
 
@@ -327,20 +325,17 @@ function TeacherAttendancePageContent() {
 
       <div className="hidden gap-3 rounded-xl border border-gray-200 bg-white p-4 md:grid md:grid-cols-4">
         <label className="text-xs text-gray-700 sm:text-sm">
-          <span className="mb-1 block font-medium">Day (ixtiyoriy)</span>
-          <select
-            value={day}
-            onChange={(e) => setDay(e.target.value)}
-            className={`w-full rounded-lg border px-2.5 py-1.5 text-xs sm:px-3 sm:py-2 sm:text-sm ${day ? "border-[#A60E07] bg-red-50" : "border-gray-300"}`}
-          >
-            <option value="">Barchasi</option>
-            <option value="dushanba">dushanba</option>
-            <option value="seshanba">seshanba</option>
-          </select>
+          <span className="mb-1 block font-medium">Sana (ixtiyoriy)</span>
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className={`w-full rounded-lg border px-2.5 py-1.5 text-xs sm:px-3 sm:py-2 sm:text-sm ${date ? "border-[#A60E07] bg-red-50" : "border-gray-300"}`}
+          />
         </label>
 
         <label className="text-xs text-gray-700 sm:text-sm">
-          <span className="mb-1 block font-medium">Shift (ixtiyoriy)</span>
+          <span className="mb-1 block font-medium">Smena (ixtiyoriy)</span>
           <select
             value={shift}
             onChange={(e) => setShift(e.target.value)}
@@ -352,23 +347,12 @@ function TeacherAttendancePageContent() {
           </select>
         </label>
 
-        {/* <label className="col-span-2 text-xs text-gray-700 sm:text-sm md:col-span-1">
-          <span className="mb-1 block font-medium">Date (ixtiyoriy)</span>
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className={`w-full rounded-lg border px-2.5 py-1.5 text-xs sm:px-3 sm:py-2 sm:text-sm ${date ? "border-[#A60E07] bg-red-50" : "border-gray-300"}`}
-          />
-        </label> */}
-
         <div className="col-span-2 flex items-end md:col-span-1">
           {hasActiveFilters ? (
             <button
               type="button"
               onClick={() => {
                 setDate("");
-                setDay("");
                 setShift("");
               }}
               className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 sm:w-auto sm:px-4 sm:py-2 sm:text-sm"
@@ -403,6 +387,23 @@ function TeacherAttendancePageContent() {
             {groups.map((group) => {
               const groupId = group.group_id || group.id;
               const isActive = String(groupId) === activeGroupId;
+              const markedCount = Number(
+                group.today_marked_students_count ??
+                group.marked_students_count ??
+                group.today_marked_count ??
+                0
+              );
+              const totalCount = Number(
+                group.today_active_students_count ??
+                group.active_students_count ??
+                group.total_students ??
+                group.students_count ??
+                0
+              );
+              const hasProgress = totalCount > 0;
+              const attendancePercent = hasProgress ? Math.min(100, Math.round((markedCount / totalCount) * 100)) : 0;
+              const hasTodayAttendance =
+                group.today_attendance_completed === true || markedCount > 0;
               return (
                 <button
                   type="button"
@@ -410,18 +411,59 @@ function TeacherAttendancePageContent() {
                   onClick={() => handleSelectGroup(groupId)}
                   className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition sm:px-4 sm:py-2 sm:text-sm ${
                     isActive
-                      ? "border-[#A60E07] bg-[#A60E07] text-white"
-                      : "border-gray-300 bg-white text-gray-700 hover:border-[#A60E07]"
+                      ? hasTodayAttendance
+                        ? "border-emerald-500 bg-emerald-600 text-white"
+                        : "border-[#A60E07] bg-[#A60E07] text-white"
+                      : hasTodayAttendance
+                        ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                        : "border-gray-300 bg-white text-gray-700 hover:border-[#A60E07]"
                   }`}
                 >
                   <div className="text-left leading-tight">
                     <div>{group.group_name || group.name}</div>
-                    <div className={`text-[10px] font-medium sm:text-[11px] ${isActive ? "text-red-100" : "text-gray-500"}`}>
+                    <div
+                      className={`text-[10px] font-medium sm:text-[11px] ${
+                        isActive
+                          ? hasTodayAttendance
+                            ? "text-emerald-100"
+                            : "text-red-100"
+                          : "text-gray-500"
+                      }`}
+                    >
                       {Array.isArray(group.schedule?.days) && group.schedule.days.length
                         ? group.schedule.days.map(getDayShort).join(", ")
                         : "-"}{" "}
                       {group.schedule?.time ? `• ${group.schedule.time}` : ""}
                     </div>
+                    {hasProgress ? (
+                      <div
+                        className={`mt-1 text-[10px] ${
+                          isActive
+                            ? hasTodayAttendance
+                              ? "text-emerald-100"
+                              : "text-red-100"
+                            : hasTodayAttendance
+                              ? "text-emerald-700"
+                              : "text-gray-500"
+                        }`}
+                      >
+                        Davomat: {markedCount}/{totalCount} ({attendancePercent}%)
+                        <div
+                          className={`mt-1 h-1 w-full rounded-full ${
+                            isActive
+                              ? hasTodayAttendance
+                                ? "bg-emerald-200/40"
+                                : "bg-red-200/40"
+                              : "bg-gray-200"
+                          }`}
+                        >
+                          <div
+                            className={`h-1 rounded-full ${hasTodayAttendance ? "bg-emerald-500" : "bg-[#A60E07]"}`}
+                            style={{ width: `${attendancePercent}%` }}
+                          />
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
                 </button>
               );
@@ -440,7 +482,7 @@ function TeacherAttendancePageContent() {
         <>
           <div className="space-y-2 rounded-xl border border-gray-200 bg-white p-3 sm:space-y-3 sm:p-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-base font-bold text-gray-900 sm:text-lg">Darslar ro&apos;yxati</h2>
+              <h2 className="hidden text-base font-bold text-gray-900 sm:block sm:text-lg">Darslar ro&apos;yxati</h2>
               <div className="flex items-center gap-2">
                 <input
                   type="month"
@@ -463,19 +505,16 @@ function TeacherAttendancePageContent() {
             {isMobileFiltersOpen ? (
               <div className="grid grid-cols-2 gap-2 rounded-lg border border-gray-200 bg-gray-50 p-2.5 md:hidden">
                 <label className="text-xs text-gray-700">
-                  <span className="mb-1 block font-medium">Day</span>
-                  <select
-                    value={day}
-                    onChange={(e) => setDay(e.target.value)}
-                    className={`w-full rounded-lg border px-2.5 py-1.5 text-xs ${day ? "border-[#A60E07] bg-red-50" : "border-gray-300"}`}
-                  >
-                    <option value="">Barchasi</option>
-                    <option value="dushanba">dushanba</option>
-                    <option value="seshanba">seshanba</option>
-                  </select>
+                  <span className="mb-1 block font-medium">Sana</span>
+                  <input
+                    type="date"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    className={`w-full rounded-lg border px-2.5 py-1.5 text-xs ${date ? "border-[#A60E07] bg-red-50" : "border-gray-300"}`}
+                  />
                 </label>
                 <label className="text-xs text-gray-700">
-                  <span className="mb-1 block font-medium">Shift</span>
+                  <span className="mb-1 block font-medium">Smena</span>
                   <select
                     value={shift}
                     onChange={(e) => setShift(e.target.value)}
@@ -491,7 +530,6 @@ function TeacherAttendancePageContent() {
                     type="button"
                     onClick={() => {
                       setDate("");
-                      setDay("");
                       setShift("");
                     }}
                     className="col-span-2 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700"

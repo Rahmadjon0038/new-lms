@@ -412,9 +412,6 @@ const TeacherPaymentsInfo = () => {
                                                     <div className="sm:hidden text-[10px] text-gray-500 mt-1 truncate">
                                                         {student.group_name} - {student.subject_name}
                                                     </div>
-                                                    <div className="text-[10px] text-blue-600 mt-1">
-                                                        Davomat: {student.attended_lessons}/{student.total_lessons} ({student.attendance_percentage}%)
-                                                    </div>
                                                 </div>
                                             </div>
                                         </td>

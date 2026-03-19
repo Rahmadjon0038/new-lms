@@ -167,8 +167,7 @@ export default function AdminTeacherGroupsPage() {
   }, [lessonStudentsQuery.data]);
 
   const normalizeStatus = (status) => {
-    if (status === "keldi") return "keldi";
-    if (status === "kechikdi") return "kechikdi";
+    if (status === "keldi" || status === "kechikdi") return "keldi";
     return "kelmadi";
   };
 
@@ -265,15 +264,13 @@ export default function AdminTeacherGroupsPage() {
                   </td>
                   <td className="px-2 py-1.5 sm:px-3 sm:py-2">
                     <div className="inline-flex rounded-xl border border-gray-200 bg-white p-0.5 sm:p-1">
-                      {["keldi", "kelmadi", "kechikdi"].map((option) => {
+                      {["keldi", "kelmadi"].map((option) => {
                         const isActive = getCurrentStudentStatus(student) === option;
                         const disabled = !canStudentMark(student) || markMutation.isPending;
                         const optionClass =
                           option === "keldi"
                             ? "bg-green-600 text-white"
-                            : option === "kechikdi"
-                              ? "bg-amber-500 text-white"
-                              : "bg-red-600 text-white";
+                            : "bg-red-600 text-white";
                         return (
                           <button
                             key={option}
