@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { instance } from './api';
+import { normalizeMonth } from "../utils/date";
 
 // ========== YANGI ATTENDANCE API'LAR ==========
 
@@ -78,7 +79,8 @@ export const useCreateTodayLesson = () => {
 const getStudentMonthlyAttendance = async (group_id, month, student_id = null) => {
     const params = new URLSearchParams();
     params.append('group_id', group_id);
-    params.append('month', month);
+    const normalizedMonth = normalizeMonth(month);
+    if (normalizedMonth) params.append('month', normalizedMonth);
     if (student_id) {
         params.append('student_id', student_id);
     }
@@ -100,7 +102,8 @@ const getStudentAttendanceSnapshot = async (student_id, group_id, month, teacher
     const params = new URLSearchParams();
     params.append('student_id', student_id);
     params.append('group_id', group_id);
-    params.append('month', month);
+    const normalizedMonth = normalizeMonth(month);
+    if (normalizedMonth) params.append('month', normalizedMonth);
     
     // Add optional filters
     if (teacher_id) {
@@ -163,17 +166,19 @@ export const useSaveAttendance = () => {
 // GET /api/attendance/groups/{group_id}/monthly?month=YYYY-MM
 const getMonthlyAttendance = async ({ group_id, month }) => {
     const params = new URLSearchParams();
-    if (month) params.append('month', month);
+    const normalizedMonth = normalizeMonth(month);
+    if (normalizedMonth) params.append('month', normalizedMonth);
     
     const response = await instance.get(`/api/attendance/groups/${group_id}/monthly?${params.toString()}`);
     return response.data;
 }
 
 export const useGetMonthlyAttendance = (group_id, month) => {
+    const normalizedMonth = normalizeMonth(month);
     return useQuery({
-        queryKey: ['monthly-attendance', group_id, month],
-        queryFn: () => getMonthlyAttendance({ group_id, month }),
-        enabled: !!group_id && !!month,
+        queryKey: ['monthly-attendance', group_id, normalizedMonth],
+        queryFn: () => getMonthlyAttendance({ group_id, month: normalizedMonth }),
+        enabled: !!group_id && !!normalizedMonth,
     });
 }
 
@@ -181,8 +186,9 @@ export const useGetMonthlyAttendance = (group_id, month) => {
 // GET /api/attendance/groups/{group_id}/lessons?month=YYYY-MM
 const getGroupLessons = async ({ group_id, month }) => {
     const params = new URLSearchParams();
-    if (month) {
-        params.append('month', month);
+    const normalizedMonth = normalizeMonth(month);
+    if (normalizedMonth) {
+        params.append('month', normalizedMonth);
     }
 
     const queryString = params.toString();
@@ -193,9 +199,10 @@ const getGroupLessons = async ({ group_id, month }) => {
 }
 
 export const useGetGroupLessons = (group_id, month) => {
+    const normalizedMonth = normalizeMonth(month);
     return useQuery({
-        queryKey: ['group-lessons', group_id, month],
-        queryFn: () => getGroupLessons({ group_id, month }),
+        queryKey: ['group-lessons', group_id, normalizedMonth],
+        queryFn: () => getGroupLessons({ group_id, month: normalizedMonth }),
         enabled: !!group_id,
     });
 }
@@ -223,8 +230,9 @@ export const useUpdateLessonDate = (group_id, month) => {
 // GET /api/attendance/my-lessons?month=YYYY-MM
 const getMyLessons = async ({ date, month }) => {
     const params = new URLSearchParams();
-    if (month) {
-        params.append('month', month);
+    const normalizedMonth = normalizeMonth(month);
+    if (normalizedMonth) {
+        params.append('month', normalizedMonth);
     } else if (date) {
         params.append('date', date);
     }
@@ -234,10 +242,11 @@ const getMyLessons = async ({ date, month }) => {
 };
 
 export const useGetMyLessons = ({ date, month }) => {
+    const normalizedMonth = normalizeMonth(month);
     return useQuery({
-        queryKey: ['attendance-my-lessons', date, month],
-        queryFn: () => getMyLessons({ date, month }),
-        enabled: Boolean(date || month),
+        queryKey: ['attendance-my-lessons', date, normalizedMonth],
+        queryFn: () => getMyLessons({ date, month: normalizedMonth }),
+        enabled: Boolean(date || normalizedMonth),
     });
 };
 

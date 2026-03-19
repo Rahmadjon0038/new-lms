@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useGetNotify } from "../../hooks/notify";
 import { useGetLessonStudents, useMarkLessonAttendance } from "../../hooks/attendance";
 import { ArrowLeftIcon, CheckCircleIcon, UserIcon } from "@heroicons/react/24/outline";
+import { useQueryClient } from "@tanstack/react-query";
+import { normalizeMonth } from "../../utils/date";
 
 const MAIN_COLOR = "#A60E07";
 
@@ -33,6 +35,7 @@ function LessonMarkPage({ role = "teacher" }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const notify = useGetNotify();
+  const queryClient = useQueryClient();
 
   const lessonId = Number(params.lesson_id);
   const lessonStatus = searchParams.get("lesson_status");
@@ -48,6 +51,36 @@ function LessonMarkPage({ role = "teacher" }) {
     if (Array.isArray(data)) return data;
     return [];
   }, [data]);
+
+  const lessonMeta = useMemo(() => {
+    const root = data?.data ?? data ?? {};
+    const lesson =
+      root?.lesson ||
+      root?.lesson_info ||
+      root?.lesson_data ||
+      root?.data?.lesson ||
+      root?.data?.lesson_info ||
+      root?.data?.lesson_data ||
+      null;
+    const groupId =
+      lesson?.group_id ||
+      root?.group_id ||
+      root?.group?.id ||
+      root?.group?.group_id ||
+      root?.data?.group_id ||
+      root?.data?.group?.id ||
+      root?.data?.group?.group_id ||
+      "";
+    const lessonDate = String(lesson?.date || lesson?.lesson_date || root?.lesson_date || "").slice(0, 10);
+    const month = normalizeMonth(lessonDate);
+    return { groupId, lessonDate, month };
+  }, [data]);
+
+  useEffect(() => {
+    if (lessonMeta.lessonDate) {
+      console.log("[Lesson] date:", lessonMeta.lessonDate);
+    }
+  }, [lessonMeta.lessonDate]);
 
   const [attendanceMap, setAttendanceMap] = useState({});
 
@@ -121,6 +154,14 @@ function LessonMarkPage({ role = "teacher" }) {
       {
         onSuccess: (response) => {
           notify("ok", response?.message || "Davomat saqlandi");
+          if (lessonMeta.groupId && lessonMeta.month) {
+            queryClient.invalidateQueries({
+              queryKey: ["monthly-attendance", lessonMeta.groupId, lessonMeta.month],
+            });
+            queryClient.refetchQueries({
+              queryKey: ["monthly-attendance", lessonMeta.groupId, lessonMeta.month],
+            });
+          }
         },
         onError: (err) => {
           notify("err", err?.response?.data?.message || "Davomatni saqlab bo'lmadi");

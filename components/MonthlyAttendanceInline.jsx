@@ -4,6 +4,7 @@ import { instance } from "../hooks/api";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-hot-toast";
 import { useQuery } from "@tanstack/react-query";
+import { normalizeMonth } from "../utils/date";
 
 // API function for getting user profile
 const getUserProfile = async () => {
@@ -209,7 +210,8 @@ const MonthlyStatusModal = ({ isOpen, onClose, student, groupId, currentMonth, u
 };
 
 const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
-  const { data, isLoading, error } = useMonthlyAttendance(groupId, selectedMonth);
+  const normalizedMonth = normalizeMonth(selectedMonth);
+  const { data, isLoading, error } = useMonthlyAttendance(groupId, normalizedMonth);
   const queryClient = useQueryClient();
   const [statusModal, setStatusModal] = useState({ isOpen: false, student: null });
   
@@ -261,7 +263,23 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
     return { lessons: [], students: [] };
   };
 
+  const extractMonthlyMeta = (response) => {
+    const root = response?.data ?? response ?? {};
+    const candidate =
+      root?.data ||
+      root?.monthly_data ||
+      root?.monthly_attendance ||
+      root?.report ||
+      root?.result ||
+      root;
+    return {
+      month: candidate?.month || "",
+      group: candidate?.group || null,
+    };
+  };
+
   const { lessons: rawLessons, students } = extractMonthlyPayload(data);
+  const { month: reportMonth, group: reportGroup } = extractMonthlyMeta(data);
   const lessons = [...rawLessons].sort((a, b) => {
     const aDate = new Date(a?.date || 0).getTime();
     const bDate = new Date(b?.date || 0).getTime();
@@ -273,7 +291,7 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
     mutationFn: updateMonthlyStatus,
     onSuccess: () => {
       toast.success('Status muvaffaqiyatli o\'zgartirildi!');
-      queryClient.invalidateQueries(['monthly-attendance', groupId, selectedMonth]);
+      queryClient.invalidateQueries(['monthly-attendance', groupId, normalizedMonth]);
       setStatusModal({ isOpen: false, student: null });
     },
     onError: (error) => {
@@ -284,16 +302,16 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
 
   // Excel export handler
   const handleExport = async () => {
-    if (!groupId || !selectedMonth) {
+    if (!groupId || !normalizedMonth) {
       alert('Guruh yoki oy tanlanmagan');
       return;
     }
     
     try {
-      console.log(`Exporting for Group ID: ${groupId}, Month: ${selectedMonth}`);
+      console.log(`Exporting for Group ID: ${groupId}, Month: ${normalizedMonth}`);
       
       // Instance orqali to'g'ri API chaqirish
-      const response = await instance.get(`/api/attendance/groups/${groupId}/monthly/export?month=${selectedMonth}`, {
+      const response = await instance.get(`/api/attendance/groups/${groupId}/monthly/export?month=${normalizedMonth}`, {
         responseType: 'blob'
       });
       
@@ -305,7 +323,7 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `davomat_guruh_${groupId}_${selectedMonth}.xlsx`;
+      link.download = `davomat_guruh_${groupId}_${normalizedMonth}.xlsx`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -381,15 +399,11 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
     const status = attendanceRecord?.status;
     const isMarked = attendanceRecord?.is_marked;
     const isInMembership = isLessonWithinMembership(lessonDate, membershipPeriods);
-    const isFutureLesson = isFutureLessonDate(lessonDate);
 
     if (!isInMembership) {
       return <span className="text-gray-400 text-xs">-</span>;
     }
     if (!attendanceRecord || isMarked === false) {
-      return <span className="text-gray-400 text-xs">-</span>;
-    }
-    if (isFutureLesson) {
       return <span className="text-gray-400 text-xs">-</span>;
     }
     if (status === "keldi") {
@@ -427,6 +441,18 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
           <span className="sm:hidden">Export</span>
         </button>
       </div>
+
+      {(reportGroup || reportMonth) ? (
+        <div className="mt-3 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700 sm:text-sm">
+          <div className="flex flex-wrap gap-2">
+            {reportMonth ? <span>Oy: <strong>{reportMonth}</strong></span> : null}
+            {reportGroup?.group_name ? <span>Guruh: <strong>{reportGroup.group_name}</strong></span> : null}
+            {reportGroup?.subject_name ? <span>Fan: <strong>{reportGroup.subject_name}</strong></span> : null}
+            {reportGroup?.teacher_name ? <span>Ustoz: <strong>{reportGroup.teacher_name}</strong></span> : null}
+            {reportGroup?.group_price ? <span>Narx: <strong>{formatMoney(reportGroup.group_price)}</strong></span> : null}
+          </div>
+        </div>
+      ) : null}
 
       {!lessons.length || !students.length ? (
         <div className="mt-4 rounded-md border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
@@ -537,7 +563,7 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
         onClose={() => setStatusModal({ isOpen: false, student: null })}
         student={statusModal.student}
         groupId={groupId}
-        currentMonth={selectedMonth}
+        currentMonth={normalizedMonth}
         updateStatusMutation={updateStatusMutation}
       />
     </div>

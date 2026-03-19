@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   ArrowLeftIcon,
   CalendarIcon,
@@ -23,14 +23,16 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { instance } from "../../../../hooks/api";
 import MonthlyAttendanceInline from "../../../../components/MonthlyAttendanceInline";
 import { toast } from "react-hot-toast";
+import { normalizeMonth } from "../../../../utils/date";
 
 const MAIN_COLOR = "#A60E07";
 
 // API functions
 const getGroupLessons = async (groupId, month) => {
   const params = new URLSearchParams();
-  if (month) {
-    params.append('month', month);
+  const normalizedMonth = normalizeMonth(month);
+  if (normalizedMonth) {
+    params.append('month', normalizedMonth);
   }
   
   const queryString = params.toString();
@@ -69,7 +71,8 @@ const saveLessonAttendance = async ({ lesson_id, attendance_records }) => {
 };
 
 const regenerateLessons = async ({ group_id, month, from_date }) => {
-  const payload = { month };
+  const normalizedMonth = normalizeMonth(month);
+  const payload = { month: normalizedMonth };
   if (from_date) payload.from_date = from_date;
   const response = await instance.post(`/api/attendance/groups/${group_id}/lessons/regenerate`, payload);
   return response.data;
@@ -321,14 +324,14 @@ const GroupLessonsPage = () => {
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const monthFromURL = searchParams.get('month');
     if (monthFromURL) {
-      return monthFromURL;
+      return normalizeMonth(monthFromURL);
     }
     
     // Agar URL da yo'q bo'lsa, localStorage dan o'qish
     if (typeof window !== 'undefined') {
       const savedMonth = localStorage.getItem('selectedMonth');
       if (savedMonth) {
-        return savedMonth;
+        return normalizeMonth(savedMonth);
       }
     }
     
@@ -339,14 +342,17 @@ const GroupLessonsPage = () => {
   // URL ni yangilash selectedMonth o'zgarganda
   const updateURLWithMonth = (month) => {
     if (typeof window !== 'undefined') {
+      const normalizedMonth = normalizeMonth(month);
       // localStorage ga saqlash
-      localStorage.setItem('selectedMonth', month);
+      localStorage.setItem('selectedMonth', normalizedMonth);
       
       const newURL = new URL(window.location.href);
-      newURL.searchParams.set('month', month);
+      newURL.searchParams.set('month', normalizedMonth);
       router.replace(newURL.pathname + '?' + newURL.searchParams.toString(), { scroll: false });
     }
   };
+
+  const normalizedMonth = useMemo(() => normalizeMonth(selectedMonth), [selectedMonth]);
   
   // Create lesson modal state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -358,8 +364,8 @@ const GroupLessonsPage = () => {
   const [lessonPanels, setLessonPanels] = useState({});
 
   const { data: lessonsData, isLoading, error } = useQuery({
-    queryKey: ['group-lessons', groupId, selectedMonth],
-    queryFn: () => getGroupLessons(groupId, selectedMonth),
+    queryKey: ['group-lessons', groupId, normalizedMonth],
+    queryFn: () => getGroupLessons(groupId, normalizedMonth),
     enabled: !!groupId,
   });
 
@@ -367,7 +373,7 @@ const GroupLessonsPage = () => {
     mutationFn: updateLessonDate,
     onSuccess: () => {
       toast.success("Dars sanasi yangilandi!");
-      queryClient.invalidateQueries({ queryKey: ['group-lessons', groupId, selectedMonth] });
+      queryClient.invalidateQueries({ queryKey: ['group-lessons', groupId, normalizedMonth] });
       setEditModal({ isOpen: false, lesson: null });
     },
     onError: (error) => {
@@ -379,7 +385,7 @@ const GroupLessonsPage = () => {
   const regenerateLessonsMutation = useMutation({
     mutationFn: () => regenerateLessons({
       group_id: groupId,
-      month: selectedMonth,
+      month: normalizedMonth,
       from_date: regenerateFromDate || undefined,
     }),
     onSuccess: () => {
@@ -388,7 +394,7 @@ const GroupLessonsPage = () => {
       setRegenerateFromDate("");
       setExpandedLessonId(null);
       setLessonPanels({});
-      queryClient.invalidateQueries({ queryKey: ['group-lessons', groupId, selectedMonth] });
+      queryClient.invalidateQueries({ queryKey: ['group-lessons', groupId, normalizedMonth] });
     },
     onError: (error) => {
       toast.error(error?.response?.data?.message || "Qayta yaratishda xatolik");
@@ -519,8 +525,8 @@ const GroupLessonsPage = () => {
 
       toast.success("Davomat saqlandi!");
       setExpandedLessonId(null);
-      queryClient.invalidateQueries({ queryKey: ['group-lessons', groupId, selectedMonth] });
-      queryClient.invalidateQueries({ queryKey: ['monthly-attendance', groupId, selectedMonth] });
+      queryClient.invalidateQueries({ queryKey: ['group-lessons', groupId, normalizedMonth] });
+      queryClient.invalidateQueries({ queryKey: ['monthly-attendance', groupId, normalizedMonth] });
 
       setLessonPanels((prev) => ({
         ...prev,
@@ -954,7 +960,7 @@ const GroupLessonsPage = () => {
         )}
 
         {/* Monthly Attendance Table (inline) */}
-        <MonthlyAttendanceInline groupId={groupId} selectedMonth={selectedMonth} />
+        <MonthlyAttendanceInline groupId={groupId} selectedMonth={normalizedMonth} />
 
         {/* Create Lesson Modal */}
         <CreateLessonModal 
@@ -982,7 +988,7 @@ const GroupLessonsPage = () => {
             setIsRegenerateModalOpen(false);
             setRegenerateFromDate("");
           }}
-          month={selectedMonth}
+          month={normalizedMonth}
           fromDate={regenerateFromDate}
           setFromDate={setRegenerateFromDate}
           onSubmit={() => regenerateLessonsMutation.mutate()}

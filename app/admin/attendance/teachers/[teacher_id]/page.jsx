@@ -13,6 +13,7 @@ import {
 } from "../../../../../hooks/attendance";
 import { useGetNotify } from "../../../../../hooks/notify";
 import MonthlyAttendanceInline from "../../../../../components/MonthlyAttendanceInline";
+import { normalizeMonth } from "../../../../../utils/date";
 
 const CURRENT_MONTH = new Date().toISOString().slice(0, 7);
 const getTodayYmd = () => {
@@ -156,6 +157,31 @@ export default function AdminTeacherGroupsPage() {
     const exists = lessons.some((lesson) => String(lesson.id || lesson.lesson_id) === String(selectedLessonId));
     return exists ? String(selectedLessonId) : "";
   }, [lessons, selectedLessonId]);
+
+  const activeLesson = useMemo(() => {
+    if (!activeLessonId) return null;
+    return lessons.find((lesson) => String(lesson.id || lesson.lesson_id) === String(activeLessonId)) || null;
+  }, [lessons, activeLessonId]);
+
+  const activeLessonDate = useMemo(() => {
+    const raw = activeLesson?.date || activeLesson?.lesson_date || "";
+    return String(raw).slice(0, 10);
+  }, [activeLesson]);
+
+  const monthlyMonth = useMemo(() => {
+    const normalizedSelected = normalizeMonth(selectedMonth);
+    if (activeLessonDate && activeLessonDate === getTodayYmd()) {
+      return normalizeMonth(activeLessonDate);
+    }
+    return normalizedSelected;
+  }, [activeLessonDate, selectedMonth]);
+
+  useEffect(() => {
+    if (activeLessonDate) {
+      console.log("[Lesson] date:", activeLessonDate);
+    }
+  }, [activeLessonDate]);
+
   const lessonStudentsQuery = useGetLessonStudents(activeLessonId || undefined);
   const markMutation = useMarkLessonAttendance();
 
@@ -331,7 +357,10 @@ export default function AdminTeacherGroupsPage() {
                     lessonStudentsQuery.refetch();
                     lessonsQuery.refetch();
                     queryClient.invalidateQueries({
-                      queryKey: ["monthly-attendance", activeGroupId, selectedMonth],
+                      queryKey: ["monthly-attendance", activeGroupId, monthlyMonth],
+                    });
+                    queryClient.refetchQueries({
+                      queryKey: ["monthly-attendance", activeGroupId, monthlyMonth],
                     });
                   },
                   onError: (err) => {
@@ -596,7 +625,7 @@ export default function AdminTeacherGroupsPage() {
             </div>
           ) : null}
 
-          <MonthlyAttendanceInline groupId={activeGroupId} selectedMonth={selectedMonth} />
+          <MonthlyAttendanceInline groupId={activeGroupId} selectedMonth={monthlyMonth} />
         </div>
       ) : null}
 

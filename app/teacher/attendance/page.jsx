@@ -11,6 +11,8 @@ import {
 } from "../../../hooks/attendance";
 import { useGetNotify } from "../../../hooks/notify";
 import MonthlyAttendanceInline from "../../../components/MonthlyAttendanceInline";
+import { useQueryClient } from "@tanstack/react-query";
+import { normalizeMonth } from "../../../utils/date";
 
 const CURRENT_MONTH = new Date().toISOString().slice(0, 7);
 const TODAY_DATE = new Date().toISOString().slice(0, 10);
@@ -23,6 +25,7 @@ function TeacherAttendancePageContent() {
   const searchParams = useSearchParams();
   const searchString = searchParams.toString();
   const notify = useGetNotify();
+  const queryClient = useQueryClient();
 
   const [date, setDate] = useState(searchParams.get("date") || "");
   const [shift, setShift] = useState(searchParams.get("shift") || "");
@@ -151,6 +154,30 @@ function TeacherAttendancePageContent() {
     const exists = lessons.some((lesson) => String(lesson.id || lesson.lesson_id) === String(selectedLessonId));
     return exists ? String(selectedLessonId) : "";
   }, [lessons, selectedLessonId]);
+
+  const activeLesson = useMemo(() => {
+    if (!activeLessonId) return null;
+    return lessons.find((lesson) => String(lesson.id || lesson.lesson_id) === String(activeLessonId)) || null;
+  }, [lessons, activeLessonId]);
+
+  const activeLessonDate = useMemo(() => {
+    const raw = activeLesson?.date || activeLesson?.lesson_date || "";
+    return String(raw).slice(0, 10);
+  }, [activeLesson]);
+
+  const monthlyMonth = useMemo(() => {
+    const normalizedSelected = normalizeMonth(selectedMonth);
+    if (activeLessonDate && activeLessonDate === TODAY_DATE) {
+      return normalizeMonth(activeLessonDate);
+    }
+    return normalizedSelected;
+  }, [activeLessonDate, selectedMonth]);
+
+  useEffect(() => {
+    if (activeLessonDate) {
+      console.log("[Lesson] date:", activeLessonDate);
+    }
+  }, [activeLessonDate]);
 
   const lessonStudentsQuery = useGetLessonStudents(activeLessonId || undefined);
   const markMutation = useMarkLessonAttendance();
@@ -417,6 +444,14 @@ function TeacherAttendancePageContent() {
                     setSelectedLessonId("");
                     lessonStudentsQuery.refetch();
                     lessonsQuery.refetch();
+                    if (activeGroupId && monthlyMonth) {
+                      queryClient.invalidateQueries({
+                        queryKey: ["monthly-attendance", activeGroupId, monthlyMonth],
+                      });
+                      queryClient.refetchQueries({
+                        queryKey: ["monthly-attendance", activeGroupId, monthlyMonth],
+                      });
+                    }
                   },
                   onError: (err) => {
                     notify("err", err?.response?.data?.message || "Davomat saqlanmadi");
@@ -707,7 +742,7 @@ function TeacherAttendancePageContent() {
             ) : null}
           </div>
 
-          <MonthlyAttendanceInline groupId={activeGroupId} selectedMonth={selectedMonth} />
+          <MonthlyAttendanceInline groupId={activeGroupId} selectedMonth={monthlyMonth} />
         </>
       ) : null}
     </div>
