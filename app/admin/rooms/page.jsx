@@ -510,6 +510,14 @@ const RoomsPage = () => {
     const notify = useGetNotify();
 
     const rooms = roomsData?.rooms || [];
+    const [search, setSearch] = useState("");
+    const filteredRooms = rooms.filter((room) => {
+        const key = search.trim().toLowerCase();
+        if (!key) return true;
+        const name = String(room?.name || room?.room_name || room?.title || "").toLowerCase();
+        const number = String(room?.room_number || room?.number || "").toLowerCase();
+        return name.includes(key) || number.includes(key);
+    });
 
     const handleViewSchedule = (roomId) => {
         setSelectedRoomId(roomId);
@@ -588,19 +596,21 @@ const RoomsPage = () => {
     return (
         <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6">
             <div className="">
-                {/* Header */}
-                <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">Xonalar Boshqarish</h1>
-                        <p className="mt-1 text-sm text-gray-600 sm:text-base">Barcha xonalarni boshqaring va yangi xonalar qo'shing</p>
-                    </div>
+                <div className="mb-4 flex items-center gap-2">
+                    <input
+                        type="text"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Xona bo'yicha qidiruv..."
+                        className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm sm:max-w-xs"
+                    />
                     <button
                         onClick={() => setIsModalOpen(true)}
-                        className="flex w-full items-center justify-center gap-2 rounded-lg border-2 bg-white px-4 py-2.5 font-bold text-white transition hover:shadow-md sm:w-auto sm:py-3"
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border-2 bg-white text-white transition hover:shadow-md sm:h-auto sm:w-auto sm:gap-2 sm:px-4 sm:py-2 sm:text-sm sm:font-semibold"
                         style={{ borderColor: MAIN_COLOR, backgroundColor: MAIN_COLOR }}
                     >
-                        <PlusIcon className="h-5 w-5" />
-                        Xona Qo'shish
+                        <PlusIcon className="h-4 w-4" />
+                        <span className="hidden sm:inline">Xona Qo'shish</span>
                     </button>
                 </div>
 
@@ -640,7 +650,7 @@ const RoomsPage = () => {
                         </div>
                         <p className="text-gray-600 mt-4">Xonalar yuklangan...</p>
                     </div>
-                ) : rooms.length === 0 ? (
+                ) : filteredRooms.length === 0 ? (
                     <div className="text-center py-12">
                         <Building2 className="h-16 w-16 text-gray-300 mx-auto mb-4" />
                         <p className="text-gray-600 mb-6">Xonalar mavjud emas</p>
@@ -653,8 +663,8 @@ const RoomsPage = () => {
                         </button>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                        {rooms.map(room => (
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                        {filteredRooms.map(room => (
                             <RoomCard
                                 key={room.id}
                                 room={room}

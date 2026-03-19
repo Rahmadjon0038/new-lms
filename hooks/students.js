@@ -35,13 +35,13 @@ const getAllstudent = async (filters = {}) => {
 }
 
 export const useGetAllStudents = (filters = {}, options = {}) => {
-    const { data, isLoading, error, refetch } = useQuery({
+    const { data, isLoading, isFetching, error, refetch } = useQuery({
         queryKey: ['students', filters],
         queryFn: () => getAllstudent(filters),
         ...options
     })
 
-    return { data, isLoading, error, refetch }
+    return { data, isLoading, isFetching, error, refetch }
 }
 
 // Register new student

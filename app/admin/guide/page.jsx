@@ -175,11 +175,6 @@ const AdminGuidePage = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6">
       <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Study Guides</h1>
-          <p className="mt-2 text-slate-600">Level management for admin</p>
-        </div>
-
         <button
           onClick={() => setCreateModal(true)}
           className="inline-flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white sm:w-auto"

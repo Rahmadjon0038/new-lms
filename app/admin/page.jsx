@@ -247,12 +247,12 @@ function AdminDashboard() {
           </h1>
           <p className="text-sm sm:text-base text-gray-500">Markazning umumiy ko&apos;rsatkichlari</p> */}
         </div>
-        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+        <div className="grid grid-cols-2 gap-2 w-full sm:w-auto sm:flex sm:flex-row">
           <input
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent text-sm"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent text-sm"
             style={{ outlineColor: MAIN_COLOR }}
             placeholder="Kun tanlash"
           />
@@ -260,7 +260,7 @@ function AdminDashboard() {
             type="month"
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent text-sm"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent text-sm"
             style={{ outlineColor: MAIN_COLOR }}
             placeholder="Oy tanlash"
           />
@@ -583,15 +583,15 @@ function AdminDashboard() {
           {admissionsRows.length > 0 ? (
             <div className="mt-4 grid grid-cols-1 gap-4">
               {admissionsRows.length > 0 ? (
-                <ChartCard title="Qabul trendi (12 oy)">
-                  <div className="h-[280px] w-full">
+                <ChartCard title="Qabul (12 oy)" className="p-3 sm:p-4">
+                  <div className="h-[200px] sm:h-[280px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={admissionsRows}>
+                      <LineChart data={admissionsRows} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="label" tick={{ fontSize: 11 }} />
-                        <YAxis allowDecimals={false} />
+                        <XAxis dataKey="label" tick={{ fontSize: 10 }} minTickGap={10} />
+                        <YAxis allowDecimals={false} tick={{ fontSize: 10 }} width={28} />
                         <Tooltip />
-                        <Legend />
+                        <Legend wrapperStyle={{ fontSize: 10 }} iconSize={8} />
                         <Line type="monotone" dataKey="admissions_count" name="Qabul soni" stroke={MAIN_COLOR} strokeWidth={2} />
                       </LineChart>
                     </ResponsiveContainer>

@@ -264,9 +264,11 @@ const StudentsPage = () => {
     };
 
     // Backenddan ma'lumotlarni olish
-    const { data: backendData, isLoading, error, refetch } = useGetAllStudents(filters, {
+    const { data: backendData, isLoading, isFetching, error, refetch } = useGetAllStudents(filters, {
         enabled: isTeacherRoute ? Boolean(teacherSubjectId || teacherId) : true
     });
+    const hasLoadedStudents = Boolean(backendData?.success);
+    const showStudentsLoading = ((!hasLoadedStudents && !error) || isFetching);
 
     // Student status o'zgartirish hook
     const updateStatusMutation = useUpdateStudentStatus();
@@ -787,6 +789,15 @@ const StudentsPage = () => {
                             ) : null}
                         </div>
 
+                        <Link href={`${basePath}/students/new`} className="md:hidden">
+                            <button
+                                aria-label="Yangi talaba qo'shish"
+                                className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-[#A60E07] text-white shadow-md transition duration-200 hover:opacity-90"
+                            >
+                                <FiUserPlus size={18} />
+                            </button>
+                        </Link>
+
                         <Link href={`${basePath}/students/new`} className="hidden md:order-2 md:block lg:order-none">
                             <button
                                 className="flex h-10 items-center justify-center gap-1 rounded-lg bg-[#A60E07] px-3 sm:px-4 text-sm font-semibold text-white shadow-md transition duration-200 hover:opacity-90">
@@ -830,15 +841,6 @@ const StudentsPage = () => {
                         </div>
                     ) : null}
 
-                    <div className="flex items-center md:hidden">
-                        <Link href={`${basePath}/students/new`}>
-                            <button
-                                className="flex h-10 items-center justify-center gap-1 rounded-lg bg-[#A60E07] px-3 sm:px-4 text-sm font-semibold text-white shadow-md transition duration-200 hover:opacity-90">
-                                <FiUserPlus size={18} />
-                                Yangi Talaba
-                            </button>
-                        </Link>
-                    </div>
                 </div>
             </div>
 
@@ -1058,6 +1060,10 @@ const StudentsPage = () => {
                             </div>
                         );
                     })
+                ) : showStudentsLoading ? (
+                    <div className="rounded-xl border border-gray-200 bg-white p-8 text-center text-sm text-gray-500">
+                        Yuklanmoqda...
+                    </div>
                 ) : (
                     <div className="rounded-xl border border-gray-200 bg-white p-8 text-center text-sm text-gray-500">
                         Talaba topilmadi
@@ -1449,6 +1455,12 @@ const StudentsPage = () => {
                                     </tr>
                                 );
                             })
+                        ) : showStudentsLoading ? (
+                            <tr className="bg-white">
+                                <td colSpan="4" className="px-4 py-12 text-center text-gray-500 border-b border-gray-200">
+                                    Yuklanmoqda...
+                                </td>
+                            </tr>
                         ) : (
                             <tr className="bg-white">
                                 <td colSpan="4" className="px-4 py-12 text-center text-gray-500 border-b border-gray-200">

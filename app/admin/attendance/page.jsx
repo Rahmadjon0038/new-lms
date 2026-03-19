@@ -6,10 +6,19 @@ import { UserGroupIcon } from "@heroicons/react/24/outline";
 import { useGetAttendanceTeachers } from "../../../hooks/attendance";
 
 const MAIN_COLOR = "#A60E07";
-
+const getTodayYmd = () => {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+};
 export default function AdminAttendancePage() {
   const [search, setSearch] = useState("");
-  const teachersQuery = useGetAttendanceTeachers();
+  const [date, setDate] = useState(getTodayYmd());
+  const teachersQuery = useGetAttendanceTeachers({
+    date: date || undefined,
+  });
 
   const teachers = useMemo(() => {
     const payload = teachersQuery.data;
@@ -32,13 +41,21 @@ export default function AdminAttendancePage() {
       
 
       <div className="rounded-xl border border-gray-200 bg-white p-4">
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Teacher ism bo'yicha qidirish"
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-        />
+        <div className="grid grid-cols-2 gap-2 sm:gap-3">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Teacher ism bo'yicha qidirish"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          />
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          />
+        </div>
       </div>
 
       {teachersQuery.isLoading ? (
@@ -67,6 +84,12 @@ export default function AdminAttendancePage() {
             const subjects = Array.isArray(item.subjects) ? item.subjects.join(", ") : "-";
             const rooms = Array.isArray(item.room_numbers) ? item.room_numbers.join(", ") : "-";
             const groupsCount = Number(item.groups_count) || 0;
+            const todayGroupsCount = Number(item.today_groups_count) || 0;
+            const todayMarkedGroupsCount = Number(item.today_marked_groups_count) || 0;
+            const progressPercent =
+              todayGroupsCount > 0
+                ? Math.round((todayMarkedGroupsCount / todayGroupsCount) * 100)
+                : 0;
 
             return (
               <Link
@@ -81,6 +104,23 @@ export default function AdminAttendancePage() {
                 <p className="text-sm text-gray-700"><span className="font-semibold">Fanlar:</span> {subjects}</p>
                 <p className="text-sm text-gray-700"><span className="font-semibold">Xonalar:</span> {rooms}</p>
                 <p className="mt-2 text-sm font-semibold text-gray-900">Guruhlar soni: {groupsCount}</p>
+                <div className="mt-2 text-xs text-gray-600">
+                  Bugungi darsli guruhlar:{" "}
+                  <span className="font-semibold text-gray-900">{todayGroupsCount}</span>
+                </div>
+                <div className="text-xs text-gray-600">
+                  Belgilangan guruhlar:{" "}
+                  <span className="font-semibold text-gray-900">{todayMarkedGroupsCount}</span>
+                </div>
+                <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-100">
+                  <div
+                    className="h-full rounded-full bg-emerald-500"
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
+                <div className="mt-1 text-[11px] text-gray-500">
+                  Progress: {progressPercent}%
+                </div>
               </Link>
             );
           })}

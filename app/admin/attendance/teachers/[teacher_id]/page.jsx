@@ -15,6 +15,13 @@ import { useGetNotify } from "../../../../../hooks/notify";
 import MonthlyAttendanceInline from "../../../../../components/MonthlyAttendanceInline";
 
 const CURRENT_MONTH = new Date().toISOString().slice(0, 7);
+const getTodayYmd = () => {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+};
 const WEEKDAYS_UZ = ["yakshanba", "dushanba", "seshanba", "chorshanba", "payshanba", "juma", "shanba"];
 
 export default function AdminTeacherGroupsPage() {
@@ -26,7 +33,7 @@ export default function AdminTeacherGroupsPage() {
   const notify = useGetNotify();
   const queryClient = useQueryClient();
 
-  const [day, setDay] = useState("");
+  const [date, setDate] = useState(getTodayYmd());
   const [shift, setShift] = useState("");
   const [selectedMonth, setSelectedMonth] = useState(CURRENT_MONTH);
   const [selectedGroupId, setSelectedGroupId] = useState(() => {
@@ -36,18 +43,17 @@ export default function AdminTeacherGroupsPage() {
   const [selectedLessonId, setSelectedLessonId] = useState("");
   const [attendanceOverrides, setAttendanceOverrides] = useState({});
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
-  const hasActiveFilters = Boolean(day || shift);
+  const hasActiveFilters = Boolean(shift);
 
   useEffect(() => {
     const params = new URLSearchParams(searchString);
-    params.delete("date");
-    if (day) params.set("day", day); else params.delete("day");
+    if (date) params.set("date", date); else params.delete("date");
     if (shift) params.set("shift", shift); else params.delete("shift");
     router.replace(`${pathname}?${params.toString()}`);
-  }, [day, shift, pathname, router, searchString]);
+  }, [date, shift, pathname, router, searchString]);
 
   const query = useGetAttendanceTeacherGroups(teacher_id, {
-    day: day || undefined,
+    date: date || undefined,
     shift: shift || undefined,
   });
 
@@ -162,6 +168,7 @@ export default function AdminTeacherGroupsPage() {
 
   const normalizeStatus = (status) => {
     if (status === "keldi") return "keldi";
+    if (status === "kechikdi") return "kechikdi";
     return "kelmadi";
   };
 
@@ -258,9 +265,15 @@ export default function AdminTeacherGroupsPage() {
                   </td>
                   <td className="px-2 py-1.5 sm:px-3 sm:py-2">
                     <div className="inline-flex rounded-xl border border-gray-200 bg-white p-0.5 sm:p-1">
-                      {["keldi", "kelmadi"].map((option) => {
+                      {["keldi", "kelmadi", "kechikdi"].map((option) => {
                         const isActive = getCurrentStudentStatus(student) === option;
                         const disabled = !canStudentMark(student) || markMutation.isPending;
+                        const optionClass =
+                          option === "keldi"
+                            ? "bg-green-600 text-white"
+                            : option === "kechikdi"
+                              ? "bg-amber-500 text-white"
+                              : "bg-red-600 text-white";
                         return (
                           <button
                             key={option}
@@ -277,9 +290,7 @@ export default function AdminTeacherGroupsPage() {
                             }}
                             className={`rounded-lg px-2 py-1 text-[11px] font-semibold transition sm:px-3 sm:text-xs ${
                               isActive
-                                ? option === "keldi"
-                                  ? "bg-green-600 text-white"
-                                  : "bg-red-600 text-white"
+                                ? optionClass
                                 : "text-gray-600 hover:bg-gray-100"
                             } disabled:cursor-not-allowed disabled:opacity-60`}
                           >
@@ -319,6 +330,7 @@ export default function AdminTeacherGroupsPage() {
                     notify("ok", res?.message || "Davomat saqlandi");
                     setAttendanceOverrides({});
                     setSelectedLessonId("");
+                    query.refetch();
                     lessonStudentsQuery.refetch();
                     lessonsQuery.refetch();
                     queryClient.invalidateQueries({
@@ -354,18 +366,14 @@ export default function AdminTeacherGroupsPage() {
 
       <div className="hidden gap-3 rounded-xl border border-gray-200 bg-white p-4 md:grid md:grid-cols-3">
         <label className="text-xs text-gray-700 sm:text-sm">
-          <span className="mb-1 block font-medium">Kun (ixtiyoriy)</span>
-          <select
-            value={day}
-            onChange={(e) => setDay(e.target.value)}
-            className={`w-full rounded-lg border px-2.5 py-1.5 text-xs sm:px-3 sm:py-2 sm:text-sm ${day ? "border-[#A60E07] bg-red-50" : "border-gray-300"}`}
-          >
-            <option value="">Barchasi</option>
-            <option value="dushanba">dushanba</option>
-            <option value="seshanba">seshanba</option>
-          </select>
+          <span className="mb-1 block font-medium">Sana</span>
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="w-full rounded-lg border border-gray-300 px-2.5 py-1.5 text-xs sm:px-3 sm:py-2 sm:text-sm"
+          />
         </label>
-
         <label className="text-xs text-gray-700 sm:text-sm">
           <span className="mb-1 block font-medium">Smena (ixtiyoriy)</span>
           <select
@@ -384,7 +392,6 @@ export default function AdminTeacherGroupsPage() {
             <button
               type="button"
               onClick={() => {
-                setDay("");
                 setShift("");
               }}
               className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 sm:w-auto sm:px-4 sm:py-2 sm:text-sm"
@@ -418,6 +425,9 @@ export default function AdminTeacherGroupsPage() {
           <div className="flex gap-2 overflow-x-auto pb-1">
             {activeGroups.map((group) => {
               const isActive = String(group.group_id) === activeGroupId;
+              const hasTodayAttendance =
+                group.today_attendance_completed === true ||
+                Number(group.today_marked_students_count) > 0;
               return (
                 <button
                   type="button"
@@ -426,7 +436,9 @@ export default function AdminTeacherGroupsPage() {
                   className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition sm:px-4 sm:py-2 sm:text-sm ${
                     isActive
                       ? "border-[#A60E07] bg-[#A60E07] text-white"
-                      : "border-gray-300 bg-white text-gray-700 hover:border-[#A60E07]"
+                      : hasTodayAttendance
+                        ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                        : "border-gray-300 bg-white text-gray-700 hover:border-[#A60E07]"
                   }`}
                 >
                   <div className="text-left leading-tight">
@@ -436,6 +448,10 @@ export default function AdminTeacherGroupsPage() {
                         ? group.schedule.days.map(getDayShort).join(", ")
                         : "-"}{" "}
                       {group.schedule?.time ? `• ${group.schedule.time}` : ""}
+                    </div>
+                    <div className={`mt-1 text-[10px] ${isActive ? "text-red-100" : "text-gray-500"}`}>
+                      {group.subject_name ? `${group.subject_name}` : ""}{group.subject_name ? " • " : ""}
+                      {group.room_number ? `Xona ${group.room_number}` : "Xona -"}
                     </div>
                   </div>
                 </button>
@@ -477,16 +493,13 @@ export default function AdminTeacherGroupsPage() {
           {isMobileFiltersOpen ? (
             <div className="grid grid-cols-2 gap-2 rounded-lg border border-gray-200 bg-gray-50 p-2.5 md:hidden">
               <label className="text-xs text-gray-700">
-                <span className="mb-1 block font-medium">Kun</span>
-                <select
-                  value={day}
-                  onChange={(e) => setDay(e.target.value)}
-                  className={`w-full rounded-lg border px-2.5 py-1.5 text-xs ${day ? "border-[#A60E07] bg-red-50" : "border-gray-300"}`}
-                >
-                  <option value="">Barchasi</option>
-                  <option value="dushanba">dushanba</option>
-                  <option value="seshanba">seshanba</option>
-                </select>
+                <span className="mb-1 block font-medium">Sana</span>
+                <input
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-2.5 py-1.5 text-xs"
+                />
               </label>
               <label className="text-xs text-gray-700">
                 <span className="mb-1 block font-medium">Smena</span>
@@ -504,7 +517,6 @@ export default function AdminTeacherGroupsPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    setDay("");
                     setShift("");
                   }}
                   className="col-span-2 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700"

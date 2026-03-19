@@ -282,16 +282,21 @@ export const useGetAdminTeacherLessons = ({ teacher_id, date, shift }) => {
 };
 
 // 1️⃣4️⃣ Attendance teacher list (admin/super_admin)
-// GET /api/attendance/teachers
-const getAttendanceTeachers = async () => {
-    const response = await instance.get('/api/attendance/teachers');
+// GET /api/attendance/teachers?date=YYYY-MM-DD&shift=morning|evening
+const getAttendanceTeachers = async (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.date) params.append('date', filters.date);
+    if (filters.shift) params.append('shift', filters.shift);
+    const queryString = params.toString();
+
+    const response = await instance.get(`/api/attendance/teachers${queryString ? `?${queryString}` : ''}`);
     return response.data;
 };
 
-export const useGetAttendanceTeachers = () => {
+export const useGetAttendanceTeachers = (filters = {}) => {
     return useQuery({
-        queryKey: ['attendance-teachers-list'],
-        queryFn: getAttendanceTeachers,
+        queryKey: ['attendance-teachers-list', filters],
+        queryFn: () => getAttendanceTeachers(filters),
     });
 };
 

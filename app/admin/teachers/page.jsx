@@ -907,7 +907,6 @@ export default function TeachersPage() {
       <div className="">
         {/* Header + Add Button */}
         <div className="mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-          <h1 className="text-xl font-bold text-gray-900 sm:text-3xl">O'qituvchilar Boshqaruvi</h1>
           <AddTeacherModal>
             <button className="flex w-full items-center justify-center rounded-lg bg-[#A60E07] px-3 py-2 text-sm font-semibold text-white shadow-md transition hover:opacity-90 sm:w-auto">
               <UserPlusIcon className="h-5 w-5 mr-2" />

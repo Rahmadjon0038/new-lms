@@ -158,10 +158,6 @@ const AdminExpensesPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6">
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Rasxodlar</h1>
-          <p className="text-sm text-gray-600">Oyni tanlang va rasxodlarni boshqaring</p>
-        </div>
         <button
           onClick={() => setIsAddModalOpen(true)}
           className="inline-flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white sm:w-auto"
