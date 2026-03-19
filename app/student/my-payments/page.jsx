@@ -140,9 +140,9 @@ function StudentPayments() {
   }
 
   return (
-    <div className="min-h-full bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-full bg-gradient-to-br from-gray-50 to-gray-100 px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
       <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-        <div className="flex-1">
+        <div className="hidden lg:block flex-1">
           <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-1 sm:mb-2 flex items-center">
             <BanknotesIcon className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 mr-2 sm:mr-3 text-[#A60E07]" />
             Mening To'lovlarim
@@ -151,8 +151,9 @@ function StudentPayments() {
         </div>
 
         <div className="w-full sm:w-auto">
-          <label className="block text-[10px] sm:text-xs font-medium text-gray-700 mb-1">Oyni tanlang:</label>
+          <label className="sr-only" htmlFor="payments-month">Oyni tanlang</label>
           <input
+            id="payments-month"
             type="month"
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}

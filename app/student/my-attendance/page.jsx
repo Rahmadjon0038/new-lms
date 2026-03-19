@@ -187,8 +187,8 @@ function MyAttendance() {
   }
 
   return (
-    <div className="min-h-full bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="mb-6">
+    <div className="min-h-full bg-gradient-to-br from-gray-50 to-gray-100 px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+      <div className="mb-6 hidden lg:block">
         <h1 className="text-2xl font-bold text-gray-900 mb-2 flex items-center">
           <CalendarDaysIcon className="h-7 w-7 mr-3 text-[#A60E07]" />
           Mening Davomatim
@@ -199,10 +199,11 @@ function MyAttendance() {
       <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
         <div className="flex flex-col md:flex-row md:items-center gap-4">
           <div className="flex-shrink-0">
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+            <label className="sr-only" htmlFor="attendance-month">
               Oyni tanlang
             </label>
             <input
+              id="attendance-month"
               type="month"
               value={selectedMonth}
                       onChange={(e) => {

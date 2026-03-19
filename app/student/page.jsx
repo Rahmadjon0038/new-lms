@@ -227,11 +227,11 @@ function StudetGroup() {
     "";
 
   return (
-    <div className="min-h-full">
-      <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-gray-900 mb-1">
+    <div className="min-h-full px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+      <h1 className="hidden lg:block text-xl sm:text-2xl md:text-3xl font-extrabold text-gray-900 mb-1">
         Mening Guruhlarim
       </h1>
-      <p className="text-xs sm:text-sm md:text-base text-gray-500 mb-4 sm:mb-6 md:mb-8">
+      <p className="hidden lg:block text-xs sm:text-sm md:text-base text-gray-500 mb-4 sm:mb-6 md:mb-8">
         Siz ro'yxatdan o'tgan barcha faol va tugatilgan guruhlar.
       </p>
 
