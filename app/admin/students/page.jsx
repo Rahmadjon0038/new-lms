@@ -315,7 +315,8 @@ const StudentsPage = () => {
 
     // Backenddan ma'lumotlarni olish
     const { data: backendData, isLoading, isFetching, error, refetch } = useGetAllStudents(filters, {
-        enabled: isTeacherRoute ? Boolean(teacherSubjectId || teacherId) : true
+        enabled: isTeacherRoute ? Boolean(teacherSubjectId || teacherId) : true,
+        keepPreviousData: true
     });
     const hasLoadedStudents = Boolean(backendData?.success);
     const showStudentsLoading = ((!hasLoadedStudents && !error) || isFetching);
@@ -328,6 +329,7 @@ const StudentsPage = () => {
     ) || 1;
     const pageStart = totalItems === 0 ? 0 : (currentPage - 1) * pageLimit + 1;
     const pageEnd = totalItems === 0 ? 0 : Math.min(currentPage * pageLimit, totalItems);
+    const isInitialLoading = showStudentsLoading && students.length === 0;
 
     // Student status o'zgartirish hook
     const updateStatusMutation = useUpdateStudentStatus();
@@ -337,6 +339,7 @@ const StudentsPage = () => {
 
     // Backenddan ma'lumotlarni boshqarish uchun lokal state
     const [students, setStudents] = useState([]);
+    const [allStudents, setAllStudents] = useState([]);
     const [stats, setStats] = useState(null);
     const [editingId, setEditingId] = useState(null);
     const [editData, setEditData] = useState({});
@@ -355,6 +358,7 @@ const StudentsPage = () => {
         address: '',
         age: '',
     });
+    const loadMoreRef = useRef(null);
 
     // Ma'lumot kelganda state-ni yangilash
     useEffect(() => {
@@ -396,8 +400,21 @@ const StudentsPage = () => {
             });
             setStudents(expandedStudents);
             setStats(backendData.stats);
+            setAllStudents((prev) => {
+                if (currentPage <= 1) return expandedStudents;
+                const seen = new Set(prev.map((s) => `${s.id}-${s.group_id ?? 'none'}`));
+                const merged = [...prev];
+                expandedStudents.forEach((s) => {
+                    const key = `${s.id}-${s.group_id ?? 'none'}`;
+                    if (!seen.has(key)) {
+                        seen.add(key);
+                        merged.push(s);
+                    }
+                });
+                return merged;
+            });
         }
-    }, [backendData]);
+    }, [backendData, currentPage]);
 
     useEffect(() => {
         if (isLoading) return;
@@ -405,6 +422,22 @@ const StudentsPage = () => {
             setPage((prev) => Math.max(1, prev - 1));
         }
     }, [isLoading, students.length, currentPage]);
+
+    useEffect(() => {
+        const node = loadMoreRef.current;
+        if (!node) return;
+        if (currentPage >= totalPages) return;
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (!entries[0]?.isIntersecting) return;
+                if (isFetching || isLoading) return;
+                setPage((prev) => Math.min(totalPages, prev + 1));
+            },
+            { rootMargin: "200px" }
+        );
+        observer.observe(node);
+        return () => observer.disconnect();
+    }, [currentPage, totalPages, isFetching, isLoading]);
 
     // Status dropdown yopish uchun click outside
     useEffect(() => {
@@ -448,9 +481,10 @@ const StudentsPage = () => {
 
     useEffect(() => {
         setPage(1);
+        setAllStudents([]);
     }, [searchTerm, selectedTeacher, selectedSubject, selectedStatus, showUnassigned, teacherId, teacherSubjectId, isTeacherRoute]);
 
-    const filteredStudents = students || [];
+    const filteredStudents = allStudents || [];
 
     const handleEditChange = useCallback((e) => {
         const { name, value, type } = e.target;
@@ -1147,7 +1181,7 @@ const StudentsPage = () => {
                             </div>
                         );
                     })
-                ) : showStudentsLoading ? (
+                ) : isInitialLoading ? (
                     <div className="space-y-3">
                         {Array.from({ length: 6 }).map((_, index) => (
                             <div key={`sk-m-${index}`} className="rounded-xl border border-gray-200 bg-white p-3 animate-pulse">
@@ -1569,7 +1603,7 @@ const StudentsPage = () => {
                                     </tr>
                                 );
                             })
-                        ) : showStudentsLoading ? (
+                        ) : isInitialLoading ? (
                             <>
                                 {Array.from({ length: 6 }).map((_, index) => (
                                     <tr key={`sk-d-${index}`} className="bg-white animate-pulse">
@@ -1616,31 +1650,14 @@ const StudentsPage = () => {
             </div>
 
             {totalItems > 0 && (
-                <div className="mt-3 flex flex-col gap-2 rounded-lg border border-gray-200 bg-white px-3 py-3 text-xs text-gray-600 sm:flex-row sm:items-center sm:justify-between sm:px-4">
-                    <div>
-                        Ko'rsatilmoqda {pageStart}-{pageEnd} / {totalItems}
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <button
-                            type="button"
-                            onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-                            disabled={currentPage <= 1 || isFetching}
-                            className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                            Oldingi
-                        </button>
-                        <span className="text-xs font-semibold text-gray-700">
-                            {currentPage} / {totalPages}
-                        </span>
-                        <button
-                            type="button"
-                            onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
-                            disabled={currentPage >= totalPages || isFetching}
-                            className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                            Keyingi
-                        </button>
-                    </div>
+                <div className="mt-3 rounded-lg border border-gray-200 bg-white px-3 py-3 text-center text-xs text-gray-600 sm:px-4">
+                    Ko'rsatilmoqda {pageStart}-{pageEnd} / {totalItems}
+                </div>
+            )}
+
+            {(totalPages > 1 && currentPage < totalPages) && (
+                <div ref={loadMoreRef} className="mt-3 flex items-center justify-center text-xs text-gray-500">
+                    {isFetching ? "Yuklanmoqda..." : "Yana yuklash uchun pastga tushing"}
                 </div>
             )}
 

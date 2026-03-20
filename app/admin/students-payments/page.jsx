@@ -90,7 +90,7 @@ const StudentPayments = () => {
     const subjects = subjectsData?.subjects || [];
 
     // Fetch monthly payments
-    const { data: paymentsData, isLoading, isFetching, error } = useMonthlyPayments(filters);
+    const { data: paymentsData, isLoading, isFetching, error } = useMonthlyPayments(filters, { keepPreviousData: true });
 
     const students = paymentsData?.data?.students || [];
     const apiSummary = paymentsData?.data?.summary || {};
@@ -121,6 +121,7 @@ const StudentPayments = () => {
     const effectiveTotalPages = totalItems ? totalPages : 1;
     const pageStart = effectiveTotal === 0 ? 0 : (currentPage - 1) * pageLimit + 1;
     const pageEnd = effectiveTotal === 0 ? 0 : Math.min(currentPage * pageLimit, effectiveTotal);
+    const isInitialLoading = isLoading && allStudents.length === 0;
 
     const loadMoreRef = useRef(null);
 
@@ -146,14 +147,14 @@ const StudentPayments = () => {
     }, [paymentsData, students, currentPage]);
 
     useEffect(() => {
-        if (isLoading) return;
+        if (isFetching) return;
         if (students.length === 0 && currentPage > 1) {
             setFilters((prev) => ({
                 ...prev,
                 page: Math.max(1, currentPage - 1)
             }));
         }
-    }, [isLoading, students.length, currentPage]);
+    }, [isFetching, students.length, currentPage]);
 
     useEffect(() => {
         const node = loadMoreRef.current;
@@ -875,7 +876,7 @@ const StudentPayments = () => {
                     </div>
 
                     <div className="overflow-x-auto">
-                        {isLoading ? (
+                        {isInitialLoading ? (
                             <>
                                 <div className="space-y-2.5 p-2.5 sm:p-4 md:hidden">
                                     {Array.from({ length: 6 }).map((_, index) => (
