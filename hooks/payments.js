@@ -23,6 +23,9 @@ const fetchMonthlyPayments = async (filters) => {
   if (filters.group_id) params.append('group_id', filters.group_id);
   if (filters.teacher_id) params.append('teacher_id', filters.teacher_id);
   if (filters.subject_id) params.append('subject_id', filters.subject_id);
+  if (filters.search) params.append('search', filters.search);
+  if (filters.page) params.append('page', String(filters.page));
+  if (filters.limit) params.append('limit', String(filters.limit));
 
   const monthlyStatus = filters.monthly_status;
   if (monthlyStatus && monthlyStatus !== 'all') params.append('status', monthlyStatus);

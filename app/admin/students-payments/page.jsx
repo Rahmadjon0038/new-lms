@@ -1,6 +1,6 @@
 "use client";
 /* eslint-disable react/no-unescaped-entities */
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
     CalendarIcon,
@@ -46,14 +46,16 @@ const StudentPayments = () => {
         month: new Date().toISOString().slice(0, 7), // Current month (YYYY-MM)
         payment_status: 'all',
         teacher_id: '',
-        subject_id: ''
+        subject_id: '',
+        search: '',
+        page: 1,
+        limit: 20
     });
 
     const { data: newStudentsNotification } = useNewStudentsNotification(
         filters.month || new Date().toISOString().slice(0, 7)
     );
 
-    const [searchTerm, setSearchTerm] = useState('');
     const [showFilterDropdown, setShowFilterDropdown] = useState(false);
     const filterDropdownRef = useRef(null);
     const [selectedStudent, setSelectedStudent] = useState(null);
@@ -88,28 +90,12 @@ const StudentPayments = () => {
     const subjects = subjectsData?.subjects || [];
 
     // Fetch monthly payments
-    const { data: paymentsData, isLoading, error } = useMonthlyPayments(filters);
+    const { data: paymentsData, isLoading, isFetching, error } = useMonthlyPayments(filters);
 
     const students = paymentsData?.data?.students || [];
     const apiSummary = paymentsData?.data?.summary || {};
-
-    // Filter students based on search term
-    const filteredStudents = useMemo(() => {
-        if (!searchTerm.trim()) {
-            return students;
-        }
-
-        const lowerSearchTerm = searchTerm.toLowerCase().trim();
-        return students.filter(student => {
-            const fullName = `${student.student_surname || ''} ${student.student_name || ''}`.toLowerCase();
-            const phone = (student.student_phone || '').replace(/\s+/g, '');
-            const searchPhone = lowerSearchTerm.replace(/\s+/g, '');
-
-            return fullName.includes(lowerSearchTerm) ||
-                phone.includes(searchPhone) ||
-                (student.group_name && student.group_name.toLowerCase().includes(lowerSearchTerm));
-        });
-    }, [students, searchTerm]);
+    const apiPagination = paymentsData?.data?.pagination || paymentsData?.pagination || {};
+    const [allStudents, setAllStudents] = useState([]);
 
     // Use backend statistics directly
     const stats = {
@@ -125,6 +111,71 @@ const StudentPayments = () => {
         students_with_discounts: parseInt(apiSummary.students_with_discounts || 0)
     };
 
+    const currentPage = Number(apiPagination.page || filters.page || 1);
+    const pageLimit = Number(apiPagination.limit || filters.limit || 20);
+    const totalItems = Number(apiPagination.total || 0);
+    const totalPages = Number(
+        apiPagination.total_pages || (pageLimit ? Math.ceil(totalItems / pageLimit) : 1)
+    ) || 1;
+    const effectiveTotal = totalItems || students.length;
+    const effectiveTotalPages = totalItems ? totalPages : 1;
+    const pageStart = effectiveTotal === 0 ? 0 : (currentPage - 1) * pageLimit + 1;
+    const pageEnd = effectiveTotal === 0 ? 0 : Math.min(currentPage * pageLimit, effectiveTotal);
+
+    const loadMoreRef = useRef(null);
+
+    useEffect(() => {
+        setAllStudents([]);
+    }, [filters.month, filters.payment_status, filters.teacher_id, filters.subject_id, filters.search, filters.limit]);
+
+    useEffect(() => {
+        if (!paymentsData) return;
+        setAllStudents((prev) => {
+            if (currentPage <= 1) return students;
+            const seen = new Set(prev.map((s) => `${s.student_id}-${s.group_id}`));
+            const merged = [...prev];
+            students.forEach((s) => {
+                const key = `${s.student_id}-${s.group_id}`;
+                if (!seen.has(key)) {
+                    seen.add(key);
+                    merged.push(s);
+                }
+            });
+            return merged;
+        });
+    }, [paymentsData, students, currentPage]);
+
+    useEffect(() => {
+        if (isLoading) return;
+        if (students.length === 0 && currentPage > 1) {
+            setFilters((prev) => ({
+                ...prev,
+                page: Math.max(1, currentPage - 1)
+            }));
+        }
+    }, [isLoading, students.length, currentPage]);
+
+    useEffect(() => {
+        const node = loadMoreRef.current;
+        if (!node) return;
+        if (effectiveTotalPages <= 1) return;
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (!entries[0]?.isIntersecting) return;
+                if (isFetching || isLoading) return;
+                if (currentPage >= effectiveTotalPages) return;
+                setFilters((prev) => ({
+                    ...prev,
+                    page: prev.page + 1
+                }));
+            },
+            { rootMargin: "200px" }
+        );
+
+        observer.observe(node);
+        return () => observer.disconnect();
+    }, [currentPage, effectiveTotalPages, isFetching, isLoading]);
+
     // Format currency
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('uz-UZ', {
@@ -132,6 +183,15 @@ const StudentPayments = () => {
             currency: 'UZS',
             minimumFractionDigits: 0,
         }).format(amount);
+    };
+
+    const formatName = (value) => {
+        if (!value) return '';
+        return value
+            .toLowerCase()
+            .split(/\s+/)
+            .map(part => (part ? part[0].toUpperCase() + part.slice(1) : ''))
+            .join(' ');
     };
 
     // Excel export handler
@@ -241,14 +301,16 @@ const StudentPayments = () => {
             month: new Date().toISOString().slice(0, 7),
             payment_status: 'all',
             teacher_id: '',
-            subject_id: ''
+            subject_id: '',
+            search: '',
+            page: 1,
+            limit: 20
         });
-        setSearchTerm('');
     };
 
     // Check if any filter is active
     const hasActiveDropdownFilters = filters.payment_status !== 'all' || Boolean(filters.teacher_id) || Boolean(filters.subject_id);
-    const hasActiveFilters = hasActiveDropdownFilters || searchTerm.trim();
+    const hasActiveFilters = hasActiveDropdownFilters || filters.search.trim();
 
     // Clear student month data
     const handleClearStudentMonth = async () => {
@@ -341,10 +403,13 @@ const StudentPayments = () => {
 
 
     const handleFilterChange = (key, value) => {
-        setFilters(prev => ({
-            ...prev,
-            [key]: value
-        }));
+        setFilters(prev => {
+            const nextFilters = { ...prev, [key]: value };
+            if (key !== 'page') {
+                nextFilters.page = 1;
+            }
+            return nextFilters;
+        });
     };
 
     useEffect(() => {
@@ -385,19 +450,6 @@ const StudentPayments = () => {
             return nextValue;
         });
     };
-
-    if (isLoading) {
-        return (
-            <div className="min-h-screen bg-gray-50 p-2.5 sm:p-4 md:p-6">
-                <div className="max-w-7xl mx-auto">
-                    <div className="text-center py-12">
-                        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: MAIN_COLOR }}></div>
-                        <p className="text-gray-600 mt-4">Yuklanmoqda...</p>
-                    </div>
-                </div>
-            </div>
-        );
-    }
 
     if (error) {
         return (
@@ -610,14 +662,14 @@ const StudentPayments = () => {
                                 <input
                                     type="text"
                                     placeholder="Ism, telefon, guruh..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    value={filters.search}
+                                    onChange={(e) => handleFilterChange('search', e.target.value)}
                                     className="w-full rounded-lg border border-gray-300 py-2 pl-9 pr-8 text-sm transition-colors focus:border-transparent focus:ring-2"
                                     style={{ focusRingColor: MAIN_COLOR }}
                                 />
-                                {searchTerm && (
+                                {filters.search && (
                                     <button
-                                        onClick={() => setSearchTerm('')}
+                                        onClick={() => handleFilterChange('search', '')}
                                         className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 transition-colors hover:text-gray-600"
                                     >
                                         ✕
@@ -823,10 +875,114 @@ const StudentPayments = () => {
                     </div>
 
                     <div className="overflow-x-auto">
-                        {filteredStudents.length > 0 ? (
+                        {isLoading ? (
+                            <>
+                                <div className="space-y-2.5 p-2.5 sm:p-4 md:hidden">
+                                    {Array.from({ length: 6 }).map((_, index) => (
+                                        <div key={`sk-m-${index}`} className="rounded-lg border border-gray-200 p-2.5 animate-pulse">
+                                            <div className="mb-2 flex items-start justify-between gap-2">
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="h-3 w-8 rounded bg-gray-200 mb-2"></div>
+                                                    <div className="h-4 w-40 rounded bg-gray-200 mb-2"></div>
+                                                    <div className="h-3 w-24 rounded bg-gray-200"></div>
+                                                </div>
+                                                <div className="h-6 w-16 rounded-full bg-gray-200"></div>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <div className="h-3 w-48 rounded bg-gray-200"></div>
+                                                <div className="h-3 w-40 rounded bg-gray-200"></div>
+                                                <div className="h-3 w-44 rounded bg-gray-200"></div>
+                                                <div className="h-3 w-36 rounded bg-gray-200"></div>
+                                            </div>
+                                            <div className="mt-3 grid grid-cols-2 gap-2">
+                                                <div className="h-8 rounded bg-gray-200"></div>
+                                                <div className="h-8 rounded bg-gray-200"></div>
+                                                <div className="h-8 rounded bg-gray-200"></div>
+                                                <div className="h-8 rounded bg-gray-200"></div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <table className="hidden min-w-[1100px] w-full divide-y divide-gray-200 md:table">
+                                    <thead className="bg-gray-50">
+                                        <tr>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                #
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Talaba ma'lumotlari
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Guruh / Fan / O'qituvchi
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                To'lov ma'lumotlari
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Admin
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Holati
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Amallar
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-gray-200">
+                                        {Array.from({ length: 6 }).map((_, index) => (
+                                            <tr key={`sk-d-${index}`} className="animate-pulse">
+                                                <td className="px-6 py-4">
+                                                    <div className="h-4 w-8 rounded bg-gray-200"></div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="space-y-2">
+                                                        <div className="h-4 w-40 rounded bg-gray-200"></div>
+                                                        <div className="h-3 w-28 rounded bg-gray-200"></div>
+                                                        <div className="h-3 w-24 rounded bg-gray-200"></div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="space-y-2">
+                                                        <div className="h-4 w-32 rounded bg-gray-200"></div>
+                                                        <div className="h-3 w-28 rounded bg-gray-200"></div>
+                                                        <div className="h-3 w-24 rounded bg-gray-200"></div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="space-y-2">
+                                                        <div className="h-3 w-28 rounded bg-gray-200"></div>
+                                                        <div className="h-3 w-32 rounded bg-gray-200"></div>
+                                                        <div className="h-3 w-36 rounded bg-gray-200"></div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="space-y-2">
+                                                        <div className="h-3 w-24 rounded bg-gray-200"></div>
+                                                        <div className="h-3 w-20 rounded bg-gray-200"></div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="h-6 w-16 rounded-full bg-gray-200"></div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex space-x-2">
+                                                        <div className="h-7 w-16 rounded bg-gray-200"></div>
+                                                        <div className="h-7 w-20 rounded bg-gray-200"></div>
+                                                        <div className="h-7 w-20 rounded bg-gray-200"></div>
+                                                        <div className="h-7 w-20 rounded bg-gray-200"></div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </>
+                        ) : allStudents.length > 0 ? (
                             <>
                             <div className="space-y-2.5 p-2.5 sm:p-4 md:hidden">
-                                {filteredStudents.map((student, index) => {
+                                {allStudents.map((student, index) => {
                                     const rowTint =
                                         student.payment_status === 'paid'
                                             ? 'border-l-[6px] border-green-400'
@@ -839,7 +995,7 @@ const StudentPayments = () => {
                                             <div className="min-w-0">
                                                 <p className="text-xs text-gray-400">#{index + 1}</p>
                                                 <p className="text-sm font-semibold text-gray-900">
-                                                    {student.student_surname} {student.student_name}
+                                                    {formatName(student.student_surname)} {formatName(student.student_name)}
                                                 </p>
                                                 <p className="text-xs text-gray-500">{student.student_phone}</p>
                                             </div>
@@ -934,7 +1090,7 @@ const StudentPayments = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {filteredStudents.map((student, index) => {
+                                    {allStudents.map((student, index) => {
                                     const rowTint =
                                         student.payment_status === 'paid'
                                             ? 'border-l-[6px] border-green-400'
@@ -951,7 +1107,7 @@ const StudentPayments = () => {
                                                     <div className="min-w-0 flex-1">
                                                         <div className="flex items-center gap-2 mb-1">
                                                             <div className="text-sm font-medium text-gray-900">
-                                                                {student.student_surname} {student.student_name}
+                                                                {formatName(student.student_surname)} {formatName(student.student_name)}
                                                             </div>
                                                             <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${student.monthly_status === 'active'
                                                                 ? 'bg-green-100 text-green-800'
@@ -1159,18 +1315,30 @@ const StudentPayments = () => {
                             <div className="text-center py-12">
                                 <CurrencyDollarIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
                                 <p className="text-gray-500 text-lg">
-                                    {searchTerm ? 'Qidiruv bo\'yicha natija topilmadi' : 'Ma\'lumotlar topilmadi'}
+                                    {filters.search ? 'Qidiruv bo\'yicha natija topilmadi' : 'Ma\'lumotlar topilmadi'}
                                 </p>
                                 <p className="text-gray-400 text-sm">
-                                    {searchTerm
-                                        ? `"${searchTerm}" qidiruviga mos keladigan talabalar topilmadi`
+                                    {filters.search
+                                        ? `"${filters.search}" qidiruviga mos keladigan talabalar topilmadi`
                                         : 'Tanlangan filtrlar bo\'yicha hech qanday to\'lov ma\'lumoti yo\'q'
                                     }
                                 </p>
                             </div>
                         )}
                     </div>
+
+                    {(effectiveTotal > 0) && (
+                        <div className="border-t border-gray-200 px-3 py-3 text-center text-xs text-gray-600 sm:px-6">
+                            Ko'rsatilmoqda {pageStart}-{pageEnd} / {effectiveTotal}
+                        </div>
+                    )}
                 </div>
+
+                {(effectiveTotalPages > 1 && currentPage < effectiveTotalPages) && (
+                    <div ref={loadMoreRef} className="mt-3 flex items-center justify-center text-xs text-gray-500">
+                        {isFetching ? "Yuklanmoqda..." : "Yana yuklash uchun pastga tushing"}
+                    </div>
+                )}
 
                 {/* Modals */}
                 <PaymentModal

@@ -278,6 +278,8 @@ const StudentsPage = () => {
     const [showFiltersDropdown, setShowFiltersDropdown] = useState(false);
     const [showDesktopFilterClear, setShowDesktopFilterClear] = useState(false);
     const [statusDropdownOpen, setStatusDropdownOpen] = useState(null); // Status dropdown state
+    const [page, setPage] = useState(1);
+    const [limit] = useState(20);
     const filtersDropdownRef = useRef(null);
     const desktopFilterRef = useRef(null);
 
@@ -305,7 +307,10 @@ const StudentsPage = () => {
             ? (teacherScopedBySubject ? teacherSubjectId : undefined)
             : selectedSubject,
         group_status: selectedStatus,
-        unassigned: showUnassigned ? 'true' : undefined
+        unassigned: showUnassigned ? 'true' : undefined,
+        search: searchTerm?.trim() || undefined,
+        page,
+        limit
     };
 
     // Backenddan ma'lumotlarni olish
@@ -314,6 +319,15 @@ const StudentsPage = () => {
     });
     const hasLoadedStudents = Boolean(backendData?.success);
     const showStudentsLoading = ((!hasLoadedStudents && !error) || isFetching);
+    const pagination = backendData?.pagination || backendData?.data?.pagination || {};
+    const currentPage = Number(pagination.page || page || 1);
+    const pageLimit = Number(pagination.limit || limit || 20);
+    const totalItems = Number(pagination.total || 0);
+    const totalPages = Number(
+        pagination.total_pages || (pageLimit ? Math.ceil(totalItems / pageLimit) : 1)
+    ) || 1;
+    const pageStart = totalItems === 0 ? 0 : (currentPage - 1) * pageLimit + 1;
+    const pageEnd = totalItems === 0 ? 0 : Math.min(currentPage * pageLimit, totalItems);
 
     // Student status o'zgartirish hook
     const updateStatusMutation = useUpdateStudentStatus();
@@ -385,6 +399,13 @@ const StudentsPage = () => {
         }
     }, [backendData]);
 
+    useEffect(() => {
+        if (isLoading) return;
+        if (students.length === 0 && currentPage > 1) {
+            setPage((prev) => Math.max(1, prev - 1));
+        }
+    }, [isLoading, students.length, currentPage]);
+
     // Status dropdown yopish uchun click outside
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -425,20 +446,11 @@ const StudentsPage = () => {
         };
     }, [showFiltersDropdown, showDesktopFilterClear]);
 
-    // --- Faqat local qidiruv (backend filter backend'da amalga oshiriladi) ---
-    const filteredStudents = useMemo(() => {
-        let currentList = students || [];
+    useEffect(() => {
+        setPage(1);
+    }, [searchTerm, selectedTeacher, selectedSubject, selectedStatus, showUnassigned, teacherId, teacherSubjectId, isTeacherRoute]);
 
-        if (searchTerm) {
-            const lowerCaseSearch = searchTerm.toLowerCase();
-            currentList = currentList.filter(student =>
-                `${student.surname} ${student.name}`.toLowerCase().includes(lowerCaseSearch) ||
-                (student.phone && student.phone.replace(/[\s\+]/g, '').includes(searchTerm.replace(/[\s\+]/g, ''))) ||
-                (student.group_name && student.group_name.toLowerCase().includes(lowerCaseSearch))
-            );
-        }
-        return currentList;
-    }, [searchTerm, students]);
+    const filteredStudents = students || [];
 
     const handleEditChange = useCallback((e) => {
         const { name, value, type } = e.target;
@@ -688,8 +700,6 @@ const StudentsPage = () => {
         }
         return student?.subject_name || student?.registered_subject_name || '-';
     };
-
-    if (isLoading) return <div className="p-4 text-center sm:p-8">Yuklanmoqda...</div>;
 
     return (
         <div className="mx-auto min-h-screen bg-gray-50 p-2 font-sans sm:p-4 md:p-6">
@@ -1138,8 +1148,27 @@ const StudentsPage = () => {
                         );
                     })
                 ) : showStudentsLoading ? (
-                    <div className="rounded-xl border border-gray-200 bg-white p-8 text-center text-sm text-gray-500">
-                        Yuklanmoqda...
+                    <div className="space-y-3">
+                        {Array.from({ length: 6 }).map((_, index) => (
+                            <div key={`sk-m-${index}`} className="rounded-xl border border-gray-200 bg-white p-3 animate-pulse">
+                                <div className="mb-2">
+                                    <div className="h-4 w-40 rounded bg-gray-200"></div>
+                                </div>
+                                <div className="space-y-2 rounded-lg border border-gray-100 bg-gray-50 p-2">
+                                    <div className="h-3 w-44 rounded bg-gray-200"></div>
+                                    <div className="h-3 w-36 rounded bg-gray-200"></div>
+                                    <div className="h-3 w-40 rounded bg-gray-200"></div>
+                                </div>
+                                <div className="mt-2 flex items-center justify-between gap-2">
+                                    <div className="h-9 w-28 rounded bg-gray-200"></div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="h-8 w-8 rounded bg-gray-200"></div>
+                                        <div className="h-8 w-8 rounded bg-gray-200"></div>
+                                        <div className="h-8 w-8 rounded bg-gray-200"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 ) : (
                     <div className="rounded-xl border border-gray-200 bg-white p-8 text-center text-sm text-gray-500">
@@ -1541,11 +1570,32 @@ const StudentsPage = () => {
                                 );
                             })
                         ) : showStudentsLoading ? (
-                            <tr className="bg-white">
-                                <td colSpan="4" className="px-4 py-12 text-center text-gray-500 border-b border-gray-200">
-                                    Yuklanmoqda...
-                                </td>
-                            </tr>
+                            <>
+                                {Array.from({ length: 6 }).map((_, index) => (
+                                    <tr key={`sk-d-${index}`} className="bg-white animate-pulse">
+                                        <td className="px-4 py-3 border-r border-gray-200">
+                                            <div className="space-y-2">
+                                                <div className="h-4 w-40 rounded bg-gray-200"></div>
+                                                <div className="h-3 w-28 rounded bg-gray-200"></div>
+                                                <div className="h-3 w-32 rounded bg-gray-200"></div>
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-3 border-r border-gray-200">
+                                            <div className="space-y-2">
+                                                <div className="h-4 w-36 rounded bg-gray-200"></div>
+                                                <div className="h-3 w-28 rounded bg-gray-200"></div>
+                                                <div className="h-3 w-32 rounded bg-gray-200"></div>
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-3 border-r border-gray-200">
+                                            <div className="h-3 w-24 rounded bg-gray-200"></div>
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <div className="h-6 w-28 rounded-full bg-gray-200"></div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </>
                         ) : (
                             <tr className="bg-white">
                                 <td colSpan="4" className="px-4 py-12 text-center text-gray-500 border-b border-gray-200">
@@ -1564,6 +1614,35 @@ const StudentsPage = () => {
                     </tbody>
                 </table>
             </div>
+
+            {totalItems > 0 && (
+                <div className="mt-3 flex flex-col gap-2 rounded-lg border border-gray-200 bg-white px-3 py-3 text-xs text-gray-600 sm:flex-row sm:items-center sm:justify-between sm:px-4">
+                    <div>
+                        Ko'rsatilmoqda {pageStart}-{pageEnd} / {totalItems}
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                            disabled={currentPage <= 1 || isFetching}
+                            className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            Oldingi
+                        </button>
+                        <span className="text-xs font-semibold text-gray-700">
+                            {currentPage} / {totalPages}
+                        </span>
+                        <button
+                            type="button"
+                            onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+                            disabled={currentPage >= totalPages || isFetching}
+                            className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            Keyingi
+                        </button>
+                    </div>
+                </div>
+            )}
 
             <StudentEditModal
                 isOpen={studentEditModal.open}
