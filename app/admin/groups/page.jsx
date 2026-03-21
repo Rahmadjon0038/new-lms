@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useRef, Suspense } from "react";
 import {
     BookOpenIcon,
     PlusCircleIcon,
@@ -311,7 +311,7 @@ const getTeacherIdFromProfile = (profile) => {
     );
 };
 
-function AdminGroupsPage() {
+function AdminGroupsPageInner() {
     const pathname = usePathname();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -725,5 +725,9 @@ function AdminGroupsPage() {
 }
 
 export default function page() {
-    return <AdminGroupsPage />;
+    return (
+        <Suspense fallback={<div className="p-6 text-gray-500">Yuklanmoqda...</div>}>
+            <AdminGroupsPageInner />
+        </Suspense>
+    );
 }
