@@ -289,13 +289,13 @@ function AdminDashboard() {
               color="#10B981"
               bgColor="from-green-100 to-green-50"
             />
-            <StatCard 
+            {/* <StatCard 
               title="Yangi talabalar" 
               value={dailyStats.new_students_count}
               icon={UsersIcon}
               color="#3B82F6"
               bgColor="from-blue-100 to-blue-50"
-            />
+            /> */}
             <StatCard 
               title="Rasxodlar soni" 
               value={dailyStats.expenses_count}

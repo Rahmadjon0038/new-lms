@@ -1,9 +1,12 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { UserGroupIcon } from "@heroicons/react/24/outline";
+import { CalendarIcon, UserGroupIcon } from "@heroicons/react/24/outline";
 import { useGetAttendanceTeachers } from "../../../hooks/attendance";
+import { DayPicker } from "react-day-picker";
+import { format, parseISO, isValid } from "date-fns";
+import "react-day-picker/dist/style.css";
 
 const MAIN_COLOR = "#A60E07";
 const getTodayYmd = () => {
@@ -16,6 +19,25 @@ const getTodayYmd = () => {
 export default function AdminAttendancePage() {
   const [search, setSearch] = useState("");
   const [date, setDate] = useState(getTodayYmd());
+  const [calendarDate, setCalendarDate] = useState(null);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const calendarRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (calendarRef.current && !calendarRef.current.contains(event.target)) {
+        setIsCalendarOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", handleClickOutside);
+    return () => document.removeEventListener("pointerdown", handleClickOutside);
+  }, []);
+
+  const selectedDate = useMemo(() => {
+    if (!calendarDate) return undefined;
+    const parsed = parseISO(calendarDate);
+    return isValid(parsed) ? parsed : undefined;
+  }, [calendarDate]);
   const teachersQuery = useGetAttendanceTeachers({
     date: date || undefined,
   });
@@ -38,7 +60,31 @@ export default function AdminAttendancePage() {
 
   return (
     <div className="space-y-4 p-3 sm:p-4 md:p-6">
-      
+      <div className="flex items-center justify-end">
+        <div className="relative" ref={calendarRef}>
+          <button
+            type="button"
+            onClick={() => setIsCalendarOpen((prev) => !prev)}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 shadow-sm hover:bg-gray-50"
+            aria-label="Calendar"
+          >
+            <CalendarIcon className="h-5 w-5" />
+          </button>
+          {isCalendarOpen ? (
+            <div className="absolute right-0 z-50 mt-2 rounded-2xl border border-gray-200 bg-white p-4 shadow-xl">
+              <DayPicker
+                mode="single"
+                selected={selectedDate}
+                onSelect={(day) => {
+                  if (!day) return;
+                  setCalendarDate(format(day, "yyyy-MM-dd"));
+                  setIsCalendarOpen(false);
+                }}
+              />
+            </div>
+          ) : null}
+        </div>
+      </div>
 
       <div className="rounded-xl border border-gray-200 bg-white p-4">
         <div className="grid grid-cols-2 gap-2 sm:gap-3">

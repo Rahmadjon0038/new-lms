@@ -692,10 +692,19 @@ function TeacherAttendancePageContent() {
                   return (
                     <div key={lessonId}>
                       <div
-                        className={`flex items-start justify-between gap-2 rounded-lg px-2.5 py-1.5 sm:items-center sm:px-3 sm:py-2 ${
+                        onClick={() => {
+                          if (isActiveLesson) {
+                            setSelectedLessonId("");
+                            setAttendanceOverrides({});
+                          } else {
+                            setSelectedLessonId(lessonId);
+                            setAttendanceOverrides({});
+                          }
+                        }}
+                        className={`flex cursor-pointer items-start justify-between gap-2 rounded-lg px-2.5 py-1.5 sm:items-center sm:px-3 sm:py-2 ${
                           isCompleted
                             ? "border border-emerald-300 bg-gradient-to-r from-emerald-50 to-emerald-100 shadow-sm"
-                            : "border border-gray-200 bg-white"
+                            : "border border-gray-200 bg-white hover:bg-gray-50"
                         }`}
                       >
                         <div className="min-w-0">
@@ -711,7 +720,8 @@ function TeacherAttendancePageContent() {
                         <div className="flex flex-col items-end gap-1.5 sm:flex-row sm:items-center sm:gap-2">
                           <button
                             type="button"
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               if (isActiveLesson) {
                                 setSelectedLessonId("");
                                 setAttendanceOverrides({});

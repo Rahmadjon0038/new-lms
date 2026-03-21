@@ -327,10 +327,6 @@ const StudentsPage = () => {
     const totalPages = Number(
         pagination.total_pages || (pageLimit ? Math.ceil(totalItems / pageLimit) : 1)
     ) || 1;
-    const pageStart = totalItems === 0 ? 0 : (currentPage - 1) * pageLimit + 1;
-    const pageEnd = totalItems === 0 ? 0 : Math.min(currentPage * pageLimit, totalItems);
-    const isInitialLoading = showStudentsLoading && students.length === 0;
-
     // Student status o'zgartirish hook
     const updateStatusMutation = useUpdateStudentStatus();
     const updateStudentMutation = useUpdateStudentInfo();
@@ -359,6 +355,12 @@ const StudentsPage = () => {
         age: '',
     });
     const loadMoreRef = useRef(null);
+    const [showScrollTop, setShowScrollTop] = useState(false);
+
+    const pageStart = totalItems === 0 ? 0 : (currentPage - 1) * pageLimit + 1;
+    const pageEnd = totalItems === 0 ? 0 : Math.min(currentPage * pageLimit, totalItems);
+    const isInitialLoading = showStudentsLoading && allStudents.length === 0;
+    const showEmptyState = !showStudentsLoading && hasLoadedStudents && allStudents.length === 0;
 
     // Ma'lumot kelganda state-ni yangilash
     useEffect(() => {
@@ -449,6 +451,15 @@ const StudentsPage = () => {
 
         document.addEventListener('click', handleClickOutside);
         return () => document.removeEventListener('click', handleClickOutside);
+    }, []);
+
+    useEffect(() => {
+        const onScroll = () => {
+            setShowScrollTop(window.scrollY > 600);
+        };
+        onScroll();
+        window.addEventListener('scroll', onScroll, { passive: true });
+        return () => window.removeEventListener('scroll', onScroll);
     }, []);
 
     useEffect(() => {
@@ -1204,11 +1215,11 @@ const StudentsPage = () => {
                             </div>
                         ))}
                     </div>
-                ) : (
+                ) : showEmptyState ? (
                     <div className="rounded-xl border border-gray-200 bg-white p-8 text-center text-sm text-gray-500">
                         Talaba topilmadi
                     </div>
-                )}
+                ) : null}
             </div>
 
             <div className="hidden rounded-lg border border-gray-300 bg-white shadow-lg overflow-x-auto md:block">
@@ -1630,7 +1641,7 @@ const StudentsPage = () => {
                                     </tr>
                                 ))}
                             </>
-                        ) : (
+                        ) : showEmptyState ? (
                             <tr className="bg-white">
                                 <td colSpan="4" className="px-4 py-12 text-center text-gray-500 border-b border-gray-200">
                                     <div className="flex flex-col items-center gap-4">
@@ -1644,16 +1655,10 @@ const StudentsPage = () => {
                                     </div>
                                 </td>
                             </tr>
-                        )}
+                        ) : null}
                     </tbody>
                 </table>
             </div>
-
-            {totalItems > 0 && (
-                <div className="mt-3 rounded-lg border border-gray-200 bg-white px-3 py-3 text-center text-xs text-gray-600 sm:px-4">
-                    Ko'rsatilmoqda {pageStart}-{pageEnd} / {totalItems}
-                </div>
-            )}
 
             {(totalPages > 1 && currentPage < totalPages) && (
                 <div ref={loadMoreRef} className="mt-3 flex items-center justify-center text-xs text-gray-500">
@@ -1677,6 +1682,17 @@ const StudentsPage = () => {
                 onConfirm={handleStudentDelete}
                 isLoading={deleteStudentMutation.isLoading}
             />
+
+            {showScrollTop && (
+                <button
+                    type="button"
+                    onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                    className="fixed bottom-6 right-6 z-50 inline-flex h-11 w-11 items-center justify-center rounded-full bg-[#A60E07] text-white shadow-lg transition hover:opacity-90"
+                    aria-label="Yuqoriga chiqish"
+                >
+                    <ChevronUp className="h-5 w-5" />
+                </button>
+            )}
 
         </div>
     );

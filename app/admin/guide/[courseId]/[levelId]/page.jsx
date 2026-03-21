@@ -303,15 +303,16 @@ const AdminGuideLevelPage = () => {
 
         <div className="space-y-3">
           {localLessons.map((lesson, idx) => (
-            <div
+            <Link
+              href={`/admin/guide/${courseId}/${levelId}/lesson/${lesson.id}`}
               key={lesson.id}
               draggable
               onDragStart={() => handleDragStart(lesson.id)}
               onDragOver={handleDragOver}
               onDrop={() => handleDrop(lesson.id)}
               onDragEnd={() => setDraggingLessonId(null)}
-              className={`rounded-lg border p-4 ${
-                draggingLessonId === lesson.id ? 'border-[#A60E07] bg-red-50' : 'border-gray-200'
+              className={`block rounded-lg border p-4 ${
+                draggingLessonId === lesson.id ? 'border-[#A60E07] bg-red-50' : 'border-gray-200 hover:bg-gray-50'
               }`}
             >
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
@@ -324,23 +325,30 @@ const AdminGuideLevelPage = () => {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <button onClick={() => openEditLessonModal(lesson)} className="inline-flex items-center gap-1 rounded-lg bg-gray-100 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-200">
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      openEditLessonModal(lesson);
+                    }}
+                    className="inline-flex items-center gap-1 rounded-lg bg-gray-100 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-200"
+                  >
                     <PencilSquareIcon className="h-4 w-4" />
                     Edit
                   </button>
-                  <button onClick={() => handleDeleteLesson(lesson.id)} className="rounded-lg bg-red-50 px-3 py-2 text-red-700 hover:bg-red-100">
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleDeleteLesson(lesson.id);
+                    }}
+                    className="rounded-lg bg-red-50 px-3 py-2 text-red-700 hover:bg-red-100"
+                  >
                     <TrashIcon className="h-5 w-5" />
                   </button>
-                  <Link
-                    href={`/admin/guide/${courseId}/${levelId}/lesson/${lesson.id}`}
-                    className="inline-flex items-center gap-2 rounded-lg bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100"
-                  >
-                    <EyeIcon className="h-4 w-4" />
-                    View
-                  </Link>
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>

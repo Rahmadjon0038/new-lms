@@ -124,6 +124,8 @@ const StudentPayments = () => {
     const isInitialLoading = isLoading && allStudents.length === 0;
 
     const loadMoreRef = useRef(null);
+    const loadMorePendingRef = useRef(false);
+    const savedScrollYRef = useRef(0);
 
     useEffect(() => {
         setAllStudents([]);
@@ -165,6 +167,8 @@ const StudentPayments = () => {
                 if (!entries[0]?.isIntersecting) return;
                 if (isFetching || isLoading) return;
                 if (currentPage >= effectiveTotalPages) return;
+                savedScrollYRef.current = window.scrollY;
+                loadMorePendingRef.current = true;
                 setFilters((prev) => ({
                     ...prev,
                     page: prev.page + 1
@@ -176,6 +180,14 @@ const StudentPayments = () => {
         observer.observe(node);
         return () => observer.disconnect();
     }, [currentPage, effectiveTotalPages, isFetching, isLoading]);
+
+    useEffect(() => {
+        if (!loadMorePendingRef.current) return;
+        loadMorePendingRef.current = false;
+        requestAnimationFrame(() => {
+            window.scrollTo(0, savedScrollYRef.current || 0);
+        });
+    }, [paymentsData]);
 
     // Format currency
     const formatCurrency = (amount) => {
@@ -1328,11 +1340,6 @@ const StudentPayments = () => {
                         )}
                     </div>
 
-                    {(effectiveTotal > 0) && (
-                        <div className="border-t border-gray-200 px-3 py-3 text-center text-xs text-gray-600 sm:px-6">
-                            Ko'rsatilmoqda {pageStart}-{pageEnd} / {effectiveTotal}
-                        </div>
-                    )}
                 </div>
 
                 {(effectiveTotalPages > 1 && currentPage < effectiveTotalPages) && (
