@@ -466,7 +466,7 @@ const StudentPayments = () => {
 
     if (error) {
         return (
-            <div className="min-h-screen bg-gray-50 p-2.5 sm:p-4 md:p-6">
+            <div className="min-h-screen bg-gray-50 px-0 py-2 sm:p-4 md:p-6">
                 <div className="max-w-7xl mx-auto">
                     <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
                         <p className="font-semibold">Xatolik yuz berdi:</p>
@@ -478,7 +478,7 @@ const StudentPayments = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 p-2.5 sm:p-4 md:p-6">
+        <div className="min-h-screen bg-gray-50 px-0 py-2 sm:p-4 md:p-6">
             <div className="px-1 sm:px-2">
                 {/* Header */}
                 <div className="mb-4 flex flex-col gap-3 md:mb-6 md:flex-row md:items-center md:justify-between">
@@ -600,7 +600,7 @@ const StudentPayments = () => {
                 {stats.total_students > 0 && showStats && (
                     <div className="mb-5 grid grid-cols-2 gap-2 sm:mb-6 sm:grid-cols-2 sm:gap-3 md:grid-cols-3 md:gap-4">
 
-                        <div className="rounded-lg border-l-4 border-green-500 bg-white p-3 shadow-md sm:p-4">
+                        <div className="rounded-lg border-l-4 border-green-500 bg-transparent p-2 shadow-none sm:bg-white sm:p-4 sm:shadow-md">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-[11px] font-medium uppercase tracking-wide text-gray-500 sm:text-xs">To'liq to'laganlar</p>
@@ -610,7 +610,7 @@ const StudentPayments = () => {
                             </div>
                         </div>
 
-                        <div className="rounded-lg border-l-4 border-yellow-500 bg-white p-3 shadow-md sm:p-4">
+                        <div className="rounded-lg border-l-4 border-yellow-500 bg-transparent p-2 shadow-none sm:bg-white sm:p-4 sm:shadow-md">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-[11px] font-medium uppercase tracking-wide text-gray-500 sm:text-xs">Qisman to'laganlar</p>
@@ -620,7 +620,7 @@ const StudentPayments = () => {
                             </div>
                         </div>
 
-                        <div className="rounded-lg border-l-4 border-red-500 bg-white p-3 shadow-md sm:p-4">
+                        <div className="rounded-lg border-l-4 border-red-500 bg-transparent p-2 shadow-none sm:bg-white sm:p-4 sm:shadow-md">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-[11px] font-medium uppercase tracking-wide text-gray-500 sm:text-xs">To'lamaganlar</p>
@@ -630,7 +630,7 @@ const StudentPayments = () => {
                             </div>
                         </div>
 
-                        <div className="rounded-lg border-l-4 border-indigo-500 bg-white p-3 shadow-md sm:p-4">
+                        <div className="rounded-lg border-l-4 border-indigo-500 bg-transparent p-2 shadow-none sm:bg-white sm:p-4 sm:shadow-md">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-[11px] font-medium uppercase tracking-wide text-gray-500 sm:text-xs">Umumiy kerak</p>
@@ -640,7 +640,7 @@ const StudentPayments = () => {
                             </div>
                         </div>
 
-                        <div className="rounded-lg border-l-4 border-emerald-500 bg-white p-3 shadow-md sm:p-4">
+                        <div className="rounded-lg border-l-4 border-emerald-500 bg-transparent p-2 shadow-none sm:bg-white sm:p-4 sm:shadow-md">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-[11px] font-medium uppercase tracking-wide text-gray-500 sm:text-xs">Yig'ilgan summa</p>
@@ -650,7 +650,7 @@ const StudentPayments = () => {
                             </div>
                         </div>
 
-                        <div className="rounded-lg border-l-4 border-rose-500 bg-white p-3 shadow-md sm:p-4">
+                        <div className="rounded-lg border-l-4 border-rose-500 bg-transparent p-2 shadow-none sm:bg-white sm:p-4 sm:shadow-md">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-[11px] font-medium uppercase tracking-wide text-gray-500 sm:text-xs">
@@ -667,7 +667,7 @@ const StudentPayments = () => {
                 )} */}
 
                 {/* Filters */}
-                <div className="mb-4 rounded-lg bg-white p-3 shadow-md sm:mb-6 sm:p-6">
+                <div className="mb-4 bg-transparent p-2 shadow-none sm:mb-6 sm:rounded-lg sm:bg-white sm:p-6 sm:shadow-md">
                     <div className="relative z-30" ref={filterDropdownRef}>
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-center md:flex-wrap lg:flex-nowrap">
                             <div className="relative flex-1 md:order-1 md:w-full md:flex-none lg:order-none lg:w-auto lg:flex-1">
@@ -863,8 +863,8 @@ const StudentPayments = () => {
                 </div>
 
                 {/* Results */}
-                <div className="bg-white rounded-lg shadow-md">
-                    <div className="flex flex-col gap-2 border-b border-gray-200 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4">
+                <div className="bg-transparent shadow-none sm:rounded-lg sm:bg-white sm:shadow-md">
+                    <div className="flex flex-col gap-2 border-b border-gray-200 px-2 py-2 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4">
                         {/* <h2 className="text-base font-semibold text-gray-800 sm:text-lg">
                             To'lov ma'lumotlari ({students.length} ta)
                         </h2> */}

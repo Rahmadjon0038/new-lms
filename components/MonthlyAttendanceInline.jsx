@@ -395,11 +395,21 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
     });
   };
 
-  const renderAttendanceSymbol = (attendanceRecord, lessonDate, membershipPeriods = []) => {
+  const isHolidayFlag = (value) =>
+    value === true || value === 1 || value === "1" || value === "true";
+
+  const renderAttendanceSymbol = (attendanceRecord, lessonDate, membershipPeriods = [], isHoliday = false) => {
     const status = attendanceRecord?.status;
     const isMarked = attendanceRecord?.is_marked;
     const isInMembership = isLessonWithinMembership(lessonDate, membershipPeriods);
 
+    if (isHoliday) {
+      return (
+        <span className="inline-flex items-center rounded-full border border-orange-300 bg-orange-200 px-2 py-0.5 text-[11px] font-semibold text-orange-900">
+          Dam
+        </span>
+      );
+    }
     if (!isInMembership) {
       return <span className="text-gray-400 text-xs">-</span>;
     }
@@ -431,28 +441,6 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
 
   return (
     <div className="mt-6 rounded-lg bg-white p-3 sm:mt-8 sm:p-4 md:mt-12 md:p-6">
-      <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center sm:gap-4">
-        <h1 className="text-base font-semibold text-gray-800 sm:text-lg md:text-xl">To&apos;liq oylik davomat Xisoboti</h1>
-        <button
-          onClick={handleExport}
-          className="w-full whitespace-nowrap rounded-md bg-green-500 px-3 py-1.5 text-xs font-medium text-white shadow-md transition-colors hover:bg-green-600 active:scale-90 sm:w-auto sm:px-4 sm:py-2 sm:text-sm"
-        >
-          <span className="hidden sm:inline">Exelga export qilish</span>
-          <span className="sm:hidden">Export</span>
-        </button>
-      </div>
-
-      {(reportGroup || reportMonth) ? (
-        <div className="mt-3 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700 sm:text-sm">
-          <div className="flex flex-wrap gap-2">
-            {reportMonth ? <span>Oy: <strong>{reportMonth}</strong></span> : null}
-            {reportGroup?.group_name ? <span>Guruh: <strong>{reportGroup.group_name}</strong></span> : null}
-            {reportGroup?.subject_name ? <span>Fan: <strong>{reportGroup.subject_name}</strong></span> : null}
-            {reportGroup?.teacher_name ? <span>Ustoz: <strong>{reportGroup.teacher_name}</strong></span> : null}
-            {reportGroup?.group_price ? <span>Narx: <strong>{formatMoney(reportGroup.group_price)}</strong></span> : null}
-          </div>
-        </div>
-      ) : null}
 
       {!lessons.length || !students.length ? (
         <div className="mt-4 rounded-md border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
@@ -470,12 +458,22 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
                 <th className="border border-gray-400 px-3 py-2 text-center text-xs font-semibold text-gray-700 whitespace-nowrap">Holati</th>
                 <th className="border border-gray-400 px-3 py-2 text-center text-xs font-semibold text-gray-700 whitespace-nowrap">To&apos;langan</th>
                 <th className="border border-gray-400 px-3 py-2 text-center text-xs font-semibold text-gray-700 whitespace-nowrap">Qarz</th>
-                {lessons.map((lesson) => (
-                  <th key={lesson.id} className="min-w-[100px] whitespace-nowrap border border-gray-400 px-3 py-2 text-center text-xs font-semibold text-gray-700">
+                {lessons.map((lesson) => {
+                  const lessonIsHoliday = isHolidayFlag(lesson.is_holiday);
+                  return (
+                  <th
+                    key={lesson.id}
+                    className={`min-w-[100px] whitespace-nowrap border border-gray-400 px-3 py-2 text-center text-xs font-semibold text-gray-700 ${
+                      lessonIsHoliday ? "bg-orange-200" : ""
+                    }`}
+                  >
                     <div>{formatDate(lesson.date)}</div>
                     <div className="text-[10px] font-medium text-gray-500">{getWeekdayFull(lesson.date)}</div>
+                    {lessonIsHoliday ? (
+                      <div className="mt-1 text-[10px] font-semibold text-orange-800">Dam</div>
+                    ) : null}
                   </th>
-                ))}
+                )})}
                 <th className="border border-gray-400 px-3 py-2 text-center text-xs font-semibold text-gray-700 whitespace-nowrap">Statistika</th>
               </tr>
             </thead>
@@ -526,17 +524,25 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
                     }`}>
                       {formatMoney(student.debt_amount)}
                     </td>
-                    {lessons.map((lesson) => (
+                    {lessons.map((lesson) => {
+                      const lessonIsHoliday = isHolidayFlag(lesson.is_holiday);
+                      return (
                       <td key={lesson.id} className="border border-gray-400 px-3 py-2 text-center">
                         {renderAttendanceSymbol(
                           attendanceMap[lesson.id] ||
                             attendanceMap[lesson.lesson_id] ||
                             attendanceByDate[String(lesson?.date || "").slice(0, 10)],
                           lesson.date,
-                          student.membership_periods || []
+                          student.membership_periods || [],
+                          lessonIsHoliday ||
+                            isHolidayFlag(
+                              attendanceMap[lesson.id]?.is_holiday ||
+                                attendanceMap[lesson.lesson_id]?.is_holiday ||
+                                attendanceByDate[String(lesson?.date || "").slice(0, 10)]?.is_holiday
+                            )
                         )}
                       </td>
-                    ))}
+                    )})}
                     <td className="border border-gray-400 px-3 py-2 text-center text-xs">
                       <div className="text-center">
                         <div className="font-semibold text-green-600">{student.statistics?.total_attended || student.total_present || 0}</div>

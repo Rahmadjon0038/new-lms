@@ -18,6 +18,8 @@ const CURRENT_MONTH = new Date().toISOString().slice(0, 7);
 const TODAY_DATE = new Date().toISOString().slice(0, 10);
 const WEEKDAYS_UZ = ["yakshanba", "dushanba", "seshanba", "chorshanba", "payshanba", "juma", "shanba"];
 const STATUS_OPTIONS = ["keldi", "kelmadi"];
+const isHolidayFlag = (value) =>
+  value === true || value === 1 || value === "1" || value === "true";
 
 function TeacherAttendancePageContent() {
   const pathname = usePathname();
@@ -469,7 +471,7 @@ function TeacherAttendancePageContent() {
   );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 p-2 sm:p-4 md:p-6">
       {/* <div>
         <h1 className="text-2xl font-bold text-gray-900">Teacher Attendance</h1>
         <p className="text-sm text-gray-600">Mening guruhlarim va darslarim</p>
@@ -534,7 +536,7 @@ function TeacherAttendancePageContent() {
       ) : null}
 
       {!groupsQuery.isLoading && !groupsQuery.isError ? (
-        <div className="rounded-xl border border-gray-200 bg-white p-2.5 sm:p-3">
+        <div className="sm:rounded-xl sm:border sm:border-gray-200 sm:bg-white sm:p-3">
           <div className="flex gap-2 overflow-x-auto pb-1">
             {groups.map((group) => {
               const groupId = group.group_id || group.id;
@@ -609,7 +611,7 @@ function TeacherAttendancePageContent() {
 
       {activeGroupId ? (
         <>
-          <div className="space-y-2 rounded-xl border border-gray-200 bg-white p-3 sm:space-y-3 sm:p-4">
+          <div className="space-y-2 sm:space-y-3 sm:rounded-xl sm:border sm:border-gray-200 sm:bg-white sm:p-4">
             <div className="flex items-center justify-between">
               <h2 className="hidden text-base font-bold text-gray-900 sm:block sm:text-lg">Darslar ro&apos;yxati</h2>
               <div className="flex items-center gap-2">
@@ -689,10 +691,12 @@ function TeacherAttendancePageContent() {
                   const lessonId = String(lesson.id || lesson.lesson_id);
                   const isActiveLesson = lessonId === String(activeLessonId);
                   const isCompleted = lesson.attendance_completed === true;
+                  const isHoliday = isHolidayFlag(lesson.is_holiday);
                   return (
                     <div key={lessonId}>
                       <div
                         onClick={() => {
+                          if (isHoliday) return;
                           if (isActiveLesson) {
                             setSelectedLessonId("");
                             setAttendanceOverrides({});
@@ -701,11 +705,13 @@ function TeacherAttendancePageContent() {
                             setAttendanceOverrides({});
                           }
                         }}
-                        className={`flex cursor-pointer items-start justify-between gap-2 rounded-lg px-2.5 py-1.5 sm:items-center sm:px-3 sm:py-2 ${
-                          isCompleted
-                            ? "border border-emerald-300 bg-gradient-to-r from-emerald-50 to-emerald-100 shadow-sm"
-                            : "border border-gray-200 bg-white hover:bg-gray-50"
-                        }`}
+                        className={`flex items-start justify-between gap-2 rounded-lg px-2.5 py-1.5 sm:items-center sm:px-3 sm:py-2 ${
+                          isHoliday
+                            ? "border border-orange-400 bg-orange-200 shadow-sm"
+                            : isCompleted
+                              ? "border border-emerald-300 bg-gradient-to-r from-emerald-50 to-emerald-100 shadow-sm"
+                              : "border border-gray-200 bg-white hover:bg-gray-50"
+                        } ${isHoliday ? "cursor-not-allowed" : "cursor-pointer"}`}
                       >
                         <div className="min-w-0">
                           <p className="truncate text-xs font-semibold text-gray-900 sm:text-sm">
@@ -716,12 +722,18 @@ function TeacherAttendancePageContent() {
                             {getWeekdayFromDate(lesson.date || lesson.lesson_date) ? "• " : ""}
                             {getDisplayTime(lesson)}
                           </p>
+                          {isHoliday ? (
+                            <span className="mt-1 inline-flex items-center rounded-full border border-orange-300 bg-orange-200 px-2 py-0.5 text-[10px] font-semibold text-orange-900">
+                              Dam olish kuni
+                            </span>
+                          ) : null}
                         </div>
                         <div className="flex flex-col items-end gap-1.5 sm:flex-row sm:items-center sm:gap-2">
                           <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
+                              if (isHoliday) return;
                               if (isActiveLesson) {
                                 setSelectedLessonId("");
                                 setAttendanceOverrides({});
@@ -730,11 +742,16 @@ function TeacherAttendancePageContent() {
                                 setAttendanceOverrides({});
                               }
                             }}
-                            className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold text-white sm:px-3 sm:py-1.5 sm:text-xs ${
-                              isActiveLesson ? "bg-gray-700" : "bg-[#A60E07]"
+                            disabled={isHoliday}
+                            className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60 sm:px-3 sm:py-1.5 sm:text-xs ${
+                              isHoliday
+                                ? "bg-orange-600"
+                                : isActiveLesson
+                                  ? "bg-gray-700"
+                                  : "bg-[#A60E07]"
                             }`}
                           >
-                            Davom qilish
+                            {isHoliday ? "Dam" : "Davom qilish"}
                           </button>
                         </div>
                       </div>

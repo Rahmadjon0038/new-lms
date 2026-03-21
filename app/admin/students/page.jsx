@@ -318,7 +318,7 @@ const StudentsPage = () => {
         enabled: isTeacherRoute ? Boolean(teacherSubjectId || teacherId) : true,
         keepPreviousData: true
     });
-    const hasLoadedStudents = Boolean(backendData?.success);
+    const hasLoadedStudents = Boolean(backendData?.success || backendData?.data?.success);
     const showStudentsLoading = ((!hasLoadedStudents && !error) || isFetching);
     const pagination = backendData?.pagination || backendData?.data?.pagination || {};
     const currentPage = Number(pagination.page || page || 1);
@@ -364,10 +364,11 @@ const StudentsPage = () => {
 
     // Ma'lumot kelganda state-ni yangilash
     useEffect(() => {
-        if (backendData?.success) {
+        if (backendData?.success || backendData?.data?.success) {
             // Har bir guruh uchun alohida qator yaratish
+            const rawStudents = backendData?.students || backendData?.data?.students || [];
             const expandedStudents = [];
-            backendData.students?.forEach(student => {
+            rawStudents.forEach(student => {
                 if (student.groups && student.groups.length > 0) {
                     // Har bir guruh uchun alohida qator
                     student.groups.forEach(group => {
@@ -401,7 +402,7 @@ const StudentsPage = () => {
                 }
             });
             setStudents(expandedStudents);
-            setStats(backendData.stats);
+            setStats(backendData?.stats || backendData?.data?.stats || null);
             setAllStudents((prev) => {
                 if (currentPage <= 1) return expandedStudents;
                 const seen = new Set(prev.map((s) => `${s.id}-${s.group_id ?? 'none'}`));

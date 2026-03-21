@@ -15,7 +15,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { FiFilter } from 'react-icons/fi';
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import AdminUpdateGroupModal from "../../../components/admistrator/AdminUpdateGroup";
 import { useChangeGroupStatus } from "../../../hooks/groups";
 import AdminNewGroupModal from "../../../components/admistrator/CreateGroup";
@@ -299,6 +299,8 @@ const GroupCard = ({ group, onToggleGroupStatus, onStartClass, updateGroupLoadin
     );
 };
 
+const ALLOWED_TABS = ['active', 'draft', 'closed'];
+
 const getTeacherIdFromProfile = (profile) => {
     const payload = profile?.data || profile;
     return (
@@ -311,11 +313,17 @@ const getTeacherIdFromProfile = (profile) => {
 
 function AdminGroupsPage() {
     const pathname = usePathname();
+    const router = useRouter();
+    const searchParams = useSearchParams();
     const isTeacherRoute = pathname?.startsWith('/teacher');
     const basePath = isTeacherRoute ? '/teacher' : '/admin';
     const [selectedTeacher, setSelectedTeacher] = useState('all');
     const [selectedSubject, setSelectedSubject] = useState('all');
-    const [currentTab, setCurrentTab] = useState('active');
+    const initialTab = useMemo(() => {
+        const tab = searchParams.get('tab');
+        return ALLOWED_TABS.includes(tab) ? tab : 'active';
+    }, [searchParams]);
+    const [currentTab, setCurrentTab] = useState(initialTab);
     const [showMobileFilters, setShowMobileFilters] = useState(false);
     const [showDesktopFilterClear, setShowDesktopFilterClear] = useState(false);
     const mobileFilterRef = useRef(null);
@@ -405,6 +413,27 @@ function AdminGroupsPage() {
             setShowDesktopFilterClear(false);
         }
     }, [hasActiveFilters]);
+
+    useEffect(() => {
+        const tab = searchParams.get('tab');
+        if (ALLOWED_TABS.includes(tab) && tab !== currentTab) {
+            setCurrentTab(tab);
+        }
+    }, [searchParams, currentTab]);
+
+    useEffect(() => {
+        const params = new URLSearchParams(searchParams.toString());
+        const existing = params.get('tab') || 'active';
+        if ((currentTab || 'active') === existing) {
+            return;
+        }
+        if (currentTab) {
+            params.set('tab', currentTab);
+        } else {
+            params.delete('tab');
+        }
+        router.replace(`${pathname}?${params.toString()}`);
+    }, [currentTab, pathname, router, searchParams]);
 
     // Darsni boshlash funksiyasi (draft -> active)
     const handleStartClass = (groupId) => {

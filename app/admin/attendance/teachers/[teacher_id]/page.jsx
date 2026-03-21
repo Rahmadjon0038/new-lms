@@ -24,6 +24,8 @@ const getTodayYmd = () => {
   return `${yyyy}-${mm}-${dd}`;
 };
 const WEEKDAYS_UZ = ["yakshanba", "dushanba", "seshanba", "chorshanba", "payshanba", "juma", "shanba"];
+const isHolidayFlag = (value) =>
+  value === true || value === 1 || value === "1" || value === "true";
 
 export default function AdminTeacherGroupsPage() {
   const { teacher_id } = useParams();
@@ -379,14 +381,14 @@ export default function AdminTeacherGroupsPage() {
   );
 
   return (
-    <div className="space-y-4 p-3 sm:p-4 md:p-6">
-      <div className="flex items-center gap-3">
+    <div className="space-y-4 p-2 sm:p-4 md:p-6">
+      <div className="flex items-center gap-3 px-1 pt-1 sm:px-0 sm:pt-0">
         <Link href="/admin/attendance" className="rounded-lg border border-gray-300 bg-white p-2 text-gray-700">
           <ArrowLeftIcon className="h-5 w-5" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{teacher?.full_name || "Teacher Groups"}</h1>
-          <p className="text-sm text-gray-600">Teacher guruhlari ro&apos;yxati</p>
+          <h1 className="text-lg font-bold text-gray-900 sm:text-2xl">{teacher?.full_name || "Teacher Groups"}</h1>
+          <p className="text-xs text-gray-600 sm:text-sm">Teacher guruhlari ro&apos;yxati</p>
         </div>
       </div>
 
@@ -447,7 +449,7 @@ export default function AdminTeacherGroupsPage() {
       ) : null}
 
       {!isLoadingGroups && !isErrorGroups ? (
-        <div className="rounded-xl border border-gray-200 bg-white p-2.5 sm:p-3">
+        <div className="sm:rounded-xl sm:border sm:border-gray-200 sm:bg-white sm:p-3">
           <div className="flex gap-2 overflow-x-auto pb-1">
             {activeGroups.map((group) => {
               const isActive = String(group.group_id) === activeGroupId;
@@ -494,7 +496,7 @@ export default function AdminTeacherGroupsPage() {
       ) : null}
 
       {activeGroupId ? (
-        <div className="space-y-2 rounded-xl border border-gray-200 bg-white p-3 sm:space-y-3 sm:p-4">
+        <div className="space-y-2 sm:space-y-3 sm:rounded-xl sm:border sm:border-gray-200 sm:bg-white sm:p-4">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-bold text-gray-900 sm:text-lg">Darslar ro&apos;yxati</h2>
             <div className="flex items-center gap-2">
@@ -573,10 +575,12 @@ export default function AdminTeacherGroupsPage() {
                 const lessonId = String(lesson.id || lesson.lesson_id);
                 const isActiveLesson = lessonId === String(activeLessonId);
                 const isCompleted = lesson.attendance_completed === true;
+                const isHoliday = isHolidayFlag(lesson.is_holiday);
                 return (
                   <div key={lessonId}>
                     <div
                       onClick={() => {
+                        if (isHoliday) return;
                         if (isActiveLesson) {
                           setSelectedLessonId("");
                           setAttendanceOverrides({});
@@ -585,11 +589,13 @@ export default function AdminTeacherGroupsPage() {
                           setAttendanceOverrides({});
                         }
                       }}
-                      className={`flex cursor-pointer items-start justify-between gap-2 rounded-lg px-2.5 py-1.5 sm:items-center sm:px-3 sm:py-2 ${
-                        isCompleted
-                          ? "border border-emerald-300 bg-gradient-to-r from-emerald-50 to-emerald-100 shadow-sm"
-                          : "border border-gray-200 bg-white hover:bg-gray-50"
-                      }`}
+                      className={`flex items-start justify-between gap-2 rounded-lg px-2.5 py-1.5 sm:items-center sm:px-3 sm:py-2 ${
+                        isHoliday
+                          ? "border border-orange-400 bg-orange-200 shadow-sm"
+                          : isCompleted
+                            ? "border border-emerald-300 bg-gradient-to-r from-emerald-50 to-emerald-100 shadow-sm"
+                            : "border border-gray-200 bg-white hover:bg-gray-50"
+                      } ${isHoliday ? "cursor-not-allowed" : "cursor-pointer"}`}
                     >
                       <div className="min-w-0">
                         <p className="truncate text-xs font-semibold text-gray-900 sm:text-sm">
@@ -600,12 +606,18 @@ export default function AdminTeacherGroupsPage() {
                           {getWeekdayFromDate(lesson.date || lesson.lesson_date) ? "• " : ""}
                           {getDisplayTime(lesson)}
                         </p>
+                        {isHoliday ? (
+                          <span className="mt-1 inline-flex items-center rounded-full border border-orange-300 bg-orange-200 px-2 py-0.5 text-[10px] font-semibold text-orange-900">
+                            Dam olish kuni
+                          </span>
+                        ) : null}
                       </div>
                       <div className="flex flex-col items-end gap-1.5 sm:flex-row sm:items-center sm:gap-2">
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
+                            if (isHoliday) return;
                             if (isActiveLesson) {
                               setSelectedLessonId("");
                               setAttendanceOverrides({});
@@ -614,11 +626,16 @@ export default function AdminTeacherGroupsPage() {
                               setAttendanceOverrides({});
                             }
                           }}
-                          className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold text-white sm:px-3 sm:py-1.5 sm:text-xs ${
-                            isActiveLesson ? "bg-gray-700" : "bg-[#A60E07]"
+                          disabled={isHoliday}
+                          className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60 sm:px-3 sm:py-1.5 sm:text-xs ${
+                            isHoliday
+                              ? "bg-orange-600"
+                              : isActiveLesson
+                                ? "bg-gray-700"
+                                : "bg-[#A60E07]"
                           }`}
                         >
-                          Davom qilish
+                          {isHoliday ? "Dam" : "Davom qilish"}
                         </button>
                       </div>
                     </div>

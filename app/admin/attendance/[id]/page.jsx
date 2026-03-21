@@ -1,5 +1,5 @@
 "use client";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeftIcon,
   CalendarIcon,
@@ -24,8 +24,20 @@ import { instance } from "../../../../hooks/api";
 import MonthlyAttendanceInline from "../../../../components/MonthlyAttendanceInline";
 import { toast } from "react-hot-toast";
 import { normalizeMonth } from "../../../../utils/date";
+import { DayPicker } from "react-day-picker";
+import { format, parseISO, isValid } from "date-fns";
+import "react-day-picker/dist/style.css";
 
 const MAIN_COLOR = "#A60E07";
+const getTodayYmd = () => {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+};
+const isHolidayFlag = (value) =>
+  value === true || value === 1 || value === "1" || value === "true";
 
 // API functions
 const getGroupLessons = async (groupId, month) => {
@@ -75,6 +87,14 @@ const regenerateLessons = async ({ group_id, month, from_date }) => {
   const payload = { month: normalizedMonth };
   if (from_date) payload.from_date = from_date;
   const response = await instance.post(`/api/attendance/groups/${group_id}/lessons/regenerate`, payload);
+  return response.data;
+};
+
+const toggleHoliday = async ({ date, is_holiday }) => {
+  const response = await instance.patch(`/api/attendance/holidays`, {
+    date,
+    is_holiday,
+  });
   return response.data;
 };
 
@@ -362,6 +382,26 @@ const GroupLessonsPage = () => {
   const [regenerateFromDate, setRegenerateFromDate] = useState("");
   const [expandedLessonId, setExpandedLessonId] = useState(null);
   const [lessonPanels, setLessonPanels] = useState({});
+  const [holidayDate, setHolidayDate] = useState(getTodayYmd());
+  const [calendarDate, setCalendarDate] = useState(getTodayYmd());
+  const [isHolidayCalendarOpen, setIsHolidayCalendarOpen] = useState(false);
+  const holidayCalendarRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (holidayCalendarRef.current && !holidayCalendarRef.current.contains(event.target)) {
+        setIsHolidayCalendarOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", handleClickOutside);
+    return () => document.removeEventListener("pointerdown", handleClickOutside);
+  }, []);
+
+  const holidaySelectedDate = useMemo(() => {
+    if (!calendarDate) return undefined;
+    const parsed = parseISO(calendarDate);
+    return isValid(parsed) ? parsed : undefined;
+  }, [calendarDate]);
 
   const { data: lessonsData, isLoading, error } = useQuery({
     queryKey: ['group-lessons', groupId, normalizedMonth],
@@ -401,6 +441,20 @@ const GroupLessonsPage = () => {
     },
   });
 
+  const toggleHolidayMutation = useMutation({
+    mutationFn: toggleHoliday,
+    onSuccess: (data) => {
+      const isHoliday = data?.data?.is_holiday;
+      toast.success(isHoliday ? "Dam olish kuni belgilandi!" : "Dam olish kuni bekor qilindi!");
+      queryClient.invalidateQueries({ queryKey: ['group-lessons', groupId, normalizedMonth] });
+      queryClient.invalidateQueries({ queryKey: ['monthly-attendance', groupId, normalizedMonth] });
+    },
+    onError: (error) => {
+      const message = error?.response?.data?.message || "Dam olish kunini belgilashda xatolik";
+      toast.error(message);
+    },
+  });
+
   const groupInfo = lessonsData?.group || null;
   let lessons = [];
 
@@ -417,7 +471,34 @@ const GroupLessonsPage = () => {
     setEditModal({ isOpen: true, lesson });
   };
 
-  const handleToggleAttendancePanel = async (lessonId) => {
+  const handleToggleHoliday = () => {
+    if (!holidayDate) {
+      toast.error("Iltimos, sana tanlang");
+      return;
+    }
+
+    const targetLesson = lessons.find(
+      (lesson) => String(lesson?.date || "").slice(0, 10) === holidayDate
+    );
+
+    if (!targetLesson) {
+      toast.error("Ushbu kunda dars topilmadi");
+      return;
+    }
+
+    toggleHolidayMutation.mutate({
+      date: holidayDate,
+      is_holiday: !isHolidayFlag(targetLesson.is_holiday),
+    });
+  };
+
+  const handleToggleAttendancePanel = async (lesson) => {
+    if (isHolidayFlag(lesson?.is_holiday)) {
+      toast.error("Dam olish kuni uchun davomat belgilab bo'lmaydi");
+      return;
+    }
+
+    const lessonId = lesson.id;
     if (expandedLessonId === lessonId) {
       setExpandedLessonId(null);
       return;
@@ -578,10 +659,18 @@ const GroupLessonsPage = () => {
   const averageAttendance = totalStudentsExpected > 0 
     ? Math.round((totalStudentsAttended / totalStudentsExpected) * 100)
     : 0;
+  const holidayLessonForDate = lessons.find(
+    (lesson) => String(lesson?.date || "").slice(0, 10) === holidayDate
+  );
+  const isHolidaySelected = isHolidayFlag(holidayLessonForDate?.is_holiday);
 
   const renderAttendancePanel = (lesson, panel) => (
     <div className="rounded-lg border border-gray-200 bg-white p-3 sm:p-4">
-      {panel.isLoading ? (
+      {isHolidayFlag(lesson?.is_holiday) ? (
+        <div className="rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-700">
+          Dam olish kuni. Bu dars uchun davomat belgilab bo'lmaydi.
+        </div>
+      ) : panel.isLoading ? (
         <div className="text-sm text-gray-500">Yuklanmoqda...</div>
       ) : panel.error ? (
         <div className="text-sm text-red-600">{panel.error}</div>
@@ -728,6 +817,76 @@ const GroupLessonsPage = () => {
           </div>
         </div>
 
+        {/* Holiday Picker */}
+        <div className="mb-6">
+          <div className="rounded-lg bg-white p-4 shadow-md">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                <CalendarIcon className="h-5 w-5 text-gray-500" />
+                Dam olish kunini belgilash
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <div className="relative" ref={holidayCalendarRef}>
+                  <button
+                    type="button"
+                    onClick={() => setIsHolidayCalendarOpen((prev) => !prev)}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 shadow-sm hover:bg-gray-50"
+                    aria-label="Calendar"
+                  >
+                    <CalendarIcon className="h-5 w-5" />
+                  </button>
+                  {isHolidayCalendarOpen ? (
+                    <div className="absolute left-0 z-50 mt-2 rounded-2xl border border-gray-200 bg-white p-4 shadow-xl">
+                      <DayPicker
+                        mode="single"
+                        selected={holidaySelectedDate}
+                        onSelect={(day) => {
+                          if (!day) return;
+                          const nextDate = format(day, "yyyy-MM-dd");
+                          setCalendarDate(nextDate);
+                          setHolidayDate(nextDate);
+                          setIsHolidayCalendarOpen(false);
+                        }}
+                      />
+                    </div>
+                  ) : null}
+                </div>
+                <input
+                  type="date"
+                  value={holidayDate}
+                  onChange={(e) => {
+                    setHolidayDate(e.target.value);
+                    setCalendarDate(e.target.value);
+                  }}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm sm:w-auto"
+                />
+                <button
+                  onClick={handleToggleHoliday}
+                  disabled={toggleHolidayMutation.isLoading}
+                  className="inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                  style={{ backgroundColor: MAIN_COLOR }}
+                >
+                  {toggleHolidayMutation.isLoading
+                    ? "Saqlanmoqda..."
+                    : isHolidaySelected
+                      ? "Damni bekor qilish"
+                      : "Dam qilish"}
+                </button>
+              </div>
+            </div>
+            <div className="mt-3 text-xs text-gray-600">
+              {holidayLessonForDate ? (
+                <span>
+                  Tanlangan sana: <strong>{holidayDate}</strong>{" "}
+                  {isHolidaySelected ? "— Dam kuni" : "— Dam kuni emas"}
+                </span>
+              ) : (
+                <span>Ushbu sanada dars topilmadi. Avval shu sanada lesson bo&apos;lishi kerak.</span>
+              )}
+            </div>
+          </div>
+        </div>
+
         {/* Statistics - Compact */}
         {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <StatCard 
@@ -819,7 +978,7 @@ const GroupLessonsPage = () => {
                     
                     return (
                       <React.Fragment key={lesson.id}>
-                        <tr className="hover:bg-gray-50">
+                        <tr className={isHolidayFlag(lesson.is_holiday) ? "bg-orange-200" : "hover:bg-gray-50"}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {index + 1}
                           </td>
@@ -830,6 +989,11 @@ const GroupLessonsPage = () => {
                                 <div className="text-sm font-medium text-gray-900">
                                   {getWeekdayFull(lesson.date)} {lesson.formatted_date || formatDate(lesson.date)}
                                 </div>
+                                {isHolidayFlag(lesson.is_holiday) ? (
+                                  <div className="mt-1 inline-flex items-center rounded-full border border-orange-300 bg-orange-200 px-2 py-0.5 text-[11px] font-semibold text-orange-900">
+                                    Dam olish kuni
+                                  </div>
+                                ) : null}
                               </div>
                             </div>
                           </td>
@@ -866,12 +1030,13 @@ const GroupLessonsPage = () => {
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <div className="flex items-center justify-end gap-2">
                               <button
-                                onClick={() => handleToggleAttendancePanel(lesson.id)}
-                                className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-white rounded-lg hover:opacity-90 transition-colors"
+                                onClick={() => handleToggleAttendancePanel(lesson)}
+                                disabled={isHolidayFlag(lesson.is_holiday)}
+                                className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-white rounded-lg transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                                 style={{ backgroundColor: MAIN_COLOR }}
                               >
                                 <ChevronDownIcon className={`h-4 w-4 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
-                                Davomat qilish
+                                {isHolidayFlag(lesson.is_holiday) ? "Dam" : "Davomat qilish"}
                               </button>
                               <button
                                 onClick={() => handleEditLessonDate(lesson)}
@@ -917,6 +1082,11 @@ const GroupLessonsPage = () => {
                         <p className="text-xs font-semibold text-gray-900 break-words">
                           {getWeekdayFull(lesson.date)} {lesson.formatted_date || formatDate(lesson.date)}
                         </p>
+                        {isHolidayFlag(lesson.is_holiday) ? (
+                          <span className="mt-1 inline-flex items-center rounded-full border border-orange-300 bg-orange-200 px-2 py-0.5 text-[10px] font-semibold text-orange-900">
+                            Dam olish kuni
+                          </span>
+                        ) : null}
                       </div>
                       <button
                         onClick={() => handleEditLessonDate(lesson)}
@@ -943,12 +1113,13 @@ const GroupLessonsPage = () => {
                     </div>
 
                     <button
-                      onClick={() => handleToggleAttendancePanel(lesson.id)}
-                      className="inline-flex w-full items-center justify-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-white"
+                      onClick={() => handleToggleAttendancePanel(lesson)}
+                      disabled={isHolidayFlag(lesson.is_holiday)}
+                      className="inline-flex w-full items-center justify-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
                       style={{ backgroundColor: MAIN_COLOR }}
                     >
                       <ChevronDownIcon className={`h-4 w-4 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
-                      Davomat qilish
+                      {isHolidayFlag(lesson.is_holiday) ? "Dam" : "Davomat qilish"}
                     </button>
 
                     {isExpanded ? <div className="mt-2">{renderAttendancePanel(lesson, panel)}</div> : null}

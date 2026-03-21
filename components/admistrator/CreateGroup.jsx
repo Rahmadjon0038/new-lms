@@ -33,12 +33,12 @@ const modalStyle = {
   top: "50%",
   left: "50%",
   transform: "translate(-50%, -50%)",
-  width: "90%",
-  maxWidth: "550px",
+  width: "94%",
+  maxWidth: "520px",
   bgcolor: "background.paper",
-  borderRadius: "20px",
-  boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1)",
-  p: { xs: 2, sm: 4 },
+  borderRadius: "16px",
+  boxShadow: "0 16px 24px -6px rgb(0 0 0 / 0.12)",
+  p: { xs: 1.5, sm: 3 },
   outline: "none",
   border: "none",
   maxHeight: "90vh",
@@ -151,15 +151,15 @@ export default function AdminNewGroupModal({ children, onSuccess }) {
         <Box sx={modalStyle}>
           <div className="relative w-full">
             <button onClick={handleClose} className="absolute -top-1 -right-1 text-gray-400 hover:text-[#A60E07] p-1">
-              <XMarkIcon className="h-6 w-6" />
+              <XMarkIcon className="h-5 w-5 sm:h-6 sm:w-6" />
             </button>
 
-            <h3 className="text-xl font-bold text-gray-800 mb-6 pb-4 border-b border-gray-100 flex items-center uppercase tracking-tight">
-              <UsersIcon className="h-6 w-6 mr-3 text-[#A60E07]" />
+            <h3 className="text-lg font-bold text-gray-800 mb-4 pb-3 border-b border-gray-100 flex items-center uppercase tracking-tight sm:text-xl sm:mb-6 sm:pb-4">
+              <UsersIcon className="h-5 w-5 mr-2 text-[#A60E07] sm:h-6 sm:w-6 sm:mr-3" />
               Yangi Guruh Ochish
             </h3>
 
-            <form className="space-y-5" onSubmit={handleCreateGroup}>
+            <form className="space-y-3.5 sm:space-y-5" onSubmit={handleCreateGroup}>
               {/* 1. Fan tanlash */}
               <div>
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
@@ -169,7 +169,7 @@ export default function AdminNewGroupModal({ children, onSuccess }) {
                   value={groupData.subject_id}
                   onChange={(subjectId) => setGroupData(prev => ({ ...prev, subject_id: subjectId }))}
                   placeholder="Fanni tanlang"
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none text-sm font-semibold"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none text-sm font-semibold sm:px-4 sm:py-2.5 sm:rounded-xl"
                   showAll={false}
                 />
               </div>
@@ -184,7 +184,7 @@ export default function AdminNewGroupModal({ children, onSuccess }) {
                   onChange={handleInputChange}
                   required
                   placeholder="Ingliz tili beginner"
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none text-sm font-semibold"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none text-sm font-semibold sm:px-4 sm:py-2.5 sm:rounded-xl"
                 />
               </div>
 
@@ -196,7 +196,7 @@ export default function AdminNewGroupModal({ children, onSuccess }) {
                   name="price"
                   value={groupData.price}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none text-sm font-semibold"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none text-sm font-semibold sm:px-4 sm:py-2.5 sm:rounded-xl"
                   placeholder="Masalan: 1000000"
                   min="0"
                   required
@@ -233,7 +233,7 @@ export default function AdminNewGroupModal({ children, onSuccess }) {
               {/* 5. Hafta kunlari (Tugmachalar) */}
               <div>
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Dars Kunlari *</label>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5 sm:gap-2">
                   {WEEK_DAYS.map((day) => {
                     const isSelected = groupData.selectedDays.includes(day.id);
                     return (
@@ -241,7 +241,7 @@ export default function AdminNewGroupModal({ children, onSuccess }) {
                         key={day.id}
                         type="button"
                         onClick={() => toggleDay(day.id)}
-                        className={`px-3 py-2 rounded-lg text-xs font-bold transition-all border ${isSelected
+                        className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all border sm:px-3 sm:py-2 sm:text-xs ${isSelected
                           ? "bg-[#A60E07] text-white border-[#A60E07] shadow-md shadow-red-900/20"
                           : "bg-gray-50 text-gray-500 border-gray-200 hover:border-[#A60E07]"
                           }`}
@@ -254,7 +254,7 @@ export default function AdminNewGroupModal({ children, onSuccess }) {
               </div>
 
               {/* 6. Vaqt */}
-              <div className="flex gap-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
                 <div className="flex-1">
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Boshlanish *</label>
                   <div className="flex gap-1">
@@ -265,14 +265,14 @@ export default function AdminNewGroupModal({ children, onSuccess }) {
                         const minute = groupData.startTime.split(':')[1] || '00';
                         setGroupData(prev => ({ ...prev, startTime: `${hour}:${minute}` }));
                       }}
-                      className="flex-1 px-2 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-[#A60E07] text-sm font-semibold"
+                      className="flex-1 px-2 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-[#A60E07] text-sm font-semibold sm:px-2 sm:py-2.5 sm:rounded-xl"
                       required
                     >
                       {Array.from({length: 24}, (_, i) => i.toString().padStart(2, '0')).map(hour => (
                         <option key={hour} value={hour}>{hour}</option>
                       ))}
                     </select>
-                    <span className="py-2.5 px-1 text-gray-400">:</span>
+                    <span className="py-2 px-1 text-gray-400 sm:py-2.5">:</span>
                     <select
                       value={groupData.startTime.split(':')[1] || '00'}
                       onChange={(e) => {
@@ -280,7 +280,7 @@ export default function AdminNewGroupModal({ children, onSuccess }) {
                         const minute = e.target.value;
                         setGroupData(prev => ({ ...prev, startTime: `${hour}:${minute}` }));
                       }}
-                      className="flex-1 px-2 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-[#A60E07] text-sm font-semibold"
+                      className="flex-1 px-2 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-[#A60E07] text-sm font-semibold sm:px-2 sm:py-2.5 sm:rounded-xl"
                       required
                     >
                       {['00', '15', '30', '45'].map(minute => (
@@ -299,14 +299,14 @@ export default function AdminNewGroupModal({ children, onSuccess }) {
                         const minute = groupData.endTime.split(':')[1] || '00';
                         setGroupData(prev => ({ ...prev, endTime: `${hour}:${minute}` }));
                       }}
-                      className="flex-1 px-2 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-[#A60E07] text-sm font-semibold"
+                      className="flex-1 px-2 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-[#A60E07] text-sm font-semibold sm:px-2 sm:py-2.5 sm:rounded-xl"
                       required
                     >
                       {Array.from({length: 24}, (_, i) => i.toString().padStart(2, '0')).map(hour => (
                         <option key={hour} value={hour}>{hour}</option>
                       ))}
                     </select>
-                    <span className="py-2.5 px-1 text-gray-400">:</span>
+                    <span className="py-2 px-1 text-gray-400 sm:py-2.5">:</span>
                     <select
                       value={groupData.endTime.split(':')[1] || '00'}
                       onChange={(e) => {
@@ -314,7 +314,7 @@ export default function AdminNewGroupModal({ children, onSuccess }) {
                         const minute = e.target.value;
                         setGroupData(prev => ({ ...prev, endTime: `${hour}:${minute}` }));
                       }}
-                      className="flex-1 px-2 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-[#A60E07] text-sm font-semibold"
+                      className="flex-1 px-2 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-[#A60E07] text-sm font-semibold sm:px-2 sm:py-2.5 sm:rounded-xl"
                       required
                     >
                       {['00', '15', '30', '45'].map(minute => (
@@ -333,7 +333,7 @@ export default function AdminNewGroupModal({ children, onSuccess }) {
                   name="start_date"
                   value={groupData.start_date || ""}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none text-sm font-semibold"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none text-sm font-semibold sm:py-2.5 sm:rounded-xl"
                   placeholder="Belgilanmagan"
                 />
                 {groupData.start_date === null || groupData.start_date === "" ? (
@@ -344,7 +344,7 @@ export default function AdminNewGroupModal({ children, onSuccess }) {
               <button
                 type="submit"
                 disabled={!groupData.subject_id || !groupData.name || groupData.selectedDays.length === 0 || !groupData.price || !groupData.startTime || !groupData.endTime}
-                className="w-full py-4 mt-2 rounded-xl text-sm font-black text-white transition-all shadow-lg uppercase tracking-widest hover:opacity-90 active:scale-95 bg-[#A60E07] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-3 mt-1.5 rounded-lg text-sm font-black text-white transition-all shadow-md uppercase tracking-widest hover:opacity-90 active:scale-95 bg-[#A60E07] disabled:opacity-50 disabled:cursor-not-allowed sm:py-4 sm:mt-2 sm:rounded-xl sm:shadow-lg"
               >
                 Guruhni Yaratish
               </button>
