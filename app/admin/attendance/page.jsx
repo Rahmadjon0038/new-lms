@@ -1,12 +1,10 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import { CalendarIcon, UserGroupIcon } from "@heroicons/react/24/outline";
 import { useGetAttendanceTeachers } from "../../../hooks/attendance";
-import { DayPicker } from "react-day-picker";
-import { format, parseISO, isValid } from "date-fns";
-import "react-day-picker/dist/style.css";
+import { parseISO, isValid } from "date-fns";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { instance } from "../../../hooks/api";
 import { toast } from "react-hot-toast";
@@ -39,27 +37,15 @@ export default function AdminAttendancePage() {
   const [search, setSearch] = useState("");
   const [date, setDate] = useState(getTodayYmd());
   const [holidayDate, setHolidayDate] = useState(getTodayYmd());
-  const [holidayCalendarDate, setHolidayCalendarDate] = useState(getTodayYmd());
-  const [isHolidayCalendarOpen, setIsHolidayCalendarOpen] = useState(false);
-  const holidayCalendarRef = useRef(null);
   const [holidayMonth, setHolidayMonth] = useState(new Date().toISOString().slice(0, 7));
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (holidayCalendarRef.current && !holidayCalendarRef.current.contains(event.target)) {
-        setIsHolidayCalendarOpen(false);
-      }
-    };
-    document.addEventListener("pointerdown", handleClickOutside);
-    return () => document.removeEventListener("pointerdown", handleClickOutside);
-  }, []);
-
-  const selectedHolidayDate = useMemo(() => {
-    if (!holidayCalendarDate) return undefined;
-    const parsed = parseISO(holidayCalendarDate);
-    return isValid(parsed) ? parsed : undefined;
-  }, [holidayCalendarDate]);
+  const holidayDateLabel = useMemo(() => {
+    if (!holidayDate) return "";
+    const parsed = parseISO(holidayDate);
+    if (!isValid(parsed)) return holidayDate;
+    return holidayDate;
+  }, [holidayDate]);
   const teachersQuery = useGetAttendanceTeachers({
     date: date || undefined,
   });
@@ -76,17 +62,10 @@ export default function AdminAttendancePage() {
   }, [holidaysQuery.data]);
 
   const holidayDateSet = useMemo(() => new Set(holidayDates), [holidayDates]);
-  const holidayDateObjects = useMemo(
-    () =>
-      holidayDates
-        .map((dateStr) => {
-          const parsed = parseISO(String(dateStr));
-          return isValid(parsed) ? parsed : null;
-        })
-        .filter(Boolean),
-    [holidayDates]
-  );
-
+  const sortedHolidayDates = useMemo(() => {
+    if (!Array.isArray(holidayDates)) return [];
+    return [...holidayDates].sort();
+  }, [holidayDates]);
   const toggleHolidayMutation = useMutation({
     mutationFn: toggleHoliday,
     onSuccess: (data) => {
@@ -130,86 +109,15 @@ export default function AdminAttendancePage() {
 
   return (
     <div className="space-y-4 p-3 sm:p-4 md:p-6">
-      <div className="w-full rounded-xl border border-gray-200 bg-white p-3 sm:ml-auto sm:w-auto sm:border-0 sm:bg-transparent sm:p-0">
-        <div className="flex items-center justify-between sm:hidden">
-          <div className="flex items-center gap-2 text-xs font-semibold text-gray-600">
-            <CalendarIcon className="h-4 w-4 text-gray-500" />
-            Dam olish
-          </div>
-          <button
-            type="button"
-            onClick={() => setIsHolidayCalendarOpen((prev) => !prev)}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 shadow-sm hover:bg-gray-50"
-            aria-label="Holiday calendar"
-          >
-            <CalendarIcon className="h-4 w-4" />
-          </button>
-        </div>
-
+      <div className="flex w-full justify-end">
+        <div className="w-full rounded-xl border border-gray-200 bg-white p-3 sm:w-auto sm:border-0 sm:bg-transparent sm:p-0">
         <div className="mt-2 grid grid-cols-1 gap-2 sm:mt-0 sm:flex sm:items-center sm:gap-2">
-          <div className="relative hidden sm:block" ref={holidayCalendarRef}>
-            <button
-              type="button"
-              onClick={() => setIsHolidayCalendarOpen((prev) => !prev)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 shadow-sm hover:bg-gray-50"
-              aria-label="Holiday calendar"
-            >
-              <CalendarIcon className="h-5 w-5" />
-            </button>
-            {isHolidayCalendarOpen ? (
-              <div className="absolute right-0 z-50 mt-2 rounded-2xl border border-gray-200 bg-white p-4 shadow-xl">
-                <DayPicker
-                  mode="single"
-                  selected={selectedHolidayDate}
-                  onSelect={(day) => {
-                    if (!day) return;
-                    const nextDate = format(day, "yyyy-MM-dd");
-                    const nextMonth = nextDate.slice(0, 7);
-                    setHolidayCalendarDate(nextDate);
-                    setHolidayDate(nextDate);
-                    setHolidayMonth(nextMonth);
-                    setIsHolidayCalendarOpen(false);
-                  }}
-                  modifiers={{ holiday: holidayDateObjects }}
-                  modifiersStyles={{
-                    holiday: { backgroundColor: "#DBEAFE", color: "#1D4ED8" },
-                  }}
-                />
-              </div>
-            ) : null}
-          </div>
-
-          <div className="relative sm:hidden" ref={holidayCalendarRef}>
-            {isHolidayCalendarOpen ? (
-              <div className="absolute right-0 z-50 mt-2 rounded-2xl border border-gray-200 bg-white p-4 shadow-xl">
-                <DayPicker
-                  mode="single"
-                  selected={selectedHolidayDate}
-                  onSelect={(day) => {
-                    if (!day) return;
-                    const nextDate = format(day, "yyyy-MM-dd");
-                    const nextMonth = nextDate.slice(0, 7);
-                    setHolidayCalendarDate(nextDate);
-                    setHolidayDate(nextDate);
-                    setHolidayMonth(nextMonth);
-                    setIsHolidayCalendarOpen(false);
-                  }}
-                  modifiers={{ holiday: holidayDateObjects }}
-                  modifiersStyles={{
-                    holiday: { backgroundColor: "#DBEAFE", color: "#1D4ED8" },
-                  }}
-                />
-              </div>
-            ) : null}
-          </div>
-
           <input
             type="date"
             value={holidayDate}
             onChange={(e) => {
               const nextDate = e.target.value;
               setHolidayDate(nextDate);
-              setHolidayCalendarDate(nextDate);
               if (nextDate) setHolidayMonth(nextDate.slice(0, 7));
             }}
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm sm:w-40"
@@ -227,6 +135,7 @@ export default function AdminAttendancePage() {
                 ? "Damni bekor qilish"
                 : "Dam olish"}
           </button>
+        </div>
         </div>
       </div>
 
@@ -248,10 +157,24 @@ export default function AdminAttendancePage() {
         </div>
       </div>
 
-      <div className="text-xs text-gray-600">
+      <div className="text-xs text-gray-600 space-y-1">
         {holidayDateSet.has(holidayDate) ? (
-          <span>Bugun dam olish</span>
+          <div>{holidayDateLabel} — dam olish kuni</div>
         ) : null}
+        {sortedHolidayDates.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {sortedHolidayDates.map((dateStr) => (
+              <span
+                key={dateStr}
+                className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[11px] font-medium text-gray-700"
+              >
+                {dateStr} — dam olish kuni
+              </span>
+            ))}
+          </div>
+        ) : (
+          <div className="text-[11px] text-gray-400">Dam olish kunlari yo‘q</div>
+        )}
       </div>
 
       {teachersQuery.isLoading ? (
