@@ -416,24 +416,19 @@ function AdminGroupsPageInner() {
 
     useEffect(() => {
         const tab = searchParams.get('tab');
-        if (ALLOWED_TABS.includes(tab) && tab !== currentTab) {
-            setCurrentTab(tab);
-        }
-    }, [searchParams, currentTab]);
+        if (!ALLOWED_TABS.includes(tab)) return;
+        setCurrentTab((prev) => (prev === tab ? prev : tab));
+    }, [searchParams]);
 
-    useEffect(() => {
+    const applyTab = (nextTab) => {
+        if (!ALLOWED_TABS.includes(nextTab)) return;
+        setCurrentTab(nextTab);
         const params = new URLSearchParams(searchParams.toString());
         const existing = params.get('tab') || 'active';
-        if ((currentTab || 'active') === existing) {
-            return;
-        }
-        if (currentTab) {
-            params.set('tab', currentTab);
-        } else {
-            params.delete('tab');
-        }
-        router.replace(`${pathname}?${params.toString()}`);
-    }, [currentTab, pathname, router, searchParams]);
+        if (existing === nextTab) return;
+        params.set('tab', nextTab);
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    };
 
     // Darsni boshlash funksiyasi (draft -> active)
     const handleStartClass = (groupId) => {
@@ -445,7 +440,7 @@ function AdminGroupsPageInner() {
                 console.log('Dars muvaffaqiyatli boshlandi:', data);
                 // Draft tabdan Active tabga o'tish
                 if (currentTab === 'draft') {
-                    setCurrentTab('active');
+                    applyTab('active');
                 }
             },
             onError: (error) => {
@@ -471,10 +466,10 @@ function AdminGroupsPageInner() {
                 // Status o'zgarganda mos tabga o'tish
                 if (targetStatus === 'blocked' && currentTab !== 'closed') {
                     setConfirmModal({ isOpen: false, groupId: null, newStatus: null });
-                    setCurrentTab('closed');
+                    applyTab('closed');
                 } else if (targetStatus === 'active' && currentTab !== 'active') {
                     setConfirmModal({ isOpen: false, groupId: null, newStatus: null });
-                    setCurrentTab('active');
+                    applyTab('active');
                 } else {
                     setConfirmModal({ isOpen: false, groupId: null, newStatus: null });
                 }
@@ -500,15 +495,15 @@ function AdminGroupsPageInner() {
             {/* <h1 className="mb-1 text-xl font-bold text-gray-900 sm:text-3xl">Guruhlarni Boshqarish Paneli</h1> */}
             <div className="mb-6 overflow-x-auto border-b border-gray-200">
                 <div className="flex min-w-max">
-                <button onClick={() => setCurrentTab('active')} className={tabClass('active')}>
+                <button onClick={() => applyTab('active')} className={tabClass('active')}>
                     <UsersIcon className="mr-1 inline h-4 w-4 sm:mr-2 sm:h-5 sm:w-5" />
                     Faol Guruhlar
                 </button>
-                <button onClick={() => setCurrentTab('draft')} className={tabClass('draft')}>
+                <button onClick={() => applyTab('draft')} className={tabClass('draft')}>
                     <CalendarIcon className="mr-1 inline h-4 w-4 sm:mr-2 sm:h-5 sm:w-5" />
                     Darsi Boshlanmagan
                 </button>
-                <button onClick={() => setCurrentTab('closed')} className={tabClass('closed')}>
+                <button onClick={() => applyTab('closed')} className={tabClass('closed')}>
                     <LockClosedIcon className="mr-1 inline h-4 w-4 sm:mr-2 sm:h-5 sm:w-5" />
                     Yopilgan Guruhlar
                 </button>
@@ -561,7 +556,7 @@ function AdminGroupsPageInner() {
                         ) : null}
                     </div>
 
-                    <AdminNewGroupModal onSuccess={() => setCurrentTab('draft')}>
+                    <AdminNewGroupModal onSuccess={() => applyTab('draft')}>
                         <button className="hidden w-full items-center justify-center rounded-xl bg-[#A60E07] px-4 py-2 text-sm font-bold text-white shadow-md transition hover:opacity-90 md:flex md:w-auto md:px-5 md:py-2.5">
                             <PlusCircleIcon className="mr-1 h-5 w-5" />
                             <span>Yangi Guruh</span>
@@ -615,7 +610,7 @@ function AdminGroupsPageInner() {
                             ) : null}
                         </div>
 
-                        <AdminNewGroupModal onSuccess={() => setCurrentTab('draft')}>
+                        <AdminNewGroupModal onSuccess={() => applyTab('draft')}>
                             <button
                                 type="button"
                                 className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#A60E07] text-white shadow-md transition hover:opacity-90"
@@ -627,7 +622,7 @@ function AdminGroupsPageInner() {
                     </div>
                 ) : (
                     <div className="mb-3 flex items-center justify-end md:hidden">
-                        <AdminNewGroupModal onSuccess={() => setCurrentTab('draft')}>
+                        <AdminNewGroupModal onSuccess={() => applyTab('draft')}>
                             <button
                                 type="button"
                                 className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#A60E07] text-white shadow-md transition hover:opacity-90"

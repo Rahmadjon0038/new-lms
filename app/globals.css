@@ -1,7 +1,11 @@
 @import "tailwindcss";
 
 
-body{
+html {
+    scrollbar-gutter: stable;
+}
+
+body {
     max-width: 2940px;
     margin: 0 auto;
 }
