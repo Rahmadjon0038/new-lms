@@ -23,7 +23,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { instance } from "../../../../hooks/api";
 import MonthlyAttendanceInline from "../../../../components/MonthlyAttendanceInline";
 import { toast } from "react-hot-toast";
-import { normalizeMonth } from "../../../../utils/date";
+import { normalizeMonth, formatDateYMD } from "../../../../utils/date";
 import { DayPicker } from "react-day-picker";
 import { format, parseISO, isValid } from "date-fns";
 import "react-day-picker/dist/style.css";
@@ -629,12 +629,7 @@ const GroupLessonsPage = () => {
     }
   };
 
-  // Format date for display (UTC, YYYY MM DD, no timezone shift)
-  const formatDate = (dateString) => {
-    if (!dateString) return '';
-    // Only take the date part, avoid timezone shift
-    return dateString.slice(0, 10).replace(/-/g, ' ');
-  };
+  const formatDate = (dateString) => formatDateYMD(dateString);
   const getWeekdayFull = (dateString) => {
     if (!dateString) return "";
     const [year, month, day] = String(dateString).slice(0, 10).split("-").map(Number);
@@ -987,7 +982,8 @@ const GroupLessonsPage = () => {
                               <CalendarIcon className="h-4 w-4 text-gray-400 mr-2" />
                               <div>
                                 <div className="text-sm font-medium text-gray-900">
-                                  {getWeekdayFull(lesson.date)} {lesson.formatted_date || formatDate(lesson.date)}
+                                  {getWeekdayFull(lesson.date || lesson.lesson_date || lesson.formatted_date)}{" "}
+                                  {formatDate(lesson.date || lesson.lesson_date || lesson.formatted_date)}
                                 </div>
                                 {isHolidayFlag(lesson.is_holiday) ? (
                                   <div className="mt-1 inline-flex items-center rounded-full border border-orange-300 bg-orange-200 px-2 py-0.5 text-[11px] font-semibold text-orange-900">
@@ -1080,7 +1076,8 @@ const GroupLessonsPage = () => {
                       <div className="min-w-0">
                         <p className="text-[11px] font-semibold text-gray-400">#{index + 1}</p>
                         <p className="text-xs font-semibold text-gray-900 break-words">
-                          {getWeekdayFull(lesson.date)} {lesson.formatted_date || formatDate(lesson.date)}
+                          {getWeekdayFull(lesson.date || lesson.lesson_date || lesson.formatted_date)}{" "}
+                          {formatDate(lesson.date || lesson.lesson_date || lesson.formatted_date)}
                         </p>
                         {isHolidayFlag(lesson.is_holiday) ? (
                           <span className="mt-1 inline-flex items-center rounded-full border border-orange-300 bg-orange-200 px-2 py-0.5 text-[10px] font-semibold text-orange-900">

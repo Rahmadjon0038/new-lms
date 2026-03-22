@@ -2,6 +2,7 @@
 import React from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { useGetStudentAttendanceSnapshot } from '../../hooks/attendance';
+import { formatDateYMD } from '../../utils/date';
 
 const StudentAttendanceModal = ({ isOpen, onClose, student, month }) => {
     const { data: attendanceData, isLoading, error } = useGetStudentAttendanceSnapshot(
@@ -137,24 +138,6 @@ const StudentAttendanceModal = ({ isOpen, onClose, student, month }) => {
                         </div>
                     ) : attendanceData?.success ? (
                         <div className="p-3 sm:p-6">
-                            {/* Student quick info */}
-                            <div className="mb-3 grid grid-cols-1 gap-2 rounded-lg bg-gray-50 p-2.5 sm:mb-4 sm:grid-cols-3 sm:p-3">
-                                <div className="text-xs text-gray-700">
-                                    <span className="text-gray-500">Talaba:</span>{" "}
-                                    <span className="font-medium">
-                                        {attendanceData.data.student_info.surname} {attendanceData.data.student_info.name}
-                                    </span>
-                                </div>
-                                <div className="text-xs text-gray-700">
-                                    <span className="text-gray-500">Telefon:</span>{" "}
-                                    <span className="font-medium">{attendanceData.data.student_info.phone}</span>
-                                </div>
-                                <div className="text-xs text-gray-700">
-                                    <span className="text-gray-500">Holati:</span>{" "}
-                                    {getStatusText(attendanceData.data.monthly_status)}
-                                </div>
-                            </div>
-
                             {/* Attendance Table - desktop/tablet */}
                             <div className="hidden overflow-x-auto rounded-lg border border-gray-200 bg-white sm:block">
                                 <table className="w-full min-w-[760px] border-collapse sm:min-w-[900px]">
@@ -165,8 +148,10 @@ const StudentAttendanceModal = ({ isOpen, onClose, student, month }) => {
                                             <th className="w-20 border border-gray-300 px-2 py-2 text-center text-xs font-medium text-gray-700 sm:w-24 sm:px-4 sm:py-3 sm:text-sm">Holati</th>
                                             {attendanceData.data.daily_attendance?.map((attendance, index) => (
                                                 <th key={index} className="min-w-[100px] border border-gray-300 px-2 py-2 text-center text-xs font-medium text-gray-700 sm:px-4 sm:py-3 sm:text-sm">
-                                                    <div>{attendance.formatted_date}</div>
-                                                    <div className="text-[11px] text-gray-500 font-medium">
+                                                    <div className="whitespace-nowrap">
+                                                        {formatDateYMD(attendance.date || attendance.lesson_date || attendance.formatted_date)}
+                                                    </div>
+                                                    <div className="text-[11px] text-gray-500 font-medium whitespace-nowrap">
                                                         {getWeekdayFull(attendance.date || attendance.lesson_date || attendance.formatted_date)}
                                                     </div>
                                                 </th>
@@ -177,8 +162,13 @@ const StudentAttendanceModal = ({ isOpen, onClose, student, month }) => {
                                         <tr className="hover:bg-gray-50">
                                             <td className="border border-gray-300 px-2 py-2 text-center text-xs text-gray-900 sm:px-4 sm:py-3 sm:text-sm">1</td>
                                             <td className="border border-gray-300 px-2 py-2 sm:px-4 sm:py-3">
-                                                <div className="max-w-[360px] truncate whitespace-nowrap text-xs font-medium text-gray-900 sm:text-sm">
-                                                    {attendanceData.data.student_info.surname} {attendanceData.data.student_info.name} • {attendanceData.data.student_info.phone}
+                                                <div className="max-w-[360px] text-xs font-medium text-gray-900 sm:text-sm">
+                                                    <div className="truncate whitespace-nowrap">
+                                                        {attendanceData.data.student_info.surname} {attendanceData.data.student_info.name}
+                                                    </div>
+                                                    <div className="text-[11px] text-gray-500 truncate whitespace-nowrap">
+                                                        {attendanceData.data.student_info.phone}
+                                                    </div>
                                                 </div>
                                             </td>
                                             <td className="border border-gray-300 px-2 py-2 text-center sm:px-4 sm:py-3">
@@ -200,8 +190,10 @@ const StudentAttendanceModal = ({ isOpen, onClose, student, month }) => {
                                     <div key={index} className="rounded-lg border border-gray-200 bg-white p-3">
                                         <div className="flex items-center justify-between gap-2">
                                             <div>
-                                                <p className="text-sm font-semibold text-gray-900">{attendance.formatted_date}</p>
-                                                <p className="text-xs text-gray-500">
+                                                <p className="text-sm font-semibold text-gray-900 whitespace-nowrap">
+                                                    {formatDateYMD(attendance.date || attendance.lesson_date || attendance.formatted_date)}
+                                                </p>
+                                                <p className="text-xs text-gray-500 whitespace-nowrap">
                                                     {getWeekdayFull(attendance.date || attendance.lesson_date || attendance.formatted_date)}
                                                 </p>
                                             </div>

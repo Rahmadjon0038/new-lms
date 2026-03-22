@@ -12,6 +12,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { Building2 } from 'lucide-react';
 import { useGetGroupById } from '../../../../hooks/groups';
+import { formatDateYMD, formatDateTimeYMDHM } from '../../../../utils/date';
 
 const getStudentStatusBadge = (status) => {
     if (status === 'active') {
@@ -56,23 +57,8 @@ const GroupDetailPage = () => {
     const group = groupData.group;
     const students = groupData.students || [];
 
-    const formatDate = (dateString) => {
-        return new Date(dateString).toLocaleDateString('uz-UZ', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-    };
-
-    const formatDateTime = (dateString) => {
-        return new Date(dateString).toLocaleDateString('uz-UZ', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    };
+    const formatDate = (dateString) => formatDateYMD(dateString);
+    const formatDateTime = (dateString) => formatDateTimeYMDHM(dateString);
 
     return (
         <div className="min-h-full p-1.5 sm:p-4 bg-gray-50">
@@ -276,7 +262,7 @@ const GroupDetailPage = () => {
                                                 {student.address && <div className="mt-0.5 break-words">Manzil: {student.address}</div>}
                                             </td>
                                             <td className="px-2.5 sm:px-3 py-2 text-xs text-gray-700">
-                                                {student.joined_at ? new Date(student.joined_at).toLocaleDateString('uz-UZ') : '-'}
+                                                {student.joined_at ? formatDateYMD(student.joined_at) : '-'}
                                             </td>
                                             <td className="px-2.5 sm:px-3 py-2 text-xs text-gray-700 hidden md:table-cell">
                                                 {student.registration_date?.split('T')[0] || '-'}

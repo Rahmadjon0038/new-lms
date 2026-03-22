@@ -25,6 +25,7 @@ import { usegetProfile } from "../../../hooks/user";
 import { Clock, Building2 } from "lucide-react";
 import TeacherSelect from "../../../components/teacher/Select";
 import SubjectsSelect from "../../../components/SubjectsSelect";
+import { formatDateYMD } from "../../../utils/date";
 
 // --- Tasdiqlash Modali Komponenti ---
 const ConfirmToggleModal = ({ isOpen, onClose, onConfirm, isClosing, isLoading }) => {
@@ -88,7 +89,7 @@ const GroupCard = ({ group, onToggleGroupStatus, onStartClass, updateGroupLoadin
     const timeInfo = group.schedule?.time ? ` (${group.schedule.time})` : "";
 
     const startDate = group.class_start_date
-        ? new Date(group.class_start_date).toLocaleDateString('uz-UZ')
+        ? formatDateYMD(group.class_start_date)
         : "Belgilanmagan";
 
     // Updated status logic to include class_status

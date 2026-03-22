@@ -14,6 +14,7 @@ import Link from "next/link";
 import { useGetAttendanceGroups } from "../../../../hooks/attendance";
 import TeacherSelect from "../../../../components/teacher/Select";
 import SubjectsSelect from "../../../../components/SubjectsSelect";
+import { formatDateYMD } from "../../../../utils/date";
 
 // --- Guruh Kartochkasi ---
 const GroupCard = ({ group }) => {
@@ -23,8 +24,8 @@ const GroupCard = ({ group }) => {
     'Vaqt belgilanmagan';
   
   // Class start date formatting
-  const classStartDate = group.class_start_date 
-    ? new Date(group.class_start_date).toLocaleDateString('uz-UZ')
+  const classStartDate = group.class_start_date
+    ? formatDateYMD(group.class_start_date)
     : 'Belgilanmagan';
     
   // Status color and text

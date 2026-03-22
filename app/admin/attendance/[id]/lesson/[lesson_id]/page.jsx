@@ -16,6 +16,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { instance } from "../../../../../../hooks/api";
 import { toast } from "react-hot-toast";
+import { formatDateYMD } from "../../../../../../utils/date";
 
 const MAIN_COLOR = "#A60E07";
 const formatMoney = (value) => {
@@ -286,6 +287,9 @@ const LessonAttendancePage = () => {
                           <div className="ml-3">
                             <div className="text-sm font-medium text-gray-900">
                               {student.student_name}
+                            </div>
+                            <div className="text-[11px] text-gray-500">
+                              Qo&apos;shilgan: {formatDateYMD(student.joined_at || student.membership_periods?.[0]?.joined_at || "-")}
                             </div>
                           </div>
                         </div>

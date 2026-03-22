@@ -354,10 +354,10 @@ export default function SubjectsPage() {
                                             <BookOpenIcon className="h-4 w-4 mr-1 text-blue-500" />
                                             <span>{subject.groups_count} guruh</span>
                                         </div>
-                                        <div className="flex items-center">
+                                        {/* <div className="flex items-center">
                                             <UsersIcon className="h-4 w-4 mr-1 text-green-500" />
                                             <span>{subject.students_count} talaba</span>
-                                        </div>
+                                        </div> */}
                                     </div>
                                 </div>
                                 

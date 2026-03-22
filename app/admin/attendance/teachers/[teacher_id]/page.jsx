@@ -13,7 +13,7 @@ import {
 } from "../../../../../hooks/attendance";
 import { useGetNotify } from "../../../../../hooks/notify";
 import MonthlyAttendanceInline from "../../../../../components/MonthlyAttendanceInline";
-import { normalizeMonth } from "../../../../../utils/date";
+import { normalizeMonth, formatDateYMD } from "../../../../../utils/date";
 
 const CURRENT_MONTH = new Date().toISOString().slice(0, 7);
 const getTodayYmd = () => {
@@ -269,7 +269,12 @@ export default function AdminTeacherGroupsPage() {
               {students.map((student) => (
                 <tr key={student.attendance_id}>
                   <td className="px-2 py-1.5 sm:px-3 sm:py-2">
-                    {student.student_name || `${student.surname || ""} ${student.name || ""}`.trim()}
+                    <div className="font-medium text-gray-900">
+                      {student.student_name || `${student.surname || ""} ${student.name || ""}`.trim()}
+                    </div>
+                    <div className="text-[11px] text-gray-500">
+                      Qo&apos;shilgan: {formatDateYMD(student.joined_at || student.membership_periods?.[0]?.joined_at || "-")}
+                    </div>
                   </td>
                   <td className="px-2 py-1.5 sm:px-3 sm:py-2">
                     <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold sm:px-2 sm:py-1 sm:text-xs ${
@@ -599,7 +604,7 @@ export default function AdminTeacherGroupsPage() {
                     >
                       <div className="min-w-0">
                         <p className="truncate text-xs font-semibold text-gray-900 sm:text-sm">
-                          {lesson.formatted_date || lesson.date || lesson.lesson_date || "-"}
+                          {formatDateYMD(lesson.date || lesson.lesson_date || lesson.formatted_date || "-")}
                         </p>
                         <p className="truncate text-[11px] text-gray-600 sm:text-xs">
                           {getWeekdayFromDate(lesson.date || lesson.lesson_date)}{" "}

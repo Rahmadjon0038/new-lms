@@ -4,7 +4,7 @@ import { instance } from "../hooks/api";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-hot-toast";
 import { useQuery } from "@tanstack/react-query";
-import { normalizeMonth } from "../utils/date";
+import { normalizeMonth, formatDateYMD } from "../utils/date";
 
 // API function for getting user profile
 const getUserProfile = async () => {
@@ -345,12 +345,7 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
   if (isLoading) return <div className="text-center py-6 sm:py-8 text-sm sm:text-base">Oylik hisobot yuklanmoqda...</div>;
   if (error) return <div className="bg-red-50 border border-red-200 text-red-700 px-3 sm:px-4 py-2 sm:py-3 rounded-lg text-xs sm:text-sm">Oylik hisobotda xatolik: {error.message}</div>;
 
-  // Format date from YYYY-MM-DD to DD.MM.YYYY
-  const formatDate = (dateString) => {
-    if (!dateString) return '';
-    const [year, month, day] = dateString.split('-');
-    return `${day}.${month}.${year}`;
-  };
+  const formatDate = (dateString) => formatDateYMD(dateString);
 
   const getWeekdayFull = (dateString) => {
     if (!dateString) return '';
@@ -494,6 +489,9 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
                       <div>
                         <div className="font-medium">{student.student_name}</div>
                         <div className="mt-0.5 text-[10px] text-gray-500">{student.phone}</div>
+                        <div className="mt-0.5 text-[10px] text-gray-500">
+                          Qo&apos;shilgan: {formatDateYMD(student.joined_at || student.membership_periods?.[0]?.joined_at || "-")}
+                        </div>
                       </div>
                     </td>
                     <td className="border border-gray-400 px-3 py-2 text-center text-xs">

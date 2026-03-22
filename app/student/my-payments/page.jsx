@@ -12,6 +12,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { useStudentMonthlyPayments } from "../../../hooks/payments";
 import { useGetStudentGroups } from "../../../hooks/groups";
+import { formatDateTimeYMDHM } from "../../../utils/date";
 
 const StatusBadge = ({ status }) => {
   const statusStyles = {
@@ -57,18 +58,6 @@ const formatMonth = (monthStr) => {
     "Dekabr",
   ];
   return `${monthNames[parseInt(month, 10) - 1]} ${year}`;
-};
-
-const formatDate = (dateString) => {
-  if (!dateString) return "-";
-  const date = new Date(dateString);
-  return date.toLocaleDateString("uz-UZ", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 };
 
 function StudentPayments() {
@@ -271,7 +260,7 @@ function StudentPayments() {
                 <div className="flex flex-wrap gap-3 text-xs text-gray-500">
                   <span>Tranzaksiyalar: {group.transactions_count || 0} ta</span>
                   <span>Tranzaksiya summasi: {formatCurrency(group.transactions_total || 0)}</span>
-                  <span>Oxirgi to'lov: {group.last_payment_date ? formatDate(group.last_payment_date) : "-"}</span>
+                  <span>Oxirgi to'lov: {group.last_payment_date ? formatDateTimeYMDHM(group.last_payment_date) : "-"}</span>
                 </div>
               </div>
             ))}
@@ -337,7 +326,7 @@ function StudentPayments() {
                     {groupTransactions.map((payment, index) => (
                       <tr key={payment.id || `${payment.group_id}-${index}`} className="hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatDate(payment.paid_at)}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatDateTimeYMDHM(payment.paid_at)}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-[#A60E07]">{formatCurrency(payment.amount || 0)}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{payment.payment_method || "-"}</td>
                         <td className="px-6 py-4 text-sm text-gray-600">{payment.description || "-"}</td>

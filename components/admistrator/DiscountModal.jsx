@@ -64,6 +64,19 @@ const DiscountModal = ({ isOpen, onClose, student, month }) => {
     }));
   };
 
+  const formatNumber = (value) => {
+    if (!value) return "";
+    return new Intl.NumberFormat("uz-UZ").format(value);
+  };
+
+  const handleAmountChange = (value) => {
+    const digits = String(value || "").replace(/[^\d]/g, "");
+    setDiscountData(prev => ({
+      ...prev,
+      discount_value: digits
+    }));
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -129,9 +142,20 @@ const DiscountModal = ({ isOpen, onClose, student, month }) => {
               {discountData.discount_type === 'percent' ? 'Foiz miqdori (%)' : 'Summa'}:
             </label>
             <input
-              type="number"
-              value={discountData.discount_value}
-              onChange={(e) => handleChange('discount_value', e.target.value)}
+              type="text"
+              inputMode="numeric"
+              value={
+                discountData.discount_type === 'amount'
+                  ? formatNumber(discountData.discount_value)
+                  : discountData.discount_value
+              }
+              onChange={(e) => {
+                if (discountData.discount_type === 'amount') {
+                  handleAmountChange(e.target.value);
+                } else {
+                  handleChange('discount_value', e.target.value);
+                }
+              }}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition-colors"
               style={{ '--tw-ring-color': '#A60E07' }}
               placeholder={discountData.discount_type === 'percent' ? '50' : '100000'}
@@ -161,19 +185,6 @@ const DiscountModal = ({ isOpen, onClose, student, month }) => {
               
             />
           </div>
-
-          {/* Preview */}
-          {discountData.discount_value && (
-            <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-              <p className="text-sm text-blue-800">
-                <strong>Ko'rinish:</strong> {' '}
-                {discountData.discount_type === 'percent' 
-                  ? `${discountData.discount_value}% chegirma`
-                  : `${Number(discountData.discount_value).toLocaleString()} so'm chegirma`
-                } joriy oy uchun
-              </p>
-            </div>
-          )}
 
           {/* Action Buttons */}
           <div className="flex gap-3 pt-4">

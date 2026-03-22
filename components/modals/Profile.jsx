@@ -17,6 +17,7 @@ import Box from "@mui/material/Box";
 import Modal from "@mui/material/Modal";
 import { usegetProfile, useUpdateProfile } from "../../hooks/user";
 import { useGetNotify } from "../../hooks/notify";
+import { formatDateYMD } from "../../utils/date";
 
 const modalStyle = {
   position: "absolute",
@@ -117,15 +118,6 @@ export default function ProfileModal({ children, onLogout }) {
     setIsEditing(true);
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return "";
-    return new Date(dateString).toLocaleDateString("uz-UZ", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
   if (isLoading) return children;
 
   return (
@@ -165,7 +157,7 @@ export default function ProfileModal({ children, onLogout }) {
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center mb-1">
                     <CalendarDaysIcon className="h-3 w-3 mr-1" style={{ color: '#A60E07' }} /> Qo&apos;shilgan
                   </label>
-                  <p className="text-sm font-semibold text-gray-700">{formatDate(user?.created_at)}</p>
+                  <p className="text-sm font-semibold text-gray-700">{formatDateYMD(user?.created_at)}</p>
                 </div>
               </div>
 

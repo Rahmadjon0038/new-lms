@@ -27,6 +27,7 @@ import {
 import { useGetAllStudents } from '../../hooks/students';
 import { useGetDashboardDailyStats, useGetDashboardMonthlyStats, useGetDashboardOverview } from '../../hooks/dashboard';
 import AddGroup from '../../components/admistrator/AddGroup';
+import { formatDateTimeYMDHM, formatDateYMD } from "../../utils/date";
 
 const MAIN_COLOR = "#A60E07";
 const PIE_COLORS = ['#A60E07', '#2563EB', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#14B8A6', '#64748B'];
@@ -84,19 +85,7 @@ const filterRowsFromMonth = (rows = [], fromMonth = "2026-01") =>
 const getStudentSubjectName = (student) =>
   student?.registered_subject_name || student?.subject_name || 'Belgilanmagan';
 
-const formatDateTime = (value) => {
-  if (!value) return "-";
-  const normalized = String(value).replace(" ", "T");
-  const date = new Date(normalized);
-  if (Number.isNaN(date.getTime())) return String(value);
-  return date.toLocaleString("uz-UZ", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
+const formatDateTime = (value) => formatDateTimeYMDHM(value);
 
 const formatPaymentMethod = (value) => {
   const key = String(value || "").toLowerCase().trim();
@@ -588,11 +577,9 @@ function AdminDashboard() {
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={admissionsRows} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="label" tick={{ fontSize: 10 }} minTickGap={10} />
+                        {/* <XAxis dataKey="label" tick={{ fontSize: 10 }} minTickGap={10} /> */}
                         <YAxis allowDecimals={false} tick={{ fontSize: 10 }} width={28} />
-                        <Tooltip />
-                        <Legend wrapperStyle={{ fontSize: 10 }} iconSize={8} />
-                        <Line type="monotone" dataKey="admissions_count" name="Qabul soni" stroke={MAIN_COLOR} strokeWidth={2} />
+                        <Line type="monotone" dataKey="admissions_count" stroke={MAIN_COLOR} strokeWidth={2} />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
@@ -670,7 +657,7 @@ function AdminDashboard() {
                             <Calendar className="h-2.5 w-2.5 text-orange-500" />
                             <span>
                               {student.registration_date
-                                ? new Date(student.registration_date).toLocaleDateString('uz-UZ')
+                                ? formatDateYMD(student.registration_date)
                                 : 'Belgilanmagan'}
                             </span>
                           </div>
@@ -681,7 +668,7 @@ function AdminDashboard() {
                           <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500" />
                           <span className="font-medium">
                             {student.registration_date
-                              ? new Date(student.registration_date).toLocaleDateString('uz-UZ')
+                              ? formatDateYMD(student.registration_date)
                               : 'Belgilanmagan'}
                           </span>
                         </div>

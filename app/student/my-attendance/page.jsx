@@ -12,6 +12,7 @@ import {
 import { useGetStudentMonthlyAttendance } from "../../../hooks/attendance";
 import { useGetStudentGroups } from "../../../hooks/groups";
 import { useGetProfile } from "../../../hooks/user";
+import { formatDateYMD } from "../../../utils/date";
 
 const getAttendanceStatusStyle = (status) => {
   switch (status) {
@@ -342,7 +343,9 @@ function MyAttendance() {
                         <tr key={`${item.date || item.formatted_date || index}`} className="hover:bg-red-50 transition-colors duration-150">
                           <td className="px-6 py-4 text-sm font-bold text-gray-500">{index + 1}</td>
                           <td className="px-6 py-4">
-                            <span className="text-sm font-semibold text-gray-800">{item.formatted_date || item.date || "-"}</span>
+                            <span className="text-sm font-semibold text-gray-800">
+                              {formatDateYMD(item.date || item.lesson_date || item.formatted_date || "-")}
+                            </span>
                           </td>
                           <td className="px-6 py-4">
                             <div className="flex items-center">

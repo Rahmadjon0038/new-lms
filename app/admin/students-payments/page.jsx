@@ -23,7 +23,8 @@ import {
     ExclamationTriangleIcon,
     PlusIcon,
     UserPlusIcon,
-    ArrowRightIcon
+    ArrowRightIcon,
+    PencilSquareIcon
 } from "@heroicons/react/24/outline";
 import { useMonthlyPayments, usePaymentHistory, useCreateSnapshotsForNewStudents, useNewStudentsNotification } from "../../../hooks/payments";
 import { instance } from "../../../hooks/api";
@@ -33,6 +34,7 @@ import { useGetAllSubjects } from "../../../hooks/subjects";
 import DiscountModal from "../../../components/admistrator/DiscountModal";
 import PaymentModal from "../../../components/admistrator/PaymentModal";
 import StudentAttendanceModal from "../../../components/modals/StudentAttendanceModal";
+import { formatDateYMD } from "../../../utils/date";
 
 const MAIN_COLOR = "#A60E07";
 const STATS_VISIBILITY_KEY = "students_payments_stats_visibility";
@@ -65,6 +67,10 @@ const StudentPayments = () => {
     const [showAttendanceModal, setShowAttendanceModal] = useState(false);
     const [showPaymentHistoryModal, setShowPaymentHistoryModal] = useState(false);
     const [showClearModal, setShowClearModal] = useState(false);
+    const [showEditRequiredModal, setShowEditRequiredModal] = useState(false);
+    const [editRequiredAmount, setEditRequiredAmount] = useState('');
+    const [editRequiredLoading, setEditRequiredLoading] = useState(false);
+    const [editRequiredStudent, setEditRequiredStudent] = useState(null);
     const [showStats, setShowStats] = useState(false);
     const [clearLoading, setClearLoading] = useState(false);
     const [snapshotLoading, setSnapshotLoading] = useState(false);
@@ -205,6 +211,59 @@ const StudentPayments = () => {
             .split(/\s+/)
             .map(part => (part ? part[0].toUpperCase() + part.slice(1) : ''))
             .join(' ');
+    };
+
+    const openEditRequiredModal = (student) => {
+        const current = student?.effective_required ?? student?.required_amount ?? '';
+        const normalized = current === '' || current === null || Number.isNaN(Number(current))
+            ? ''
+            : String(Math.round(Number(current)));
+        setEditRequiredAmount(normalized);
+        setEditRequiredStudent(student);
+        setShowEditRequiredModal(true);
+    };
+
+    const closeEditRequiredModal = () => {
+        setShowEditRequiredModal(false);
+        setEditRequiredAmount('');
+        setEditRequiredLoading(false);
+        setEditRequiredStudent(null);
+    };
+
+    const handleEditRequiredAmount = async (e) => {
+        e.preventDefault();
+        if (!editRequiredStudent) return;
+
+        const snapshotId =
+            editRequiredStudent.snapshot_id ||
+            editRequiredStudent.snapshotId ||
+            editRequiredStudent.id;
+
+        if (!snapshotId) {
+            notify('err', 'Snapshot ID topilmadi');
+            return;
+        }
+
+        const amount = Number(String(editRequiredAmount || '').replace(/[^\d]/g, ''));
+        if (!amount || amount <= 0) {
+            notify('err', "Iltimos to'g'ri summa kiriting");
+            return;
+        }
+
+        try {
+            setEditRequiredLoading(true);
+            await instance.put(`/api/snapshots/${snapshotId}`, {
+                required_amount: amount
+            });
+            notify('ok', "Asl narx muvaffaqiyatli o'zgartirildi");
+            queryClient.invalidateQueries({ queryKey: ['monthly-payments'] });
+            closeEditRequiredModal();
+        } catch (error) {
+            console.error('Update required amount error:', error);
+            notify('err', error?.response?.data?.message || "Asl narxni o'zgartirishda xatolik yuz berdi");
+        } finally {
+            setEditRequiredLoading(false);
+        }
     };
 
     // Excel export handler
@@ -582,7 +641,8 @@ const StudentPayments = () => {
                         </button>
                     </div>
                 </div>
-
+                
+                
                 {/* Statistics Cards - Display Only */}
                 {/* {stats.total_students > 0 && (
                     <div className="mb-3 flex items-center justify-between rounded-lg border border-gray-200 bg-white px-2.5 py-2 sm:px-4">
@@ -921,9 +981,6 @@ const StudentPayments = () => {
                                     <thead className="bg-gray-50">
                                         <tr>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                #
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Talaba ma'lumotlari
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -945,10 +1002,7 @@ const StudentPayments = () => {
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
                                         {Array.from({ length: 6 }).map((_, index) => (
-                                            <tr key={`sk-d-${index}`} className="animate-pulse">
-                                                <td className="px-6 py-4">
-                                                    <div className="h-4 w-8 rounded bg-gray-200"></div>
-                                                </td>
+                                        <tr key={`sk-d-${index}`} className="animate-pulse">
                                                 <td className="px-6 py-4">
                                                     <div className="space-y-2">
                                                         <div className="h-4 w-40 rounded bg-gray-200"></div>
@@ -1006,7 +1060,6 @@ const StudentPayments = () => {
                                     <div key={`${student.student_id}-${student.group_id}-${index}`} className={`rounded-lg border border-gray-200 p-2.5 ${rowTint}`}>
                                         <div className="mb-2 flex items-start justify-between gap-2">
                                             <div className="min-w-0">
-                                                <p className="text-xs text-gray-400">#{index + 1}</p>
                                                 <p className="text-sm font-semibold text-gray-900">
                                                     {formatName(student.student_surname)} {formatName(student.student_name)}
                                                 </p>
@@ -1018,7 +1071,18 @@ const StudentPayments = () => {
                                             <p><span className="text-gray-500">Guruh:</span> {student.group_name}</p>
                                             <p><span className="text-gray-500">Fan:</span> {student.subject_name}</p>
                                             <p><span className="text-gray-500">O'qituvchi:</span> {student.teacher_name}</p>
-                                            <p><span className="text-gray-500">Kerak:</span> {formatCurrency(parseFloat(student.effective_required || student.required_amount))}</p>
+                                            <p className="flex items-center gap-1">
+                                                <span className="text-gray-500">Kerak:</span>
+                                                <span>{formatCurrency(parseFloat(student.effective_required || student.required_amount))}</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => openEditRequiredModal(student)}
+                                                    className="inline-flex h-4 w-4 items-center justify-center rounded text-gray-400 hover:text-gray-600"
+                                                    title="Asl narxni o'zgartirish"
+                                                >
+                                                    <PencilSquareIcon className="h-3 w-3" />
+                                                </button>
+                                            </p>
                                             <p><span className="text-gray-500">To'langan:</span> <span className="font-semibold text-green-600">{formatCurrency(parseFloat(student.paid_amount))}</span></p>
                                             {parseFloat(student.debt_amount) !== 0 ? (
                                                 <p>
@@ -1080,9 +1144,6 @@ const StudentPayments = () => {
                                 <thead className="bg-gray-50">
                                     <tr>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            #
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Talaba ma'lumotlari
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -1112,10 +1173,7 @@ const StudentPayments = () => {
                                                 : 'border-l-[6px] border-red-400';
                                         return (
                                         <tr key={`${student.student_id}-${student.group_id}-${index}`} className="hover:bg-gray-50">
-                                            <td className={`px-6 py-4 whitespace-nowrap text-sm text-gray-900 ${rowTint}`}>
-                                                {index + 1}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
+                                            <td className={`px-6 py-4 whitespace-nowrap ${rowTint}`}>
                                                 <div className="flex items-start space-x-3">
                                                     <div className="min-w-0 flex-1">
                                                         <div className="flex items-center gap-2 mb-1">
@@ -1161,11 +1219,11 @@ const StudentPayments = () => {
                                                             ID: {student.student_id}
                                                         </div>
                                                         <div className="text-xs text-gray-400 mt-1">
-                                                            Qo'shilgan: {new Date(student.joined_at).toLocaleDateString('uz-UZ')}
+                                                            Qo'shilgan: {formatDateYMD(student.joined_at)}
                                                         </div> */}
                                                         {student.left_at && (
                                                             <div className="text-xs text-gray-400">
-                                                                Ketgan: {new Date(student.left_at).toLocaleDateString('uz-UZ')}
+                                                                Ketgan: {formatDateYMD(student.left_at)}
                                                             </div>
                                                         )}
                                                     </div>
@@ -1193,9 +1251,17 @@ const StudentPayments = () => {
                                                         <span className="text-gray-500">Asl narx:</span>
                                                         <span className="font-medium ml-2">{formatCurrency(parseFloat(student.group_price || 0))}</span>
                                                     </div>
-                                                    <div className="text-sm">
+                                                    <div className="text-sm flex items-center gap-1">
                                                         <span className="text-gray-500">Kerak:</span>
                                                         <span className="font-medium ml-2">{formatCurrency(parseFloat(student.effective_required || student.required_amount))}</span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => openEditRequiredModal(student)}
+                                                            className="inline-flex h-5 w-5 items-center justify-center rounded text-gray-400 hover:text-gray-600"
+                                                            title="Asl narxni o'zgartirish"
+                                                        >
+                                                            <PencilSquareIcon className="h-4 w-4" />
+                                                        </button>
                                                     </div>
                                                     <div className="text-sm">
                                                         <span className="text-gray-500">To'langan:</span>
@@ -1441,9 +1507,6 @@ const StudentPayments = () => {
                                             <thead className="bg-gray-50" style={{ backgroundColor: `${MAIN_COLOR}05` }}>
                                                 <tr>
                                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                                        #
-                                                    </th>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                                                         Sana
                                                     </th>
                                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
@@ -1471,13 +1534,10 @@ const StudentPayments = () => {
                                                     
                                                     return (
                                                         <tr key={`payment-${index}`} className="hover:bg-gray-50 transition-colors">
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                                {index + 1}
-                                                            </td>
                                                             <td className="px-6 py-4 whitespace-nowrap">
                                                                 <div className="flex items-center gap-2">
                                                                     <CalendarIcon className="h-4 w-4 text-gray-400" />
-                                                                    <span className="text-sm text-gray-900">{payment.transaction_date}</span>
+                                                                    <span className="text-sm text-gray-900">{formatDateYMD(payment.transaction_date)}</span>
                                                                 </div>
                                                             </td>
                                                             <td className="px-6 py-4 whitespace-nowrap">
@@ -1672,6 +1732,82 @@ const StudentPayments = () => {
                                     </button>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Edit Required Amount Modal */}
+                {showEditRequiredModal && editRequiredStudent && (
+                    <div
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4"
+                        onClick={closeEditRequiredModal}
+                    >
+                        <div
+                            className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-xl"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100">
+                                        <PencilSquareIcon className="h-5 w-5 text-gray-600" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-base font-semibold text-gray-900">Asl narxni o'zgartirish</h3>
+                                        <p className="text-xs text-gray-500">
+                                            {editRequiredStudent.student_surname} {editRequiredStudent.student_name}
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={closeEditRequiredModal}
+                                    className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                                >
+                                    <XCircleIcon className="h-5 w-5" />
+                                </button>
+                            </div>
+
+                            <form onSubmit={handleEditRequiredAmount} className="px-6 py-5">
+                                <div className="mb-4 rounded-lg bg-gray-50 p-3 text-sm text-gray-600">
+                                    Guruh: <span className="font-medium text-gray-900">{editRequiredStudent.group_name}</span>
+                                </div>
+
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Asl narx (UZS)
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        value={editRequiredAmount}
+                                        onChange={(e) => setEditRequiredAmount(e.target.value.replace(/[^\d]/g, ''))}
+                                        className="w-full rounded-lg border border-gray-300 px-4 py-2.5 pr-16 text-base focus:border-transparent focus:ring-2"
+                                        style={{ '--tw-ring-color': MAIN_COLOR }}
+                                        placeholder="350000"
+                                        required
+                                    />
+                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
+                                        <span className="text-sm font-medium text-gray-500">UZS</span>
+                                    </div>
+                                </div>
+
+                                <div className="mt-5 flex items-center justify-end gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={closeEditRequiredModal}
+                                        className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100"
+                                    >
+                                        Bekor qilish
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={editRequiredLoading}
+                                        className="rounded-lg px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60"
+                                        style={{ backgroundColor: MAIN_COLOR }}
+                                    >
+                                        {editRequiredLoading ? "Saqlanmoqda..." : "Saqlash"}
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 )}

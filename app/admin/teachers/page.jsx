@@ -32,6 +32,7 @@ import {
 } from "../../../hooks/teacher";
 import { useGetNotify } from "../../../hooks/notify";
 import { useGetAllSubjects } from "../../../hooks/subjects";
+import { formatDateYMD } from "../../../utils/date";
 import AddTeacherModal from "../../../components/admistrator/AddTeacherOld.jsx";
 import SubjectsSelect from "../../../components/SubjectsSelect";
 import Box from "@mui/material/Box";
@@ -513,7 +514,7 @@ function TeacherCard({ teacher, onEdit, onDelete, onStatusChange, notify }) {
 
   const formatDate = (dateString) => {
     if (!dateString) return "Belgilanmagan";
-    return new Date(dateString).toLocaleDateString('uz-UZ');
+    return formatDateYMD(dateString);
   };
 
   const recoveryKey = teacher.recovery_key || teacher.recoveryKey;

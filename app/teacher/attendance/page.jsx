@@ -12,7 +12,7 @@ import {
 import { useGetNotify } from "../../../hooks/notify";
 import MonthlyAttendanceInline from "../../../components/MonthlyAttendanceInline";
 import { useQueryClient } from "@tanstack/react-query";
-import { normalizeMonth } from "../../../utils/date";
+import { normalizeMonth, formatDateYMD } from "../../../utils/date";
 
 const CURRENT_MONTH = new Date().toISOString().slice(0, 7);
 const TODAY_DATE = new Date().toISOString().slice(0, 10);
@@ -715,7 +715,7 @@ function TeacherAttendancePageContent() {
                       >
                         <div className="min-w-0">
                           <p className="truncate text-xs font-semibold text-gray-900 sm:text-sm">
-                            {lesson.formatted_date || lesson.date || lesson.lesson_date || "-"}
+                            {formatDateYMD(lesson.date || lesson.lesson_date || lesson.formatted_date || "-")}
                           </p>
                           <p className="truncate text-[11px] text-gray-600 sm:text-xs">
                             {getWeekdayFromDate(lesson.date || lesson.lesson_date)}{" "}
