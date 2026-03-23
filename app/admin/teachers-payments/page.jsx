@@ -48,10 +48,10 @@ const getTeacherName = (t, teacherId = "") =>
 
 const digitsOnly = (v) => String(v || "").replace(/\D/g, "");
 
-const fmtSumInput = (raw) => {
+const fmtNumberInput = (raw) => {
   const clean = digitsOnly(raw);
   if (!clean) return "";
-  return `${Number(clean).toLocaleString("uz-UZ")} so'm`;
+  return Number(clean).toLocaleString("uz-UZ");
 };
 
 const paymentStateLabel = (state) => {
@@ -169,6 +169,7 @@ const TeacherPayments = () => {
         teacherId,
         salary_percentage: parsed,
       });
+      setOpenPercentByTeacher((prev) => ({ ...prev, [String(teacherId)]: false }));
       toast.success("Foiz yangilandi");
     } catch (err) {
       toast.error(err?.response?.data?.message || "Foizni yangilashda xatolik");
@@ -198,6 +199,7 @@ const TeacherPayments = () => {
         ...prev,
         [String(teacherId)]: { amount: "", description: "" },
       }));
+      setOpenAdvanceByTeacher((prev) => ({ ...prev, [String(teacherId)]: false }));
       toast.success("Avans qo'shildi");
     } catch (err) {
       toast.error(err?.response?.data?.message || "Avans qo'shishda xatolik");
@@ -440,7 +442,7 @@ const TeacherPayments = () => {
                                 <input
                                   type="text"
                                   inputMode="numeric"
-                                  value={fmtSumInput(rowAdvance.amount)}
+                                  value={fmtNumberInput(rowAdvance.amount)}
                                   onChange={(e) =>
                                     setAdvanceByTeacher((prev) => ({
                                       ...prev,
