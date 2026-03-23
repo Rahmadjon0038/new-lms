@@ -411,14 +411,6 @@ const TeacherPayments = () => {
                                 >
                                   <PencilSquareIcon className="h-4 w-4" />
                                 </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleResetAdvances(teacherId)}
-                                  className="rounded-md p-1 text-gray-500 hover:bg-rose-100 hover:text-rose-600"
-                                  title="Avanslarni tozalash"
-                                >
-                                  <TrashIcon className="h-4 w-4" />
-                                </button>
                               </div>
                             </div>
                             {openPercentByTeacher[teacherId] && (
@@ -464,6 +456,14 @@ const TeacherPayments = () => {
                                 title="Avansni o'zgartirish"
                               >
                                 <PencilSquareIcon className="h-4 w-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleResetAdvances(teacherId)}
+                                className="rounded-md p-1 text-gray-500 hover:bg-rose-100 hover:text-rose-600"
+                                title="Avanslarni tozalash"
+                              >
+                                <TrashIcon className="h-4 w-4" />
                               </button>
                             </div>
                             {openAdvanceByTeacher[teacherId] && (
@@ -545,12 +545,14 @@ const TeacherPayments = () => {
                           </div>
                         </div>
 
-                        <div className="mt-3 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-xs sm:text-sm">
-                          <span className="text-gray-600">Jami berilgan (oylik + Oylik berilgandan keyin yig'ilgan summa):</span>{" "}
-                          <span className="font-semibold text-gray-900">
-                            {fmtMoney(totalGivenDisplay)}
-                          </span>
-                        </div>
+                        {t?.is_closed && (
+                          <div className="mt-3 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-xs sm:text-sm">
+                            <span className="text-gray-600">Jami berilgan (oylik + Oylik berilgandan keyin yig'ilgan summa):</span>{" "}
+                            <span className="font-semibold text-gray-900">
+                              {fmtMoney(totalGivenDisplay)}
+                            </span>
+                          </div>
+                        )}
 
                         <div className="mt-3">
                           <button
