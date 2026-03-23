@@ -26,18 +26,29 @@ const parseAmountInput = (value = '') => Number(String(value).replace(/\D/g, '')
 
 const AdminExpensesPage = () => {
   const [month, setMonth] = useState(currentMonth);
+  const [adminName, setAdminName] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [form, setForm] = useState({ reason: '', amount: '' });
   const [editingExpense, setEditingExpense] = useState(null);
   const [editForm, setEditForm] = useState({ reason: '', amount: '', expense_date: currentDay });
 
-  const listQuery = useGetExpenses({ month });
+  const listQuery = useGetExpenses({ month, admin_name: adminName.trim() || undefined });
   const summaryQuery = useGetExpenseSummary({ month });
   const createExpense = useCreateExpense();
   const updateExpense = useUpdateExpense();
   const deleteExpense = useDeleteExpense();
 
   const items = useMemo(() => (Array.isArray(listQuery.data?.items) ? listQuery.data.items : []), [listQuery.data]);
+  const adminOptions = useMemo(() => {
+    const unique = new Set();
+    items.forEach((item) => {
+      const fullName =
+        item.admin_full_name ||
+        `${item.admin_name || ''} ${item.admin_surname || ''}`.trim();
+      if (fullName) unique.add(fullName);
+    });
+    return Array.from(unique).sort((a, b) => a.localeCompare(b, 'uz-UZ'));
+  }, [items]);
   const summary = summaryQuery.data || {};
 
   const closeModal = () => {
@@ -199,9 +210,26 @@ const AdminExpensesPage = () => {
       </div>
 
       <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-lg font-semibold text-gray-900">Rasxodlar ro‘yxati</h2>
-          <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">{listQuery.data?.count || 0} ta</span>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3">
+            <select
+              name="admin_name"
+              value={adminName}
+              onChange={(e) => setAdminName(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#A60E07] sm:w-56"
+            >
+              <option value="">Barcha adminlar</option>
+              {adminOptions.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
+              {listQuery.data?.count || 0} ta
+            </span>
+          </div>
         </div>
 
         {listQuery.isLoading || summaryQuery.isLoading ? <p className="text-sm text-gray-500">Yuklanmoqda...</p> : null}
@@ -221,6 +249,12 @@ const AdminExpensesPage = () => {
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold text-gray-900">{item.reason || item.title}</p>
                       <p className="text-xs text-gray-500">{item.expense_date}</p>
+                      <p className="text-xs text-gray-500">
+                        Kim yozdi:{' '}
+                        {item.admin_full_name ||
+                          `${item.admin_name || ''} ${item.admin_surname || ''}`.trim() ||
+                          '-'}
+                      </p>
                     </div>
                     <div className="shrink-0 text-left sm:text-right">
                       <p className="text-sm font-bold text-[#A60E07]">{formatCurrency(item.amount)}</p>

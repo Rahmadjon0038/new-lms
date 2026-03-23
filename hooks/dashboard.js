@@ -17,9 +17,15 @@ export function useGetDashboardDailyStats(from = null, to = null) {
     queryKey: ['dashboard-stats-daily', from, to],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (from) params.append('from', from);
-      if (to) params.append('to', to);
-      const url = params.toString() ? `/api/dashboard/stats/daily?${params.toString()}` : '/api/dashboard/stats/daily';
+      if (from || to) {
+        const fromValue = from || to;
+        const toValue = to || from;
+        params.append('from', fromValue);
+        params.append('to', toValue);
+      }
+      const url = params.toString()
+        ? `/api/dashboard/stats/daily?${params.toString()}`
+        : '/api/dashboard/stats/daily';
       const res = await instance.get(url);
       return normalize(res);
     },
