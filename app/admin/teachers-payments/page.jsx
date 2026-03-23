@@ -449,22 +449,24 @@ const TeacherPayments = () => {
                                 <span className="text-gray-600">Jami avans:</span>{" "}
                                 <span className="font-semibold text-gray-900">{fmtMoney(num(t, ["total_advances"]))}</span>
                               </div>
-                              <button
-                                type="button"
-                                onClick={() => toggleAdvanceEdit(teacherId)}
-                                className="rounded-md p-1 text-gray-500 hover:bg-slate-100 hover:text-gray-700"
-                                title="Avansni o'zgartirish"
-                              >
-                                <PencilSquareIcon className="h-4 w-4" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleResetAdvances(teacherId)}
-                                className="rounded-md p-1 text-gray-500 hover:bg-rose-100 hover:text-rose-600"
-                                title="Avanslarni tozalash"
-                              >
-                                <TrashIcon className="h-4 w-4" />
-                              </button>
+                              <div className="ml-auto flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => toggleAdvanceEdit(teacherId)}
+                                  className="rounded-md p-1 text-gray-500 hover:bg-slate-100 hover:text-gray-700"
+                                  title="Avansni o'zgartirish"
+                                >
+                                  <PencilSquareIcon className="h-4 w-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleResetAdvances(teacherId)}
+                                  className="rounded-md p-1 text-gray-500 hover:bg-rose-100 hover:text-rose-600"
+                                  title="Avanslarni tozalash"
+                                >
+                                  <TrashIcon className="h-4 w-4" />
+                                </button>
+                              </div>
                             </div>
                             {openAdvanceByTeacher[teacherId] && (
                               <div className="mt-2 flex items-center gap-2">
