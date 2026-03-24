@@ -323,7 +323,7 @@ const StudentsPageInner = () => {
             };
         }
 
-        const parsed = getFiltersFromSearchParams(searchParams);
+        const parsed = getFiltersFromSearchParams(new URLSearchParams(searchString));
         if (parsed.hasAny) {
             return parsed;
         }
@@ -336,7 +336,7 @@ const StudentsPageInner = () => {
             status: stored?.status || 'all',
             unassigned: Boolean(stored?.unassigned)
         };
-    }, [searchParams, storageKey]);
+    }, [searchString, storageKey]);
     // Filter state'lari
     const [searchTerm, setSearchTerm] = useState(initialFilters.search);
     const [selectedTeacher, setSelectedTeacher] = useState(initialFilters.teacher);
@@ -367,7 +367,7 @@ const StudentsPageInner = () => {
     const teacherScopedBySubject = isTeacherRoute && Boolean(teacherSubjectId);
 
     useEffect(() => {
-        const parsed = getFiltersFromSearchParams(searchParams);
+        const parsed = getFiltersFromSearchParams(new URLSearchParams(searchString));
         if (!parsed.hasAny) return;
 
         if (parsed.search !== searchTerm) setSearchTerm(parsed.search);
@@ -377,7 +377,6 @@ const StudentsPageInner = () => {
         if (parsed.unassigned !== showUnassigned) setShowUnassigned(parsed.unassigned);
     }, [
         searchString,
-        searchParams,
         isTeacherRoute,
         searchTerm,
         selectedTeacher,
@@ -408,7 +407,7 @@ const StudentsPageInner = () => {
         if (showUnassigned) params.set('unassigned', 'true');
 
         const nextSearch = params.toString();
-        const currentSearch = searchParams.toString();
+        const currentSearch = searchString;
         const nextUrl = nextSearch ? `${pathname}?${nextSearch}` : pathname;
         const currentUrl = currentSearch ? `${pathname}?${currentSearch}` : pathname;
         if (nextUrl !== currentUrl) {
@@ -424,7 +423,7 @@ const StudentsPageInner = () => {
         pathname,
         router,
         storageKey,
-        searchParams
+        searchString
     ]);
 
     // Filterlarni backend uchun tayyorlash
