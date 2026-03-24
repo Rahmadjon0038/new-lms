@@ -520,28 +520,20 @@ const TeacherPayments = () => {
                             <span className="text-gray-600">Kutilgan oylik:</span>{" "}
                             <span className="font-semibold text-gray-900">{fmtMoney(num(t, ["expected_salary", "close_expected_salary"]))}</span>
                           </div>
-                          <div className="rounded-md bg-emerald-50 px-3 py-2.5">
-                            <span className="text-gray-600">Oylik balans:</span>{" "}
-                            <span className="font-semibold text-gray-900">{fmtMoney(num(t, ["final_salary", "close_balance"]))}</span>
-                          </div>
                           <div className="rounded-md bg-blue-50 px-3 py-2.5">
-                            <div className="text-xs font-semibold uppercase tracking-wide text-blue-700">Post-close balans</div>
+                            <div className="text-xs font-semibold uppercase tracking-wide text-blue-700">Oylikdan keyin yig'ilgan summa</div>
                             <div className="mt-1 flex flex-col gap-1 text-xs sm:text-sm">
                               <div className="flex items-center justify-between gap-2">
                                 <span className="text-gray-600">Yangi tushum:</span>
                                 <span className="font-semibold text-gray-900">{fmtMoney(num(t, ["post_close_collected_revenue"]))}</span>
                               </div>
                               <div className="flex items-center justify-between gap-2">
-                                <span className="text-gray-600">Kutilgan (foiz):</span>
+                                <span className="text-gray-600">Berilishi kerak summa:</span>
                                 <span className="font-semibold text-gray-900">{fmtMoney(num(t, ["post_close_expected_salary"]))}</span>
                               </div>
                               <div className="flex items-center justify-between gap-2">
                                 <span className="text-gray-600">Berilgan:</span>
                                 <span className="font-semibold text-gray-900">{fmtMoney(num(t, ["post_close_given"]))}</span>
-                              </div>
-                              <div className="flex items-center justify-between gap-2">
-                                <span className="text-gray-600">Berilishi mumkin:</span>
-                                <span className="font-semibold text-gray-900">{fmtMoney(num(t, ["post_close_available"]))}</span>
                               </div>
                             </div>
                           </div>
@@ -568,27 +560,25 @@ const TeacherPayments = () => {
                             </div>
                           </div>
 
-                          <div className="rounded-xl border border-gray-200 p-3">
-                            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
-                              <div>
-                                <p className="text-sm font-semibold text-gray-900">Post-close tushum</p>
-                                <div className="text-base font-semibold text-gray-900 sm:text-lg">
-                                  {fmtMoney(num(t, ["post_close_collected_revenue"]))}
-                                </div>
-                                <div className="mt-1 text-xs text-gray-600">
-                                  Berilishi mumkin: {fmtMoney(num(t, ["post_close_available"]))}
-                                </div>
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                            <div>
+                              <p className="text-sm font-semibold text-gray-900">Post-close tushum</p>
+                              <div className="text-base font-semibold text-gray-900 sm:text-lg">
+                                {fmtMoney(num(t, ["post_close_collected_revenue"]))}
                               </div>
-                              <button
-                                onClick={() => handleCreateGiven(teacherId, t)}
-                                disabled={createGivenMutation.isPending || !canGive || isGivenDone}
-                                className={`w-full rounded-md px-3 py-2 text-xs font-semibold text-white sm:w-auto sm:text-sm ${
-                                  isGivenDone ? "bg-emerald-600" : "bg-blue-600"
-                                } disabled:opacity-50`}
-                              >
-                                {isGivenDone ? "Belgilangan" : "Summa berish"}
-                              </button>
+                              <div className="mt-1 text-xs text-gray-600">
+                                Berilishi mumkin: {fmtMoney(num(t, ["post_close_available"]))}
+                              </div>
                             </div>
+                            <button
+                              onClick={() => handleCreateGiven(teacherId, t)}
+                              disabled={createGivenMutation.isPending || !canGive || isGivenDone}
+                              className={`w-full rounded-md px-3 py-2 text-xs font-semibold text-white sm:w-auto sm:text-sm ${
+                                isGivenDone ? "bg-emerald-600" : "bg-blue-600"
+                              } disabled:opacity-50`}
+                            >
+                              {isGivenDone ? "Belgilangan" : "Summa berish"}
+                            </button>
                           </div>
                         </div>
 
