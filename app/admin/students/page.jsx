@@ -263,38 +263,6 @@ const getFiltersFromSearchParams = (params) => {
     };
 };
 
-const getTeacherSubjectIdFromProfile = (profile) => {
-    const payload = profile?.data || profile || {};
-    const nestedTeacher = payload?.teacher || {};
-
-    return (
-        payload?.subject_id ||
-        payload?.primary_subject_id ||
-        nestedTeacher?.subject_id ||
-        nestedTeacher?.primary_subject_id ||
-        payload?.subjects?.[0]?.id ||
-        payload?.subject_ids?.[0] ||
-        nestedTeacher?.subjects?.[0]?.id ||
-        nestedTeacher?.subject_ids?.[0] ||
-        ''
-    );
-};
-
-const getTeacherSubjectIdFromTeacherRecord = (teacher = {}) => {
-    const nestedTeacher = teacher?.teacher || {};
-    return (
-        teacher?.subject_id ||
-        teacher?.primary_subject_id ||
-        teacher?.subjects?.[0]?.id ||
-        teacher?.subject_ids?.[0] ||
-        nestedTeacher?.subject_id ||
-        nestedTeacher?.primary_subject_id ||
-        nestedTeacher?.subjects?.[0]?.id ||
-        nestedTeacher?.subject_ids?.[0] ||
-        ''
-    );
-};
-
 const getStudentUsername = (student) => (
     student?.username ||
     student?.user_name ||
@@ -356,15 +324,6 @@ const StudentsPageInner = () => {
     const { data: subjectsData } = useGetAllSubjects();
     const { data: profileData } = usegetProfile();
     const teacherId = String(getTeacherIdFromProfile(profileData) || '');
-    const teacherFromList = useMemo(() => {
-        if (!isTeacherRoute || !teacherId) return null;
-        const list = teachersData?.teachers || [];
-        return list.find((teacher) => String(teacher?.id || teacher?.teacher_id || teacher?.user_id || '') === teacherId) || null;
-    }, [isTeacherRoute, teacherId, teachersData]);
-    const teacherSubjectId = String(
-        getTeacherSubjectIdFromProfile(profileData) || getTeacherSubjectIdFromTeacherRecord(teacherFromList) || ''
-    );
-    const teacherScopedBySubject = isTeacherRoute && Boolean(teacherSubjectId);
 
     // URL -> state sync is intentionally one-time via initialFilters to avoid UI flicker.
 
@@ -411,12 +370,8 @@ const StudentsPageInner = () => {
 
     // Filterlarni backend uchun tayyorlash
     const filters = {
-        teacher_id: isTeacherRoute
-            ? (teacherScopedBySubject ? undefined : teacherId)
-            : selectedTeacher,
-        subject_id: isTeacherRoute
-            ? (teacherScopedBySubject ? teacherSubjectId : undefined)
-            : selectedSubject,
+        teacher_id: isTeacherRoute ? teacherId : selectedTeacher,
+        subject_id: isTeacherRoute ? undefined : selectedSubject,
         group_status: selectedStatus,
         unassigned: showUnassigned ? 'true' : undefined,
         search: searchTerm?.trim() || undefined,
@@ -426,7 +381,7 @@ const StudentsPageInner = () => {
 
     // Backenddan ma'lumotlarni olish
     const { data: backendData, isLoading, isFetching, error, refetch } = useGetAllStudents(filters, {
-        enabled: isTeacherRoute ? Boolean(teacherSubjectId || teacherId) : true,
+        enabled: isTeacherRoute ? Boolean(teacherId) : true,
         keepPreviousData: true
     });
     const hasLoadedStudents = Boolean(backendData?.success || backendData?.data?.success);
@@ -605,7 +560,7 @@ const StudentsPageInner = () => {
     useEffect(() => {
         setPage(1);
         setAllStudents([]);
-    }, [searchTerm, selectedTeacher, selectedSubject, selectedStatus, showUnassigned, teacherId, teacherSubjectId, isTeacherRoute]);
+    }, [searchTerm, selectedTeacher, selectedSubject, selectedStatus, showUnassigned, teacherId, isTeacherRoute]);
 
     const filteredStudents = allStudents || [];
 
