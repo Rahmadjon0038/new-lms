@@ -1,6 +1,6 @@
 "use client";
 /* eslint-disable react/no-unescaped-entities */
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
@@ -79,7 +79,7 @@ const getPaymentsFiltersFromSearchParams = (params) => {
     };
 };
 
-const StudentPayments = () => {
+const StudentPaymentsInner = () => {
     const queryClient = useQueryClient();
     const notify = useGetNotify();
     const createSnapshotsMutation = useCreateSnapshotsForNewStudents();
@@ -1960,4 +1960,10 @@ const StudentPayments = () => {
     );
 };
 
-export default StudentPayments
+const StudentPayments = () => (
+    <Suspense fallback={<div className="p-6 text-sm text-gray-500">Yuklanmoqda...</div>}>
+        <StudentPaymentsInner />
+    </Suspense>
+);
+
+export default StudentPayments;
