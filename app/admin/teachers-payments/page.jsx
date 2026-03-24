@@ -520,6 +520,31 @@ const TeacherPayments = () => {
                             <span className="text-gray-600">Kutilgan oylik:</span>{" "}
                             <span className="font-semibold text-gray-900">{fmtMoney(num(t, ["expected_salary", "close_expected_salary"]))}</span>
                           </div>
+                          <div className="rounded-md bg-emerald-50 px-3 py-2.5">
+                            <span className="text-gray-600">Oylik balans:</span>{" "}
+                            <span className="font-semibold text-gray-900">{fmtMoney(num(t, ["final_salary", "close_balance"]))}</span>
+                          </div>
+                          <div className="rounded-md bg-blue-50 px-3 py-2.5">
+                            <div className="text-xs font-semibold uppercase tracking-wide text-blue-700">Post-close balans</div>
+                            <div className="mt-1 flex flex-col gap-1 text-xs sm:text-sm">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-gray-600">Yangi tushum:</span>
+                                <span className="font-semibold text-gray-900">{fmtMoney(num(t, ["post_close_collected_revenue"]))}</span>
+                              </div>
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-gray-600">Kutilgan (foiz):</span>
+                                <span className="font-semibold text-gray-900">{fmtMoney(num(t, ["post_close_expected_salary"]))}</span>
+                              </div>
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-gray-600">Berilgan:</span>
+                                <span className="font-semibold text-gray-900">{fmtMoney(num(t, ["post_close_given"]))}</span>
+                              </div>
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-gray-600">Berilishi mumkin:</span>
+                                <span className="font-semibold text-gray-900">{fmtMoney(num(t, ["post_close_available"]))}</span>
+                              </div>
+                            </div>
+                          </div>
                         </div>
 
                         <p className="mt-4 mb-2 text-sm font-semibold text-gray-900 sm:mt-6 sm:mb-3 sm:text-base">Amallar</p>
@@ -546,9 +571,12 @@ const TeacherPayments = () => {
                           <div className="rounded-xl border border-gray-200 p-3">
                             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
                               <div>
-                                <p className="text-sm font-semibold text-gray-900">Oylik berilgandan keyin yig'ilgan summa</p>
+                                <p className="text-sm font-semibold text-gray-900">Post-close tushum</p>
                                 <div className="text-base font-semibold text-gray-900 sm:text-lg">
-                                  {fmtMoney(num(t, ["post_close_collected_salary"]))}
+                                  {fmtMoney(num(t, ["post_close_collected_revenue"]))}
+                                </div>
+                                <div className="mt-1 text-xs text-gray-600">
+                                  Berilishi mumkin: {fmtMoney(num(t, ["post_close_available"]))}
                                 </div>
                               </div>
                               <button
@@ -566,7 +594,7 @@ const TeacherPayments = () => {
 
                         {t?.is_closed && (
                           <div className="mt-3 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-xs sm:text-sm">
-                            <span className="text-gray-600">Jami berilgan (oylik + Oylik berilgandan keyin yig'ilgan summa):</span>{" "}
+                            <span className="text-gray-600">Jami berilgan (oylik + post-close):</span>{" "}
                             <span className="font-semibold text-gray-900">
                               {fmtMoney(totalGivenDisplay)}
                             </span>
