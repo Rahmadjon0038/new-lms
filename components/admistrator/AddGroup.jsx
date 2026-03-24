@@ -102,10 +102,19 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
         undefined,
         { enabled: !isTeacherRoute || Boolean(teacherId) }
     );
-    const { data: allStudentsData, isLoading: studentsLoading } = useGetAllStudents(
-        isTeacherRoute
+    const bulkStudentFilters = useMemo(() => {
+        const baseFilters = isTeacherRoute
             ? (teacherScopedBySubject ? { subject_id: teacherSubjectId } : { teacher_id: teacherId })
-            : {},
+            : {};
+
+        return {
+            ...baseFilters,
+            unassigned: bulkOnlyUnassigned ? 'true' : undefined
+        };
+    }, [isTeacherRoute, teacherScopedBySubject, teacherSubjectId, teacherId, bulkOnlyUnassigned]);
+
+    const { data: allStudentsData, isLoading: studentsLoading } = useGetAllStudents(
+        bulkStudentFilters,
         { enabled: isModalOpen && activeTab === 'bulk' && (!isTeacherRoute || Boolean(teacherSubjectId || teacherId)) }
     );
 
@@ -237,7 +246,7 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
     };
 
     const bulkStudents = useMemo(() => {
-        const list = allStudentsData?.students || [];
+        const list = allStudentsData?.students || allStudentsData?.data?.students || [];
         return list.map((item) => {
             const groups = Array.isArray(item.groups) ? item.groups : [];
             const currentSubjects = Array.from(

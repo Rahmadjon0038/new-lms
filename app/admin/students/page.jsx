@@ -9,7 +9,7 @@ import {
     Shield, ShieldBan, Award, UserX, Trash2, Settings, Building2, ChevronDown, ChevronUp, Pencil, X
 } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useGetAllStudents, useUpdateStudentStatus, useUpdateStudentInfo, useDeleteStudent } from '../../../hooks/students';
 import { usegetTeachers } from '../../../hooks/teacher';
 import { useGetAllSubjects } from '../../../hooks/subjects';
@@ -225,6 +225,44 @@ const getTeacherIdFromProfile = (profile) => {
     );
 };
 
+const FILTERS_STORAGE_KEY_ADMIN = 'students-filters-admin';
+const FILTERS_STORAGE_KEY_TEACHER = 'students-filters-teacher';
+
+const getStoredFilters = (storageKey) => {
+    if (typeof window === 'undefined') return null;
+    try {
+        const raw = window.localStorage.getItem(storageKey);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        return parsed && typeof parsed === 'object' ? parsed : null;
+    } catch {
+        return null;
+    }
+};
+
+const getFiltersFromSearchParams = (params) => {
+    const search = params.get('search') || '';
+    const teacher = params.get('teacher') || 'all';
+    const subject = params.get('subject') || 'all';
+    const status = params.get('status') || 'all';
+    const unassigned = params.get('unassigned') === 'true';
+    const hasAny =
+        params.has('search') ||
+        params.has('teacher') ||
+        params.has('subject') ||
+        params.has('status') ||
+        params.has('unassigned');
+
+    return {
+        search,
+        teacher,
+        subject,
+        status,
+        unassigned,
+        hasAny
+    };
+};
+
 const getTeacherSubjectIdFromProfile = (profile) => {
     const payload = profile?.data || profile || {};
     const nestedTeacher = payload?.teacher || {};
@@ -267,14 +305,44 @@ const getStudentUsername = (student) => (
 
 const StudentsPage = () => {
     const pathname = usePathname();
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const searchString = searchParams.toString();
     const isTeacherRoute = pathname?.startsWith('/teacher');
     const basePath = isTeacherRoute ? '/teacher' : '/admin';
+    const storageKey = isTeacherRoute ? FILTERS_STORAGE_KEY_TEACHER : FILTERS_STORAGE_KEY_ADMIN;
+
+    const initialFilters = useMemo(() => {
+        if (typeof window === 'undefined') {
+            return {
+                search: '',
+                teacher: 'all',
+                subject: 'all',
+                status: 'all',
+                unassigned: false
+            };
+        }
+
+        const parsed = getFiltersFromSearchParams(searchParams);
+        if (parsed.hasAny) {
+            return parsed;
+        }
+
+        const stored = getStoredFilters(storageKey);
+        return {
+            search: stored?.search || '',
+            teacher: stored?.teacher || 'all',
+            subject: stored?.subject || 'all',
+            status: stored?.status || 'all',
+            unassigned: Boolean(stored?.unassigned)
+        };
+    }, [searchParams, storageKey]);
     // Filter state'lari
-    const [searchTerm, setSearchTerm] = useState('');
-    const [selectedTeacher, setSelectedTeacher] = useState('all');
-    const [selectedSubject, setSelectedSubject] = useState('all');
-    const [selectedStatus, setSelectedStatus] = useState('all');
-    const [showUnassigned, setShowUnassigned] = useState(false);
+    const [searchTerm, setSearchTerm] = useState(initialFilters.search);
+    const [selectedTeacher, setSelectedTeacher] = useState(initialFilters.teacher);
+    const [selectedSubject, setSelectedSubject] = useState(initialFilters.subject);
+    const [selectedStatus, setSelectedStatus] = useState(initialFilters.status);
+    const [showUnassigned, setShowUnassigned] = useState(initialFilters.unassigned);
     const [showFiltersDropdown, setShowFiltersDropdown] = useState(false);
     const [showDesktopFilterClear, setShowDesktopFilterClear] = useState(false);
     const [statusDropdownOpen, setStatusDropdownOpen] = useState(null); // Status dropdown state
@@ -297,6 +365,67 @@ const StudentsPage = () => {
         getTeacherSubjectIdFromProfile(profileData) || getTeacherSubjectIdFromTeacherRecord(teacherFromList) || ''
     );
     const teacherScopedBySubject = isTeacherRoute && Boolean(teacherSubjectId);
+
+    useEffect(() => {
+        const parsed = getFiltersFromSearchParams(searchParams);
+        if (!parsed.hasAny) return;
+
+        if (parsed.search !== searchTerm) setSearchTerm(parsed.search);
+        if (!isTeacherRoute && parsed.teacher !== selectedTeacher) setSelectedTeacher(parsed.teacher);
+        if (!isTeacherRoute && parsed.subject !== selectedSubject) setSelectedSubject(parsed.subject);
+        if (parsed.status !== selectedStatus) setSelectedStatus(parsed.status);
+        if (parsed.unassigned !== showUnassigned) setShowUnassigned(parsed.unassigned);
+    }, [
+        searchString,
+        searchParams,
+        isTeacherRoute,
+        searchTerm,
+        selectedTeacher,
+        selectedSubject,
+        selectedStatus,
+        showUnassigned
+    ]);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+
+        const payload = {
+            search: searchTerm,
+            teacher: selectedTeacher,
+            subject: selectedSubject,
+            status: selectedStatus,
+            unassigned: showUnassigned
+        };
+
+        window.localStorage.setItem(storageKey, JSON.stringify(payload));
+
+        const params = new URLSearchParams();
+        const trimmedSearch = searchTerm.trim();
+        if (trimmedSearch) params.set('search', trimmedSearch);
+        if (!isTeacherRoute && selectedTeacher !== 'all') params.set('teacher', selectedTeacher);
+        if (!isTeacherRoute && selectedSubject !== 'all') params.set('subject', selectedSubject);
+        if (selectedStatus !== 'all') params.set('status', selectedStatus);
+        if (showUnassigned) params.set('unassigned', 'true');
+
+        const nextSearch = params.toString();
+        const currentSearch = searchParams.toString();
+        const nextUrl = nextSearch ? `${pathname}?${nextSearch}` : pathname;
+        const currentUrl = currentSearch ? `${pathname}?${currentSearch}` : pathname;
+        if (nextUrl !== currentUrl) {
+            router.replace(nextUrl, { scroll: false });
+        }
+    }, [
+        searchTerm,
+        selectedTeacher,
+        selectedSubject,
+        selectedStatus,
+        showUnassigned,
+        isTeacherRoute,
+        pathname,
+        router,
+        storageKey,
+        searchParams
+    ]);
 
     // Filterlarni backend uchun tayyorlash
     const filters = {

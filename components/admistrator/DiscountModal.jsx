@@ -69,6 +69,25 @@ const DiscountModal = ({ isOpen, onClose, student, month }) => {
     return new Intl.NumberFormat("uz-UZ").format(value);
   };
 
+  const formatMoney = (value) => {
+    const amount = Number(value);
+    if (!Number.isFinite(amount)) return "";
+    return new Intl.NumberFormat("uz-UZ").format(Math.round(amount));
+  };
+
+  const getBaseAmount = () => {
+    const raw = student?.effective_required ?? student?.required_amount ?? student?.required ?? 0;
+    const parsed = Number(String(raw).replace(/[^\d.-]/g, ""));
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
+  const percentValue = Number(String(discountData.discount_value || "").replace(/[^\d.]/g, ""));
+  const baseAmount = getBaseAmount();
+  const calculatedAmount =
+    discountData.discount_type === "percent" && baseAmount > 0 && percentValue > 0
+      ? (baseAmount * percentValue) / 100
+      : 0;
+
   const handleAmountChange = (value) => {
     const digits = String(value || "").replace(/[^\d]/g, "");
     setDiscountData(prev => ({
@@ -165,6 +184,17 @@ const DiscountModal = ({ isOpen, onClose, student, month }) => {
             />
             {discountData.discount_type === 'percent' && (
               <p className="text-xs text-gray-500 mt-1">0 dan 100 gacha</p>
+            )}
+            {discountData.discount_type === 'percent' && (
+              <div className="mt-2 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700">
+                {baseAmount > 0 ? (
+                  <>
+                    Hisoblangan summa: <strong>{formatMoney(calculatedAmount)}</strong> so&apos;m
+                  </>
+                ) : (
+                  <>Bazaviy summa topilmadi</>
+                )}
+              </div>
             )}
           </div>
 

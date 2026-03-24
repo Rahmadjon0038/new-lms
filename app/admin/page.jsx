@@ -231,10 +231,10 @@ function AdminDashboard() {
   };
 
   const renderStudentCard = (student) => (
-    <div key={student.student_id || `${student.name}-${student.created_time}`} className="rounded-lg border border-gray-200 px-3 py-2 text-xs sm:text-sm">
+    <div key={student.student_id || `${student.name}-${student.created_time}`} className="rounded-lg border border-gray-200 px-3 py-2 text-sm sm:text-base">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 space-y-1">
-          <div className="flex flex-wrap items-center gap-2 text-[11px] text-gray-700">
+          <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-gray-700">
             <span className="flex items-center gap-1 text-gray-500">
               <User className="h-3 w-3" />
               Ism:
@@ -253,7 +253,7 @@ function AdminDashboard() {
             </span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 text-[11px] text-gray-700">
+          <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-gray-700">
             <span className="flex items-center gap-1 text-gray-500">
               <BookOpen className="h-3 w-3" />
               Fan:
@@ -275,7 +275,7 @@ function AdminDashboard() {
             ) : null}
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 text-[11px] text-gray-700">
+          <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-gray-700">
             <span className="flex items-center gap-1 text-gray-500">
               <Phone className="h-3 w-3" />
               Tel 1:
@@ -293,7 +293,7 @@ function AdminDashboard() {
             </span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 text-[11px] text-gray-700">
+          <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-gray-700">
             <span className="flex items-center gap-1 text-gray-500">
               <AlertCircle className="h-3 w-3" />
               Ota/ona:
@@ -301,36 +301,12 @@ function AdminDashboard() {
             <span className="text-gray-800 truncate">
               {student.father_name || "-"} {student.father_phone ? `(${student.father_phone})` : ""}
             </span>
-            {student.student_status ? (
-              <>
-                <span className="text-gray-400">•</span>
-                <span className="text-gray-800 truncate">Status: {student.student_status}</span>
-              </>
-            ) : null}
-            {student.course_status ? (
-              <>
-                <span className="text-gray-400">•</span>
-                <span className="text-gray-800 truncate">Kurs: {student.course_status}</span>
-              </>
-            ) : null}
           </div>
 
-          {(student.course_start_date || student.course_end_date || student.age || student.address) ? (
-            <div className="flex flex-wrap items-center gap-2 text-[11px] text-gray-700">
-              {student.course_start_date ? (
-                <span className="text-gray-800 truncate">Boshlanish: {formatDateYMD(student.course_start_date)}</span>
-              ) : null}
-              {student.course_end_date ? (
-                <>
-                  <span className="text-gray-400">•</span>
-                  <span className="text-gray-800 truncate">Tugash: {formatDateYMD(student.course_end_date)}</span>
-                </>
-              ) : null}
+          {(student.age || student.address) ? (
+            <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-gray-700">
               {student.age ? (
-                <>
-                  <span className="text-gray-400">•</span>
-                  <span className="text-gray-800 truncate">Yosh: {student.age}</span>
-                </>
+                <span className="text-gray-800 truncate">Yosh: {student.age}</span>
               ) : null}
               {student.address ? (
                 <>
@@ -341,7 +317,7 @@ function AdminDashboard() {
             </div>
           ) : null}
         </div>
-        <div className="text-right text-[11px] text-gray-500">
+        <div className="text-right text-xs sm:text-sm text-gray-500">
           {formatDateTime(student.created_time)}
         </div>
       </div>
@@ -502,9 +478,9 @@ function AdminDashboard() {
                 <div className="space-y-4">
                   {dailyNewStudentsGrouped.map((group) => (
                     <div key={group.subject_id || group.subject_name} className="rounded-lg border border-gray-200 p-3">
-                      <div className="mb-3 flex flex-wrap items-center gap-2 text-xs font-semibold text-gray-700">
-                        <span>{group.subject_name || "Fan"}</span>
-                        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600">
+                      <div className="mb-3 flex flex-wrap items-center gap-2 rounded-md bg-green-100 px-2 py-1 text-sm sm:text-base font-semibold text-green-900">
+                        <span className="uppercase tracking-wide">{group.subject_name || "Fan"}</span>
+                        <span className="rounded-full bg-green-200 px-2 py-0.5 text-xs sm:text-sm text-green-900">
                           {group.count ?? (Array.isArray(group.students) ? group.students.length : 0)} ta
                         </span>
                       </div>

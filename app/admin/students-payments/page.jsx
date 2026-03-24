@@ -1,7 +1,8 @@
 "use client";
 /* eslint-disable react/no-unescaped-entities */
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
     CalendarIcon,
     UserIcon,
@@ -38,21 +39,96 @@ import { formatDateYMD } from "../../../utils/date";
 
 const MAIN_COLOR = "#A60E07";
 const STATS_VISIBILITY_KEY = "students_payments_stats_visibility";
+const PAYMENTS_FILTERS_KEY = "students_payments_filters";
+
+const getStoredPaymentsFilters = () => {
+    if (typeof window === "undefined") return null;
+    try {
+        const raw = window.localStorage.getItem(PAYMENTS_FILTERS_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        return parsed && typeof parsed === "object" ? parsed : null;
+    } catch {
+        return null;
+    }
+};
+
+const getPaymentsFiltersFromSearchParams = (params) => {
+    const month = params.get("month") || "";
+    const paymentStatus = params.get("payment_status") || "all";
+    const teacherId = params.get("teacher_id") || "";
+    const subjectId = params.get("subject_id") || "";
+    const search = params.get("search") || "";
+    const limit = params.get("limit");
+    const hasAny =
+        params.has("month") ||
+        params.has("payment_status") ||
+        params.has("teacher_id") ||
+        params.has("subject_id") ||
+        params.has("search") ||
+        params.has("limit");
+
+    return {
+        month,
+        payment_status: paymentStatus,
+        teacher_id: teacherId,
+        subject_id: subjectId,
+        search,
+        limit: limit ? Number(limit) : undefined,
+        hasAny
+    };
+};
 
 const StudentPayments = () => {
     const queryClient = useQueryClient();
     const notify = useGetNotify();
     const createSnapshotsMutation = useCreateSnapshotsForNewStudents();
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
+    const searchString = searchParams.toString();
+
+    const initialFilters = useMemo(() => {
+        const currentMonth = new Date().toISOString().slice(0, 7);
+
+        if (typeof window === "undefined") {
+            return {
+                month: currentMonth,
+                payment_status: "all",
+                teacher_id: "",
+                subject_id: "",
+                search: "",
+                page: 1,
+                limit: 20
+            };
+        }
+
+        const parsed = getPaymentsFiltersFromSearchParams(searchParams);
+        if (parsed.hasAny) {
+            return {
+                month: parsed.month || currentMonth,
+                payment_status: parsed.payment_status || "all",
+                teacher_id: parsed.teacher_id || "",
+                subject_id: parsed.subject_id || "",
+                search: parsed.search || "",
+                page: 1,
+                limit: parsed.limit || 20
+            };
+        }
+
+        const stored = getStoredPaymentsFilters();
+        return {
+            month: stored?.month || currentMonth,
+            payment_status: stored?.payment_status || "all",
+            teacher_id: stored?.teacher_id || "",
+            subject_id: stored?.subject_id || "",
+            search: stored?.search || "",
+            page: 1,
+            limit: Number(stored?.limit) || 20
+        };
+    }, [searchParams]);
     
-    const [filters, setFilters] = useState({
-        month: new Date().toISOString().slice(0, 7), // Current month (YYYY-MM)
-        payment_status: 'all',
-        teacher_id: '',
-        subject_id: '',
-        search: '',
-        page: 1,
-        limit: 20
-    });
+    const [filters, setFilters] = useState(initialFilters);
 
     const { data: newStudentsNotification } = useNewStudentsNotification(
         filters.month || new Date().toISOString().slice(0, 7)
@@ -132,6 +208,73 @@ const StudentPayments = () => {
     const loadMoreRef = useRef(null);
     const loadMorePendingRef = useRef(false);
     const savedScrollYRef = useRef(0);
+
+    useEffect(() => {
+        const parsed = getPaymentsFiltersFromSearchParams(searchParams);
+        if (!parsed.hasAny) return;
+
+        const nextMonth = parsed.month || new Date().toISOString().slice(0, 7);
+        const nextStatus = parsed.payment_status || "all";
+        const nextTeacher = parsed.teacher_id || "";
+        const nextSubject = parsed.subject_id || "";
+        const nextSearch = parsed.search || "";
+        const nextLimit = parsed.limit || 20;
+
+        setFilters((prev) => {
+            const updated = {
+                ...prev,
+                month: nextMonth,
+                payment_status: nextStatus,
+                teacher_id: nextTeacher,
+                subject_id: nextSubject,
+                search: nextSearch,
+                limit: nextLimit,
+                page: 1
+            };
+
+            return JSON.stringify(updated) === JSON.stringify(prev) ? prev : updated;
+        });
+    }, [searchString, searchParams]);
+
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+
+        const payload = {
+            month: filters.month,
+            payment_status: filters.payment_status,
+            teacher_id: filters.teacher_id,
+            subject_id: filters.subject_id,
+            search: filters.search,
+            limit: filters.limit
+        };
+        window.localStorage.setItem(PAYMENTS_FILTERS_KEY, JSON.stringify(payload));
+
+        const params = new URLSearchParams();
+        if (filters.month) params.set("month", filters.month);
+        if (filters.payment_status && filters.payment_status !== "all") params.set("payment_status", filters.payment_status);
+        if (filters.teacher_id) params.set("teacher_id", filters.teacher_id);
+        if (filters.subject_id) params.set("subject_id", filters.subject_id);
+        if (filters.search?.trim()) params.set("search", filters.search.trim());
+        if (filters.limit && Number(filters.limit) !== 20) params.set("limit", String(filters.limit));
+
+        const nextSearch = params.toString();
+        const currentSearch = searchParams.toString();
+        const nextUrl = nextSearch ? `${pathname}?${nextSearch}` : pathname;
+        const currentUrl = currentSearch ? `${pathname}?${currentSearch}` : pathname;
+        if (nextUrl !== currentUrl) {
+            router.replace(nextUrl, { scroll: false });
+        }
+    }, [
+        filters.month,
+        filters.payment_status,
+        filters.teacher_id,
+        filters.subject_id,
+        filters.search,
+        filters.limit,
+        pathname,
+        router,
+        searchParams
+    ]);
 
     useEffect(() => {
         setAllStudents([]);
