@@ -75,17 +75,23 @@ const salaryStatusStyle = (isClosed) =>
 
 const getRowToneClass = (teacher) => {
   const isClosed = Boolean(teacher?.is_closed);
-  const payableNow = num(teacher, ["available_balance", "final_salary", "close_balance"]);
+  const regularPayable = num(teacher, ["final_salary", "available_balance", "close_balance"]);
+  const postCloseAvailable = num(teacher, ["post_close_available"]);
+  const payableNow = isClosed ? postCloseAvailable : regularPayable;
   if (!isClosed) return "bg-white";
   if (payableNow <= 0) return "bg-emerald-50";
   return "bg-amber-50";
 };
 
-const resolveCanGive = (teacher, payableNow) => {
-  const hasPayableNow = payableNow > 0;
-  if (typeof teacher?.can_give === "boolean") return teacher.can_give || hasPayableNow;
-  if (typeof teacher?.can_give_after_close === "boolean") return teacher.can_give_after_close || hasPayableNow;
-  return hasPayableNow;
+const resolveCanGive = (teacher, { isClosed, regularPayable, postCloseAvailable }) => {
+  if (isClosed) {
+    if (typeof teacher?.post_close_can_give === "boolean") return teacher.post_close_can_give;
+    if (typeof teacher?.can_give_after_close === "boolean") return teacher.can_give_after_close || postCloseAvailable > 0;
+    return postCloseAvailable > 0;
+  }
+
+  if (typeof teacher?.can_give === "boolean") return teacher.can_give || regularPayable > 0;
+  return regularPayable > 0;
 };
 
 const TeacherPayments = () => {
@@ -149,7 +155,9 @@ const TeacherPayments = () => {
       monthlyTeachers.forEach((t) => {
         const teacherId = getTeacherId(t);
         if (!teacherId) return;
-        const payableNow = num(t, ["available_balance", "final_salary", "close_balance"]);
+        const regularPayable = num(t, ["final_salary", "available_balance", "close_balance"]);
+        const postCloseAvailable = num(t, ["post_close_available"]);
+        const payableNow = t?.is_closed ? postCloseAvailable : regularPayable;
         if (payableNow > 0) next[teacherId] = false;
         else if (next[teacherId] === undefined) next[teacherId] = false;
       });
@@ -224,8 +232,13 @@ const TeacherPayments = () => {
   };
 
   const handleCreateGiven = async (teacherId, teacherRow) => {
-    const payableNow = num(teacherRow, ["available_balance", "final_salary", "close_balance"]);
-    const canGive = resolveCanGive(teacherRow, payableNow);
+    const regularPayable = num(teacherRow, ["final_salary", "available_balance", "close_balance"]);
+    const postCloseAvailable = num(teacherRow, ["post_close_available"]);
+    const canGive = resolveCanGive(teacherRow, {
+      isClosed: Boolean(teacherRow?.is_closed),
+      regularPayable,
+      postCloseAvailable,
+    });
 
     if (!canGive) {
       toast.error("Hozir berib bo'lmaydi");
@@ -360,14 +373,18 @@ const TeacherPayments = () => {
                 const students = asArray(t.students);
                 const isStudentsOpen = !!openStudentsByTeacher[teacherId];
                 const isDetailsOpen = !!openDetailsByTeacher[teacherId];
-                const payableNow = num(t, ["available_balance", "final_salary", "close_balance"]);
-                const canGive = resolveCanGive(t, payableNow);
+                const regularPayable = num(t, ["final_salary", "available_balance", "close_balance"]);
+                const postCloseAvailable = num(t, ["post_close_available"]);
+                const canGive = resolveCanGive(t, {
+                  isClosed: Boolean(t?.is_closed),
+                  regularPayable,
+                  postCloseAvailable,
+                });
                 const isGivenDone = Boolean(givenDoneByTeacher[teacherId]);
                 const isReset = Boolean(resetByTeacher[String(teacherId)]);
                 const computedGiven =
                   num(t, ["total_given", "given_total", "total_payout"]) ||
-                  (num(t, ["expected_salary", "close_expected_salary"]) +
-                    num(t, ["post_close_collected_salary"]));
+                  (num(t, ["final_salary", "close_balance"]) + num(t, ["post_close_given"]));
                 const totalGivenDisplay = isReset ? 0 : computedGiven;
                 return (
                   <div key={`${teacherId}-${i}`} className="rounded-xl border border-gray-200 bg-white shadow-sm">
