@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useMemo, useCallback, memo, useEffect, useRef } from 'react';
+import React, { Suspense, useState, useMemo, useCallback, memo, useEffect, useRef } from 'react';
 import { FiUserPlus, FiFilter } from 'react-icons/fi';
 import { ClipboardDocumentCheckIcon, ClipboardDocumentIcon, InformationCircleIcon, KeyIcon } from '@heroicons/react/24/outline';
 import {
@@ -303,7 +303,7 @@ const getStudentUsername = (student) => (
     ''
 );
 
-const StudentsPage = () => {
+const StudentsPageInner = () => {
     const pathname = usePathname();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -1827,5 +1827,11 @@ const StudentsPage = () => {
         </div>
     );
 };
+
+const StudentsPage = () => (
+    <Suspense fallback={<div className="p-6 text-sm text-gray-500">Yuklanmoqda...</div>}>
+        <StudentsPageInner />
+    </Suspense>
+);
 
 export default StudentsPage;
