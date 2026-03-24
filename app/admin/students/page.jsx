@@ -366,24 +366,7 @@ const StudentsPageInner = () => {
     );
     const teacherScopedBySubject = isTeacherRoute && Boolean(teacherSubjectId);
 
-    useEffect(() => {
-        const parsed = getFiltersFromSearchParams(new URLSearchParams(searchString));
-        if (!parsed.hasAny) return;
-
-        if (parsed.search !== searchTerm) setSearchTerm(parsed.search);
-        if (!isTeacherRoute && parsed.teacher !== selectedTeacher) setSelectedTeacher(parsed.teacher);
-        if (!isTeacherRoute && parsed.subject !== selectedSubject) setSelectedSubject(parsed.subject);
-        if (parsed.status !== selectedStatus) setSelectedStatus(parsed.status);
-        if (parsed.unassigned !== showUnassigned) setShowUnassigned(parsed.unassigned);
-    }, [
-        searchString,
-        isTeacherRoute,
-        searchTerm,
-        selectedTeacher,
-        selectedSubject,
-        selectedStatus,
-        showUnassigned
-    ]);
+    // URL -> state sync is intentionally one-time via initialFilters to avoid UI flicker.
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
