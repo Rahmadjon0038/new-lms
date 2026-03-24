@@ -234,8 +234,9 @@ const TeacherPayments = () => {
   const handleCreateGiven = async (teacherId, teacherRow) => {
     const regularPayable = num(teacherRow, ["final_salary", "available_balance", "close_balance"]);
     const postCloseAvailable = num(teacherRow, ["post_close_available"]);
+    const isClosed = Boolean(teacherRow?.is_closed);
     const canGive = resolveCanGive(teacherRow, {
-      isClosed: Boolean(teacherRow?.is_closed),
+      isClosed,
       regularPayable,
       postCloseAvailable,
     });
@@ -249,6 +250,7 @@ const TeacherPayments = () => {
       const payload = {
         teacher_id: Number(teacherId),
         month_name: month,
+        payout_type: isClosed ? "post_close" : "regular",
       };
 
       await createGivenMutation.mutateAsync({
@@ -520,23 +522,6 @@ const TeacherPayments = () => {
                             <span className="text-gray-600">Kutilgan oylik:</span>{" "}
                             <span className="font-semibold text-gray-900">{fmtMoney(num(t, ["expected_salary", "close_expected_salary"]))}</span>
                           </div>
-                          <div className="rounded-md bg-blue-50 px-3 py-2.5">
-                            <div className="text-xs font-semibold uppercase tracking-wide text-blue-700">Oylikdan keyin yig'ilgan summa</div>
-                            <div className="mt-1 flex flex-col gap-1 text-xs sm:text-sm">
-                              <div className="flex items-center justify-between gap-2">
-                                <span className="text-gray-600">Yangi tushum:</span>
-                                <span className="font-semibold text-gray-900">{fmtMoney(num(t, ["post_close_collected_revenue"]))}</span>
-                              </div>
-                              <div className="flex items-center justify-between gap-2">
-                                <span className="text-gray-600">Berilishi kerak summa:</span>
-                                <span className="font-semibold text-gray-900">{fmtMoney(num(t, ["post_close_expected_salary"]))}</span>
-                              </div>
-                              <div className="flex items-center justify-between gap-2">
-                                <span className="text-gray-600">Berilgan:</span>
-                                <span className="font-semibold text-gray-900">{fmtMoney(num(t, ["post_close_given"]))}</span>
-                              </div>
-                            </div>
-                          </div>
                         </div>
 
                         <p className="mt-4 mb-2 text-sm font-semibold text-gray-900 sm:mt-6 sm:mb-3 sm:text-base">Amallar</p>
@@ -560,25 +545,33 @@ const TeacherPayments = () => {
                             </div>
                           </div>
 
-                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-                            <div>
-                              <p className="text-sm font-semibold text-gray-900">Post-close tushum</p>
-                              <div className="text-base font-semibold text-gray-900 sm:text-lg">
-                                {fmtMoney(num(t, ["post_close_collected_revenue"]))}
+                          <div className="rounded-md bg-slate-50 px-3 py-2.5">
+                            <div className="text-xs font-semibold uppercase tracking-wide text-gray-700">Oylikdan keyin yig'ilgan summa</div>
+                            <div className="mt-1 flex flex-col gap-1 text-xs sm:text-sm">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-gray-600">Yangi tushum:</span>
+                                <span className="font-semibold text-gray-900">{fmtMoney(num(t, ["post_close_collected_revenue"]))}</span>
                               </div>
-                              <div className="mt-1 text-xs text-gray-600">
-                                Berilishi mumkin: {fmtMoney(num(t, ["post_close_available"]))}
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-gray-600">Berilishi kerak summa:</span>
+                                <span className="font-semibold text-gray-900">{fmtMoney(num(t, ["post_close_expected_salary"]))}</span>
+                              </div>
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-gray-600">Berilgan:</span>
+                                <span className="font-semibold text-gray-900">{fmtMoney(num(t, ["post_close_given"]))}</span>
                               </div>
                             </div>
-                            <button
-                              onClick={() => handleCreateGiven(teacherId, t)}
-                              disabled={createGivenMutation.isPending || !canGive || isGivenDone}
-                              className={`w-full rounded-md px-3 py-2 text-xs font-semibold text-white sm:w-auto sm:text-sm ${
-                                isGivenDone ? "bg-emerald-600" : "bg-blue-600"
-                              } disabled:opacity-50`}
-                            >
-                              {isGivenDone ? "Belgilangan" : "Summa berish"}
-                            </button>
+                            <div className="mt-2 flex justify-end">
+                              <button
+                                onClick={() => handleCreateGiven(teacherId, t)}
+                                disabled={createGivenMutation.isPending || !canGive || isGivenDone}
+                                className={`w-full rounded-md px-3 py-2 text-xs font-semibold text-white sm:w-auto sm:text-sm ${
+                                  isGivenDone ? "bg-emerald-600" : "bg-blue-600"
+                                } disabled:opacity-50`}
+                              >
+                                {isGivenDone ? "Belgilangan" : "Summa berish"}
+                              </button>
+                            </div>
                           </div>
                         </div>
 
@@ -612,11 +605,17 @@ const TeacherPayments = () => {
 
                         {isStudentsOpen && (
                           <div className="mt-2 overflow-x-auto rounded-md border border-gray-200">
-                            <table className="min-w-[560px] w-full text-[11px] sm:min-w-[640px] sm:text-xs">
+                            <table className="min-w-[900px] w-full text-[11px] sm:min-w-[1100px] sm:text-xs">
                               <thead>
                                 <tr className="border-b text-left text-gray-500">
                                   <th className="py-1.5 pr-2 pl-2 sm:py-2">ID</th>
                                   <th className="py-1.5 pr-2 sm:py-2">F.I.Sh</th>
+                                  <th className="py-1.5 pr-2 sm:py-2">Telefon</th>
+                                  <th className="py-1.5 pr-2 sm:py-2">Qo'shimcha telefon</th>
+                                  <th className="py-1.5 pr-2 sm:py-2">Ota ismi</th>
+                                  <th className="py-1.5 pr-2 sm:py-2">Ota telefoni</th>
+                                  <th className="py-1.5 pr-2 sm:py-2">Manzil</th>
+                                  <th className="py-1.5 pr-2 sm:py-2">Yosh</th>
                                   <th className="py-1.5 pr-2 sm:py-2">Holat</th>
                                   <th className="py-1.5 pr-2 sm:py-2">Kerakli summa</th>
                                   <th className="py-1.5 pr-2 sm:py-2">To'lagan summa</th>
@@ -625,13 +624,19 @@ const TeacherPayments = () => {
                               <tbody>
                                 {students.length === 0 ? (
                                   <tr>
-                                    <td colSpan={5} className="py-2 pl-2 text-gray-500">O'quvchi topilmadi</td>
+                                    <td colSpan={11} className="py-2 pl-2 text-gray-500">O'quvchi topilmadi</td>
                                   </tr>
                                 ) : (
                                   students.map((s) => (
                                     <tr key={String(s.student_id)} className="border-b border-gray-100">
                                       <td className="py-1.5 pr-2 pl-2 sm:py-2">{s.student_id}</td>
                                       <td className="py-1.5 pr-2 sm:py-2">{s.full_name || `${s.surname || ""} ${s.name || ""}`.trim()}</td>
+                                      <td className="py-1.5 pr-2 sm:py-2">{s.phone || "-"}</td>
+                                      <td className="py-1.5 pr-2 sm:py-2">{s.phone2 || "-"}</td>
+                                      <td className="py-1.5 pr-2 sm:py-2">{s.father_name || "-"}</td>
+                                      <td className="py-1.5 pr-2 sm:py-2">{s.father_phone || "-"}</td>
+                                      <td className="py-1.5 pr-2 sm:py-2">{s.address || "-"}</td>
+                                      <td className="py-1.5 pr-2 sm:py-2">{s.age ?? "-"}</td>
                                       <td className="py-1.5 pr-2 sm:py-2">
                                         <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold sm:text-[11px] ${paymentStateStyle(s.payment_state)}`}>
                                           {paymentStateLabel(s.payment_state)}
