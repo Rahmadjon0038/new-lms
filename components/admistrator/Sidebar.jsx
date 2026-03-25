@@ -14,6 +14,7 @@ import {
   WalletIcon, // To'lovlar uchun
   BuildingLibraryIcon, // Xonalar
   ReceiptPercentIcon, // Rasxodlar
+  Cog6ToothIcon,
   ChevronRightIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
@@ -83,6 +84,11 @@ const secondarySidebarItems = [
     name: "O'qituvchilar",
     icon: UserGroupIcon,
     href: "/admin/teachers",
+  },
+  {
+    name: "Sozlamalar",
+    icon: Cog6ToothIcon,
+    href: "/admin/settings",
   },
 ];
 
