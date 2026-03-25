@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Squares2X2Icon, XMarkIcon } from "@heroicons/react/24/outline";
+import { Squares2X2Icon, UserGroupIcon, BanknotesIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
 const MAIN_COLOR = "#A60E07";
 
@@ -13,10 +13,28 @@ const sidebarItems = [
     icon: Squares2X2Icon,
     href: "/super_admin",
   },
+  {
+    name: "Adminlar",
+    icon: UserGroupIcon,
+    href: "/super_admin/admins",
+  },
+  {
+    name: "Admin oyliklari",
+    icon: BanknotesIcon,
+    href: "/super_admin/admins/salary",
+  },
 ];
 
 function SuperAdminSidebar({ isOpen = false, onClose = () => {} }) {
   const pathname = usePathname();
+  const activeHref = sidebarItems.reduce((best, item) => {
+    const isMatch =
+      item.href === "/super_admin"
+        ? pathname === item.href
+        : pathname === item.href || pathname.startsWith(`${item.href}/`);
+    if (!isMatch) return best;
+    return item.href.length > best.length ? item.href : best;
+  }, "");
 
   return (
     <aside
@@ -32,9 +50,7 @@ function SuperAdminSidebar({ isOpen = false, onClose = () => {} }) {
       </div>
       <nav className="flex-1 px-4 py-6 space-y-2">
         {sidebarItems.map((item) => {
-          const isActive = item.href === "/super_admin"
-            ? pathname === item.href
-            : pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const isActive = item.href === activeHref;
           return (
             <Link
               key={item.name}
