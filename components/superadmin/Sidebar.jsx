@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Squares2X2Icon, UserGroupIcon, BanknotesIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { Squares2X2Icon, UserGroupIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
 const MAIN_COLOR = "#A60E07";
 
@@ -17,11 +17,6 @@ const sidebarItems = [
     name: "Adminlar",
     icon: UserGroupIcon,
     href: "/super_admin/admins",
-  },
-  {
-    name: "Admin oyliklari",
-    icon: BanknotesIcon,
-    href: "/super_admin/admins/salary",
   },
 ];
 

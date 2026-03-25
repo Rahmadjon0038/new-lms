@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import Link from "next/link";
 import {
   useAdmins,
   useCreateAdmin,
@@ -9,7 +8,7 @@ import {
   useUpdateAdminStatus,
 } from "../../../hooks/admins";
 import { useGetNotify } from "../../../hooks/notify";
-import { XMarkIcon } from "@heroicons/react/24/outline";
+import { XMarkIcon, PlusIcon, EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 
 const MAIN_COLOR = "#A60E07";
 
@@ -54,7 +53,7 @@ export default function SuperAdminAdminsPage() {
   const thisMonth = new Date().toISOString().slice(0, 7);
 
   const [statusFilter, setStatusFilter] = useState("all");
-  const [monthFilter, setMonthFilter] = useState("");
+  const [monthFilter, setMonthFilter] = useState(thisMonth);
   const [createForm, setCreateForm] = useState({
     name: "",
     surname: "",
@@ -64,6 +63,8 @@ export default function SuperAdminAdminsPage() {
     phone2: "",
   });
   const [recoveryInfo, setRecoveryInfo] = useState(null);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [statusModal, setStatusModal] = useState({
     open: false,
@@ -92,7 +93,7 @@ export default function SuperAdminAdminsPage() {
     return [];
   }, [adminsQuery.data]);
 
-  const showSalaryColumns = Boolean(monthFilter);
+  const showSalaryColumns = true;
 
   const handleCreateSubmit = (event) => {
     event.preventDefault();
@@ -209,85 +210,22 @@ export default function SuperAdminAdminsPage() {
           <h1 className="text-2xl font-extrabold" style={{ color: MAIN_COLOR }}>Adminlar boshqaruvi</h1>
           <p className="text-sm text-gray-600">Admin yaratish, holatini o'zgartirish va oylik berish.</p>
         </div>
-        <Link
-          href="/super_admin/admins/salary"
-          className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+        <button
+          type="button"
+          onClick={() => setCreateModalOpen(true)}
+          className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white"
+          style={{ backgroundColor: MAIN_COLOR }}
         >
-          Admin oyliklari
-        </Link>
+          <PlusIcon className="h-4 w-4" />
+          Admin yaratish
+        </button>
       </div>
 
-      <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-        <h2 className="text-base font-semibold text-gray-900">Admin yaratish</h2>
-        <form onSubmit={handleCreateSubmit} className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <input
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-            placeholder="Ism"
-            value={createForm.name}
-            onChange={(e) => setCreateForm((prev) => ({ ...prev, name: e.target.value }))}
-          />
-          <input
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-            placeholder="Familiya"
-            value={createForm.surname}
-            onChange={(e) => setCreateForm((prev) => ({ ...prev, surname: e.target.value }))}
-          />
-          <input
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-            placeholder="Username"
-            value={createForm.username}
-            onChange={(e) => setCreateForm((prev) => ({ ...prev, username: e.target.value }))}
-          />
-          <input
-            type="password"
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-            placeholder="Parol"
-            value={createForm.password}
-            onChange={(e) => setCreateForm((prev) => ({ ...prev, password: e.target.value }))}
-          />
-          <input
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-            placeholder="Telefon"
-            value={createForm.phone}
-            onChange={(e) => setCreateForm((prev) => ({ ...prev, phone: e.target.value }))}
-          />
-          <input
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-            placeholder="Telefon 2 (ixtiyoriy)"
-            value={createForm.phone2}
-            onChange={(e) => setCreateForm((prev) => ({ ...prev, phone2: e.target.value }))}
-          />
-          <div className="sm:col-span-2 lg:col-span-3 flex flex-wrap items-center gap-3">
-            <button
-              type="submit"
-              disabled={createAdminMutation.isLoading}
-              className="rounded-lg px-5 py-2 text-sm font-semibold text-white"
-              style={{ backgroundColor: MAIN_COLOR }}
-            >
-              {createAdminMutation.isLoading ? "Yaratilmoqda..." : "Admin yaratish"}
-            </button>
-            {recoveryInfo?.recovery_key ? (
-              <div className="flex flex-wrap items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-                <span>Recovery key:</span>
-                <span className="font-mono font-semibold">{recoveryInfo.recovery_key}</span>
-                <button
-                  type="button"
-                  onClick={copyRecoveryKey}
-                  className="rounded-md border border-amber-300 bg-white px-2 py-1 text-xs font-semibold text-amber-800"
-                >
-                  Nusxalash
-                </button>
-              </div>
-            ) : null}
-          </div>
-        </form>
-      </section>
-
-      <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+      <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-base font-semibold text-gray-900">Adminlar ro'yxati</h2>
-            <p className="text-xs text-gray-500">Status va oy bo'yicha filterlang.</p>
+            <p className="text-xs text-gray-500">Status, oy va admin ID bo'yicha filterlang.</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <select
@@ -317,31 +255,27 @@ export default function SuperAdminAdminsPage() {
             {adminsQuery.error?.response?.data?.message || adminsQuery.error?.message || "Adminlar yuklanmadi"}
           </div>
         ) : (
-          <div className="mt-4 overflow-x-auto">
-            <table className="min-w-[1000px] w-full text-sm">
+          <div className="mt-3 overflow-x-auto">
+            <table className="min-w-[1200px] w-full text-sm">
               <thead>
                 <tr className="border-b bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
                   <th className="py-2 pr-2">ID</th>
                   <th className="py-2 pr-2">FIO</th>
                   <th className="py-2 pr-2">Username</th>
                   <th className="py-2 pr-2">Telefon</th>
-                  <th className="py-2 pr-2">Status</th>
-                  <th className="py-2 pr-2">Termination</th>
+                  <th className="py-2 pr-2">Holat</th>
+                  <th className="py-2 pr-2">Bo'shatilgan sana</th>
                   <th className="py-2 pr-2">Yaratilgan</th>
-                  {showSalaryColumns ? (
-                    <>
-                      <th className="py-2 pr-2">Oylik</th>
-                      <th className="py-2 pr-2">Tavsif</th>
-                      <th className="py-2 pr-2">Yangilangan</th>
-                    </>
-                  ) : null}
-                  <th className="py-2 pr-2">Action</th>
+                  <th className="py-2 pr-2">Oylik</th>
+                  <th className="py-2 pr-2">Tavsif</th>
+                  <th className="py-2 pr-2">Yangilangan</th>
+                  <th className="py-2 pr-2">Amallar</th>
                 </tr>
               </thead>
               <tbody>
                 {admins.length === 0 ? (
                   <tr>
-                    <td colSpan={showSalaryColumns ? 11 : 8} className="py-4 text-gray-500">
+                    <td colSpan={11} className="py-4 text-gray-500">
                       Adminlar topilmadi
                     </td>
                   </tr>
@@ -369,15 +303,11 @@ export default function SuperAdminAdminsPage() {
                       </td>
                       <td className="py-2 pr-2">{formatDate(admin.terminationDate)}</td>
                       <td className="py-2 pr-2">{formatDate(admin.createdAt || admin.created_at)}</td>
-                      {showSalaryColumns ? (
-                        <>
-                          <td className="py-2 pr-2">
-                            {admin.salary ? formatCurrency(admin.salary.amount) : "-"}
-                          </td>
-                          <td className="py-2 pr-2">{admin.salary?.description || "-"}</td>
-                          <td className="py-2 pr-2">{formatDate(admin.salary?.updated_at)}</td>
-                        </>
-                      ) : null}
+                      <td className="py-2 pr-2">
+                        {admin.salary ? formatCurrency(admin.salary.amount) : "-"}
+                      </td>
+                      <td className="py-2 pr-2">{admin.salary?.description || "-"}</td>
+                      <td className="py-2 pr-2">{formatDate(admin.salary?.updated_at)}</td>
                       <td className="py-2 pr-2">
                         <div className="flex flex-wrap gap-2">
                           <button
@@ -404,6 +334,99 @@ export default function SuperAdminAdminsPage() {
           </div>
         )}
       </section>
+
+      <ModalShell
+        isOpen={createModalOpen}
+        title="Admin yaratish"
+        onClose={() => setCreateModalOpen(false)}
+        footer={
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            {recoveryInfo?.recovery_key ? (
+              <div className="flex flex-wrap items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                <span>Recovery key:</span>
+                <span className="font-mono font-semibold">{recoveryInfo.recovery_key}</span>
+                <button
+                  type="button"
+                  onClick={copyRecoveryKey}
+                  className="rounded-md border border-amber-300 bg-white px-2 py-1 text-xs font-semibold text-amber-800"
+                >
+                  Nusxalash
+                </button>
+              </div>
+            ) : (
+              <span className="text-xs text-gray-500">Recovery key yaratgandan keyin chiqadi.</span>
+            )}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setCreateModalOpen(false)}
+                className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700"
+              >
+                Bekor qilish
+              </button>
+              <button
+                type="submit"
+                form="create-admin-form"
+                disabled={createAdminMutation.isLoading}
+                className="rounded-lg px-4 py-2 text-sm font-semibold text-white"
+                style={{ backgroundColor: MAIN_COLOR }}
+              >
+                {createAdminMutation.isLoading ? "Yaratilmoqda..." : "Saqlash"}
+              </button>
+            </div>
+          </div>
+        }
+      >
+        <form id="create-admin-form" onSubmit={handleCreateSubmit} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <input
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            placeholder="Ism"
+            value={createForm.name}
+            onChange={(e) => setCreateForm((prev) => ({ ...prev, name: e.target.value }))}
+          />
+          <input
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            placeholder="Familiya"
+            value={createForm.surname}
+            onChange={(e) => setCreateForm((prev) => ({ ...prev, surname: e.target.value }))}
+          />
+          <input
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            placeholder="Username"
+            value={createForm.username}
+            onChange={(e) => setCreateForm((prev) => ({ ...prev, username: e.target.value }))}
+          />
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-10 text-sm"
+              placeholder="Parol"
+              value={createForm.password}
+              onChange={(e) => setCreateForm((prev) => ({ ...prev, password: e.target.value }))}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-gray-500 hover:bg-gray-100"
+              aria-label={showPassword ? "Parolni yashirish" : "Parolni ko'rsatish"}
+            >
+              {showPassword ? <EyeSlashIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
+            </button>
+          </div>
+          <input
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            placeholder="Telefon"
+            value={createForm.phone}
+            onChange={(e) => setCreateForm((prev) => ({ ...prev, phone: e.target.value }))}
+          />
+          <input
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            placeholder="Telefon 2 (ixtiyoriy)"
+            value={createForm.phone2}
+            onChange={(e) => setCreateForm((prev) => ({ ...prev, phone2: e.target.value }))}
+          />
+        </form>
+      </ModalShell>
 
       <ModalShell
         isOpen={statusModal.open}
