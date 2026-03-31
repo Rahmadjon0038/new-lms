@@ -25,7 +25,8 @@ import {
     PlusIcon,
     UserPlusIcon,
     ArrowRightIcon,
-    PencilSquareIcon
+    PencilSquareIcon,
+    UserMinusIcon
 } from "@heroicons/react/24/outline";
 import { useMonthlyPayments, usePaymentHistory, useCreateSnapshotsForNewStudents, useNewStudentsNotification } from "../../../hooks/payments";
 import { instance } from "../../../hooks/api";
@@ -143,12 +144,14 @@ const StudentPaymentsInner = () => {
     const [showAttendanceModal, setShowAttendanceModal] = useState(false);
     const [showPaymentHistoryModal, setShowPaymentHistoryModal] = useState(false);
     const [showClearModal, setShowClearModal] = useState(false);
+    const [showRemoveStudentModal, setShowRemoveStudentModal] = useState(false);
     const [showEditRequiredModal, setShowEditRequiredModal] = useState(false);
     const [editRequiredAmount, setEditRequiredAmount] = useState('');
     const [editRequiredLoading, setEditRequiredLoading] = useState(false);
     const [editRequiredStudent, setEditRequiredStudent] = useState(null);
     const [showStats, setShowStats] = useState(false);
     const [clearLoading, setClearLoading] = useState(false);
+    const [removeStudentLoading, setRemoveStudentLoading] = useState(false);
     const [snapshotLoading, setSnapshotLoading] = useState(false);
     const [historyFilters, setHistoryFilters] = useState({
         month: null,
@@ -574,6 +577,53 @@ const StudentPaymentsInner = () => {
             notify('err', error.response?.data?.message || 'Ma\'lumotlarni tozalashda xatolik yuz berdi');
         } finally {
             setClearLoading(false);
+        }
+    };
+
+    const handleRemoveStudentFromSnapshot = async () => {
+        if (!selectedStudent) return;
+
+        setRemoveStudentLoading(true);
+        try {
+            const response = await instance.post('/api/snapshots/remove-student', {
+                student_id: selectedStudent.student_id,
+                group_id: selectedStudent.group_id,
+                month: filters.month
+            });
+
+            if (response.data.success) {
+                queryClient.invalidateQueries({ queryKey: ['monthly-payments'] });
+
+                setShowRemoveStudentModal(false);
+                setSelectedStudent(null);
+
+                const deleted = response.data?.data?.deleted;
+                let successMessage = response.data.message || "Talaba to'lov jadvalidan olib tashlandi";
+                if (deleted) {
+                    const details = [];
+                    if (deleted.transactions_deleted > 0) {
+                        details.push(`${deleted.transactions_deleted} ta tranzaksiya o'chirildi`);
+                    }
+                    if (deleted.student_payments_deleted > 0) {
+                        details.push(`${deleted.student_payments_deleted} ta student payment o'chirildi`);
+                    }
+                    if (deleted.snapshot_deleted > 0) {
+                        details.push(`${deleted.snapshot_deleted} ta snapshot o'chirildi`);
+                    }
+                    if (details.length > 0) {
+                        successMessage += `. ${details.join(', ')}.`;
+                    }
+                }
+
+                notify('ok', successMessage);
+            } else {
+                notify('err', response.data.message || 'Xatolik yuz berdi');
+            }
+        } catch (error) {
+            console.error('Remove student error:', error);
+            notify('err', error.response?.data?.message || 'Talabani jadvaldan chiqarishda xatolik yuz berdi');
+        } finally {
+            setRemoveStudentLoading(false);
         }
     };
 
@@ -1215,8 +1265,7 @@ const StudentPaymentsInner = () => {
                                             <p><span className="text-gray-500">Fan:</span> {student.subject_name}</p>
                                             <p><span className="text-gray-500">O'qituvchi:</span> {student.teacher_name}</p>
                                             <p className="flex items-center gap-1">
-                                                <span className="text-gray-500">Kerak:</span>
-                                                <span>{formatCurrency(parseFloat(student.effective_required || student.required_amount))}</span>
+                                                <span>{formatCurrency(parseFloat(student.group_price || 0))}</span>
                                                 <button
                                                     type="button"
                                                     onClick={() => openEditRequiredModal(student)}
@@ -1225,6 +1274,10 @@ const StudentPaymentsInner = () => {
                                                 >
                                                     <PencilSquareIcon className="h-3 w-3" />
                                                 </button>
+                                            </p>
+                                            <p>
+                                                <span className="text-gray-500">Kerak:</span>{" "}
+                                                <span>{formatCurrency(parseFloat(student.effective_required || student.required_amount))}</span>
                                             </p>
                                             <p><span className="text-gray-500">To'langan:</span> <span className="font-semibold text-green-600">{formatCurrency(parseFloat(student.paid_amount))}</span></p>
                                             {parseFloat(student.debt_amount) !== 0 ? (
@@ -1277,6 +1330,17 @@ const StudentPaymentsInner = () => {
                                             >
                                                 <TrashIcon className="h-3 w-3" />
                                                 Tozalash
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setSelectedStudent(student);
+                                                    setShowRemoveStudentModal(true);
+                                                }}
+                                                className="inline-flex items-center justify-center gap-1 rounded-lg bg-rose-100 px-2 py-1.5 text-xs font-medium text-rose-700"
+                                                title="To'lov jadvalidan chiqarish"
+                                            >
+                                                <UserMinusIcon className="h-3 w-3" />
+                                                Jadvaldan chiqarish
                                             </button>
                                         </div>
                                     </div>
@@ -1391,20 +1455,19 @@ const StudentPaymentsInner = () => {
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="space-y-1">
                                                     <div className="text-sm">
-                                                        <span className="text-gray-500">Asl narx:</span>
-                                                        <span className="font-medium ml-2">{formatCurrency(parseFloat(student.group_price || 0))}</span>
-                                                    </div>
-                                                    <div className="text-sm flex items-center gap-1">
-                                                        <span className="text-gray-500">Kerak:</span>
-                                                        <span className="font-medium ml-2">{formatCurrency(parseFloat(student.effective_required || student.required_amount))}</span>
+                                                        <span className="font-medium">{formatCurrency(parseFloat(student.group_price || 0))}</span>
                                                         <button
                                                             type="button"
                                                             onClick={() => openEditRequiredModal(student)}
-                                                            className="inline-flex h-5 w-5 items-center justify-center rounded text-gray-400 hover:text-gray-600"
+                                                            className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded text-gray-400 hover:text-gray-600"
                                                             title="Asl narxni o'zgartirish"
                                                         >
                                                             <PencilSquareIcon className="h-4 w-4" />
                                                         </button>
+                                                    </div>
+                                                    <div className="text-sm flex items-center gap-1">
+                                                        <span className="text-gray-500">Kerak:</span>
+                                                        <span className="font-medium ml-2">{formatCurrency(parseFloat(student.effective_required || student.required_amount))}</span>
                                                     </div>
                                                     <div className="text-sm">
                                                         <span className="text-gray-500">To'langan:</span>
@@ -1525,6 +1588,17 @@ const StudentPaymentsInner = () => {
                                                     >
                                                         <TrashIcon className="h-3 w-3" />
                                                         Tozalash
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            setSelectedStudent(student);
+                                                            setShowRemoveStudentModal(true);
+                                                        }}
+                                                        className="inline-flex items-center gap-1 px-3 py-1 text-xs font-medium text-rose-700 bg-rose-100 rounded-lg hover:bg-rose-200 transition-colors"
+                                                        title="To'lov jadvalidan chiqarish"
+                                                    >
+                                                        <UserMinusIcon className="h-3 w-3" />
+                                                        Jadvaldan chiqarish
                                                     </button>
                                                 </div>
                                             </td>
@@ -1870,6 +1944,89 @@ const StudentPaymentsInner = () => {
                                             <>
                                                 <TrashIcon className="h-4 w-4" />
                                                 Ha, tozalash
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {showRemoveStudentModal && selectedStudent && (
+                    <div 
+                        className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                        onClick={() => {
+                            setShowRemoveStudentModal(false);
+                            setSelectedStudent(null);
+                        }}
+                    >
+                        <div 
+                            className="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="px-6 py-4 text-center">
+                                <div className="w-16 h-16 mx-auto mb-4 bg-rose-50 rounded-full flex items-center justify-center">
+                                    <UserMinusIcon className="h-8 w-8 text-rose-500" />
+                                </div>
+                                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                                    To'lov jadvalidan chiqarish
+                                </h3>
+                                <p className="text-sm text-gray-500">
+                                    Tasdiqlasangiz talaba tanlangan oy uchun to'lov jadvalidan chiqariladi.
+                                </p>
+                            </div>
+
+                            <div className="px-6 pb-6">
+                                <div className="bg-gray-50 rounded-xl p-4 mb-5">
+                                    <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
+                                        <div className="flex gap-2">
+                                            <span className="text-gray-500">Talaba:</span>
+                                            <p className="font-medium text-gray-900">
+                                                {selectedStudent.student_surname} {selectedStudent.student_name}
+                                            </p>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <span className="text-gray-500">Guruh:</span>
+                                            <p className="font-medium text-gray-900">{selectedStudent.group_name}</p>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <span className="text-gray-500">Oy:</span>
+                                            <p className="font-medium text-gray-900">{filters.month}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 mb-5 text-sm text-rose-900">
+                                    <p className="font-medium mb-2">Nima o'chadi:</p>
+                                    <p>Tanlangan oy bo'yicha tranzaksiyalar, student payments va snapshot yozuvlari o'chiriladi.</p>
+                                </div>
+
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => {
+                                            setShowRemoveStudentModal(false);
+                                            setSelectedStudent(null);
+                                        }}
+                                        disabled={removeStudentLoading}
+                                        className="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors disabled:opacity-50"
+                                    >
+                                        Bekor qilish
+                                    </button>
+                                    <button
+                                        onClick={handleRemoveStudentFromSnapshot}
+                                        disabled={removeStudentLoading}
+                                        className="flex-1 px-4 py-3 text-sm font-medium text-white bg-rose-500 rounded-xl hover:bg-rose-600 transition-colors disabled:opacity-50 inline-flex items-center justify-center gap-2"
+                                    >
+                                        {removeStudentLoading ? (
+                                            <>
+                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                                O'chirilmoqda...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <UserMinusIcon className="h-4 w-4" />
+                                                Ha, chiqarish
                                             </>
                                         )}
                                     </button>
