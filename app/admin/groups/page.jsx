@@ -12,12 +12,13 @@ import {
     LockClosedIcon,
     CalendarIcon,
     PlayIcon,
+    TrashIcon,
 } from "@heroicons/react/24/outline";
 import { FiFilter } from 'react-icons/fi';
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import AdminUpdateGroupModal from "../../../components/admistrator/AdminUpdateGroup";
-import { useChangeGroupStatus } from "../../../hooks/groups";
+import { useChangeGroupStatus, useDeleteGroup } from "../../../hooks/groups";
 import AdminNewGroupModal from "../../../components/admistrator/CreateGroup";
 import { usegetAllgroups } from "../../../hooks/groups";
 import { useGetAllSubjects } from "../../../hooks/subjects";
@@ -70,7 +71,44 @@ const ConfirmToggleModal = ({ isOpen, onClose, onConfirm, isClosing, isLoading }
     );
 };
 
-const GroupCard = ({ group, onToggleGroupStatus, onStartClass, updateGroupLoading = false, basePath = "/admin" }) => {
+const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm, isLoading }) => {
+    if (!isOpen) return null;
+    return (
+        <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+            onClick={onClose}
+        >
+            <div
+                className="bg-white p-6 rounded-2xl shadow-2xl max-w-sm w-full animate-in fade-in zoom-in duration-200"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="flex justify-center mb-4">
+                    <TrashIcon className="h-14 w-14 text-red-500" />
+                </div>
+                <h3 className="text-xl font-bold text-center text-gray-800 mb-2">
+                    Guruhni o'chirish
+                </h3>
+                <p className="text-gray-500 text-center text-sm mb-6">
+                    Ushbu guruh va unga tegishli barcha a&apos;zolik ma&apos;lumotlari o&apos;chiriladi. Davom etasizmi?
+                </p>
+                <div className="flex gap-3">
+                    <button onClick={onClose} className="flex-1 py-2.5 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition">
+                        Bekor qilish
+                    </button>
+                    <button
+                        onClick={onConfirm}
+                        disabled={isLoading}
+                        className="flex-1 py-2.5 rounded-xl font-bold text-white transition disabled:opacity-50 bg-red-600 hover:bg-red-700"
+                    >
+                        {isLoading ? "Bajarilmoqda..." : "O'chirish"}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const GroupCard = ({ group, onToggleGroupStatus, onStartClass, onDelete, showDelete = false, updateGroupLoading = false, deleteLoading = false, basePath = "/admin" }) => {
     const [showStudentDetails, setShowStudentDetails] = useState(false);
 
     // Dropdown ni yopish uchun outside click
@@ -283,6 +321,17 @@ const GroupCard = ({ group, onToggleGroupStatus, onStartClass, updateGroupLoadin
                             )}
                         </button>
                     )}
+
+                    {showDelete && (
+                        <button
+                            onClick={() => onDelete(group.id)}
+                            className="flex min-h-[42px] min-w-[42px] items-center justify-center rounded-lg bg-red-600 p-2.5 text-white shadow-md transition duration-150 hover:bg-red-700"
+                            disabled={deleteLoading}
+                            title="Guruhni o'chirish"
+                        >
+                            <TrashIcon className="h-5 w-5" />
+                        </button>
+                    )}
                 </div>
 
                 {isDraft && (
@@ -332,6 +381,7 @@ function AdminGroupsPageInner() {
 
     // --- Modal State ---
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, groupId: null, newStatus: null });
+    const [deleteModal, setDeleteModal] = useState({ isOpen: false, groupId: null });
 
     // Updated to handle draft status and exclude draft from active
     const getIsActiveFilter = () => {
@@ -369,6 +419,7 @@ function AdminGroupsPageInner() {
     }, [backendData]);
 
     const changeGroupStatusMutation = useChangeGroupStatus();
+    const deleteGroupMutation = useDeleteGroup();
 
     const groups = filteredGroups;
     const hasActiveFilters = isTeacherRoute ? false : (selectedTeacher !== 'all' || selectedSubject !== 'all');
@@ -478,6 +529,21 @@ function AdminGroupsPageInner() {
             onError: (error) => {
                 console.error('Guruh status o\'zgartirishda xatolik:', error);
                 setConfirmModal({ isOpen: false, groupId: null, newStatus: null });
+            }
+        });
+    };
+
+    const handleOpenDelete = (groupId) => {
+        setDeleteModal({ isOpen: true, groupId });
+    };
+
+    const handleConfirmDelete = () => {
+        deleteGroupMutation.mutate(deleteModal.groupId, {
+            onSuccess: () => {
+                setDeleteModal({ isOpen: false, groupId: null });
+            },
+            onError: () => {
+                setDeleteModal({ isOpen: false, groupId: null });
             }
         });
     };
@@ -689,14 +755,17 @@ function AdminGroupsPageInner() {
 
             <p className="mb-5 text-sm text-gray-500 sm:text-lg">Jami {backendData?.success ? backendData.count || 0 : 0} ta guruh mavjud</p>
 
-            <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {groups.map((group) => (
                     <GroupCard
                         key={group.id}
                         group={group}
                         onToggleGroupStatus={handleOpenConfirm}
                         onStartClass={handleStartClass}
+                        onDelete={handleOpenDelete}
+                        showDelete={!isTeacherRoute && currentTab === 'closed'}
                         updateGroupLoading={changeGroupStatusMutation.isLoading}
+                        deleteLoading={deleteGroupMutation.isLoading}
                         basePath={basePath}
                     />
                 ))}
@@ -709,6 +778,13 @@ function AdminGroupsPageInner() {
                 onConfirm={handleConfirmToggle}
                 isClosing={confirmModal.newStatus === 'blocked'}
                 isLoading={changeGroupStatusMutation.isLoading}
+            />
+
+            <ConfirmDeleteModal
+                isOpen={deleteModal.isOpen}
+                onClose={() => setDeleteModal({ isOpen: false, groupId: null })}
+                onConfirm={handleConfirmDelete}
+                isLoading={deleteGroupMutation.isLoading}
             />
 
             {groups.length === 0 && (

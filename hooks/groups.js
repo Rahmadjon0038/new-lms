@@ -67,6 +67,41 @@ export const useChangeGroupStatus = () => {
     return changeStatusMutation;
 }
 
+// ----------- delete group -----------------
+const deleteGroup = async (id) => {
+    const response = await instance.delete(`/api/groups/${id}`);
+    return response.data;
+}
+
+export const useDeleteGroup = () => {
+    const quericlient = useQueryClient();
+    const notify = useGetNotify();
+
+    const deleteGroupMutation = useMutation({
+        mutationFn: deleteGroup,
+        onSuccess: (data, vars) => {
+            quericlient.invalidateQueries(['groups']);
+
+            const message = data?.message || "Guruh muvaffaqiyatli o'chirildi";
+            notify('ok', message);
+
+            if (vars?.onSuccess) {
+                vars.onSuccess(data);
+            }
+        },
+        onError: (err, vars) => {
+            const errorMessage = err?.response?.data?.message || "Guruhni o'chirishda xatolik yuz berdi";
+            notify('err', errorMessage);
+
+            if (vars?.onError) {
+                vars.onError(err);
+            }
+        }
+    });
+
+    return deleteGroupMutation;
+}
+
 // -------------- Get all groups information ----------
 const getAllgroups = async (status, teacher_id, subject_id) => {
     let url = '/api/groups';
