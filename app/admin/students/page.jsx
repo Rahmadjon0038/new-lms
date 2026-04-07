@@ -271,6 +271,15 @@ const getStudentUsername = (student) => (
     ''
 );
 
+const extractStudentsArray = (payload) => {
+    if (!payload) return [];
+    if (Array.isArray(payload.students)) return payload.students;
+    if (Array.isArray(payload?.data?.students)) return payload.data.students;
+    if (Array.isArray(payload?.data?.data)) return payload.data.data;
+    if (Array.isArray(payload?.data)) return payload.data;
+    return [];
+};
+
 const StudentsPageInner = () => {
     const pathname = usePathname();
     const router = useRouter();
@@ -384,7 +393,17 @@ const StudentsPageInner = () => {
         enabled: isTeacherRoute ? Boolean(teacherId) : true,
         keepPreviousData: true
     });
-    const hasLoadedStudents = Boolean(backendData?.success || backendData?.data?.success);
+    const rawStudents = useMemo(() => extractStudentsArray(backendData), [backendData]);
+    const hasLoadedStudents = Boolean(
+        backendData &&
+        (backendData?.success ||
+            backendData?.data?.success ||
+            rawStudents.length > 0 ||
+            Array.isArray(backendData?.students) ||
+            Array.isArray(backendData?.data?.students) ||
+            Array.isArray(backendData?.data?.data) ||
+            Array.isArray(backendData?.data))
+    );
     const showStudentsLoading = ((!hasLoadedStudents && !error) || isFetching);
     const pagination = backendData?.pagination || backendData?.data?.pagination || {};
     const currentPage = Number(pagination.page || page || 1);
@@ -426,13 +445,17 @@ const StudentsPageInner = () => {
     const pageStart = totalItems === 0 ? 0 : (currentPage - 1) * pageLimit + 1;
     const pageEnd = totalItems === 0 ? 0 : Math.min(currentPage * pageLimit, totalItems);
     const isInitialLoading = showStudentsLoading && allStudents.length === 0;
-    const showEmptyState = !showStudentsLoading && hasLoadedStudents && allStudents.length === 0;
+    const showEmptyState =
+        !showStudentsLoading &&
+        hasLoadedStudents &&
+        allStudents.length === 0 &&
+        rawStudents.length === 0;
 
     // Ma'lumot kelganda state-ni yangilash
     useEffect(() => {
-        if (backendData?.success || backendData?.data?.success) {
+        if (hasLoadedStudents) {
             // Har bir guruh uchun alohida qator yaratish
-            const rawStudents = backendData?.students || backendData?.data?.students || [];
+            const rawStudents = extractStudentsArray(backendData);
             const expandedStudents = [];
             rawStudents.forEach(student => {
                 if (student.groups && student.groups.length > 0) {
