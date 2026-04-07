@@ -66,7 +66,7 @@ function Navbar() {
       className="w-full shadow-lg border-b z-[100]" 
       style={{ backgroundColor: '#A60E07', borderColor: 'rgba(255,255,255,0.1)' }}>
       
-      <div className="flex justify-between items-center h-16 px-4 md:px-8 max-w-[1600px] mx-auto">
+      <div className="flex w-full justify-between items-center h-16 px-4 md:px-8">
         
         {/* 1. Logotip - mobil ekranlarda shrifti biroz kichrayadi */}
         <Link
