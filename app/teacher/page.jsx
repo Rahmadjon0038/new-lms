@@ -10,6 +10,7 @@ import {
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { useGetTeacherGroups } from "../../hooks/groups";
+import { usegetProfile } from "../../hooks/user";
 
 // --- Guruh Kartochkasi ---
 const GroupCard = ({ group }) => {
@@ -108,6 +109,7 @@ const GroupCard = ({ group }) => {
 
 // --- Asosiy Komponent ---
 function TeacherGroups() {
+  const { data: user } = usegetProfile();
   const { data: groupsData, isLoading, error } = useGetTeacherGroups();
 
   if (isLoading) {
@@ -131,12 +133,19 @@ function TeacherGroups() {
 
   const groups = groupsData?.data?.groups || [];
 
+  const fullName = user ? `${user.surname} ${user.name}` : "";
+
   return (
     <div className="min-h-full p-2 sm:p-4 md:p-0">
       <header className="mb-4 sm:mb-6 md:mb-8 text-center sm:text-left">
         <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-gray-900 leading-tight">
           Mening Guruhlarim
         </h1>
+        {fullName ? (
+          <p className="text-xs sm:text-sm md:text-base text-gray-600 mt-1">
+            O'qituvchi: {fullName}
+          </p>
+        ) : null}
         <p className="text-xs sm:text-sm md:text-lg text-gray-500 mt-1">
           Jami {groupsData?.data?.total_groups || 0} ta faol guruh
         </p>
