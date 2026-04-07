@@ -20,6 +20,7 @@ import {
   EllipsisVerticalIcon,
   ExclamationTriangleIcon,
   ClipboardDocumentIcon,
+  ArrowPathIcon,
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
 import {
@@ -28,7 +29,8 @@ import {
   usePutTeacherOnLeave,
   useTerminateTeacher,
   useReactivateTeacher,
-  useUpdateTeacher
+  useUpdateTeacher,
+  useRotateRecoveryKey
 } from "../../../hooks/teacher";
 import { useGetNotify } from "../../../hooks/notify";
 import { useGetAllSubjects } from "../../../hooks/subjects";
@@ -482,6 +484,7 @@ const EditTeacherModal = ({ isOpen, onClose, teacher, onUpdate, isLoading }) => 
 function TeacherCard({ teacher, onEdit, onDelete, onStatusChange, notify }) {
   const [showActions, setShowActions] = useState(false);
   const [copiedRecoveryKey, setCopiedRecoveryKey] = useState(false);
+  const rotateRecoveryMutation = useRotateRecoveryKey();
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -518,18 +521,45 @@ function TeacherCard({ teacher, onEdit, onDelete, onStatusChange, notify }) {
   };
 
   const recoveryKey = teacher.recovery_key || teacher.recoveryKey;
+  const [localRecoveryKey, setLocalRecoveryKey] = useState(recoveryKey || "");
+
+  React.useEffect(() => {
+    setLocalRecoveryKey(recoveryKey || "");
+  }, [recoveryKey]);
 
   const handleCopyRecoveryKey = async () => {
-    if (!recoveryKey) return;
+    if (!localRecoveryKey) return;
 
     try {
-      await navigator.clipboard.writeText(recoveryKey);
+      await navigator.clipboard.writeText(localRecoveryKey);
       setCopiedRecoveryKey(true);
       notify("ok", "Recovery key nusxalandi");
       setTimeout(() => setCopiedRecoveryKey(false), 1500);
     } catch {
       notify("err", "Recovery key ni nusxalashda xatolik");
     }
+  };
+
+  const handleRotateRecoveryKey = () => {
+    if (!teacher?.id) return;
+    rotateRecoveryMutation.mutate({
+      userId: teacher.id,
+      onSuccess: (data) => {
+        const newKey =
+          data?.data?.recovery_key ||
+          data?.data?.recoveryKey ||
+          data?.recovery_key ||
+          data?.recoveryKey ||
+          "";
+        if (newKey) {
+          setLocalRecoveryKey(newKey);
+        }
+        notify("ok", "Recovery key yangilandi");
+      },
+      onError: () => {
+        notify("err", "Recovery key yangilashda xatolik");
+      }
+    });
   };
 
   return (
@@ -630,10 +660,21 @@ function TeacherCard({ teacher, onEdit, onDelete, onStatusChange, notify }) {
         )}
 
         {/* Recovery key */}
-        {recoveryKey && (
+        {localRecoveryKey && (
           <div className="bg-amber-50 rounded-lg p-3 mt-3 border border-amber-100">
             <div className="flex items-center justify-between gap-3">
-              <span className="text-xs font-medium text-amber-700 uppercase tracking-wide">Recovery key</span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleRotateRecoveryKey}
+                  disabled={rotateRecoveryMutation.isLoading}
+                  title="Recovery keyni yangilash"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors disabled:opacity-60"
+                >
+                  <ArrowPathIcon className={`h-4 w-4 ${rotateRecoveryMutation.isLoading ? "animate-spin" : ""}`} />
+                </button>
+                <span className="text-xs font-medium text-amber-700 uppercase tracking-wide">Recovery key</span>
+              </div>
               <button
                 type="button"
                 onClick={handleCopyRecoveryKey}
@@ -643,7 +684,7 @@ function TeacherCard({ teacher, onEdit, onDelete, onStatusChange, notify }) {
                 {copiedRecoveryKey ? "Copied" : "Copy"}
               </button>
             </div>
-            <p className="text-sm text-gray-800 mt-1 break-all">{recoveryKey}</p>
+            <p className="text-sm text-gray-800 mt-1 break-all">{localRecoveryKey}</p>
           </div>
         )}
       </div>

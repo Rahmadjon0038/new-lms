@@ -171,3 +171,27 @@ export const useReactivateTeacher = () => {
         }
     });
 }
+
+// -------------- Rotate teacher recovery key ----------
+const rotateRecoveryKey = async ({ userId }) => {
+    const response = await instance.patch(`/api/users/recovery-key/${userId}/rotate`);
+    return response.data;
+}
+
+export const useRotateRecoveryKey = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: rotateRecoveryKey,
+        onSuccess: (data, vars) => {
+            queryClient.invalidateQueries(['teachers']);
+            if (vars?.onSuccess) {
+                vars.onSuccess(data);
+            }
+        },
+        onError: (err, vars) => {
+            if (vars?.onError) {
+                vars.onError(err);
+            }
+        }
+    });
+}
