@@ -471,7 +471,7 @@ function TeacherAttendancePageContent() {
   );
 
   return (
-    <div className="no-teacher-padding space-y-4">
+    <div className="space-y-4">
       {/* <div>
         <h1 className="text-2xl font-bold text-gray-900">Teacher Attendance</h1>
         <p className="text-sm text-gray-600">Mening guruhlarim va darslarim</p>

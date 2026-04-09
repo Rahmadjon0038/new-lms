@@ -58,10 +58,21 @@ const isFutureAttendanceItem = (item) => {
 const getNormalizedAttendanceStatus = (item) => {
   if (!item) return null;
   if (isFutureAttendanceItem(item)) return null;
-  if (item.is_marked === false) return null;
-  if (item.status === "keldi" || item.status === "kelmadi" || item.status === "kech_qoldi") {
-    return item.status;
+  const statusValue = item.status;
+  const hasValidStatus =
+    statusValue === "keldi" || statusValue === "kelmadi" || statusValue === "kech_qoldi";
+
+  if (item.is_marked === false || item.is_marked === 0 || item.is_marked === "0") return null;
+
+  if (item.is_marked === true || item.is_marked === 1 || item.is_marked === "1" || item.is_marked === "true") {
+    return hasValidStatus ? statusValue : null;
   }
+
+  // Some endpoints don't send is_marked; if status is present, treat as marked.
+  if (hasValidStatus) {
+    return statusValue;
+  }
+
   return null;
 };
 
@@ -217,9 +228,7 @@ function MyAttendance() {
 
           {groups.length > 0 && (
             <div className="flex-1">
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-                Guruh tanlang
-              </label>
+             
               <div className="flex flex-wrap gap-2">
                 {groups.map((group) => {
                   const groupId = getGroupId(group);
