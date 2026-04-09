@@ -452,6 +452,7 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
                 <th className="border border-gray-400 px-3 py-2 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">Talaba</th>
                 <th className="border border-gray-400 px-3 py-2 text-center text-xs font-semibold text-gray-700 whitespace-nowrap">Holati</th>
                 <th className="border border-gray-400 px-3 py-2 text-center text-xs font-semibold text-gray-700 whitespace-nowrap">To&apos;langan</th>
+                <th className="border border-gray-400 px-3 py-2 text-center text-xs font-semibold text-gray-700 whitespace-nowrap">Chegirma</th>
                 <th className="border border-gray-400 px-3 py-2 text-center text-xs font-semibold text-gray-700 whitespace-nowrap">Qarz</th>
                 {lessons.map((lesson) => {
                   const lessonIsHoliday = isHolidayFlag(lesson.is_holiday);
@@ -516,6 +517,9 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
                     </td>
                     <td className="border border-gray-400 px-3 py-2 text-center text-xs text-gray-700 whitespace-nowrap">
                       {formatMoney(student.paid_amount)}
+                    </td>
+                    <td className="border border-gray-400 px-3 py-2 text-center text-xs text-gray-700 whitespace-nowrap">
+                      {formatMoney(student.discount_amount)}
                     </td>
                     <td className={`border border-gray-400 px-3 py-2 text-center text-xs whitespace-nowrap ${
                       Number(student.debt_amount) > 0 ? "text-red-600" : "text-gray-700"

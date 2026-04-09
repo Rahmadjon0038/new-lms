@@ -646,6 +646,34 @@ const GroupLessonsPage = () => {
       minute: '2-digit',
     });
   };
+  const formatMoney = (value) => {
+    const amount = Number(value);
+    if (!Number.isFinite(amount)) return "-";
+    return `${amount.toLocaleString("uz-UZ")} so'm`;
+  };
+  const getDiscountDisplay = (student) => {
+    if (!student) return "-";
+    const amount =
+      student.discount_amount ??
+      student.discountAmount ??
+      student?.discount?.amount ??
+      student?.discount?.discount_amount ??
+      student?.payment?.discount_amount ??
+      student?.payments?.discount_amount ??
+      student?.financial?.discount_amount ??
+      student?.monthly_discount_amount;
+    const type = student.discount_type || student?.discount?.type || student?.discount_type_name;
+    const value = student.discount_value ?? student?.discount?.value;
+
+    const amountNumber = Number(amount);
+    if (Number.isFinite(amountNumber) && amountNumber > 0) {
+      return formatMoney(amountNumber);
+    }
+    if (type === "percent" && Number(value) > 0) {
+      return `${Number(value)}%`;
+    }
+    return "-";
+  };
 
   // Calculate overall statistics
   const totalLessons = lessons.length;
@@ -688,6 +716,9 @@ const GroupLessonsPage = () => {
                   <div className="min-w-0">
                     <div className="text-sm font-medium text-gray-900">{student.student_name}</div>
                     <div className="text-[11px] text-gray-500">{student.phone}</div>
+                    <div className="text-[11px] text-gray-500">
+                      Chegirma: {getDiscountDisplay(student)}
+                    </div>
                     <div className="mt-1">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full border text-[11px] font-medium ${statusBadgeClass}`}>
                         {student.monthly_status_description || student.monthly_status || "Status yo'q"}

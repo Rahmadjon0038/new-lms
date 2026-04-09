@@ -618,13 +618,14 @@ const TeacherPayments = () => {
                                   <th className="py-1.5 pr-2 sm:py-2">Yosh</th>
                                   <th className="py-1.5 pr-2 sm:py-2">Holat</th>
                                   <th className="py-1.5 pr-2 sm:py-2">Kerakli summa</th>
+                                  <th className="py-1.5 pr-2 sm:py-2">Chegirma</th>
                                   <th className="py-1.5 pr-2 sm:py-2">To'lagan summa</th>
                                 </tr>
                               </thead>
                               <tbody>
                                 {students.length === 0 ? (
                                   <tr>
-                                    <td colSpan={11} className="py-2 pl-2 text-gray-500">O'quvchi topilmadi</td>
+                                    <td colSpan={12} className="py-2 pl-2 text-gray-500">O'quvchi topilmadi</td>
                                   </tr>
                                 ) : (
                                   students.map((s) => (
@@ -643,6 +644,7 @@ const TeacherPayments = () => {
                                         </span>
                                       </td>
                                       <td className="py-1.5 pr-2 sm:py-2">{fmtMoney(num(s, ["required_amount"]))}</td>
+                                      <td className="py-1.5 pr-2 sm:py-2">{fmtMoney(num(s, ["discount_amount"]))}</td>
                                       <td className="py-1.5 pr-2 sm:py-2">{fmtMoney(num(s, ["paid_amount"]))}</td>
                                     </tr>
                                   ))
