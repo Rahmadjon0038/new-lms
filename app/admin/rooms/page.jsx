@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
     PlusIcon,
     TrashIcon,
@@ -15,6 +15,15 @@ import { useGetAllRooms, useCreateRoom, useDeleteRoom, useUpdateRoom, useGetRoom
 import { useGetNotify } from '../../../hooks/notify';
 
 const MAIN_COLOR = "#A60E07";
+
+const getRoomFormData = (room = null) => ({
+    room_number: room?.room_number || '',
+    capacity: room?.capacity ?? '',
+    description: room?.description || '',
+    has_projector: Boolean(room?.has_projector),
+    building: room?.building || '',
+    floor: room?.floor || '',
+});
 
 // Modal komponenti - yangi xona qo'shish
 const AddRoomModal = ({ isOpen, onClose, onSubmit, isLoading }) => {
@@ -56,7 +65,7 @@ const AddRoomModal = ({ isOpen, onClose, onSubmit, isLoading }) => {
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-xl font-bold text-gray-800">Yangi Xona Qo'shish</h3>
+                    <h3 className="text-xl font-bold text-gray-800">Yangi Xona Qo&apos;shish</h3>
                     <button
                         onClick={onClose}
                         className="p-1 hover:bg-gray-100 rounded-lg transition"
@@ -83,7 +92,7 @@ const AddRoomModal = ({ isOpen, onClose, onSubmit, isLoading }) => {
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Sig'imi (o'rinlik) *
+                            Sig&apos;imi (o&apos;rinlik) *
                         </label>
                         <input
                             type="number"
@@ -138,7 +147,7 @@ const AddRoomModal = ({ isOpen, onClose, onSubmit, isLoading }) => {
                             className="flex-1 py-2.5 rounded-xl font-bold text-white transition disabled:opacity-50"
                             style={{ backgroundColor: MAIN_COLOR }}
                         >
-                            {isLoading ? 'Saqlanmoqda...' : 'Qo\'shish'}
+                            {isLoading ? 'Saqlanmoqda...' : "Qo'shish"}
                         </button>
                     </div>
                 </form>
@@ -149,27 +158,7 @@ const AddRoomModal = ({ isOpen, onClose, onSubmit, isLoading }) => {
 
 // Xona tahrirlash modali
 const EditRoomModal = ({ isOpen, onClose, onSubmit, isLoading, initialData }) => {
-    const [formData, setFormData] = useState({
-        room_number: '',
-        capacity: '',
-        description: '',
-        has_projector: false,
-        building: '',
-        floor: '',
-    });
-
-    useEffect(() => {
-        if (isOpen && initialData) {
-            setFormData({
-                room_number: initialData.room_number || '',
-                capacity: initialData.capacity ?? '',
-                description: initialData.description || '',
-                has_projector: Boolean(initialData.has_projector),
-                building: initialData.building || '',
-                floor: initialData.floor || '',
-            });
-        }
-    }, [isOpen, initialData]);
+    const [formData, setFormData] = useState(() => getRoomFormData(initialData));
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -224,7 +213,7 @@ const EditRoomModal = ({ isOpen, onClose, onSubmit, isLoading, initialData }) =>
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Sig'imi (o'rinlik) *
+                            Sig&apos;imi (o&apos;rinlik) *
                         </label>
                         <input
                             type="number"
@@ -358,7 +347,7 @@ const ScheduleModal = ({ isOpen, onClose, roomId }) => {
                 ) : groups.length === 0 ? (
                     <div className="text-center py-12">
                         <CalendarDaysIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                        <p className="text-gray-600">Bu xonada hozircha darslar yo'q</p>
+                        <p className="text-gray-600">Bu xonada hozircha darslar yo&apos;q</p>
                     </div>
                 ) : (
                     <div className="space-y-4">
@@ -381,7 +370,7 @@ const ScheduleModal = ({ isOpen, onClose, roomId }) => {
                                         </p>
                                     </div>
                                     <span className="text-lg font-bold" style={{ color: MAIN_COLOR }}>
-                                        {parseFloat(group.price).toLocaleString()} so'm
+                                        {parseFloat(group.price).toLocaleString()} so&apos;m
                                     </span>
                                 </div>
 
@@ -389,7 +378,7 @@ const ScheduleModal = ({ isOpen, onClose, roomId }) => {
                                     <div className="flex items-center gap-2 text-sm">
                                         <UsersIcon className="h-4 w-4 text-blue-500" />
                                         <span className="text-gray-700">
-                                            <strong>O'qituvchi:</strong> {group.teacher_name}
+                                            <strong>O&apos;qituvchi:</strong> {group.teacher_name}
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-2 text-sm">
@@ -476,7 +465,7 @@ const RoomCard = ({ room, onDelete, onEdit, onViewSchedule }) => {
                 <div className="flex flex-wrap items-center gap-3 text-sm sm:gap-4">
                     <div className="flex items-center gap-1">
                         <Sofa className="h-4 w-4 text-gray-500" />
-                        <span className="text-gray-700 font-medium">{room.capacity} o'rinlik</span>
+                        <span className="text-gray-700 font-medium">{room.capacity} o&apos;rinlik</span>
                     </div>
                     {room.has_projector && (
                         <div className="flex items-center gap-1 text-green-600 font-medium">
@@ -601,7 +590,7 @@ const RoomsPage = () => {
                         type="text"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Xona bo'yicha qidiruv..."
+                        placeholder="Xona bo&apos;yicha qidiruv..."
                         className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm sm:max-w-xs"
                     />
                     <button
@@ -610,7 +599,7 @@ const RoomsPage = () => {
                         style={{ borderColor: MAIN_COLOR, backgroundColor: MAIN_COLOR }}
                     >
                         <PlusIcon className="h-4 w-4" />
-                        <span className="hidden sm:inline">Xona Qo'shish</span>
+                        <span className="hidden sm:inline">Xona Qo&apos;shish</span>
                     </button>
                 </div>
 
@@ -622,6 +611,7 @@ const RoomsPage = () => {
                     isLoading={createRoomMutation.isPending}
                 />
                 <EditRoomModal
+                    key={`${editRoom?.id ?? 'new'}-${isEditModalOpen ? 'open' : 'closed'}`}
                     isOpen={isEditModalOpen}
                     onClose={() => {
                         setIsEditModalOpen(false);
@@ -659,7 +649,7 @@ const RoomsPage = () => {
                             className="px-6 py-2 rounded-lg font-bold text-white transition"
                             style={{ backgroundColor: MAIN_COLOR }}
                         >
-                            Birinchi Xonani Qo'shish
+                            Birinchi Xonani Qo&apos;shish
                         </button>
                     </div>
                 ) : (

@@ -51,7 +51,7 @@ export const useDeleteRoom = () => {
 
 // ----------- Update room -----------------
 const updateRoom = async ({ id, roomData }) => {
-    const response = await instance.patch(`/api/rooms/${id}`, roomData);
+    const response = await instance.put(`/api/rooms/${id}`, roomData);
     return response.data;
 }
 
