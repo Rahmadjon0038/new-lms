@@ -1,14 +1,17 @@
 'use client';
 
 import React, { useState } from 'react';
-import { EyeIcon, EyeSlashIcon, KeyIcon } from '@heroicons/react/24/outline';
+import { EyeIcon, EyeSlashIcon, KeyIcon, TrashIcon, UsersIcon } from '@heroicons/react/24/outline';
 import { useChangePassword, usegetProfile } from '../../../hooks/user';
 import { useGetNotify } from '../../../hooks/notify';
+import { useClearAllStudentsFromGroups, useDeleteEmptyGroups } from '../../../hooks/groups';
 
 const AdminSettingsPage = () => {
   const { data: user } = usegetProfile();
   const notify = useGetNotify();
   const changePasswordMutation = useChangePassword();
+  const clearAllStudentsMutation = useClearAllStudentsFromGroups();
+  const deleteEmptyGroupsMutation = useDeleteEmptyGroups();
 
   const [form, setForm] = useState({
     old_password: '',
@@ -36,6 +39,22 @@ const AdminSettingsPage = () => {
         notify('err', err?.response?.data?.message || 'Parolni yangilashda xatolik');
       },
     });
+  };
+
+  const handleClearAllStudents = () => {
+    const confirmed = window.confirm(
+      "Haqiqatan barcha talabalarni barcha guruhlardan chiqarishni xohlaysizmi? Talabalar o'chmaydi, faqat guruh bog'lanishi tozalanadi."
+    );
+    if (!confirmed) return;
+
+    clearAllStudentsMutation.mutate();
+  };
+
+  const handleDeleteEmptyGroups = () => {
+    const confirmed = window.confirm("Faqat bo'sh guruhlar o'chiriladi. Davom etasizmi?");
+    if (!confirmed) return;
+
+    deleteEmptyGroupsMutation.mutate();
   };
 
   return (
@@ -100,6 +119,44 @@ const AdminSettingsPage = () => {
             {changePasswordMutation.isPending ? 'Yuklanmoqda...' : 'Parolni yangilash'}
           </button>
         </form>
+
+        <div className="mt-6 border-t border-gray-200 pt-5">
+          <div className="mb-3 flex items-center gap-3">
+            <div className="rounded-xl bg-amber-500/10 p-2">
+              <TrashIcon className="h-5 w-5 text-amber-600" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-gray-900">Xavfli amallar</h2>
+              <p className="text-sm text-gray-600">Faqat admin uchun. Amal qaytarilmaydi.</p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <button
+              type="button"
+              onClick={handleClearAllStudents}
+              disabled={clearAllStudentsMutation.isPending}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700 transition hover:bg-red-100 disabled:opacity-60"
+            >
+              <UsersIcon className="h-5 w-5" />
+              {clearAllStudentsMutation.isPending
+                ? 'Talabalar chiqarilmoqda...'
+                : "Barcha talabalarni guruhlardan chiqarish"}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleDeleteEmptyGroups}
+              disabled={deleteEmptyGroupsMutation.isPending}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-700 transition hover:bg-amber-100 disabled:opacity-60"
+            >
+              <TrashIcon className="h-5 w-5" />
+              {deleteEmptyGroupsMutation.isPending
+                ? "Bo'sh guruhlar o'chirilmoqda..."
+                : "Bo'sh guruhlarni o'chirish"}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

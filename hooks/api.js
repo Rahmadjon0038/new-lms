@@ -2,9 +2,7 @@ import axios from "axios";
 import Cookies from "js-cookie";
 
 export const instance = axios.create({
-  // baseURL: "http://localhost:5001",
-  baseURL: "https://api.taraqqiyot-teaching-center.uz",
-  // http://192.168.0.121:5001/
+  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.taraqqiyot-teaching-center.uz",
 });
 
 let isRefreshing = false;
@@ -69,7 +67,7 @@ instance.interceptors.response.use(
 
       return new Promise((resolve, reject) => {
         // Oddiy axios orqali refresh qilish
-        axios.post("http://localhost:5000/api/users/refresh", { refreshToken })
+        axios.post(`${instance.defaults.baseURL}/api/users/refresh`, { refreshToken })
           .then(({ data }) => {
             const { accessToken } = data;
             Cookies.set("accessToken", accessToken);
