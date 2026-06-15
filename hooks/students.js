@@ -53,6 +53,57 @@ export const useGetAllStudents = (filters = {}, options = {}) => {
     return { data, isLoading, isFetching, error, refetch }
 }
 
+const getAllStudentsAcrossPages = async (filters = {}) => {
+    const pageSize = Math.min(Number(filters.limit) || 100, 100);
+    let page = 1;
+    let mergedStudents = [];
+    let lastResponse = null;
+    let total = 0;
+    let totalPages = 1;
+
+    while (true) {
+        const response = await getAllstudent({
+            ...filters,
+            page,
+            limit: pageSize,
+        });
+
+        lastResponse = response;
+        const students = Array.isArray(response?.students) ? response.students : [];
+        mergedStudents = mergedStudents.concat(students);
+        total = Number(response?.pagination?.total || total || mergedStudents.length);
+        totalPages = Number(response?.pagination?.total_pages || totalPages || 1);
+
+        if (!students.length || page >= totalPages) {
+            break;
+        }
+
+        page += 1;
+    }
+
+    return {
+        ...lastResponse,
+        students: mergedStudents,
+        pagination: {
+            ...(lastResponse?.pagination || {}),
+            page: 1,
+            limit: mergedStudents.length || pageSize,
+            total: total || mergedStudents.length,
+            total_pages: 1,
+        },
+    };
+};
+
+export const useGetAllStudentsAll = (filters = {}, options = {}) => {
+    const { data, isLoading, isFetching, error, refetch } = useQuery({
+        queryKey: ['students-all-pages', filters],
+        queryFn: () => getAllStudentsAcrossPages(filters),
+        ...options,
+    });
+
+    return { data, isLoading, isFetching, error, refetch };
+};
+
 // Register new student
 const registerStudent = async (studentData) => {
     const response = await instance.post('/api/users/register', studentData);

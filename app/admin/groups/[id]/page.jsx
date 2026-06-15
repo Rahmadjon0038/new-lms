@@ -16,6 +16,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useGetGroupById, useRemoveStudentFromGroup } from '../../../../hooks/groups';
 import { useDeleteStudent } from '../../../../hooks/students';
 import { useGetNotify } from '../../../../hooks/notify';
+import AddGroup from '../../../../components/admistrator/AddGroup';
 import { formatDateYMD, formatDateTimeYMDHM } from '../../../../utils/date';
 
 const getStudentStatusBadge = (status) => {
@@ -341,6 +342,30 @@ const GroupDetailPage = () => {
                             Yaratilgan: {formatDateTime(group.created_at)}
                         </p>
                     </div>
+
+                    {group.status !== 'blocked' ? (
+                        <div className="mt-3 flex justify-end">
+                            <AddGroup
+                                defaultActiveTab="bulk"
+                                hideSingleTab
+                                forceBulkJoin
+                                fixedBulkTargetGroupId={group.id}
+                                allowBulkAllStudents
+                                onSuccess={() => {
+                                    queryClient.invalidateQueries(['group', groupId]);
+                                    queryClient.invalidateQueries(['students']);
+                                }}
+                            >
+                                <button
+                                    type="button"
+                                    className="inline-flex items-center gap-2 rounded-xl bg-[#A60E07] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#8b0c06]"
+                                >
+                                    <UsersIcon className="h-4 w-4" />
+                                    Talaba qo&apos;shish
+                                </button>
+                            </AddGroup>
+                        </div>
+                    ) : null}
                 </div>
 
                 <div className="bg-white rounded-none sm:rounded-lg shadow-none sm:shadow-md border-0 sm:border sm:border-gray-100 overflow-hidden">

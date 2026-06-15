@@ -153,6 +153,7 @@ const StudentPaymentsInner = () => {
     const [clearLoading, setClearLoading] = useState(false);
     const [removeStudentLoading, setRemoveStudentLoading] = useState(false);
     const [snapshotLoading, setSnapshotLoading] = useState(false);
+    const [snapshotDeleteLoading, setSnapshotDeleteLoading] = useState(false);
     const [historyFilters, setHistoryFilters] = useState({
         month: null,
         groupId: null,
@@ -656,6 +657,34 @@ const StudentPaymentsInner = () => {
         }
     };
 
+    const handleDeleteSnapshot = async () => {
+        if (!filters.month) {
+            notify('err', "Avval oyni tanlang");
+            return;
+        }
+
+        const confirmed = window.confirm(
+            `${filters.month} oyi uchun to'lov jadvalini butunlay o'chirishni xohlaysizmi? Tranzaksiyalar, student payments va snapshot yozuvlari ham o'chadi.`
+        );
+        if (!confirmed) return;
+
+        setSnapshotDeleteLoading(true);
+        try {
+            const response = await instance.delete(`/api/snapshots/${filters.month}`);
+            if (response.data?.success) {
+                queryClient.invalidateQueries({ queryKey: ['monthly-payments'] });
+                notify('ok', response.data.message || `${filters.month} oyi uchun to'lov jadvali o'chirildi`);
+            } else {
+                notify('err', response.data?.message || 'Jadvalni o\'chirishda xatolik yuz berdi');
+            }
+        } catch (error) {
+            console.error('Snapshot delete error:', error);
+            notify('err', error.response?.data?.message || 'Jadvalni o\'chirishda xatolik yuz berdi');
+        } finally {
+            setSnapshotDeleteLoading(false);
+        }
+    };
+
     // Add "All" option to statuses
     const statusTabs = [
         { value: 'all', label: "To'lov holati" },
@@ -744,7 +773,7 @@ const StudentPaymentsInner = () => {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="grid w-full grid-cols-3 gap-1.5 sm:grid-cols-2 md:w-auto md:grid-cols-3 md:gap-3">
+                    <div className="grid w-full grid-cols-2 gap-1.5 sm:grid-cols-2 md:w-auto md:grid-cols-4 md:gap-3">
                         <button
                             onClick={handleCreateSnapshot}
                             disabled={snapshotLoading}
@@ -761,6 +790,25 @@ const StudentPaymentsInner = () => {
                                     <PlusIcon className="h-4 w-4" />
                                     <span className="hidden sm:inline">Oylik jadval yaratish</span>
                                     <span className="sm:hidden">Jadval</span>
+                                </>
+                            )}
+                        </button>
+                        <button
+                            onClick={handleDeleteSnapshot}
+                            disabled={snapshotDeleteLoading || !filters.month}
+                            className="inline-flex w-full items-center justify-center gap-1 rounded-lg bg-red-600 px-2 py-1.5 text-xs font-medium text-white transition-colors hover:opacity-90 focus:ring-2 focus:ring-offset-2 disabled:opacity-50 sm:gap-2 sm:px-4 sm:py-2 sm:text-sm"
+                            title="Tanlangan oy uchun to'lov jadvalini o'chirish"
+                        >
+                            {snapshotDeleteLoading ? (
+                                <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                    <span className="hidden sm:inline">O'chirilmoqda...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <TrashIcon className="h-4 w-4" />
+                                    <span className="hidden sm:inline">Jadvalni o'chirish</span>
+                                    <span className="sm:hidden">O'chirish</span>
                                 </>
                             )}
                         </button>

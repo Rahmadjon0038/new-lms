@@ -17,7 +17,7 @@ import {
     useRemoveStudentFromGroup,
     usegetAllgroups
 } from '../../hooks/groups';
-import { useGetAllStudents, useJoinStudentToGroup } from '../../hooks/students';
+import { useGetAllStudentsAll, useJoinStudentToGroup } from '../../hooks/students';
 import { usegetTeachers } from '../../hooks/teacher';
 import { usegetProfile } from '../../hooks/user';
 import { toast } from 'react-hot-toast';
@@ -64,7 +64,17 @@ const getTeacherSubjectIdFromTeacherRecord = (teacher = {}) => {
     );
 };
 
-const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
+const AddGroup = ({
+    children,
+    student,
+    onSuccess,
+    isInGroup = false,
+    defaultActiveTab = 'single',
+    hideSingleTab = false,
+    forceBulkJoin = false,
+    fixedBulkTargetGroupId = '',
+    allowBulkAllStudents = false,
+}) => {
     const pathname = usePathname();
     const isTeacherRoute = pathname?.startsWith('/teacher');
     const { data: profileData } = usegetProfile();
@@ -81,7 +91,7 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
     const teacherScopedBySubject = isTeacherRoute && Boolean(teacherSubjectId);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [activeTab, setActiveTab] = useState('single'); // 'single' | 'bulk'
+    const [activeTab, setActiveTab] = useState(defaultActiveTab); // 'single' | 'bulk'
 
     // Single action states
     const [selectedGroupId, setSelectedGroupId] = useState('');
@@ -94,7 +104,7 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
     const [bulkSourceGroupId, setBulkSourceGroupId] = useState('');
     const [bulkTargetGroupId, setBulkTargetGroupId] = useState('');
     const [bulkSubjectFilter, setBulkSubjectFilter] = useState('all');
-    const [bulkOnlyUnassigned, setBulkOnlyUnassigned] = useState(true);
+    const [bulkOnlyUnassigned, setBulkOnlyUnassigned] = useState(!allowBulkAllStudents);
 
     const { data: groupsData, isLoading: groupsLoading } = usegetAllgroups(
         undefined,
@@ -113,8 +123,12 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
         };
     }, [isTeacherRoute, teacherScopedBySubject, teacherSubjectId, teacherId, bulkOnlyUnassigned]);
 
-    const { data: allStudentsData, isLoading: studentsLoading } = useGetAllStudents(
-        bulkStudentFilters,
+    const { data: allStudentsData, isLoading: studentsLoading } = useGetAllStudentsAll(
+        {
+            ...bulkStudentFilters,
+            // Bulk mode uchun sahifalab emas, barcha talabalarni olib kelamiz
+            limit: 100
+        },
         { enabled: isModalOpen && activeTab === 'bulk' && (!isTeacherRoute || Boolean(teacherSubjectId || teacherId)) }
     );
 
@@ -337,12 +351,12 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
         setBulkSearchTerm('');
         setBulkSelectedIds([]);
         setBulkSourceGroupId('');
-        setBulkTargetGroupId('');
+        setBulkTargetGroupId(fixedBulkTargetGroupId || '');
         setBulkActionType('join');
         setBulkSubjectFilter('all');
-        setBulkOnlyUnassigned(true);
-        setActiveTab('single');
-    }, []);
+        setBulkOnlyUnassigned(!allowBulkAllStudents);
+        setActiveTab(defaultActiveTab);
+    }, [allowBulkAllStudents, defaultActiveTab, fixedBulkTargetGroupId]);
 
     const handleSingleSubmit = (e) => {
         e.preventDefault();
@@ -520,8 +534,11 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
 
     const handleOpenModal = () => {
         const currentHasGroup = student?.group_name && student.group_name !== 'Guruh biriktirilmagan';
-        setActiveTab('single');
+        setActiveTab(hideSingleTab ? 'bulk' : defaultActiveTab);
         setActionType(isInGroup ? (currentHasGroup ? 'change' : 'remove') : (currentHasGroup ? 'change' : 'join'));
+        setBulkTargetGroupId(fixedBulkTargetGroupId || '');
+        setBulkActionType('join');
+        setBulkOnlyUnassigned(!allowBulkAllStudents);
         setIsModalOpen(true);
     };
 
@@ -553,30 +570,32 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
                             </button>
                         </div>
 
-                        <div className="mb-4 flex gap-2 border-b border-gray-200 pb-2.5 sm:mb-5 sm:pb-3">
-                            <button
-                                type="button"
-                                onClick={() => setActiveTab('single')}
-                                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition sm:px-4 sm:py-2 sm:text-sm ${
-                                    activeTab === 'single'
-                                        ? 'bg-[#A60E07] text-white'
-                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                }`}
-                            >
-                                Bitta talaba
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setActiveTab('bulk')}
-                                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition sm:px-4 sm:py-2 sm:text-sm ${
-                                    activeTab === 'bulk'
-                                        ? 'bg-[#A60E07] text-white'
-                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                }`}
-                            >
-                                Ommaviy qo&apos;shish
-                            </button>
-                        </div>
+                        {!hideSingleTab ? (
+                            <div className="mb-4 flex gap-2 border-b border-gray-200 pb-2.5 sm:mb-5 sm:pb-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setActiveTab('single')}
+                                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition sm:px-4 sm:py-2 sm:text-sm ${
+                                        activeTab === 'single'
+                                            ? 'bg-[#A60E07] text-white'
+                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    }`}
+                                >
+                                    Bitta talaba
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setActiveTab('bulk')}
+                                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition sm:px-4 sm:py-2 sm:text-sm ${
+                                        activeTab === 'bulk'
+                                            ? 'bg-[#A60E07] text-white'
+                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    }`}
+                                >
+                                    Ommaviy qo&apos;shish
+                                </button>
+                            </div>
+                        ) : null}
 
                         {activeTab === 'single' ? (
                             <>
@@ -725,44 +744,50 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
                         ) : (
                             <>
                                 <div className="mb-3 rounded-lg border border-gray-200 bg-gray-50 p-2.5 sm:mb-4 sm:p-3">
-                                    <div className="grid gap-2 md:grid-cols-3">
-                                        <button
-                                            type="button"
-                                            onClick={() => setBulkActionType('join')}
-                                            className={`rounded-lg border px-2.5 py-1.5 text-xs font-semibold sm:px-3 sm:py-2 sm:text-sm ${
-                                                bulkActionType === 'join'
-                                                    ? 'border-green-500 bg-green-50 text-green-700'
-                                                    : 'border-gray-300 bg-white text-gray-700'
-                                            }`}
-                                        >
-                                            Guruhga qo&apos;shish
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setBulkActionType('change')}
-                                            className={`rounded-lg border px-2.5 py-1.5 text-xs font-semibold sm:px-3 sm:py-2 sm:text-sm ${
-                                                bulkActionType === 'change'
-                                                    ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                                    : 'border-gray-300 bg-white text-gray-700'
-                                            }`}
-                                        >
-                                            Guruhni almashtirish
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setBulkActionType('remove')}
-                                            className={`rounded-lg border px-2.5 py-1.5 text-xs font-semibold sm:px-3 sm:py-2 sm:text-sm ${
-                                                bulkActionType === 'remove'
-                                                    ? 'border-red-500 bg-red-50 text-red-700'
-                                                    : 'border-gray-300 bg-white text-gray-700'
-                                            }`}
-                                        >
-                                            Guruhdan chiqarish
-                                        </button>
-                                    </div>
+                                    {!forceBulkJoin ? (
+                                        <div className="grid gap-2 md:grid-cols-3">
+                                            <button
+                                                type="button"
+                                                onClick={() => setBulkActionType('join')}
+                                                className={`rounded-lg border px-2.5 py-1.5 text-xs font-semibold sm:px-3 sm:py-2 sm:text-sm ${
+                                                    bulkActionType === 'join'
+                                                        ? 'border-green-500 bg-green-50 text-green-700'
+                                                        : 'border-gray-300 bg-white text-gray-700'
+                                                }`}
+                                            >
+                                                Guruhga qo&apos;shish
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setBulkActionType('change')}
+                                                className={`rounded-lg border px-2.5 py-1.5 text-xs font-semibold sm:px-3 sm:py-2 sm:text-sm ${
+                                                    bulkActionType === 'change'
+                                                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                                        : 'border-gray-300 bg-white text-gray-700'
+                                                }`}
+                                            >
+                                                Guruhni almashtirish
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setBulkActionType('remove')}
+                                                className={`rounded-lg border px-2.5 py-1.5 text-xs font-semibold sm:px-3 sm:py-2 sm:text-sm ${
+                                                    bulkActionType === 'remove'
+                                                        ? 'border-red-500 bg-red-50 text-red-700'
+                                                        : 'border-gray-300 bg-white text-gray-700'
+                                                }`}
+                                            >
+                                                Guruhdan chiqarish
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm font-semibold text-green-700">
+                                            Tanlangan guruhga talabalar qo&apos;shiladi
+                                        </div>
+                                    )}
 
                                     <div className="mt-3 grid gap-2 md:grid-cols-2">
-                                        {(bulkActionType === 'remove' || bulkActionType === 'change') ? (
+                                        {(bulkActionType === 'remove' || bulkActionType === 'change') && !forceBulkJoin ? (
                                             <select
                                                 value={bulkSourceGroupId}
                                                 onChange={(e) => setBulkSourceGroupId(e.target.value)}
@@ -784,8 +809,8 @@ const AddGroup = ({ children, student, onSuccess, isInGroup = false }) => {
                                                 value={bulkTargetGroupId}
                                                 onChange={(value) => setBulkTargetGroupId(value)}
                                                 options={availableGroups}
-                                                placeholder="Kerakli guruhni tanlang *"
-                                                disabled={groupsLoading || isBulkLoading}
+                                                placeholder={fixedBulkTargetGroupId ? 'Tanlangan guruh' : 'Kerakli guruhni tanlang *'}
+                                                disabled={groupsLoading || isBulkLoading || Boolean(fixedBulkTargetGroupId)}
                                             />
                                         ) : null}
                                     </div>
