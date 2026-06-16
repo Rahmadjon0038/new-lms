@@ -1,20 +1,15 @@
 "use client";
-import React, { useState, useEffect } from "react";
-// Next.js App Router uchun muhim hook
+import React from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { instance } from "../../hooks/api";
 import {
   BookOpenIcon,
-  UserGroupIcon,
-  AcademicCapIcon,
   ClipboardDocumentListIcon, // Davomat uchun
   BriefcaseIcon,
   BookmarkIcon, // Qo'llanma uchun
   Cog6ToothIcon,
-  Bars3Icon,
-  XMarkIcon,
 } from "@heroicons/react/24/outline";
 
 // API function for checking English teacher status
@@ -35,16 +30,6 @@ const getTeacherSidebarItems = (isEnglishTeacher) => {
       name: "Mening Guruhlarim",
       icon: BookOpenIcon,
       href: "/teacher",
-    },
-    {
-      name: "Guruhlar",
-      icon: UserGroupIcon,
-      href: "/teacher/groups",
-    },
-    {
-      name: "Talabalar",
-      icon: AcademicCapIcon,
-      href: "/teacher/students",
     },
     {
       name: "Davomat",
@@ -77,31 +62,16 @@ const getTeacherSidebarItems = (isEnglishTeacher) => {
 
 function TeacherSidebar() {
   const pathname = usePathname();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // English teacher status ni tekshirish - TanStack Query bilan
   const { data: teacherData, isLoading } = useQuery({
     queryKey: ['english-teacher-status'],
     queryFn: checkEnglishTeacher,
     retry: 1,
-    staleTime: 5 * 60 * 1000, // 5 daqiqa
+    staleTime: 5 * 60 * 1000,
   });
 
-  // Loading holatida default false, aks holda backend javobini ishlatish
   const isEnglishTeacher = isLoading ? false : teacherData?.isEnglishTeacher === true;
   const TeacherSidebarItems = getTeacherSidebarItems(isEnglishTeacher);
-
-  // Body scroll ni bloklash
-  useEffect(() => {
-    if (isMobileMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isMobileMenuOpen]);
 
   const renderSidebarContent = () => {
     if (isLoading) {
@@ -129,7 +99,6 @@ function TeacherSidebar() {
             <Link
               key={item.name}
               href={item.href}
-              onClick={() => setIsMobileMenuOpen(false)}
               className={`
                 flex items-center px-3 py-3 rounded-lg text-sm font-medium transition duration-150 ease-in-out
                 ${
@@ -154,50 +123,9 @@ function TeacherSidebar() {
   };
 
   return (
-    <>
-      {/* Mobil uchun Hamburger tugmasi */}
-      <button
-        onClick={() => setIsMobileMenuOpen(true)}
-        className="lg:hidden fixed bottom-4 right-4 z-40 p-3 bg-[#A70E07] text-white rounded-full shadow-lg hover:bg-[#8a0c06] transition-colors"
-        aria-label="Menuni ochish"
-      >
-        <Bars3Icon className="h-6 w-6" />
-      </button>
-
-      {/* Mobil Sidebar (Overlay) */}
-      {isMobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 z-50">
-          {/* Qora overlay */}
-          <div 
-            className="absolute inset-0 bg-black/50 transition-opacity"
-            onClick={() => setIsMobileMenuOpen(false)}
-          />
-          
-          {/* Sidebar content */}
-          <div className="absolute left-0 top-0 h-full w-64 bg-white shadow-xl transform transition-transform duration-300 ease-in-out">
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-800">Menyu</h2>
-              <button
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                aria-label="Menuni yopish"
-              >
-                <XMarkIcon className="h-6 w-6 text-gray-600" />
-              </button>
-            </div>
-            
-            {/* Menu items */}
-            {renderSidebarContent()}
-          </div>
-        </div>
-      )}
-
-      {/* Desktop Sidebar */}
-      <div className="hidden lg:flex flex-col w-48 xl:w-60 min-h-screen bg-white shadow-xl">
-        {renderSidebarContent()}
-      </div>
-    </>
+    <div className="hidden lg:flex flex-col w-48 xl:w-60 min-h-screen bg-white shadow-xl">
+      {renderSidebarContent()}
+    </div>
   );
 }
 

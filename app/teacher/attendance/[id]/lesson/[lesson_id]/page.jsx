@@ -278,10 +278,6 @@ const TeacherLessonAttendanceContent = () => {
                             <div className="text-xs sm:text-sm font-medium text-gray-900 truncate">
                               {student.student_name}
                             </div>
-                            <div className="sm:hidden text-[10px] text-gray-500 flex items-center mt-0.5">
-                              <Phone className="h-2 w-2 mr-1" />
-                              {student.phone}
-                            </div>
                           </div>
                         </div>
                       </td>

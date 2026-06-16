@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React from "react";
 import {
   BookOpenIcon,
   UsersIcon,
@@ -10,7 +10,6 @@ import {
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { useGetTeacherGroups } from "../../hooks/groups";
-import { usegetProfile } from "../../hooks/user";
 
 // --- Guruh Kartochkasi ---
 const GroupCard = ({ group }) => {
@@ -30,7 +29,7 @@ const GroupCard = ({ group }) => {
   const statusDisplay = getStatusDisplay();
 
   return (
-    <div className="flex flex-col justify-between bg-white p-3 sm:p-4 md:p-5 lg:p-6 rounded-lg sm:rounded-xl shadow-md sm:shadow-lg border-t-4 border-[#A60E07] transition duration-150 hover:shadow-xl h-full">
+    <div className="teacher-group-card flex flex-col justify-between bg-white p-3 sm:p-4 md:p-5 lg:p-6 rounded-[8px] shadow-md sm:shadow-lg border-t-4 border-[#A60E07] transition duration-150 hover:shadow-xl h-full">
       <div className="mb-3 sm:mb-4">
         <div className="flex justify-between items-start mb-3 sm:mb-4 gap-2">
           <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-800 flex items-start">
@@ -88,7 +87,7 @@ const GroupCard = ({ group }) => {
             )}
 
             <p className="text-[#A60E07] font-bold text-base">
-              {groupInfo.price.toLocaleString()} so'm
+              {groupInfo.price.toLocaleString()} so&apos;m
             </p>
           </div>
         </div>
@@ -109,7 +108,6 @@ const GroupCard = ({ group }) => {
 
 // --- Asosiy Komponent ---
 function TeacherGroups() {
-  const { data: user } = usegetProfile();
   const { data: groupsData, isLoading, error } = useGetTeacherGroups();
 
   if (isLoading) {
@@ -133,26 +131,24 @@ function TeacherGroups() {
 
   const groups = groupsData?.data?.groups || [];
 
-  const fullName = user ? `${user.surname} ${user.name}` : "";
-
   return (
-    <div className="min-h-full p-2 sm:p-4 md:p-0">
-      <header className="mb-4 sm:mb-6 md:mb-8 text-center sm:text-left">
+    <div className="min-h-full p-1 sm:p-4 md:p-0">
+      {/* <header className="mb-4 sm:mb-6 md:mb-8 text-center sm:text-left">
         <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-gray-900 leading-tight">
           Mening Guruhlarim
         </h1>
         {fullName ? (
           <p className="text-xs sm:text-sm md:text-base text-gray-600 mt-1">
-            O'qituvchi: {fullName}
+            O&apos;qituvchi: {fullName}
           </p>
         ) : null}
         <p className="text-xs sm:text-sm md:text-lg text-gray-500 mt-1">
           Jami {groupsData?.data?.total_groups || 0} ta faol guruh
         </p>
-      </header>
+      </header> */}
 
       {/* Grid: Mobil - 1 ta, Planshet - 2 ta, Desktop - 3 ta */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-3 sm:gap-4 md:gap-6 lg:gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-2 sm:gap-4 md:gap-6 lg:gap-8">
         {groups.map((group) => (
           <GroupCard key={group.group_info.id} group={group} />
         ))}

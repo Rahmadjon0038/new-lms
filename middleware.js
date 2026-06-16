@@ -4,6 +4,13 @@ export function middleware(request) {
   const token = request.cookies.get('accessToken')?.value;
   const role = request.cookies.get('role')?.value;
   const { pathname } = request.nextUrl;
+  const teacherAllowedPaths = [
+    '/teacher/attendance',
+    '/teacher/payments-info',
+    '/teacher/settings',
+    '/teacher/guide',
+    '/teacher/my-groups',
+  ];
   const roleHomeRedirectMap = {
     admin: '/admin/attendance',
     teacher: '/teacher/attendance',
@@ -36,6 +43,16 @@ export function middleware(request) {
 
     const roleBase = roleBaseMap[role];
     if (roleBase) {
+      if (role === 'teacher' && pathname.startsWith('/teacher')) {
+        const isAllowedTeacherPath =
+          pathname === '/teacher' ||
+          teacherAllowedPaths.some((allowedPath) => pathname === allowedPath || pathname.startsWith(`${allowedPath}/`));
+
+        if (!isAllowedTeacherPath) {
+          return NextResponse.redirect(new URL('/teacher/attendance', request.url));
+        }
+      }
+
       const protectedBases = Object.values(roleBaseMap);
       const requestedBase = protectedBases.find((base) => pathname === base || pathname.startsWith(`${base}/`));
       if (requestedBase && requestedBase !== roleBase) {

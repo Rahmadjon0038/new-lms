@@ -63,7 +63,7 @@ function Navbar() {
 
   return (
     <header 
-      className="w-full shadow-lg border-b z-[100]" 
+      className="teacher-navbar w-full shadow-lg border-b z-[100]" 
       style={{ backgroundColor: '#A60E07', borderColor: 'rgba(255,255,255,0.1)' }}>
       
       <div className="flex w-full justify-between items-center h-16 px-4 md:px-8">

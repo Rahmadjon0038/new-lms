@@ -1,37 +1,39 @@
 "use client";
 /* eslint-disable react/no-unescaped-entities */
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
-    CalendarIcon,
-    CurrencyDollarIcon,
     CheckCircleIcon,
     XCircleIcon,
     ClockIcon,
     PhoneIcon,
     MagnifyingGlassIcon,
-    FunnelIcon,
+    CurrencyDollarIcon,
     UsersIcon,
     InformationCircleIcon,
 } from "@heroicons/react/24/outline";
 import { useMonthlyPayments } from "../../../hooks/payments";
 
 const MAIN_COLOR = "#A60E07";
+const CURRENT_MONTH = new Date().toISOString().slice(0, 7);
+const formatPhoneNumber = (value) => {
+    const digits = String(value || "").replace(/\D/g, "");
+    const normalized = digits.startsWith("998") ? digits.slice(3) : digits.startsWith("8") ? digits.slice(1) : digits;
+    if (normalized.length !== 9) return value || "-";
+    return `+998-${normalized.slice(0, 2)}-${normalized.slice(2, 5)}-${normalized.slice(5, 7)}-${normalized.slice(7, 9)}`;
+};
 
 const TeacherPaymentsInfo = () => {
-    const [filters, setFilters] = useState({
-        month: new Date().toISOString().slice(0, 7), // Current month (YYYY-MM)
-        payment_status: 'all'
-    });
-
     const [searchTerm, setSearchTerm] = useState('');
-    const [showFilterDropdown, setShowFilterDropdown] = useState(false);
-    const filterDropdownRef = useRef(null);
     const [tooltipVisible, setTooltipVisible] = useState(null);
+    const filters = useMemo(() => ({
+        month: CURRENT_MONTH,
+        payment_status: 'all'
+    }), []);
 
     // Fetch payments using existing hook
     const { data: paymentsData, isLoading, error } = useMonthlyPayments(filters);
 
-    const students = paymentsData?.data?.students || [];
+    const students = useMemo(() => paymentsData?.data?.students || [], [paymentsData]);
     const apiSummary = paymentsData?.data?.summary || {};
 
     // Filter students based on search term
@@ -114,37 +116,6 @@ const TeacherPaymentsInfo = () => {
         );
     };
 
-    const handleFilterChange = (key, value) => {
-        setFilters(prev => ({
-            ...prev,
-            [key]: value
-        }));
-    };
-
-    useEffect(() => {
-        if (!showFilterDropdown) return undefined;
-
-        const handleOutsideClick = (event) => {
-            if (filterDropdownRef.current && !filterDropdownRef.current.contains(event.target)) {
-                setShowFilterDropdown(false);
-            }
-        };
-
-        const handleEscape = (event) => {
-            if (event.key === 'Escape') {
-                setShowFilterDropdown(false);
-            }
-        };
-
-        document.addEventListener('pointerdown', handleOutsideClick);
-        document.addEventListener('keydown', handleEscape);
-
-        return () => {
-            document.removeEventListener('pointerdown', handleOutsideClick);
-            document.removeEventListener('keydown', handleEscape);
-        };
-    }, [showFilterDropdown]);
-
     if (isLoading) {
         return (
             <div className="min-h-full flex items-center justify-center">
@@ -168,7 +139,7 @@ const TeacherPaymentsInfo = () => {
     }
 
     return (
-        <div className="min-h-full">
+        <div className="min-h-full px-1 sm:px-4 md:px-0">
             {/* Header */}
             {/* <div className="mb-4 sm:mb-6">
                 <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
@@ -179,69 +150,24 @@ const TeacherPaymentsInfo = () => {
                 </p>
             </div> */}
 
-            {/* Filters */}
-            <div className="mb-3 rounded-lg bg-white p-2.5 shadow-md sm:mb-6 sm:p-4 md:p-6">
-                <div className="relative z-30" ref={filterDropdownRef}>
-                    <div className="flex items-center gap-2">
-                        <div className="relative flex-1">
-                            <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400 sm:h-4 sm:w-4" />
-                            <input
-                                type="text"
-                                placeholder="Ism, telefon, guruh..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full rounded-lg border border-gray-300 py-2 pl-8 pr-7 text-xs transition-colors focus:border-transparent focus:ring-2 sm:pl-9 sm:pr-8 sm:text-sm"
-                            />
-                            {searchTerm && (
-                                <button
-                                    onClick={() => setSearchTerm('')}
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 transition-colors hover:text-gray-600"
-                                >
-                                    ✕
-                                </button>
-                            )}
-                        </div>
+            {/* Search */}
+            <div className="mb-3 sm:mb-6">
+                <div className="relative">
+                    <MagnifyingGlassIcon className="absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400 sm:left-3 sm:h-4 sm:w-4" />
+                    <input
+                        type="text"
+                        placeholder="Ism, telefon, guruh..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full rounded-lg border border-gray-300 bg-white py-1.5 pl-8 pr-7 text-[11px] transition-colors focus:border-transparent focus:ring-2 sm:py-2 sm:pl-9 sm:pr-8 sm:text-sm"
+                    />
+                    {searchTerm && (
                         <button
-                            type="button"
-                            onClick={() => setShowFilterDropdown((prev) => !prev)}
-                            className="inline-flex h-9 items-center justify-center gap-1 rounded-lg border border-gray-300 px-2.5 text-xs font-medium text-gray-700 hover:bg-gray-50 sm:h-10 sm:px-3 sm:text-sm"
+                            onClick={() => setSearchTerm('')}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 transition-colors hover:text-gray-600"
                         >
-                            <FunnelIcon className="h-4 w-4" />
-                            Filter
+                            ✕
                         </button>
-                    </div>
-
-                    {showFilterDropdown && (
-                        <div className="absolute right-0 z-50 mt-2 w-full rounded-lg border border-gray-200 bg-white p-2.5 shadow-lg sm:w-[560px] sm:p-3">
-                            <div className="mb-3">
-                                <label className="mb-2 block text-xs font-medium text-gray-700 sm:text-sm">To'lov holati:</label>
-                                <div className="flex flex-wrap gap-2">
-                                    {statusTabs.map((status) => (
-                                        <button
-                                            key={status.value}
-                                            onClick={() => handleFilterChange('payment_status', status.value)}
-                                            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors sm:text-sm ${filters.payment_status === status.value
-                                                ? 'text-white shadow-md'
-                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                                }`}
-                                            style={filters.payment_status === status.value ? { backgroundColor: MAIN_COLOR } : {}}
-                                        >
-                                            {status.label}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="mb-1.5 block text-xs font-medium text-gray-700 sm:text-sm">Oy:</label>
-                                <input
-                                    type="month"
-                                    value={filters.month}
-                                    onChange={(e) => handleFilterChange('month', e.target.value)}
-                                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs focus:border-transparent focus:outline-none focus:ring-2 sm:text-sm"
-                                />
-                            </div>
-                        </div>
                     )}
                 </div>
             </div>
@@ -332,8 +258,8 @@ const TeacherPaymentsInfo = () => {
 
             {/* Results Table */}
             <div className="bg-white rounded-lg shadow-md">
-                <div className="border-b border-gray-200 px-2.5 py-2.5 sm:px-4 sm:py-4 md:px-6">
-                    <h2 className="text-base sm:text-lg font-semibold text-gray-800">
+                <div className="border-b border-gray-200 px-3 py-2.5 sm:px-4 sm:py-4 md:px-5">
+                    <h2 className="text-sm sm:text-base md:text-lg font-semibold text-gray-800">
                         To'lov ma'lumotlari ({filteredStudents.length} ta)
                     </h2>
                 </div>
@@ -343,19 +269,19 @@ const TeacherPaymentsInfo = () => {
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-2 sm:px-4 md:px-5 lg:px-4 py-2 sm:py-3 lg:py-3 text-left text-[10px] sm:text-xs lg:text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         #
                                     </th>
-                                    <th className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-2 sm:px-4 md:px-5 lg:px-4 py-2 sm:py-3 lg:py-3 text-left text-[10px] sm:text-xs lg:text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Talaba ma'lumotlari
                                     </th>
-                                    <th className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
+                                    <th className="px-2 sm:px-4 md:px-5 lg:px-4 py-2 sm:py-3 lg:py-3 text-left text-[10px] sm:text-xs lg:text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
                                         Guruh / Fan
                                     </th>
-                                    <th className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-2 sm:px-4 md:px-5 lg:px-4 py-2 sm:py-3 lg:py-3 text-left text-[10px] sm:text-xs lg:text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         To'lov ma'lumotlari
                                     </th>
-                                    <th className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-2 sm:px-4 md:px-5 lg:px-4 py-2 sm:py-3 lg:py-3 text-left text-[10px] sm:text-xs lg:text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Holati
                                     </th>
                                 </tr>
@@ -363,17 +289,17 @@ const TeacherPaymentsInfo = () => {
                             <tbody className="bg-white divide-y divide-gray-200">
                                 {filteredStudents.map((student, index) => (
                                     <tr key={`${student.student_id}-${student.group_id}-${index}`} className="hover:bg-gray-50">
-                                        <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">
+                                        <td className="px-2 sm:px-4 md:px-5 lg:px-4 py-2 sm:py-4 lg:py-3 whitespace-nowrap text-xs sm:text-sm lg:text-sm text-gray-900">
                                             {index + 1}
                                         </td>
-                                        <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-4">
+                                        <td className="px-2 sm:px-4 md:px-5 lg:px-4 py-2 sm:py-4 lg:py-3">
                                             <div className="flex items-start space-x-2 sm:space-x-3">
                                                 <div className="min-w-0 flex-1">
                                                     <div className="flex items-center gap-1 sm:gap-2 mb-1">
-                                                        <div className="text-xs sm:text-sm font-medium text-gray-900 truncate">
+                                                        <div className="text-xs sm:text-sm lg:text-sm font-medium text-gray-900 truncate">
                                                             {student.student_surname} {student.student_name}
                                                         </div>
-                                                        <span className={`inline-flex items-center px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium ${
+                                                        <span className={`inline-flex items-center px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs lg:text-xs font-medium ${
                                                             student.monthly_status === 'active'
                                                                 ? 'bg-green-100 text-green-800'
                                                                 : student.monthly_status === 'finished'
@@ -387,25 +313,25 @@ const TeacherPaymentsInfo = () => {
                                                              student.monthly_status === 'stopped' ? "To'xtatgan" : student.monthly_status}
                                                         </span>
                                                     </div>
-                                                    <div className="flex items-center text-xs sm:text-sm text-gray-500 mt-1">
-                                                        <PhoneIcon className="h-3 w-3 mr-1 flex-shrink-0" />
+                                                    <div className="flex items-center text-xs sm:text-sm lg:text-xs text-gray-500 mt-1">
+                                                        <PhoneIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0" />
                                                         <a href={`tel:${student.student_phone}`} className="hover:underline truncate">
-                                                            {student.student_phone}
+                                                            {formatPhoneNumber(student.student_phone)}
                                                         </a>
                                                     </div>
                                                     {student.student_father_phone && (
-                                                        <div className="flex items-center text-[10px] sm:text-xs text-gray-400 mt-1">
-                                                            <PhoneIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1 flex-shrink-0" />
-                                                            <span className="truncate">{student.student_father_phone} (ota)</span>
+                                                        <div className="flex items-center text-[10px] sm:text-xs lg:text-[11px] text-gray-400 mt-1">
+                                                            <PhoneIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3 lg:h-4 lg:w-4 mr-1 flex-shrink-0" />
+                                                            <span className="truncate">{formatPhoneNumber(student.student_father_phone)} (ota)</span>
                                                         </div>
                                                     )}
                                                     {student.student_father_name && (
-                                                        <div className="text-[10px] sm:text-xs text-gray-400 mt-1 truncate">
+                                                        <div className="text-[10px] sm:text-xs lg:text-[11px] text-gray-400 mt-1 truncate">
                                                             Otasi: {student.student_father_name}
                                                         </div>
                                                     )}
                                                     {student.last_payment_date && (
-                                                        <div className="text-[10px] sm:text-xs text-green-600 mt-1">
+                                                        <div className="text-[10px] sm:text-xs lg:text-[11px] text-green-600 mt-1">
                                                             So'nggi to'lov: {student.last_payment_date}
                                                         </div>
                                                     )}
@@ -415,19 +341,19 @@ const TeacherPaymentsInfo = () => {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-4 hidden sm:table-cell">
+                                        <td className="px-2 sm:px-4 md:px-5 lg:px-4 py-2 sm:py-4 lg:py-3 hidden sm:table-cell">
                                             <div>
-                                                <div className="text-xs sm:text-sm font-medium text-gray-900 mb-1">
+                                                <div className="text-xs sm:text-sm lg:text-sm font-medium text-gray-900 mb-1">
                                                     {student.group_name}
                                                 </div>
-                                                <div className="text-xs sm:text-sm text-gray-500">
+                                                <div className="text-xs sm:text-sm lg:text-xs text-gray-500">
                                                     {student.subject_name}
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-4 whitespace-nowrap">
+                                        <td className="px-2 sm:px-4 md:px-5 lg:px-4 py-2 sm:py-4 lg:py-3 whitespace-nowrap">
                                             <div className="space-y-0.5 sm:space-y-1">
-                                                <div className="text-xs sm:text-sm">
+                                                <div className="text-xs sm:text-sm lg:text-xs">
                                                     <span className="text-gray-500">Asl narx:</span>
                                                     <span className="font-medium ml-1 sm:ml-2">{formatCurrency(parseFloat(student.group_price || 0))}</span>
                                                 </div>
@@ -436,17 +362,17 @@ const TeacherPaymentsInfo = () => {
                                                     <span className="font-medium ml-1 sm:ml-2">{formatCurrency(parseFloat(student.required_amount))}</span>
                                                 </div> */}
                                                 {parseFloat(student.effective_required) !== parseFloat(student.required_amount) && (
-                                                    <div className="text-xs sm:text-sm">
+                                                    <div className="text-xs sm:text-sm lg:text-xs">
                                                         <span className="text-gray-500">Kerak:</span>
                                                         <span className="font-medium text-blue-600 ml-1 sm:ml-2">{formatCurrency(parseFloat(student.effective_required))}</span>
                                                     </div>
                                                 )}
-                                                <div className="text-xs sm:text-sm">
+                                                <div className="text-xs sm:text-sm lg:text-xs">
                                                     <span className="text-gray-500">To'langan:</span>
                                                     <span className="font-medium text-green-600 ml-1 sm:ml-2">{formatCurrency(parseFloat(student.paid_amount))}</span>
                                                 </div>
                                                 {parseFloat(student.discount_amount) > 0 && (
-                                                    <div className="text-xs sm:text-sm relative">
+                                                    <div className="text-xs sm:text-sm lg:text-xs relative">
                                                         <div className="flex items-center gap-1">
                                                             <span className="text-gray-500">Chegirma:</span>
                                                             <span className="font-medium text-orange-500 ml-1 sm:ml-2">-{formatCurrency(parseFloat(student.discount_amount))}</span>
@@ -475,14 +401,14 @@ const TeacherPaymentsInfo = () => {
                                                     </div>
                                                 )}
                                                 {parseFloat(student.debt_amount) > 0 && (
-                                                    <div className="text-xs sm:text-sm">
+                                                        <div className="text-xs sm:text-sm lg:text-xs">
                                                         <span className="text-gray-500">Qarz:</span>
                                                         <span className="font-medium text-red-600 ml-1 sm:ml-2">{formatCurrency(parseFloat(student.debt_amount))}</span>
                                                     </div>
                                                 )}
                                             </div>
                                         </td>
-                                        <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-4 whitespace-nowrap">
+                                        <td className="px-2 sm:px-4 md:px-5 lg:px-4 py-2 sm:py-4 lg:py-3 whitespace-nowrap">
                                             {getStatusBadge(student.payment_status)}
                                         </td>
                                     </tr>
@@ -498,7 +424,7 @@ const TeacherPaymentsInfo = () => {
                             <p className="text-gray-400 text-sm">
                                 {searchTerm 
                                     ? `"${searchTerm}" qidiruviga mos keladigan talabalar topilmadi`
-                                    : 'Tanlangan filtrlar bo\'yicha hech qanday to\'lov ma\'lumoti yo\'q'
+                                    : "Hech qanday to'lov ma'lumoti yo'q"
                                 }
                             </p>
                         </div>

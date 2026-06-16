@@ -18,6 +18,13 @@ const updateMonthlyStatus = async (data) => {
   return response.data;
 };
 
+const formatPhoneNumber = (value) => {
+  const digits = String(value || "").replace(/\D/g, "");
+  const normalized = digits.startsWith("998") ? digits.slice(3) : digits.startsWith("8") ? digits.slice(1) : digits;
+  if (normalized.length !== 9) return value || "-";
+  return `+998-${normalized.slice(0, 2)}-${normalized.slice(2, 5)}-${normalized.slice(5, 7)}-${normalized.slice(7, 9)}`;
+};
+
 // Monthly Status Update Modal
 const MonthlyStatusModal = ({ isOpen, onClose, student, groupId, currentMonth, updateStatusMutation }) => {
   const [newStatus, setNewStatus] = useState('');
@@ -445,32 +452,32 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
 
       {lessons.length && students.length ? (
         <div className="mt-4 overflow-x-auto">
-          <table className="min-w-[980px] w-full">
+          <table className="min-w-[980px] w-full xl:min-w-[1080px]">
             <thead className="bg-gray-50">
               <tr>
-                <th className="border border-gray-400 px-3 py-2 text-left text-xs font-semibold text-gray-700">#</th>
-                <th className="border border-gray-400 px-3 py-2 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">Talaba</th>
-                <th className="border border-gray-400 px-3 py-2 text-center text-xs font-semibold text-gray-700 whitespace-nowrap">Holati</th>
-                <th className="border border-gray-400 px-3 py-2 text-center text-xs font-semibold text-gray-700 whitespace-nowrap">To&apos;langan</th>
-                <th className="border border-gray-400 px-3 py-2 text-center text-xs font-semibold text-gray-700 whitespace-nowrap">Chegirma</th>
-                <th className="border border-gray-400 px-3 py-2 text-center text-xs font-semibold text-gray-700 whitespace-nowrap">Qarz</th>
+                <th className="border border-gray-400 px-2 py-2 text-left text-[10px] font-semibold text-gray-700 sm:px-3 sm:py-2 sm:text-xs lg:px-3 lg:py-2.5 lg:text-xs">#</th>
+                <th className="border border-gray-400 px-2 py-2 text-left text-[10px] font-semibold text-gray-700 whitespace-nowrap sm:px-3 sm:py-2 sm:text-xs lg:px-3 lg:py-2.5 lg:text-xs">Talaba</th>
+                <th className="border border-gray-400 px-2 py-2 text-center text-[10px] font-semibold text-gray-700 whitespace-nowrap sm:px-3 sm:py-2 sm:text-xs lg:px-3 lg:py-2.5 lg:text-xs">Holati</th>
+                <th className="border border-gray-400 px-2 py-2 text-center text-[10px] font-semibold text-gray-700 whitespace-nowrap sm:px-3 sm:py-2 sm:text-xs lg:px-3 lg:py-2.5 lg:text-xs">To&apos;langan</th>
+                <th className="border border-gray-400 px-2 py-2 text-center text-[10px] font-semibold text-gray-700 whitespace-nowrap sm:px-3 sm:py-2 sm:text-xs lg:px-3 lg:py-2.5 lg:text-xs">Chegirma</th>
+                <th className="border border-gray-400 px-2 py-2 text-center text-[10px] font-semibold text-gray-700 whitespace-nowrap sm:px-3 sm:py-2 sm:text-xs lg:px-3 lg:py-2.5 lg:text-xs">Qarz</th>
                 {lessons.map((lesson) => {
                   const lessonIsHoliday = isHolidayFlag(lesson.is_holiday);
                   return (
                   <th
                     key={lesson.id}
-                    className={`min-w-[100px] whitespace-nowrap border border-gray-400 px-3 py-2 text-center text-xs font-semibold text-gray-700 ${
+                    className={`min-w-[100px] whitespace-nowrap border border-gray-400 px-2 py-2 text-center text-[10px] font-semibold text-gray-700 sm:px-3 sm:py-2 sm:text-xs lg:min-w-[110px] lg:px-3 lg:py-2.5 lg:text-xs ${
                       lessonIsHoliday ? "bg-orange-200" : ""
                     }`}
                   >
                     <div>{formatDate(lesson.date)}</div>
-                    <div className="text-[10px] font-medium text-gray-500">{getWeekdayFull(lesson.date)}</div>
+                    <div className="text-[9px] font-medium text-gray-500 sm:text-[10px] lg:text-[11px]">{getWeekdayFull(lesson.date)}</div>
                     {lessonIsHoliday ? (
-                      <div className="mt-1 text-[10px] font-semibold text-orange-800">Dam</div>
+                      <div className="mt-1 text-[9px] font-semibold text-orange-800 sm:text-[10px]">Dam</div>
                     ) : null}
                   </th>
                 )})}
-                <th className="border border-gray-400 px-3 py-2 text-center text-xs font-semibold text-gray-700 whitespace-nowrap">Statistika</th>
+                <th className="border border-gray-400 px-2 py-2 text-center text-[10px] font-semibold text-gray-700 whitespace-nowrap sm:px-3 sm:py-2 sm:text-xs lg:px-3 lg:py-2.5 lg:text-xs">Statistika</th>
               </tr>
             </thead>
             <tbody className="bg-white">
@@ -485,19 +492,21 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
 
                 return (
                   <tr key={`${student.student_id}-${idx}`} className="hover:bg-gray-50">
-                    <td className="border border-gray-400 px-3 py-2 text-xs text-gray-600">{idx + 1}</td>
-                    <td className="border border-gray-400 px-3 py-2 text-xs font-medium text-gray-900 whitespace-nowrap">
+                    <td className="border border-gray-400 px-2 py-2 text-[10px] text-gray-600 sm:px-3 sm:text-xs lg:px-3 lg:py-2.5 lg:text-xs">{idx + 1}</td>
+                    <td className="border border-gray-400 px-2 py-2 text-[10px] font-medium text-gray-900 whitespace-nowrap sm:px-3 sm:py-2 sm:text-xs lg:px-3 lg:py-2.5 lg:text-xs">
                       <div>
-                        <div className="font-medium">{student.student_name}</div>
-                        <div className="mt-0.5 text-[10px] text-gray-500">{student.phone}</div>
-                        <div className="mt-0.5 text-[10px] text-gray-500">
+                        <div className="font-medium lg:text-sm">{student.student_name}</div>
+                        <div className="mt-0.5 text-[9px] text-gray-500 sm:text-[10px] lg:text-xs">
+                          {formatPhoneNumber(student.phone)}
+                        </div>
+                        <div className="mt-0.5 text-[9px] text-gray-500 sm:text-[10px] lg:text-xs">
                           Qo&apos;shilgan: {formatDateYMD(student.joined_at || student.membership_periods?.[0]?.joined_at || "-")}
                         </div>
                       </div>
                     </td>
-                    <td className="border border-gray-400 px-3 py-2 text-center text-xs">
+                    <td className="border border-gray-400 px-2 py-2 text-center text-[10px] sm:px-3 sm:text-xs lg:px-3 lg:py-2.5 lg:text-xs">
                       <div className="flex flex-col items-center justify-center gap-1">
-                        <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
+                        <span className={`inline-flex rounded-full px-2 py-1 text-[10px] font-semibold sm:text-xs ${
                           student.monthly_status === "active" ? "bg-green-100 text-green-800" :
                           student.monthly_status === "stopped" ? "bg-orange-100 text-orange-800" :
                           "bg-gray-100 text-gray-800"
@@ -507,7 +516,7 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
                         {canChangeMonthlyStatus ? (
                           <button
                             onClick={() => setStatusModal({ isOpen: true, student })}
-                            className="rounded px-2 py-0.5 text-xs text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-800"
+                            className="rounded px-2 py-0.5 text-[10px] text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-800 sm:text-xs"
                             title="Statusni o'zgartirish"
                           >
                             O&apos;zgartirish
@@ -515,13 +524,13 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
                         ) : null}
                       </div>
                     </td>
-                    <td className="border border-gray-400 px-3 py-2 text-center text-xs text-gray-700 whitespace-nowrap">
+                    <td className="border border-gray-400 px-2 py-2 text-center text-[10px] text-gray-700 whitespace-nowrap sm:px-3 sm:text-xs lg:px-3 lg:py-2.5 lg:text-xs">
                       {formatMoney(student.paid_amount)}
                     </td>
-                    <td className="border border-gray-400 px-3 py-2 text-center text-xs text-gray-700 whitespace-nowrap">
+                    <td className="border border-gray-400 px-2 py-2 text-center text-[10px] text-gray-700 whitespace-nowrap sm:px-3 sm:text-xs lg:px-3 lg:py-2.5 lg:text-xs">
                       {formatMoney(student.discount_amount)}
                     </td>
-                    <td className={`border border-gray-400 px-3 py-2 text-center text-xs whitespace-nowrap ${
+                    <td className={`border border-gray-400 px-2 py-2 text-center text-[10px] whitespace-nowrap sm:px-3 sm:text-xs lg:px-3 lg:py-2.5 lg:text-xs ${
                       Number(student.debt_amount) > 0 ? "text-red-600" : "text-gray-700"
                     }`}>
                       {formatMoney(student.debt_amount)}
@@ -529,7 +538,7 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
                     {lessons.map((lesson) => {
                       const lessonIsHoliday = isHolidayFlag(lesson.is_holiday);
                       return (
-                      <td key={lesson.id} className="border border-gray-400 px-3 py-2 text-center">
+                      <td key={lesson.id} className="border border-gray-400 px-2 py-2 text-center sm:px-3 lg:px-3 lg:py-2.5">
                         {renderAttendanceSymbol(
                           attendanceMap[lesson.id] ||
                             attendanceMap[lesson.lesson_id] ||
@@ -545,7 +554,7 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
                         )}
                       </td>
                     )})}
-                    <td className="border border-gray-400 px-3 py-2 text-center text-xs">
+                    <td className="border border-gray-400 px-2 py-2 text-center text-[10px] sm:px-3 sm:text-xs lg:px-3 lg:py-2.5 lg:text-xs">
                       <div className="text-center">
                         <div className="font-semibold text-green-600">{student.statistics?.total_attended || student.total_present || 0}</div>
                         <div className="font-semibold text-red-600">{student.statistics?.total_missed || student.total_absent || 0}</div>

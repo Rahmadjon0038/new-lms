@@ -17,3 +17,13 @@ main:has(.no-teacher-padding) {
 .teacher-groups-no-padding > div {
     padding: 0 !important;
 }
+
+@media (max-width: 767px) {
+    body.teacher-mobile-4 :not(.teacher-navbar):not(.teacher-navbar *) {
+        border-radius: 4px !important;
+    }
+
+    body.teacher-mobile-4 .teacher-group-card {
+        border-radius: 6px !important;
+    }
+}

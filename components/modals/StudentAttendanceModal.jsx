@@ -15,6 +15,13 @@ const StudentAttendanceModal = ({ isOpen, onClose, student, month }) => {
 
     if (!isOpen) return null;
 
+    const formatPhoneNumber = (value) => {
+        const digits = String(value || "").replace(/\D/g, "");
+        const normalized = digits.startsWith("998") ? digits.slice(3) : digits.startsWith("8") ? digits.slice(1) : digits;
+        if (normalized.length !== 9) return value || "-";
+        return `+998-${normalized.slice(0, 2)}-${normalized.slice(2, 5)}-${normalized.slice(5, 7)}-${normalized.slice(7, 9)}`;
+    };
+
     const getWeekdayFull = (dateString) => {
         if (!dateString) return '';
         const base = String(dateString).slice(0, 10);
@@ -140,18 +147,18 @@ const StudentAttendanceModal = ({ isOpen, onClose, student, month }) => {
                         <div className="p-3 sm:p-6">
                             {/* Attendance Table - desktop/tablet */}
                             <div className="hidden overflow-x-auto rounded-lg border border-gray-200 bg-white sm:block">
-                                <table className="w-full min-w-[760px] border-collapse sm:min-w-[900px]">
+                                <table className="w-full min-w-[860px] border-collapse xl:min-w-[980px]">
                                     <thead className="bg-gray-50">
                                         <tr>
-                                            <th className="w-10 border border-gray-300 px-2 py-2 text-left text-xs font-medium text-gray-700 sm:w-12 sm:px-4 sm:py-3 sm:text-sm">#</th>
-                                            <th className="min-w-[220px] border border-gray-300 px-2 py-2 text-left text-xs font-medium text-gray-700 sm:px-4 sm:py-3 sm:text-sm">Talaba</th>
-                                            <th className="w-20 border border-gray-300 px-2 py-2 text-center text-xs font-medium text-gray-700 sm:w-24 sm:px-4 sm:py-3 sm:text-sm">Holati</th>
+                                            <th className="w-12 border border-gray-300 px-3 py-3 text-left text-sm font-medium text-gray-700 xl:w-14 xl:px-4 xl:py-4 xl:text-base">#</th>
+                                            <th className="min-w-[250px] border border-gray-300 px-3 py-3 text-left text-sm font-medium text-gray-700 xl:px-4 xl:py-4 xl:text-base">Talaba</th>
+                                            <th className="w-24 border border-gray-300 px-3 py-3 text-center text-sm font-medium text-gray-700 xl:w-28 xl:px-4 xl:py-4 xl:text-base">Holati</th>
                                             {attendanceData.data.daily_attendance?.map((attendance, index) => (
-                                                <th key={index} className="min-w-[100px] border border-gray-300 px-2 py-2 text-center text-xs font-medium text-gray-700 sm:px-4 sm:py-3 sm:text-sm">
+                                                <th key={index} className="min-w-[110px] border border-gray-300 px-3 py-3 text-center text-sm font-medium text-gray-700 xl:min-w-[120px] xl:px-4 xl:py-4 xl:text-base">
                                                     <div className="whitespace-nowrap">
                                                         {formatDateYMD(attendance.date || attendance.lesson_date || attendance.formatted_date)}
                                                     </div>
-                                                    <div className="text-[11px] text-gray-500 font-medium whitespace-nowrap">
+                                                    <div className="text-xs text-gray-500 font-medium whitespace-nowrap xl:text-sm">
                                                         {getWeekdayFull(attendance.date || attendance.lesson_date || attendance.formatted_date)}
                                                     </div>
                                                 </th>
@@ -160,22 +167,22 @@ const StudentAttendanceModal = ({ isOpen, onClose, student, month }) => {
                                     </thead>
                                     <tbody>
                                         <tr className="hover:bg-gray-50">
-                                            <td className="border border-gray-300 px-2 py-2 text-center text-xs text-gray-900 sm:px-4 sm:py-3 sm:text-sm">1</td>
-                                            <td className="border border-gray-300 px-2 py-2 sm:px-4 sm:py-3">
-                                                <div className="max-w-[360px] text-xs font-medium text-gray-900 sm:text-sm">
+                                            <td className="border border-gray-300 px-3 py-3 text-center text-sm text-gray-900 xl:px-4 xl:py-4 xl:text-base">1</td>
+                                            <td className="border border-gray-300 px-3 py-3 xl:px-4 xl:py-4">
+                                                <div className="max-w-[420px] text-sm font-medium text-gray-900 xl:max-w-[520px] xl:text-base">
                                                     <div className="truncate whitespace-nowrap">
                                                         {attendanceData.data.student_info.surname} {attendanceData.data.student_info.name}
                                                     </div>
-                                                    <div className="text-[11px] text-gray-500 truncate whitespace-nowrap">
-                                                        {attendanceData.data.student_info.phone}
+                                                    <div className="text-xs text-gray-500 truncate whitespace-nowrap xl:text-sm">
+                                                        {formatPhoneNumber(attendanceData.data.student_info.phone)}
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="border border-gray-300 px-2 py-2 text-center sm:px-4 sm:py-3">
+                                            <td className="border border-gray-300 px-3 py-3 text-center xl:px-4 xl:py-4">
                                                 {getStatusText(attendanceData.data.monthly_status)}
                                             </td>
                                             {attendanceData.data.daily_attendance?.map((attendance, index) => (
-                                                <td key={index} className="border border-gray-300 px-2 py-2 text-center sm:px-4 sm:py-3">
+                                                <td key={index} className="border border-gray-300 px-3 py-3 text-center xl:px-4 xl:py-4">
                                                     {getStatusIcon(attendance)}
                                                 </td>
                                             ))}

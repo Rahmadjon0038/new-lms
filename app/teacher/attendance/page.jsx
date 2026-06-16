@@ -2,7 +2,7 @@
 
 import React, { Suspense, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { FunnelIcon } from "@heroicons/react/24/outline";
+import { CheckIcon, PhoneIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import {
   useGetMyAttendanceGroups,
   useGetGroupLessons,
@@ -20,6 +20,12 @@ const WEEKDAYS_UZ = ["yakshanba", "dushanba", "seshanba", "chorshanba", "payshan
 const STATUS_OPTIONS = ["keldi", "kelmadi"];
 const isHolidayFlag = (value) =>
   value === true || value === 1 || value === "1" || value === "true";
+const formatPhoneNumber = (value) => {
+  const digits = String(value || "").replace(/\D/g, "");
+  const normalized = digits.startsWith("998") ? digits.slice(3) : digits.startsWith("8") ? digits.slice(1) : digits;
+  if (normalized.length !== 9) return value || "-";
+  return `+998-${normalized.slice(0, 2)}-${normalized.slice(2, 5)}-${normalized.slice(5, 7)}-${normalized.slice(7, 9)}`;
+};
 
 function TeacherAttendancePageContent() {
   const pathname = usePathname();
@@ -29,8 +35,6 @@ function TeacherAttendancePageContent() {
   const notify = useGetNotify();
   const queryClient = useQueryClient();
 
-  const [date, setDate] = useState(searchParams.get("date") || "");
-  const [shift, setShift] = useState(searchParams.get("shift") || "");
   const [selectedMonth, setSelectedMonth] = useState(searchParams.get("month") || CURRENT_MONTH);
   const [selectedGroupId, setSelectedGroupId] = useState(() => {
     if (typeof window === "undefined") return searchParams.get("group_id") || "";
@@ -38,22 +42,17 @@ function TeacherAttendancePageContent() {
   });
   const [selectedLessonId, setSelectedLessonId] = useState("");
   const [attendanceOverrides, setAttendanceOverrides] = useState({});
-  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
-  const hasActiveFilters = Boolean(date || shift);
 
   useEffect(() => {
     const params = new URLSearchParams(searchString);
-    if (date) params.set("date", date); else params.delete("date");
     params.delete("day");
-    if (shift) params.set("shift", shift); else params.delete("shift");
     if (selectedMonth) params.set("month", selectedMonth); else params.delete("month");
     if (selectedGroupId) params.set("group_id", String(selectedGroupId)); else params.delete("group_id");
     router.replace(`${pathname}?${params.toString()}`);
-  }, [date, shift, selectedMonth, selectedGroupId, pathname, router, searchString]);
+  }, [selectedMonth, selectedGroupId, pathname, router, searchString]);
 
   const groupsQuery = useGetMyAttendanceGroups({
-    date: date || undefined,
-    shift: shift || undefined,
+    month: selectedMonth || undefined,
   });
 
   const groups = useMemo(() => {
@@ -265,11 +264,7 @@ function TeacherAttendancePageContent() {
   };
 
   const renderLessonStudentsDropdown = () => (
-    <div className="mt-2 space-y-2 rounded-lg border border-gray-200 bg-gray-50 p-2.5 sm:p-3">
-      <div className="flex items-center justify-end">
-        <span className="hidden text-[11px] text-gray-500 sm:inline">Lesson ID: {activeLessonId}</span>
-      </div>
-
+    <div className="mt-2 space-y-2 sm:rounded-lg sm:border sm:border-gray-200 sm:bg-gray-50 sm:p-2.5">
       {lessonStudentsQuery.isLoading ? (
         <div className="space-y-2">
           {Array.from({ length: 6 }).map((_, idx) => (
@@ -289,12 +284,15 @@ function TeacherAttendancePageContent() {
           <div className="space-y-2 sm:hidden">
             {students.map((student) => {
               const badge = getPaymentBadge(student);
+              const currentStatus = getCurrentStudentStatus(student);
+              const disabled = !canStudentMark(student) || markMutation.isPending;
+              const initial = normalizeStatus(student.status);
               return (
-                <div key={student.attendance_id} className="rounded-lg border border-gray-200 bg-white p-2.5">
+                <div key={student.attendance_id} className="rounded-[6px] border border-gray-200 bg-white p-2.5 shadow-sm">
                   <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="text-sm font-semibold text-gray-900">
-                        {student.student_name || `${student.surname || ""} ${student.name || ""}`.trim()}
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-xs font-semibold text-gray-900 sm:text-sm">
+                        {`${student.surname || ""} ${student.name || ""}`.trim() || student.student_name || "-"}
                       </div>
                       <div className="mt-1 flex flex-wrap gap-1.5 text-[10px]">
                         <span className={`rounded-full px-2 py-0.5 font-semibold ${
@@ -307,39 +305,47 @@ function TeacherAttendancePageContent() {
                         </span>
                       </div>
                     </div>
-                    <div className="text-[10px] text-gray-500">ID: {student.attendance_id}</div>
-                  </div>
-                  <div className="mt-2">
-                    <div className="inline-flex w-full justify-between rounded-xl border border-gray-200 bg-white p-1">
-                      {STATUS_OPTIONS.map((option) => {
-                        const isActive = getCurrentStudentStatus(student) === option;
-                        const disabled = !canStudentMark(student) || markMutation.isPending;
-                        return (
-                          <button
-                            key={option}
-                            type="button"
-                            disabled={disabled}
-                            onClick={() => {
-                              const initial = normalizeStatus(student.status);
-                              setAttendanceOverrides((prev) => {
-                                const next = { ...prev };
-                                if (option === initial) delete next[student.attendance_id];
-                                else next[student.attendance_id] = option;
-                                return next;
-                              });
-                            }}
-                            className={`flex-1 rounded-lg px-2 py-1 text-[11px] font-semibold transition ${
-                              isActive
-                                ? option === "keldi"
-                                  ? "bg-green-600 text-white"
-                                  : "bg-red-600 text-white"
-                                : "text-gray-600 hover:bg-gray-100"
-                            } disabled:cursor-not-allowed disabled:opacity-60`}
-                          >
-                            {option}
-                          </button>
-                        );
-                      })}
+                    <div className="flex shrink-0 items-center gap-1">
+                      <button
+                        type="button"
+                        disabled={disabled}
+                        onClick={() => {
+                          setAttendanceOverrides((prev) => {
+                            const next = { ...prev };
+                            if ("keldi" === initial) delete next[student.attendance_id];
+                            else next[student.attendance_id] = "keldi";
+                            return next;
+                          });
+                        }}
+                        className={`inline-flex h-8 w-8 items-center justify-center rounded-full border text-green-600 transition ${
+                          currentStatus === "keldi"
+                            ? "border-green-600 bg-green-600 text-white"
+                            : "border-green-200 bg-green-50 hover:bg-green-100"
+                        } disabled:cursor-not-allowed disabled:opacity-60`}
+                        aria-label="Keldi"
+                      >
+                        <CheckIcon className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={disabled}
+                        onClick={() => {
+                          setAttendanceOverrides((prev) => {
+                            const next = { ...prev };
+                            if ("kelmadi" === initial) delete next[student.attendance_id];
+                            else next[student.attendance_id] = "kelmadi";
+                            return next;
+                          });
+                        }}
+                        className={`inline-flex h-8 w-8 items-center justify-center rounded-full border text-red-600 transition ${
+                          currentStatus === "kelmadi"
+                            ? "border-red-600 bg-red-600 text-white"
+                            : "border-red-200 bg-red-50 hover:bg-red-100"
+                        } disabled:cursor-not-allowed disabled:opacity-60`}
+                        aria-label="Kelmadi"
+                      >
+                        <XMarkIcon className="h-4 w-4" />
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -349,24 +355,31 @@ function TeacherAttendancePageContent() {
 
           <div className="hidden overflow-x-auto sm:block">
             <table className="min-w-full divide-y divide-gray-200 text-xs sm:text-sm">
-              <thead className="bg-white">
-                <tr>
-                  <th className="px-2 py-1.5 text-left font-semibold text-gray-600 sm:px-3 sm:py-2">Talaba</th>
-                  <th className="px-2 py-1.5 text-left font-semibold text-gray-600 sm:px-3 sm:py-2">Monthly</th>
-                  <th className="px-2 py-1.5 text-left font-semibold text-gray-600 sm:px-3 sm:py-2">To'lov</th>
-                  <th className="px-2 py-1.5 text-left font-semibold text-gray-600 sm:px-3 sm:py-2">Davomat</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 bg-white">
-                {students.map((student) => (
-                  <tr key={student.attendance_id}>
-                    <td className="px-2 py-1.5 sm:px-3 sm:py-2">
-                      {student.student_name || `${student.surname || ""} ${student.name || ""}`.trim()}
-                    </td>
-                    <td className="px-2 py-1.5 sm:px-3 sm:py-2">
-                      <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold sm:px-2 sm:py-1 sm:text-xs ${
-                        student.monthly_status === "active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"
-                      }`}>
+                <thead className="bg-white">
+                  <tr>
+                    <th className="px-2 py-1.5 text-left font-semibold text-gray-600 sm:px-3 sm:py-2">Talaba</th>
+                    <th className="hidden px-2 py-1.5 text-left font-semibold text-gray-600 sm:table-cell sm:px-3 sm:py-2">Telefon</th>
+                    <th className="px-2 py-1.5 text-left font-semibold text-gray-600 sm:px-3 sm:py-2">Holati</th>
+                    <th className="px-2 py-1.5 text-left font-semibold text-gray-600 sm:px-3 sm:py-2">To&apos;lov</th>
+                    <th className="px-2 py-1.5 text-left font-semibold text-gray-600 sm:px-3 sm:py-2">Davomat</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 bg-white">
+                  {students.map((student) => (
+                    <tr key={student.attendance_id}>
+                      <td className="px-2 py-1.5 sm:px-3 sm:py-2">
+                        {`${student.surname || ""} ${student.name || ""}`.trim() || student.student_name || "-"}
+                      </td>
+                      <td className="hidden px-2 py-1.5 sm:table-cell sm:px-3 sm:py-2">
+                        <span className="inline-flex items-center gap-1 text-xs text-gray-600 sm:text-sm">
+                          <PhoneIcon className="h-3.5 w-3.5 text-gray-400" />
+                          {formatPhoneNumber(student.phone)}
+                        </span>
+                      </td>
+                      <td className="px-2 py-1.5 sm:px-3 sm:py-2">
+                        <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold sm:px-2 sm:py-1 sm:text-xs ${
+                          student.monthly_status === "active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"
+                        }`}>
                         {student.monthly_status || "active"}
                       </span>
                     </td>
@@ -477,46 +490,6 @@ function TeacherAttendancePageContent() {
         <p className="text-sm text-gray-600">Mening guruhlarim va darslarim</p>
       </div> */}
 
-      <div className="hidden gap-3 rounded-xl border border-gray-200 bg-white p-4 md:grid md:grid-cols-4">
-        <label className="text-xs text-gray-700 sm:text-sm">
-          <span className="mb-1 block font-medium">Sana (ixtiyoriy)</span>
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className={`w-full rounded-lg border px-2.5 py-1.5 text-xs sm:px-3 sm:py-2 sm:text-sm ${date ? "border-[#A60E07] bg-red-50" : "border-gray-300"}`}
-          />
-        </label>
-
-        <label className="text-xs text-gray-700 sm:text-sm">
-          <span className="mb-1 block font-medium">Smena (ixtiyoriy)</span>
-          <select
-            value={shift}
-            onChange={(e) => setShift(e.target.value)}
-            className={`w-full rounded-lg border px-2.5 py-1.5 text-xs sm:px-3 sm:py-2 sm:text-sm ${shift ? "border-[#A60E07] bg-red-50" : "border-gray-300"}`}
-          >
-            <option value="">Barchasi</option>
-            <option value="morning">kunduzgi</option>
-            <option value="evening">kechki</option>
-          </select>
-        </label>
-
-        <div className="col-span-2 flex items-end md:col-span-1">
-          {hasActiveFilters ? (
-            <button
-              type="button"
-              onClick={() => {
-                setDate("");
-                setShift("");
-              }}
-              className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 sm:w-auto sm:px-4 sm:py-2 sm:text-sm"
-            >
-              Filterlarni tozalash
-            </button>
-          ) : null}
-        </div>
-      </div>
-
       {groupsQuery.isLoading ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -621,55 +594,8 @@ function TeacherAttendancePageContent() {
                   onChange={(e) => setSelectedMonth(e.target.value)}
                   className="rounded-lg border border-gray-300 px-2 py-1 text-[11px] sm:text-xs"
                 />
-                <button
-                  type="button"
-                  onClick={() => setIsMobileFiltersOpen((prev) => !prev)}
-                  className={`rounded-lg border p-1.5 md:hidden ${
-                    hasActiveFilters ? "border-[#A60E07] bg-red-50 text-[#A60E07]" : "border-gray-300 text-gray-600"
-                  }`}
-                  aria-label="Filterni ochish"
-                >
-                  <FunnelIcon className="h-4 w-4" />
-                </button>
               </div>
             </div>
-            {isMobileFiltersOpen ? (
-              <div className="grid grid-cols-2 gap-2 rounded-lg border border-gray-200 bg-gray-50 p-2.5 md:hidden">
-                <label className="text-xs text-gray-700">
-                  <span className="mb-1 block font-medium">Sana</span>
-                  <input
-                    type="date"
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    className={`w-full rounded-lg border px-2.5 py-1.5 text-xs ${date ? "border-[#A60E07] bg-red-50" : "border-gray-300"}`}
-                  />
-                </label>
-                <label className="text-xs text-gray-700">
-                  <span className="mb-1 block font-medium">Smena</span>
-                  <select
-                    value={shift}
-                    onChange={(e) => setShift(e.target.value)}
-                    className={`w-full rounded-lg border px-2.5 py-1.5 text-xs ${shift ? "border-[#A60E07] bg-red-50" : "border-gray-300"}`}
-                  >
-                    <option value="">Barchasi</option>
-                    <option value="morning">kunduzgi</option>
-                    <option value="evening">kechki</option>
-                  </select>
-                </label>
-                {hasActiveFilters ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDate("");
-                      setShift("");
-                    }}
-                    className="col-span-2 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700"
-                  >
-                    Filterlarni tozalash
-                  </button>
-                ) : null}
-              </div>
-            ) : null}
 
             {lessonsQuery.isLoading ? (
               <div className="space-y-2">

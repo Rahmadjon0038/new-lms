@@ -1,21 +1,20 @@
-// app/layout.js
-
 import Navbar from "../../components/Navbar";
 import TeacherSidebar from "../../components/teacher/Sidebar";
+import TeacherBottomNav from "../../components/teacher/BottomNav";
 
 export default function RootLayout({ children }) {
   return (
     <html lang="uz">
-      <body>
+      <body className="teacher-mobile-4">
         <Navbar userName="Rahmadjon Abdullayev" role="Teacher" />
-        <div className="flex min-h-screen bg-gray-50">
-          {/* 1. Sidebar */}
-          {/* Bu yerda sizning sidebar komponentingiz turadi. */}
+        <div className="min-h-screen bg-gray-50 lg:flex">
           <TeacherSidebar />
-
-          {/* 2. Asosiy Kontent (Sahifalar) */}
-          {/* Next.js sahifalari (page.js) shu joyga yuklanadi. */}
-          <main className="flex-1 p-3 sm:p-4 md:p-4 lg:p-6 xl:p-8 overflow-y-auto">{children}</main>
+          <main className="min-h-screen overflow-y-auto px-1 pb-24 pt-2 sm:px-4 sm:pt-4 md:px-4 lg:flex-1 lg:px-6 lg:pb-6 xl:px-8">
+            {children}
+          </main>
+          <div className="lg:hidden">
+            <TeacherBottomNav />
+          </div>
         </div>
       </body>
     </html>
