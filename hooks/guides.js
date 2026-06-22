@@ -109,16 +109,18 @@ const getAdminLevels = async () => {
   return normalizeLevels(unwrap(response));
 };
 
-const createAdminLevel = async ({ banner }) => {
+const createAdminLevel = async ({ title, banner }) => {
   const formData = new FormData();
+  if (title !== undefined) formData.append('title', title);
   formData.append('banner', banner);
   const response = await instance.post('/api/admin/guides/levels', formData);
   return unwrap(response);
 };
 
-const updateAdminLevel = async ({ levelId, banner }) => {
+const updateAdminLevel = async ({ levelId, title, banner }) => {
   const formData = new FormData();
-  formData.append('banner', banner);
+  if (title !== undefined) formData.append('title', title);
+  if (banner) formData.append('banner', banner);
   const response = await instance.patch(`/api/admin/guides/levels/${levelId}`, formData);
   return unwrap(response);
 };

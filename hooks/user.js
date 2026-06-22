@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import toast from "react-hot-toast";
 
 const { instance } = require("./api")
 
@@ -64,6 +65,31 @@ export const useResetPasswordWithKey = () => {
         },
         onError: (err, vars) => {
             if (vars.onError) vars.onError(err);
+        },
+    });
+};
+
+// -------------- Reset all student passwords to default ----------
+const resetAllStudentPasswordsToDefault = async () => {
+    const response = await instance.post('/api/users/admin/reset-all-student-passwords');
+    return response.data;
+};
+
+export const useResetAllStudentPasswordsToDefault = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: resetAllStudentPasswordsToDefault,
+        onSuccess: (data, vars) => {
+            queryClient.invalidateQueries({ queryKey: ['students'] });
+            queryClient.invalidateQueries({ queryKey: ['groups'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+            toast.success(data?.message || 'Barcha talabalar parollari yangilandi');
+            if (vars?.onSuccess) vars.onSuccess(data);
+        },
+        onError: (err, vars) => {
+            toast.error(err?.response?.data?.message || "Talabalar parollarini yangilashda xatolik");
+            if (vars?.onError) vars.onError(err);
         },
     });
 };

@@ -549,7 +549,16 @@ function AdminGroupsPageInner() {
     };
 
     if (isLoading) return <div className="p-6 text-center text-base font-bold text-[#A60E07] animate-pulse sm:p-10 sm:text-xl">Guruhlar yuklanmoqda...</div>;
-    if (error) return <div className="p-6 text-center font-bold text-red-600 sm:p-10">Xatolik yuz berdi!</div>;
+    if (error) {
+        const message = error?.response?.data?.message || error?.message || "Xatolik yuz berdi!";
+        return (
+            <div className="p-6 sm:p-10">
+                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center font-semibold text-red-700">
+                    Guruhlar yuklanmadi: {message}
+                </div>
+            </div>
+        );
+    }
 
     const tabClass = (tabName) =>
         `px-2 py-2 text-center text-xs font-bold border-b-4 transition duration-200 cursor-pointer whitespace-nowrap sm:px-6 sm:text-base

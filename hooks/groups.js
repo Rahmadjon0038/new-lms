@@ -102,58 +102,6 @@ export const useDeleteGroup = () => {
     return deleteGroupMutation;
 }
 
-// ----------- clear all students from all groups ----------
-const clearAllStudentsFromGroups = async () => {
-    const response = await instance.post('/api/groups/admin/clear-all-students');
-    return response.data;
-}
-
-export const useClearAllStudentsFromGroups = () => {
-    const queryClient = useQueryClient();
-    const notify = useGetNotify();
-
-    return useMutation({
-        mutationFn: clearAllStudentsFromGroups,
-        onSuccess: (data, vars) => {
-            queryClient.invalidateQueries(['students']);
-            queryClient.invalidateQueries(['groups']);
-            queryClient.invalidateQueries(['student-groups']);
-            queryClient.invalidateQueries(['dashboard']);
-            notify('ok', data?.message || 'Barcha talabalar guruhlardan chiqarildi');
-            if (vars?.onSuccess) vars.onSuccess(data);
-        },
-        onError: (err, vars) => {
-            notify('err', err?.response?.data?.message || "Talabalarni guruhlardan chiqarishda xatolik");
-            if (vars?.onError) vars.onError(err);
-        }
-    });
-}
-
-// ----------- delete empty groups ----------
-const deleteEmptyGroups = async () => {
-    const response = await instance.delete('/api/groups/admin/delete-empty-groups');
-    return response.data;
-}
-
-export const useDeleteEmptyGroups = () => {
-    const queryClient = useQueryClient();
-    const notify = useGetNotify();
-
-    return useMutation({
-        mutationFn: deleteEmptyGroups,
-        onSuccess: (data, vars) => {
-            queryClient.invalidateQueries(['groups']);
-            queryClient.invalidateQueries(['dashboard']);
-            notify('ok', data?.message || 'Bo\'sh guruhlar o\'chirildi');
-            if (vars?.onSuccess) vars.onSuccess(data);
-        },
-        onError: (err, vars) => {
-            notify('err', err?.response?.data?.message || "Bo'sh guruhlarni o'chirishda xatolik");
-            if (vars?.onError) vars.onError(err);
-        }
-    });
-}
-
 // -------------- Get all groups information ----------
 const getAllgroups = async (status, teacher_id, subject_id) => {
     let url = '/api/groups';
@@ -177,7 +125,7 @@ const getAllgroups = async (status, teacher_id, subject_id) => {
     return response.data;
 }
 
-export const usegetAllgroups = (status, teacher_id, subject_id, options = {}) => {
+export const useGetAllgroups = (status, teacher_id, subject_id, options = {}) => {
     const { data, isLoading, error } = useQuery({
         queryKey: ['groups', status, teacher_id, subject_id],
         queryFn: () => getAllgroups(status, teacher_id, subject_id),
@@ -185,6 +133,8 @@ export const usegetAllgroups = (status, teacher_id, subject_id, options = {}) =>
     });
     return { data, isLoading, error };
 }
+
+export const usegetAllgroups = useGetAllgroups;
 
 // -----------  create new group -----------------
 const createGroup = async ({ groupdata }) => {

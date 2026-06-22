@@ -507,9 +507,11 @@ export default function AdminTeacherGroupsPage() {
 
       {activeGroupId ? (
         <div className="space-y-2 sm:space-y-3 sm:rounded-xl sm:border sm:border-gray-200 sm:bg-white sm:p-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-gray-900 sm:text-lg">Darslar ro&apos;yxati</h2>
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 className="text-base font-bold text-gray-900 sm:text-lg">Darslar ro&apos;yxati</h2>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
               <input
                 type="month"
                 value={selectedMonth}

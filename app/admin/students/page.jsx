@@ -1,12 +1,12 @@
 'use client'
 import React, { Suspense, useState, useMemo, useCallback, memo, useEffect, useRef } from 'react';
 import { FiUserPlus, FiFilter } from 'react-icons/fi';
-import { ClipboardDocumentCheckIcon, ClipboardDocumentIcon, InformationCircleIcon, KeyIcon } from '@heroicons/react/24/outline';
+import { InformationCircleIcon } from '@heroicons/react/24/outline';
 import {
     User, Phone, MapPin, Calendar, GraduationCap,
     CheckCircle, XCircle, Clock, BookOpen, Users,
-    Home, UserCheck, AlertCircle, PlayCircle, PauseCircle, MoreVertical,
-    Shield, ShieldBan, Award, UserX, Trash2, Settings, Building2, ChevronDown, ChevronUp, Pencil, X
+    Home, AlertCircle, PlayCircle, PauseCircle, MoreVertical,
+    ShieldBan, Award, UserX, Trash2, Settings, Building2, ChevronDown, ChevronUp, Pencil, X
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -271,6 +271,13 @@ const getStudentUsername = (student) => (
     ''
 );
 
+const getStudentPassword = (student) => (
+    student?.password ||
+    student?.password_plain ||
+    student?.temp_password ||
+    ''
+);
+
 const extractStudentsArray = (payload) => {
     if (!payload) return [];
     if (Array.isArray(payload.students)) return payload.students;
@@ -424,11 +431,11 @@ const StudentsPageInner = () => {
     const [stats, setStats] = useState(null);
     const [editingId, setEditingId] = useState(null);
     const [editData, setEditData] = useState({});
-    const [visibleRecoveryKeys, setVisibleRecoveryKeys] = useState({});
-    const [copiedRecoveryRow, setCopiedRecoveryRow] = useState(null);
     const [mobileExpandedRows, setMobileExpandedRows] = useState({});
     const [studentEditModal, setStudentEditModal] = useState({ open: false, student: null });
     const [studentDeleteModal, setStudentDeleteModal] = useState({ open: false, student: null });
+    const [credentialExpandedRows, setCredentialExpandedRows] = useState({});
+    const [credentialPasswordDrafts, setCredentialPasswordDrafts] = useState({});
     const [studentEditForm, setStudentEditForm] = useState({
         name: '',
         surname: '',
@@ -530,6 +537,17 @@ const StudentsPageInner = () => {
         observer.observe(node);
         return () => observer.disconnect();
     }, [currentPage, totalPages, isFetching, isLoading]);
+
+    useEffect(() => {
+        const handleOutsideClick = (event) => {
+            if (!event.target.closest('.credential-dropdown')) {
+                setCredentialExpandedRows({});
+            }
+        };
+
+        document.addEventListener('pointerdown', handleOutsideClick);
+        return () => document.removeEventListener('pointerdown', handleOutsideClick);
+    }, []);
 
     // Status dropdown yopish uchun click outside
     useEffect(() => {
@@ -784,7 +802,7 @@ const StudentsPageInner = () => {
             age: ageValue
         };
 
-        const loadingToast = notify('load');
+        notify('load');
         try {
             await updateStudentMutation.mutateAsync({
                 studentId: studentEditModal.student.id,
@@ -808,24 +826,53 @@ const StudentsPageInner = () => {
         }
     };
 
-    const toggleRecoveryKey = (rowKey) => {
-        setVisibleRecoveryKeys((prev) => ({ ...prev, [rowKey]: !prev[rowKey] }));
-    };
-
-    const copyRecoveryKey = async (rowKey, value) => {
-        if (!value) return;
-        try {
-            await navigator.clipboard.writeText(value);
-            setCopiedRecoveryRow(rowKey);
-            notify('ok', "Recovery key nusxalandi");
-            setTimeout(() => setCopiedRecoveryRow(null), 1500);
-        } catch {
-            notify('err', "Recovery key ni nusxalab bo'lmadi");
-        }
-    };
-
     const toggleMobileCard = (rowKey) => {
         setMobileExpandedRows((prev) => ({ ...prev, [rowKey]: !prev[rowKey] }));
+    };
+
+    const toggleCredentialCard = (rowKey, student) => {
+        const isCurrentlyOpen = !!credentialExpandedRows[rowKey];
+        if (!isCurrentlyOpen && !Object.prototype.hasOwnProperty.call(credentialPasswordDrafts, rowKey)) {
+            setCredentialPasswordDrafts((drafts) => ({
+                ...drafts,
+                [rowKey]: getStudentPassword(student) || '123456'
+            }));
+        }
+        setCredentialExpandedRows((prev) => ({ ...prev, [rowKey]: !prev[rowKey] }));
+    };
+
+    const handleCredentialPasswordChange = (rowKey, value) => {
+        setCredentialPasswordDrafts((prev) => ({ ...prev, [rowKey]: value }));
+    };
+
+    const handleCredentialPasswordSave = async (student, rowKey) => {
+        const nextPassword = String(credentialPasswordDrafts[rowKey] ?? '').trim();
+        if (!nextPassword) {
+            notify('err', "Parol bo'sh bo'lmasligi kerak");
+            return;
+        }
+
+        notify('load');
+        try {
+            await updateStudentMutation.mutateAsync({
+                studentId: student.id,
+                data: { password: nextPassword },
+                onSuccess: () => {
+                    notify('dismiss');
+                    notify('ok', 'Talaba paroli yangilandi');
+                    refetch();
+                },
+                onError: (error) => {
+                    notify('dismiss');
+                    const message = error?.response?.data?.message || 'Parol yangilashda xatolik yuz berdi';
+                    notify('err', message);
+                }
+            });
+        } catch (error) {
+            notify('dismiss');
+            const message = error?.response?.data?.message || 'Parol yangilashda xatolik yuz berdi';
+            notify('err', message);
+        }
     };
 
     const getStudentSubjectName = (student) => {
@@ -1058,6 +1105,12 @@ const StudentsPageInner = () => {
                 </div>
             </div>
 
+            {error ? (
+                <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    Talabalar ro&apos;yxatini yuklab bo&apos;lmadi. Backend vaqtincha ishlamayotgan yoki schema yangilanmagan bo&apos;lishi mumkin.
+                </div>
+            ) : null}
+
             {/* Statistika bo'limi */}
             {/* {stats && stats.group_memberships && (
                 <div className="bg-white rounded-lg shadow-lg border border-gray-300 p-6 mb-6">
@@ -1180,13 +1233,6 @@ const StudentsPageInner = () => {
                                             </div>
                                         ) : null}
 
-                                        {getStudentUsername(student) ? (
-                                            <div className="flex items-start gap-1">
-                                                <UserCheck className="mt-0.5 h-3 w-3 text-blue-500" />
-                                                <span className="break-words"><span className="font-medium text-gray-500">Foydalanuvchi nomi:</span> {getStudentUsername(student)}</span>
-                                            </div>
-                                        ) : null}
-
                                         <p><span className="font-medium text-gray-500">Ro'yxatdan sana:</span> {student.registration_date?.split('T')[0] || '-'}</p>
 
                                         <div className="flex items-center justify-between gap-2">
@@ -1244,36 +1290,56 @@ const StudentsPageInner = () => {
                                             ) : null}
                                         </div>
 
-                                        {student.recovery_key ? (
-                                            <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-2">
-                                                <div className="flex items-center justify-between gap-2">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => toggleRecoveryKey(rowKey)}
-                                                        className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-1 text-[11px] font-semibold text-amber-800"
-                                                    >
-                                                        <KeyIcon className="h-3.5 w-3.5" />
-                                                        Recovery key
-                                                    </button>
-                                                    {visibleRecoveryKeys[rowKey] ? (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => copyRecoveryKey(rowKey, student.recovery_key)}
-                                                            className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-1 text-[11px] font-semibold text-gray-700"
-                                                        >
-                                                            {copiedRecoveryRow === rowKey ? (
-                                                                <ClipboardDocumentCheckIcon className="h-3.5 w-3.5 text-green-600" />
-                                                            ) : (
-                                                                <ClipboardDocumentIcon className="h-3.5 w-3.5" />
-                                                            )}
-                                                            {copiedRecoveryRow === rowKey ? "Nusxalandi" : "Nusxa olish"}
-                                                        </button>
-                                                    ) : null}
-                                                </div>
-                                                {visibleRecoveryKeys[rowKey] ? (
-                                                    <p className="mt-2 break-all rounded-md bg-white px-2 py-1.5 text-[11px] font-bold text-amber-900">
-                                                        {student.recovery_key}
-                                                    </p>
+                                        {(getStudentUsername(student) || getStudentPassword(student)) ? (
+                                            <div className="credential-dropdown mt-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => toggleCredentialCard(rowKey, student)}
+                                                    className="inline-flex items-center gap-1 py-1 text-left"
+                                                    aria-label={credentialExpandedRows[rowKey] ? "Kirish ma'lumotlarini yopish" : "Kirish ma'lumotlarini ochish"}
+                                                >
+                                                    <InformationCircleIcon className="h-3.5 w-3.5 text-blue-800" />
+                                                    <span className="text-[11px] font-semibold text-blue-800">
+                                                        Kirish ma'lumotlari
+                                                    </span>
+                                                    {credentialExpandedRows[rowKey] ? (
+                                                        <ChevronUp className="h-3.5 w-3.5 text-blue-700" />
+                                                    ) : (
+                                                        <ChevronDown className="h-3.5 w-3.5 text-blue-700" />
+                                                    )}
+                                                </button>
+
+                                                {credentialExpandedRows[rowKey] ? (
+                                                    <div className="pl-6 text-[11px] text-blue-900">
+                                                        {getStudentUsername(student) ? (
+                                                            <p className="break-all">
+                                                                <span className="font-semibold">Foydalanuvchi nomi:</span> {getStudentUsername(student)}
+                                                            </p>
+                                                        ) : null}
+
+                                                        <div className={getStudentUsername(student) ? 'mt-2' : 'mt-1'}>
+                                                            <label className="block text-[11px] font-semibold text-blue-900">
+                                                                Parol
+                                                            </label>
+                                                            <div className="mt-1 flex items-center gap-2">
+                                                                <input
+                                                                    type="text"
+                                                                    value={credentialPasswordDrafts[rowKey] ?? getStudentPassword(student) ?? '123456'}
+                                                                    onChange={(e) => handleCredentialPasswordChange(rowKey, e.target.value)}
+                                                                    className="min-w-0 flex-1 rounded-md border border-blue-200 bg-white px-2 py-1 text-[11px] text-blue-900 outline-none focus:border-blue-400"
+                                                                    placeholder="Parol"
+                                                                />
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleCredentialPasswordSave(student, rowKey)}
+                                                                    disabled={updateStudentMutation.isLoading}
+                                                                    className="inline-flex h-7 items-center justify-center rounded-md bg-[#A60E07] px-2 text-[11px] font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
+                                                                >
+                                                                    Saqlash
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 ) : null}
                                             </div>
                                         ) : null}
@@ -1400,43 +1466,54 @@ const StudentsPageInner = () => {
                                                             </div>
                                                         )}
 
-                                                        {getStudentUsername(student) && (
-                                                            <div className="flex items-start gap-1 text-xs text-gray-600">
-                                                                <UserCheck className="h-3 w-3 text-blue-500 mt-0.5" />
-                                                                <span className="break-words"><strong>Foydalanuvchi nomi:</strong> {getStudentUsername(student)}</span>
-                                                            </div>
-                                                        )}
+                                                        {(getStudentUsername(student) || getStudentPassword(student)) ? (
+                                                            <div className="credential-dropdown mt-2">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => toggleCredentialCard(rowKey, student)}
+                                                                    className="inline-flex items-center gap-1 py-1 text-left"
+                                                                    aria-label={credentialExpandedRows[rowKey] ? "Kirish ma'lumotlarini yopish" : "Kirish ma'lumotlarini ochish"}
+                                                                >
+                                                                    <InformationCircleIcon className="h-3.5 w-3.5 text-blue-800" />
+                                                                    <span className="text-[11px] font-semibold text-blue-800">Kirish ma'lumotlari</span>
+                                                                    {credentialExpandedRows[rowKey] ? (
+                                                                        <ChevronUp className="h-3.5 w-3.5 text-blue-700" />
+                                                                    ) : (
+                                                                        <ChevronDown className="h-3.5 w-3.5 text-blue-700" />
+                                                                    )}
+                                                                </button>
 
-                                                        {student.recovery_key ? (
-                                                            <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-2">
-                                                                <div className="flex items-center justify-between gap-2">
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => toggleRecoveryKey(rowKey)}
-                                                                        className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-1 text-[11px] font-semibold text-amber-800 hover:bg-amber-100"
-                                                                    >
-                                                                        <KeyIcon className="h-3.5 w-3.5" />
-                                                                        Recovery key
-                                                                    </button>
-                                                                    {visibleRecoveryKeys[rowKey] ? (
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => copyRecoveryKey(rowKey, student.recovery_key)}
-                                                                            className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-1 text-[11px] font-semibold text-gray-700 hover:bg-gray-100"
-                                                                        >
-                                                                            {copiedRecoveryRow === rowKey ? (
-                                                                                <ClipboardDocumentCheckIcon className="h-3.5 w-3.5 text-green-600" />
-                                                                            ) : (
-                                                                                <ClipboardDocumentIcon className="h-3.5 w-3.5" />
-                                                                            )}
-                                                                            {copiedRecoveryRow === rowKey ? "Nusxalandi" : "Nusxa olish"}
-                                                                        </button>
-                                                                    ) : null}
-                                                                </div>
-                                                                {visibleRecoveryKeys[rowKey] ? (
-                                                                    <p className="mt-2 break-all rounded-md bg-white px-2 py-1.5 text-[11px] font-bold text-amber-900">
-                                                                        {student.recovery_key}
-                                                                    </p>
+                                                                {credentialExpandedRows[rowKey] ? (
+                                                                    <div className="pl-6 text-[11px] text-blue-900">
+                                                                        {getStudentUsername(student) ? (
+                                                                            <p className="break-all">
+                                                                                <span className="font-semibold">Foydalanuvchi nomi:</span> {getStudentUsername(student)}
+                                                                            </p>
+                                                                        ) : null}
+
+                                                                        <div className={getStudentUsername(student) ? 'mt-2' : 'mt-1'}>
+                                                                            <label className="block text-[11px] font-semibold text-blue-900">
+                                                                                Parol
+                                                                            </label>
+                                                                            <div className="mt-1 flex items-center gap-2">
+                                                                                <input
+                                                                                    type="text"
+                                                                                    value={credentialPasswordDrafts[rowKey] ?? getStudentPassword(student) ?? '123456'}
+                                                                                    onChange={(e) => handleCredentialPasswordChange(rowKey, e.target.value)}
+                                                                                    className="min-w-0 flex-1 rounded-md border border-blue-200 bg-white px-2 py-1 text-[11px] text-blue-900 outline-none focus:border-blue-400"
+                                                                                    placeholder="Parol"
+                                                                                />
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => handleCredentialPasswordSave(student, rowKey)}
+                                                                                    disabled={updateStudentMutation.isLoading}
+                                                                                    className="inline-flex h-7 items-center justify-center rounded-md bg-[#A60E07] px-2 text-[11px] font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
+                                                                                >
+                                                                                    Saqlash
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
                                                                 ) : null}
                                                             </div>
                                                         ) : null}
@@ -1772,7 +1849,6 @@ const StudentsPageInner = () => {
                 onConfirm={handleStudentDelete}
                 isLoading={deleteStudentMutation.isLoading}
             />
-
             {showScrollTop && (
                 <button
                     type="button"
