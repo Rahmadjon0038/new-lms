@@ -20,7 +20,6 @@ import {
   EllipsisVerticalIcon,
   ExclamationTriangleIcon,
   ClipboardDocumentIcon,
-  ArrowPathIcon,
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
 import {
@@ -30,7 +29,6 @@ import {
   useTerminateTeacher,
   useReactivateTeacher,
   useUpdateTeacher,
-  useRotateRecoveryKey
 } from "../../../hooks/teacher";
 import { useGetNotify } from "../../../hooks/notify";
 import { useGetAllSubjects } from "../../../hooks/subjects";
@@ -483,8 +481,7 @@ const EditTeacherModal = ({ isOpen, onClose, teacher, onUpdate, isLoading }) => 
 
 function TeacherCard({ teacher, onEdit, onDelete, onStatusChange, notify }) {
   const [showActions, setShowActions] = useState(false);
-  const [copiedRecoveryKey, setCopiedRecoveryKey] = useState(false);
-  const rotateRecoveryMutation = useRotateRecoveryKey();
+  const [copiedCreds, setCopiedCreds] = useState(false);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -520,46 +517,19 @@ function TeacherCard({ teacher, onEdit, onDelete, onStatusChange, notify }) {
     return formatDateYMD(dateString);
   };
 
-  const recoveryKey = teacher.recovery_key || teacher.recoveryKey;
-  const [localRecoveryKey, setLocalRecoveryKey] = useState(recoveryKey || "");
+  const login = teacher.username || "";
+  const password = teacher.password || "";
 
-  React.useEffect(() => {
-    setLocalRecoveryKey(recoveryKey || "");
-  }, [recoveryKey]);
-
-  const handleCopyRecoveryKey = async () => {
-    if (!localRecoveryKey) return;
-
+  const handleCopyCreds = async () => {
+    if (!login) return;
     try {
-      await navigator.clipboard.writeText(localRecoveryKey);
-      setCopiedRecoveryKey(true);
-      notify("ok", "Recovery key nusxalandi");
-      setTimeout(() => setCopiedRecoveryKey(false), 1500);
+      await navigator.clipboard.writeText(`Login: ${login}\nParol: ${password}`);
+      setCopiedCreds(true);
+      notify("ok", "Hisob ma'lumotlari nusxalandi");
+      setTimeout(() => setCopiedCreds(false), 1500);
     } catch {
-      notify("err", "Recovery key ni nusxalashda xatolik");
+      notify("err", "Nusxalashda xatolik");
     }
-  };
-
-  const handleRotateRecoveryKey = () => {
-    if (!teacher?.id) return;
-    rotateRecoveryMutation.mutate({
-      userId: teacher.id,
-      onSuccess: (data) => {
-        const newKey =
-          data?.data?.recovery_key ||
-          data?.data?.recoveryKey ||
-          data?.recovery_key ||
-          data?.recoveryKey ||
-          "";
-        if (newKey) {
-          setLocalRecoveryKey(newKey);
-        }
-        notify("ok", "Recovery key yangilandi");
-      },
-      onError: () => {
-        notify("err", "Recovery key yangilashda xatolik");
-      }
-    });
   };
 
   return (
@@ -659,34 +629,28 @@ function TeacherCard({ teacher, onEdit, onDelete, onStatusChange, notify }) {
           </div>
         )}
 
-        {/* Recovery key */}
-        {localRecoveryKey && (
-          <div className="bg-amber-50 rounded-lg p-3 mt-3 border border-amber-100">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleRotateRecoveryKey}
-                  disabled={rotateRecoveryMutation.isLoading}
-                  title="Recovery keyni yangilash"
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors disabled:opacity-60"
-                >
-                  <ArrowPathIcon className={`h-4 w-4 ${rotateRecoveryMutation.isLoading ? "animate-spin" : ""}`} />
-                </button>
-                <span className="text-xs font-medium text-amber-700 uppercase tracking-wide">Recovery key</span>
-              </div>
-              <button
-                type="button"
-                onClick={handleCopyRecoveryKey}
-                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-amber-700 bg-amber-100 hover:bg-amber-200 rounded-md transition-colors"
-              >
-                {copiedRecoveryKey ? <CheckIcon className="h-3.5 w-3.5" /> : <ClipboardDocumentIcon className="h-3.5 w-3.5" />}
-                {copiedRecoveryKey ? "Copied" : "Copy"}
-              </button>
-            </div>
-            <p className="text-sm text-gray-800 mt-1 break-all">{localRecoveryKey}</p>
+        {/* Hisobga kirish ma'lumotlari (ochiq) */}
+        <div className="bg-indigo-50 rounded-lg p-3 mt-3 border border-indigo-100">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-xs font-medium text-indigo-700 uppercase tracking-wide">Hisobga kirish</span>
+            <button
+              type="button"
+              onClick={handleCopyCreds}
+              className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-indigo-700 bg-indigo-100 hover:bg-indigo-200 rounded-md transition-colors"
+            >
+              {copiedCreds ? <CheckIcon className="h-3.5 w-3.5" /> : <ClipboardDocumentIcon className="h-3.5 w-3.5" />}
+              {copiedCreds ? "Nusxalandi" : "Nusxalash"}
+            </button>
           </div>
-        )}
+          <div className="mt-2 space-y-1">
+            <p className="text-sm text-gray-800">
+              <span className="font-medium text-gray-600">Login:</span> {login || "—"}
+            </p>
+            <p className="text-sm text-gray-800">
+              <span className="font-medium text-gray-600">Parol:</span> {password || "—"}
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Action tugmalari */}

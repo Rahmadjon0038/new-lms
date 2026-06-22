@@ -47,28 +47,6 @@ export const useGetProfile = () => {
 // Backward-compatible alias
 export const usegetProfile = useGetProfile;
 
-// -------------- Forgot password with recovery key ----------
-const resetPasswordWithRecoveryKey = async ({ username, recovery_key, new_password }) => {
-    const response = await instance.post('/api/users/forgot-password/reset-with-key', {
-        username,
-        recovery_key,
-        new_password,
-    });
-    return response.data;
-};
-
-export const useResetPasswordWithKey = () => {
-    return useMutation({
-        mutationFn: resetPasswordWithRecoveryKey,
-        onSuccess: (data, vars) => {
-            if (vars.onSuccess) vars.onSuccess(data);
-        },
-        onError: (err, vars) => {
-            if (vars.onError) vars.onError(err);
-        },
-    });
-};
-
 // -------------- Reset all student passwords to default ----------
 const resetAllStudentPasswordsToDefault = async () => {
     const response = await instance.post('/api/users/admin/reset-all-student-passwords');
@@ -89,6 +67,29 @@ export const useResetAllStudentPasswordsToDefault = () => {
         },
         onError: (err, vars) => {
             toast.error(err?.response?.data?.message || "Talabalar parollarini yangilashda xatolik");
+            if (vars?.onError) vars.onError(err);
+        },
+    });
+};
+
+// -------------- Reset all teacher passwords to default (777777) ----------
+const resetAllTeacherPasswordsToDefault = async () => {
+    const response = await instance.post('/api/users/admin/reset-all-teacher-passwords');
+    return response.data;
+};
+
+export const useResetAllTeacherPasswordsToDefault = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: resetAllTeacherPasswordsToDefault,
+        onSuccess: (data, vars) => {
+            queryClient.invalidateQueries({ queryKey: ['teachers'] });
+            toast.success(data?.message || "Barcha o'qituvchilar parollari yangilandi");
+            if (vars?.onSuccess) vars.onSuccess(data);
+        },
+        onError: (err, vars) => {
+            toast.error(err?.response?.data?.message || "O'qituvchilar parollarini yangilashda xatolik");
             if (vars?.onError) vars.onError(err);
         },
     });

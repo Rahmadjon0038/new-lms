@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowUpTrayIcon, ArrowLeftIcon, DocumentIcon, EyeIcon, PencilSquareIcon, PlusCircleIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { ArrowUpTrayIcon, ArrowLeftIcon, DocumentIcon, PencilSquareIcon, PlusCircleIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
 import {
   useAdminCreateLesson,
@@ -14,6 +14,7 @@ import {
   useAdminUpdateLesson,
   useAdminUploadMainPdf,
 } from '../../../../../hooks/guides';
+import { instance } from '../../../../../hooks/api';
 
 const MAIN_COLOR = '#A60E07';
 
@@ -40,10 +41,10 @@ const Modal = ({ isOpen, title, onClose, children, onSave, loading }) => {
 
         <div className="mt-4 flex justify-end gap-2">
           <button onClick={onClose} className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700">
-            Cancel
+            Bekor qilish
           </button>
           <button disabled={loading} onClick={onSave} className="rounded-lg bg-[#A60E07] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
-            Save
+            Saqlash
           </button>
         </div>
       </div>
@@ -73,6 +74,7 @@ const AdminGuideLevelPage = () => {
   const [lessonEditModal, setLessonEditModal] = useState({ open: false, lessonId: null });
   const [localLessons, setLocalLessons] = useState([]);
   const [draggingLessonId, setDraggingLessonId] = useState(null);
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState('');
 
   const [pdfForm, setPdfForm] = useState({ file: null });
   const [lessonForm, setLessonForm] = useState({ topic_name: '' });
@@ -81,6 +83,34 @@ const AdminGuideLevelPage = () => {
   useEffect(() => {
     setLocalLessons(lessons);
   }, [lessons]);
+
+  // Asosiy PDF muqovasi uchun birinchi sahifani yuklab olamiz (himoyalangan stream)
+  useEffect(() => {
+    let active = true;
+    let objectUrl = '';
+
+    const loadPreview = async () => {
+      if (!mainPdf) {
+        setPdfPreviewUrl('');
+        return;
+      }
+      const url = mainPdf.protected_file_url || `/api/admin/guides/levels/${levelId}/main-pdf/file`;
+      try {
+        const response = await instance.get(url, { responseType: 'blob' });
+        if (!active) return;
+        objectUrl = URL.createObjectURL(response.data);
+        setPdfPreviewUrl(objectUrl);
+      } catch {
+        if (active) setPdfPreviewUrl('');
+      }
+    };
+
+    loadPreview();
+    return () => {
+      active = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [mainPdf, levelId]);
 
   const hasOrderChanged = useMemo(() => {
     if (localLessons.length !== lessons.length) return true;
@@ -121,42 +151,42 @@ const AdminGuideLevelPage = () => {
         order_index: idx + 1,
       }));
       await reorderLessonsMutation.mutateAsync({ levelId, lessons: payload });
-      toast.success('Lesson order saved');
+      toast.success('Darslar tartibi saqlandi');
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Failed to save lesson order');
+      toast.error(err?.response?.data?.message || 'Tartibni saqlashda xatolik');
     }
   };
 
   const handleSaveMainPdf = async () => {
     if (!pdfForm.file) {
-      toast.error('Please select a PDF');
+      toast.error('Iltimos, PDF tanlang');
       return;
     }
 
     try {
       await uploadMainPdfMutation.mutateAsync({ levelId, file: pdfForm.file });
-      toast.success('Main PDF uploaded');
+      toast.success('Asosiy PDF yuklandi');
       setPdfForm({ file: null });
       setPdfModalOpen(false);
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Failed to upload main PDF');
+      toast.error(err?.response?.data?.message || 'PDF yuklashda xatolik');
     }
   };
 
   const handleDeleteMainPdf = async () => {
-    if (!window.confirm('Are you sure you want to delete the main PDF?')) return;
+    if (!window.confirm('Asosiy PDFni o‘chirmoqchimisiz?')) return;
 
     try {
       await deleteMainPdfMutation.mutateAsync(levelId);
-      toast.success('Main PDF deleted');
+      toast.success('Asosiy PDF o‘chirildi');
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Failed to delete main PDF');
+      toast.error(err?.response?.data?.message || 'PDFni o‘chirishda xatolik');
     }
   };
 
   const handleCreateLesson = async () => {
     if (!lessonForm.topic_name.trim()) {
-      toast.error('Topic name is required');
+      toast.error('Mavzu nomini kiriting');
       return;
     }
 
@@ -165,17 +195,17 @@ const AdminGuideLevelPage = () => {
         levelId,
         topic_name: lessonForm.topic_name.trim(),
       });
-      toast.success('Lesson added');
+      toast.success('Dars qo‘shildi');
       setLessonForm({ topic_name: '' });
       setLessonCreateModal(false);
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Failed to add lesson');
+      toast.error(err?.response?.data?.message || 'Dars qo‘shishda xatolik');
     }
   };
 
   const handleUpdateLesson = async () => {
     if (!editForm.topic_name.trim()) {
-      toast.error('Topic name is required');
+      toast.error('Mavzu nomini kiriting');
       return;
     }
 
@@ -185,30 +215,30 @@ const AdminGuideLevelPage = () => {
         lessonId: lessonEditModal.lessonId,
         topic_name: editForm.topic_name.trim(),
       });
-      toast.success('Lesson updated');
+      toast.success('Dars yangilandi');
       setLessonEditModal({ open: false, lessonId: null });
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Failed to update lesson');
+      toast.error(err?.response?.data?.message || 'Darsni yangilashda xatolik');
     }
   };
 
   const handleDeleteLesson = async (lessonId) => {
-    if (!window.confirm('Are you sure you want to delete this lesson?')) return;
+    if (!window.confirm('Ushbu darsni o‘chirmoqchimisiz?')) return;
 
     try {
       await deleteLessonMutation.mutateAsync({ lessonId, levelId });
-      toast.success('Lesson deleted');
+      toast.success('Dars o‘chirildi');
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Failed to delete lesson');
+      toast.error(err?.response?.data?.message || 'Darsni o‘chirishda xatolik');
     }
   };
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 p-4">
-        <div className="text-center py-10">
-          <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2" style={{ borderColor: MAIN_COLOR }} />
-          <p className="text-gray-600 mt-3">Loading...</p>
+        <div className="py-10 text-center">
+          <div className="inline-block h-10 w-10 animate-spin rounded-full border-b-2" style={{ borderColor: MAIN_COLOR }} />
+          <p className="mt-3 text-gray-600">Yuklanmoqda...</p>
         </div>
       </div>
     );
@@ -217,9 +247,9 @@ const AdminGuideLevelPage = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 p-4">
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4">
-          <p className="font-semibold">Error</p>
-          <p className="text-sm">Failed to load level details.</p>
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
+          <p className="font-semibold">Xatolik</p>
+          <p className="text-sm">Daraja ma&apos;lumotlarini yuklab bo&apos;lmadi.</p>
         </div>
       </div>
     );
@@ -232,34 +262,55 @@ const AdminGuideLevelPage = () => {
           <ArrowLeftIcon className="h-5 w-5 text-gray-700" />
         </button>
         <div className="min-w-0">
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 break-words">{level?.title || 'Level'}</h1>
+          <h1 className="break-words text-2xl font-bold text-slate-900 md:text-3xl">{level?.title || 'Daraja'}</h1>
         </div>
       </div>
 
-      <div className="mb-6 rounded-xl bg-white p-4 sm:p-5 shadow-md border border-gray-100">
-        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-lg sm:text-xl font-semibold text-slate-900">Main PDF guide</h2>
-          <span className={`text-sm px-3 py-1 rounded-full font-medium ${mainPdf ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
-            {mainPdf ? 'PDF available' : 'PDF missing'}
-          </span>
+      <div className="mb-6 rounded-xl border border-gray-100 bg-white p-4 shadow-md sm:p-5">
+        <div className="mb-4">
+          <h2 className="text-lg font-semibold text-slate-900 sm:text-xl">Asosiy qo&apos;llanma (PDF)</h2>
         </div>
 
         {mainPdf ? (
-          <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-4 min-w-0">
-                <div className="rounded-xl bg-red-100 p-3">
-                  <DocumentIcon className="h-8 w-8 text-red-600" />
+          <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-end">
+            {/* Kitob ko'rinishidagi karta — birinchi sahifa muqova sifatida */}
+            <button
+              type="button"
+              onClick={() => router.push(`/admin/guide/${courseId}/${levelId}/main-pdf`)}
+              className="group relative block h-64 w-48 shrink-0 overflow-hidden rounded-l-md rounded-r-xl bg-white shadow-[0_12px_30px_rgba(0,0,0,0.25)] transition-transform duration-200 hover:-translate-y-1"
+              style={{ borderLeft: `10px solid ${MAIN_COLOR}` }}
+              title="Ochish"
+            >
+              {pdfPreviewUrl ? (
+                <iframe
+                  title="PDF muqova"
+                  src={`${pdfPreviewUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH&zoom=page-width&page=1`}
+                  className="pointer-events-none absolute inset-0 h-full w-full"
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center">
+                  <div className="h-8 w-8 animate-spin rounded-full border-b-2" style={{ borderColor: MAIN_COLOR }} />
                 </div>
-                <div className="min-w-0">
-                  <h3 className="text-base sm:text-lg font-semibold text-slate-900 truncate">{mainPdf.file_name || 'Main PDF'}</h3>
-                  <p className="text-sm text-slate-600">PDF uploaded</p>
-                </div>
-              </div>
-              <div className="flex w-full items-center gap-2 sm:w-auto">
-                <Link href={`/admin/guide/${courseId}/${levelId}/main-pdf`} className="rounded-lg bg-[#A60E07] px-4 py-2 text-sm font-semibold text-white">
-                  Open
-                </Link>
+              )}
+              {/* kitob jildidagi yorug'lik chizig'i */}
+              <span className="pointer-events-none absolute left-0 top-0 h-full w-2 bg-white/30" />
+              {/* hover overlay */}
+              <span className="absolute inset-0 flex items-center justify-center opacity-0 transition group-hover:bg-black/25 group-hover:opacity-100">
+                <span className="rounded-full bg-white/90 px-3 py-1.5 text-xs font-semibold text-gray-800">Ochish</span>
+              </span>
+            </button>
+
+            <div className="min-w-0 flex-1 text-center sm:text-left">
+              <h3 className="truncate text-base font-semibold text-slate-900 sm:text-lg">{mainPdf.file_name || 'Asosiy PDF'}</h3>
+              <p className="text-sm text-slate-600">PDF yuklangan</p>
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+                <button
+                  onClick={() => setPdfModalOpen(true)}
+                  className="rounded-lg bg-gray-100 px-3 py-2 text-gray-700 hover:bg-gray-200"
+                  title="Tahrirlash"
+                >
+                  <PencilSquareIcon className="h-5 w-5" />
+                </button>
                 <button onClick={handleDeleteMainPdf} className="rounded-lg bg-red-50 px-3 py-2 text-red-700 hover:bg-red-100">
                   <TrashIcon className="h-5 w-5" />
                 </button>
@@ -268,38 +319,38 @@ const AdminGuideLevelPage = () => {
           </div>
         ) : (
           <div className="rounded-xl border-2 border-dashed border-gray-300 bg-white p-6 text-center">
-            <p className="mb-3 text-sm text-gray-600">Main PDF not uploaded yet</p>
+            <p className="mb-3 text-sm text-gray-600">Asosiy PDF hali yuklanmagan</p>
             <button onClick={() => setPdfModalOpen(true)} className="rounded-lg bg-[#A60E07] px-4 py-2 text-sm font-semibold text-white">
-              Upload PDF
+              PDF yuklash
             </button>
           </div>
         )}
       </div>
 
-      <div className="rounded-xl bg-white p-4 sm:p-5 shadow-md border border-gray-100">
+      <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-md sm:p-5">
         <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-lg sm:text-xl font-semibold text-slate-900">Lesson list</h2>
+          <h2 className="text-lg font-semibold text-slate-900 sm:text-xl">Darslar ro&apos;yxati</h2>
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={handleSaveOrder}
               disabled={!hasOrderChanged || reorderLessonsMutation.isPending}
               className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Save order
+              Tartibni saqlash
             </button>
             <button
               onClick={() => setLessonCreateModal(true)}
               className="inline-flex items-center gap-2 rounded-lg bg-[#A60E07] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
             >
               <PlusCircleIcon className="h-5 w-5" />
-              Add lesson
+              Dars qo&apos;shish
             </button>
           </div>
         </div>
 
-        <p className="mb-3 text-xs text-gray-500">Drag and drop lessons to reorder them, then click &quot;Save order&quot;.</p>
+        <p className="mb-3 text-xs text-gray-500">Darslarni tartiblash uchun sudrab joylashtiring, so&apos;ng &quot;Tartibni saqlash&quot; tugmasini bosing.</p>
 
-        {localLessons.length === 0 ? <p className="text-sm text-gray-500">Lesson topilmadi.</p> : null}
+        {localLessons.length === 0 ? <p className="text-sm text-gray-500">Dars topilmadi.</p> : null}
 
         <div className="space-y-3">
           {localLessons.map((lesson, idx) => (
@@ -316,11 +367,11 @@ const AdminGuideLevelPage = () => {
               }`}
             >
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-                <div className="flex items-center gap-4 min-w-0">
+                <div className="flex min-w-0 items-center gap-4">
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#A60E07] text-sm font-bold text-white">{idx + 1}</div>
                   <div className="min-w-0">
-                    <h3 className="text-base sm:text-lg font-semibold text-slate-900 truncate">{lesson.title}</h3>
-                    <p className="text-sm text-slate-600 truncate">{lesson.topic_name || lesson.title}</p>
+                    <h3 className="truncate text-base font-semibold text-slate-900 sm:text-lg">{lesson.title}</h3>
+                    <p className="truncate text-sm text-slate-600">{lesson.topic_name || lesson.title}</p>
                   </div>
                 </div>
 
@@ -334,7 +385,7 @@ const AdminGuideLevelPage = () => {
                     className="inline-flex items-center gap-1 rounded-lg bg-gray-100 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-200"
                   >
                     <PencilSquareIcon className="h-4 w-4" />
-                    Edit
+                    Tahrirlash
                   </button>
                   <button
                     onClick={(e) => {
@@ -355,7 +406,7 @@ const AdminGuideLevelPage = () => {
 
       <Modal
         isOpen={pdfModalOpen}
-        title="Upload main PDF"
+        title="Asosiy PDF yuklash"
         onClose={() => setPdfModalOpen(false)}
         onSave={handleSaveMainPdf}
         loading={uploadMainPdfMutation.isPending}
@@ -389,7 +440,7 @@ const AdminGuideLevelPage = () => {
 
       <Modal
         isOpen={lessonCreateModal}
-        title="Add new lesson"
+        title="Yangi dars qo'shish"
         onClose={() => setLessonCreateModal(false)}
         onSave={handleCreateLesson}
         loading={createLessonMutation.isPending}
@@ -399,14 +450,14 @@ const AdminGuideLevelPage = () => {
             value={lessonForm.topic_name}
             onChange={(e) => setLessonForm((prev) => ({ ...prev, topic_name: e.target.value }))}
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-            placeholder="Topic name"
+            placeholder="Mavzu nomi"
           />
         </div>
       </Modal>
 
       <Modal
         isOpen={lessonEditModal.open}
-        title="Update lesson"
+        title="Darsni tahrirlash"
         onClose={() => setLessonEditModal({ open: false, lessonId: null })}
         onSave={handleUpdateLesson}
         loading={updateLessonMutation.isPending}
@@ -416,7 +467,7 @@ const AdminGuideLevelPage = () => {
             value={editForm.topic_name}
             onChange={(e) => setEditForm((prev) => ({ ...prev, topic_name: e.target.value }))}
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-            placeholder="Topic name"
+            placeholder="Mavzu nomi"
           />
         </div>
       </Modal>

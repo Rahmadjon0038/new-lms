@@ -58,7 +58,7 @@ const AdminMainPdfPage = () => {
         objectUrl = URL.createObjectURL(response.data);
         setPdfUrl(objectUrl);
       } catch (err) {
-        toast.error(err?.response?.data?.message || 'Failed to load main PDF');
+        toast.error(err?.response?.data?.message || 'Asosiy PDFni yuklab bo‘lmadi');
       } finally {
         if (active) setLoadingPdf(false);
       }
@@ -90,14 +90,14 @@ const AdminMainPdfPage = () => {
           <button onClick={() => router.push(`/admin/guide/${courseId}/${levelId}`)} className="rounded-md bg-gray-100 hover:bg-gray-200 p-2">
             <ArrowLeftIcon className="h-4 w-4 text-gray-700" />
           </button>
-          <h1 className="text-sm font-semibold text-gray-800">Main PDF preview</h1>
+          <h1 className="text-sm font-semibold text-gray-800">Asosiy PDF ko‘rinishi</h1>
         </div>
         <button
           onClick={() => setIsFullScreenMode(true)}
           className="inline-flex items-center gap-1 rounded-md bg-gray-100 px-2.5 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-200 sm:px-3"
         >
           <ArrowsPointingOutIcon className="h-4 w-4" />
-          <span className="hidden sm:inline">Full screen</span>
+          <span className="hidden sm:inline">To‘liq ekran</span>
         </button>
       </div>
 
@@ -106,13 +106,13 @@ const AdminMainPdfPage = () => {
           <div className="h-full flex items-center justify-center">
             <div className="text-center">
               <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2" style={{ borderColor: MAIN_COLOR }} />
-              <p className="text-gray-600 mt-3">PDF is loading...</p>
+              <p className="text-gray-600 mt-3">PDF yuklanmoqda...</p>
             </div>
           </div>
         ) : (
           <div className="mx-auto w-full max-w-4xl">
             <div className="mb-3 rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
-              <p className="text-sm font-semibold text-gray-800">Main PDF</p>
+              <p className="text-sm font-semibold text-gray-800">Asosiy PDF</p>
               <p className="text-xs text-gray-500">Markazlangan ko&apos;rinish</p>
             </div>
             <div className="rounded-2xl border border-gray-200 bg-white p-3 shadow-sm sm:p-4">
@@ -135,14 +135,14 @@ const AdminMainPdfPage = () => {
         >
           <div className="h-full" onClick={(e) => e.stopPropagation()}>
             <div className="h-12 border-b border-white/10 px-3 sm:px-4 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-white">Main PDF - Full screen</h2>
+              <h2 className="text-sm font-semibold text-white">Asosiy PDF - To‘liq ekran</h2>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setIsFullScreenMode(false)}
                   className="inline-flex items-center gap-1 rounded-md bg-white/10 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/20"
                 >
                   <ArrowsPointingInIcon className="h-4 w-4" />
-                  Exit
+                  Chiqish
                 </button>
                 <button onClick={() => setIsFullScreenMode(false)} className="rounded-md bg-white/10 p-2 text-white hover:bg-white/20">
                   <XMarkIcon className="h-4 w-4" />

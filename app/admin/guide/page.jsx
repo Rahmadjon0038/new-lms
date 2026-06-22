@@ -1,133 +1,139 @@
 'use client';
-/* eslint-disable @next/next/no-img-element */
-import React, { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
-import {
-  ArrowsPointingOutIcon,
-  ArrowRightIcon,
-  ArrowUpTrayIcon,
-  PencilSquareIcon,
-  PlusCircleIcon,
-  TrashIcon,
-  XMarkIcon,
-} from '@heroicons/react/24/outline';
+
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Plus, Pencil, Trash2, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { useAdminCreateLevel, useAdminDeleteLevel, useAdminGuideLevels, useAdminUpdateLevel } from '../../../hooks/guides';
-import { instance } from '../../../hooks/api';
+import {
+  useAdminCreateLevel,
+  useAdminDeleteLevel,
+  useAdminGuideLevels,
+  useAdminUpdateLevel,
+} from '../../../hooks/guides';
+import LevelPath from '../../../components/guide/LevelPath';
+import {
+  GUIDE_ICONS,
+  GUIDE_COLORS,
+  LEVEL_PRESETS,
+  getGuideIcon,
+  getGuideColor,
+  DEFAULT_ICON_KEY,
+  DEFAULT_COLOR_KEY,
+} from '../../../components/guide/guideIcons';
 
 const MAIN_COLOR = '#A60E07';
 
-const renderPreview = ({ url, mimeType, title, className = '' }) => {
-  if (!url) {
-    return (
-      <div className={`flex items-center justify-center bg-gray-50 text-sm font-semibold text-gray-500 ${className}`}>
-        Preview yo&apos;q
-      </div>
-    );
-  }
+const emptyForm = { title: '', icon: DEFAULT_ICON_KEY, color: DEFAULT_COLOR_KEY };
 
-  if (mimeType === 'application/pdf') {
-    return (
-      <iframe
-        title={title || 'PDF preview'}
-        src={`${url}#toolbar=0&navpanes=0&scrollbar=0&view=FitH&zoom=page-width`}
-        className={className}
-      />
-    );
-  }
-
-  return <img src={url} alt={title || 'Preview'} className={className} />;
-};
-
-const FileModal = ({
-  isOpen,
-  title,
-  onClose,
-  onSave,
-  isLoading,
-  form,
-  setForm,
-  previewUrl,
-  previewMimeType,
-  previewLabel,
-  submitLabel,
-  requireFile = false,
-}) => {
+const LevelModal = ({ isOpen, mode, form, setForm, onClose, onSave, isLoading }) => {
   if (!isOpen) return null;
 
+  const previewColor = getGuideColor(form.color);
+
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
       <div
-        className="w-full max-w-2xl rounded-xl bg-white p-5 shadow-xl"
+        className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-            {previewLabel ? <p className="mt-1 text-sm text-gray-500">{previewLabel}</p> : null}
-          </div>
+          <h3 className="text-lg font-semibold text-gray-900">
+            {mode === 'edit' ? 'Darajani tahrirlash' : 'Yangi daraja'}
+          </h3>
           <button onClick={onClose} className="rounded-md p-1 hover:bg-gray-100" type="button">
-            <XMarkIcon className="h-5 w-5 text-gray-600" />
+            <X className="h-5 w-5 text-gray-600" />
           </button>
         </div>
 
-        <div className="space-y-4">
-          <label className="block">
-            <span className="mb-2 block text-sm font-medium text-gray-700">Title *</span>
-            <input
-              type="text"
-              value={form.title}
-              onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
-              className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-[#A60E07]"
-              placeholder="Daraja nomi"
-            />
-          </label>
-
-          <div className="block">
-            <span className="mb-2 block text-sm font-medium text-gray-700">Qo&apos;llanma PDF *</span>
-            {form.file || previewUrl ? (
-              <div className="relative overflow-hidden rounded-xl border border-gray-300 bg-gray-50">
-                {form.file ? (
-                  <button
-                    type="button"
-                    onClick={() => setForm((prev) => ({ ...prev, file: null }))}
-                    className="absolute right-2 top-2 z-10 rounded-full bg-red-500 p-1 text-white"
-                  >
-                    <XMarkIcon className="h-4 w-4" />
-                  </button>
-                ) : null}
-                {renderPreview({
-                  url: previewUrl,
-                  mimeType: previewMimeType,
-                  title: form.title,
-                  className: 'h-56 w-full object-cover',
-                })}
-              </div>
-            ) : (
-              <label className="flex h-56 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#A60E07]/40 bg-white text-gray-600 hover:bg-gray-50">
-                <input
-                  type="file"
-                  accept="application/pdf"
-                  onChange={(e) => setForm((prev) => ({ ...prev, file: e.target.files?.[0] || null }))}
-                  className="hidden"
-                />
-                <ArrowUpTrayIcon className="h-9 w-9 text-gray-400" />
-                <p className="text-sm font-semibold">PDF yuklash</p>
-                <p className="text-xs text-gray-500">Banner avtomatik PDF&apos;dan olinadi</p>
-              </label>
-            )}
-            {!requireFile && !form.file ? (
-              <p className="mt-2 text-xs text-gray-500">Agar faqat title o&apos;zgarsa, PDF qayta yuklash shart emas.</p>
-            ) : null}
+        {/* Tanlangan icon + rang ko'rinishi */}
+        <div className="mb-5 flex items-center justify-center">
+          <div
+            className="flex h-20 w-20 items-center justify-center rounded-full text-white shadow-lg"
+            style={{ backgroundColor: previewColor, boxShadow: `0 6px 0 0 ${previewColor}55` }}
+          >
+            {React.createElement(getGuideIcon(form.icon), { className: 'h-9 w-9', strokeWidth: 2.4 })}
           </div>
         </div>
 
-        <div className="mt-5 flex justify-end gap-2">
+        {/* Tayyor darajalar — bosilganda nom + mos icon + rang tanlanadi */}
+        <div className="mb-4">
+          <span className="mb-2 block text-sm font-medium text-gray-700">Tayyor darajalar</span>
+          <div className="flex flex-wrap gap-2">
+            {LEVEL_PRESETS.map((preset) => {
+              const active = form.title === preset.title;
+              return (
+                <button
+                  key={preset.title}
+                  type="button"
+                  onClick={() => setForm({ title: preset.title, icon: preset.icon, color: preset.color })}
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                    active ? 'border-transparent text-white' : 'border-gray-200 text-gray-700 hover:bg-gray-50'
+                  }`}
+                  style={active ? { backgroundColor: getGuideColor(preset.color) } : undefined}
+                >
+                  {React.createElement(getGuideIcon(preset.icon), { className: 'h-4 w-4' })}
+                  {preset.title}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <label className="block">
+          <span className="mb-2 block text-sm font-medium text-gray-700">Daraja nomi *</span>
+          <input
+            type="text"
+            value={form.title}
+            onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
+            className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-[#A60E07]"
+            placeholder="Masalan: Beginner"
+          />
+        </label>
+
+        <div className="mt-4">
+          <span className="mb-2 block text-sm font-medium text-gray-700">Iconka</span>
+          <div className="grid max-h-44 grid-cols-7 gap-2 overflow-y-auto rounded-xl border border-gray-200 p-2">
+            {GUIDE_ICONS.map(({ key, Icon }) => {
+              const active = form.icon === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setForm((prev) => ({ ...prev, icon: key }))}
+                  className={`flex h-10 w-10 items-center justify-center rounded-lg border transition ${
+                    active ? 'border-transparent text-white' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                  }`}
+                  style={active ? { backgroundColor: previewColor } : undefined}
+                >
+                  <Icon className="h-5 w-5" strokeWidth={2.2} />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <span className="mb-2 block text-sm font-medium text-gray-700">Rang</span>
+          <div className="flex flex-wrap gap-2">
+            {GUIDE_COLORS.map(({ key, hex }) => {
+              const active = form.color === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setForm((prev) => ({ ...prev, color: key }))}
+                  className={`h-8 w-8 rounded-full transition ${active ? 'ring-2 ring-offset-2 ring-gray-400' : ''}`}
+                  style={{ backgroundColor: hex }}
+                  title={key}
+                />
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="mt-6 flex justify-end gap-2">
           <button onClick={onClose} className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700" type="button">
-            Cancel
+            Bekor qilish
           </button>
           <button
             disabled={isLoading}
@@ -136,7 +142,7 @@ const FileModal = ({
             style={{ backgroundColor: MAIN_COLOR }}
             type="button"
           >
-            {submitLabel}
+            Saqlash
           </button>
         </div>
       </div>
@@ -145,287 +151,158 @@ const FileModal = ({
 };
 
 const AdminGuidePage = () => {
+  const router = useRouter();
   const { data: levels = [], isLoading, error } = useAdminGuideLevels();
   const createLevelMutation = useAdminCreateLevel();
   const updateLevelMutation = useAdminUpdateLevel();
   const deleteLevelMutation = useAdminDeleteLevel();
 
-  const [createModal, setCreateModal] = useState(false);
-  const [editModal, setEditModal] = useState({ open: false, levelId: null, bannerUrl: '', bannerMimeType: '', title: '' });
-  const [bannerViewer, setBannerViewer] = useState({ open: false, url: '', mimeType: '', title: '' });
-  const [createForm, setCreateForm] = useState({ title: '', file: null });
-  const [editForm, setEditForm] = useState({ title: '', file: null });
-  const [levelBanners, setLevelBanners] = useState({});
+  const [modal, setModal] = useState({ open: false, mode: 'create', levelId: null });
+  const [form, setForm] = useState(emptyForm);
 
-  const createPreviewUrl = useMemo(() => (createForm.file ? URL.createObjectURL(createForm.file) : ''), [createForm.file]);
-  const createPreviewMimeType = createForm.file?.type || '';
-  const editPreviewUrl = useMemo(() => (editForm.file ? URL.createObjectURL(editForm.file) : editModal.bannerUrl || ''), [editForm.file, editModal.bannerUrl]);
-  const editPreviewMimeType = editForm.file?.type || editModal.bannerMimeType || '';
+  const openCreate = () => {
+    setForm(emptyForm);
+    setModal({ open: true, mode: 'create', levelId: null });
+  };
 
-  useEffect(
-    () => () => {
-      if (createPreviewUrl) URL.revokeObjectURL(createPreviewUrl);
-      if (editForm.file && editPreviewUrl) URL.revokeObjectURL(editPreviewUrl);
-    },
-    [createPreviewUrl, editPreviewUrl, editForm.file]
-  );
-
-  useEffect(() => {
-    let active = true;
-    const objectUrls = [];
-
-    const loadBanners = async () => {
-      if (!levels.length) {
-        setLevelBanners({});
-        return;
-      }
-
-      const entries = await Promise.all(
-        levels.map(async (level) => {
-          if (!level?.protected_banner_url) return [level.id, ''];
-          try {
-            const response = await instance.get(level.protected_banner_url, { responseType: 'blob' });
-            const objectUrl = URL.createObjectURL(response.data);
-            objectUrls.push(objectUrl);
-            return [level.id, objectUrl];
-          } catch {
-            return [level.id, ''];
-          }
-        })
-      );
-
-      if (active) setLevelBanners(Object.fromEntries(entries));
-    };
-
-    loadBanners();
-    return () => {
-      active = false;
-      objectUrls.forEach((url) => URL.revokeObjectURL(url));
-    };
-  }, [levels]);
-
-  const openEditModal = (level) => {
-    setEditForm({ title: level.title || '', file: null });
-    setEditModal({
-      open: true,
-      levelId: level.id,
-      bannerUrl: levelBanners[level.id] || '',
-      bannerMimeType: level.banner_mime_type || '',
+  const openEdit = (level) => {
+    setForm({
       title: level.title || '',
+      icon: level.icon || DEFAULT_ICON_KEY,
+      color: level.color || DEFAULT_COLOR_KEY,
     });
+    setModal({ open: true, mode: 'edit', levelId: level.id });
   };
 
-  const handleCreateLevel = async () => {
-    const title = String(createForm.title || '').trim();
+  const closeModal = () => setModal({ open: false, mode: 'create', levelId: null });
+
+  const handleSave = async () => {
+    const title = String(form.title || '').trim();
     if (!title) {
-      toast.error('Title kiritish kerak');
-      return;
-    }
-    if (!createForm.file) {
-      toast.error('PDF yuklash kerak');
+      toast.error('Daraja nomini kiriting');
       return;
     }
 
     try {
-      await createLevelMutation.mutateAsync({
-        title,
-        banner: createForm.file,
-      });
-      toast.success('Level created');
-      setCreateForm({ title: '', file: null });
-      setCreateModal(false);
+      if (modal.mode === 'edit') {
+        await updateLevelMutation.mutateAsync({
+          levelId: modal.levelId,
+          title,
+          icon: form.icon,
+          color: form.color,
+        });
+        toast.success('Daraja yangilandi');
+      } else {
+        await createLevelMutation.mutateAsync({ title, icon: form.icon, color: form.color });
+        toast.success('Daraja qo‘shildi');
+      }
+      closeModal();
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Failed to create level');
+      toast.error(err?.response?.data?.message || 'Saqlashda xatolik');
     }
   };
 
-  const handleUpdateLevel = async () => {
-    const title = String(editForm.title || '').trim();
-    if (!title) {
-      toast.error('Title kiritish kerak');
-      return;
-    }
-
-    try {
-      await updateLevelMutation.mutateAsync({
-        levelId: editModal.levelId,
-        title,
-        banner: editForm.file || undefined,
-      });
-      toast.success('Level updated');
-      setEditForm({ title: '', file: null });
-      setEditModal({ open: false, levelId: null, bannerUrl: '', bannerMimeType: '', title: '' });
-    } catch (err) {
-      toast.error(err?.response?.data?.message || 'Failed to update level');
-    }
-  };
-
-  const handleDeleteLevel = async (levelId) => {
-    if (!window.confirm('Are you sure you want to delete this level?')) return;
-
+  const handleDelete = async (levelId) => {
+    if (!window.confirm('Ushbu darajani o‘chirmoqchimisiz?')) return;
     try {
       await deleteLevelMutation.mutateAsync(levelId);
-      toast.success('Level deleted');
+      toast.success('Daraja o‘chirildi');
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Failed to delete level');
+      toast.error(err?.response?.data?.message || 'O‘chirishda xatolik');
     }
   };
 
+  const isSaving = createLevelMutation.isPending || updateLevelMutation.isPending;
+
+  // API darajalarni yangidan eskiga (DESC) qaytaradi — eng oxirgi qo'shilgan o'ngda
+  // turishi uchun teskari tartiblab beramiz (eski chapda, yangi o'ngda).
+  const orderedLevels = [...levels].reverse();
+
   return (
-    <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6">
-      <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <button
-          onClick={() => setCreateModal(true)}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white sm:w-auto"
-          style={{ backgroundColor: MAIN_COLOR }}
-          type="button"
-        >
-          <PlusCircleIcon className="h-5 w-5" />
-          Add level
-        </button>
-      </div>
+    <div className="relative h-[calc(100dvh-4rem)] w-full overflow-hidden bg-gray-50">
+      <button
+        onClick={openCreate}
+        className="absolute right-3 top-3 z-40 inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-white shadow-lg"
+        style={{ backgroundColor: MAIN_COLOR }}
+        type="button"
+      >
+        <Plus className="h-5 w-5" />
+        Daraja qo&apos;shish
+      </button>
 
       {isLoading ? (
-        <div className="py-10 text-center">
-          <div className="inline-block h-10 w-10 animate-spin rounded-full border-b-2" style={{ borderColor: MAIN_COLOR }} />
-          <p className="mt-3 text-gray-600">Loading...</p>
+        <div className="flex h-full flex-col items-center justify-center">
+          <div className="h-10 w-10 animate-spin rounded-full border-b-2" style={{ borderColor: MAIN_COLOR }} />
+          <p className="mt-3 text-gray-600">Yuklanmoqda...</p>
         </div>
       ) : null}
 
       {error ? (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
-          <p className="font-semibold">Error</p>
-          <p className="text-sm">Failed to load levels.</p>
+        <div className="flex h-full items-center justify-center p-4">
+          <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
+            <p className="font-semibold">Xatolik</p>
+            <p className="text-sm">Darajalarni yuklab bo&apos;lmadi.</p>
+          </div>
         </div>
       ) : null}
 
       {!isLoading && !error ? (
         levels.length === 0 ? (
-          <div className="rounded-xl bg-white p-8 text-center text-gray-600 shadow-md">No levels found</div>
-        ) : (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
-            {levels.map((level) => {
-              const bannerUrl = levelBanners[level.id] || '';
-              const bannerMimeType = level.banner_mime_type || '';
-
-              return (
-                <div
-                  key={level.id}
-                  className="flex h-full flex-col rounded-xl border border-gray-200 bg-white p-4 shadow-md transition duration-150 hover:shadow-lg sm:p-5"
-                  style={{ borderTop: `5px solid ${MAIN_COLOR}` }}
-                >
-                  <div className="relative mb-4 overflow-hidden rounded-xl border border-gray-200 bg-gradient-to-br from-gray-100 to-gray-50">
-                    <div className="absolute right-2 top-2 z-10 flex items-center gap-1">
-                      <button
-                        onClick={() => setBannerViewer({ open: true, url: bannerUrl, mimeType: bannerMimeType, title: level.title || '' })}
-                        disabled={!bannerUrl}
-                        className="rounded-lg border border-gray-200 bg-white/95 p-2 hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
-                        title="Full screen"
-                        type="button"
-                      >
-                        <ArrowsPointingOutIcon className="h-4 w-4 text-gray-700" />
-                      </button>
-                      <button
-                        onClick={() => openEditModal(level)}
-                        className="rounded-lg border border-gray-200 bg-white/95 p-2 hover:bg-white"
-                        title="Edit"
-                        type="button"
-                      >
-                        <PencilSquareIcon className="h-4 w-4 text-gray-700" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteLevel(level.id)}
-                        className="rounded-lg border border-red-100 bg-red-50/95 p-2 hover:bg-red-100"
-                        title="Delete"
-                        type="button"
-                      >
-                        <TrashIcon className="h-4 w-4 text-red-700" />
-                      </button>
-                    </div>
-
-                    {renderPreview({
-                      url: bannerUrl,
-                      mimeType: bannerMimeType,
-                      title: level.title || 'Level banner',
-                      className: 'h-64 w-full object-cover sm:h-80 lg:h-96',
-                    })}
-                  </div>
-
-                  <p className="text-base font-semibold text-gray-900">{level.title || 'Untitled Level'}</p>
-
-                  <Link
-                    href={`/admin/guide/1/${level.id}`}
-                    className="mt-auto inline-flex w-full items-center justify-center rounded-lg bg-[#A60E07] py-3 text-base font-bold text-white transition-opacity hover:opacity-90"
-                  >
-                    View lessons
-                    <ArrowRightIcon className="ml-2 h-5 w-5" />
-                  </Link>
-                </div>
-              );
-            })}
+          <div className="flex h-full flex-col items-center justify-center text-gray-600">
+            <p className="mb-4">Hozircha daraja yo&apos;q</p>
+            <button
+              onClick={openCreate}
+              className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white"
+              style={{ backgroundColor: MAIN_COLOR }}
+              type="button"
+            >
+              <Plus className="h-5 w-5" />
+              Birinchi darajani qo&apos;shish
+            </button>
           </div>
+        ) : (
+          <LevelPath
+            levels={orderedLevels}
+            onSelect={(level) => router.push(`/admin/guide/1/${level.id}`)}
+            renderActions={(level) => (
+              <>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openEdit(level);
+                  }}
+                  className="rounded-lg border border-gray-200 bg-white p-1.5 shadow-sm hover:bg-gray-50"
+                  title="Tahrirlash"
+                >
+                  <Pencil className="h-4 w-4 text-gray-700" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(level.id);
+                  }}
+                  className="rounded-lg border border-red-100 bg-red-50 p-1.5 shadow-sm hover:bg-red-100"
+                  title="O'chirish"
+                >
+                  <Trash2 className="h-4 w-4 text-red-700" />
+                </button>
+              </>
+            )}
+          />
         )
       ) : null}
 
-      <FileModal
-        isOpen={createModal}
-        title="New level"
-        onClose={() => setCreateModal(false)}
-        onSave={handleCreateLevel}
-        isLoading={createLevelMutation.isPending}
-        form={createForm}
-        setForm={setCreateForm}
-        previewUrl={createPreviewUrl}
-        previewMimeType={createPreviewMimeType}
-        previewLabel="Title yozing va PDF yuklang"
-        submitLabel="Save"
-        requireFile
+      <LevelModal
+        isOpen={modal.open}
+        mode={modal.mode}
+        form={form}
+        setForm={setForm}
+        onClose={closeModal}
+        onSave={handleSave}
+        isLoading={isSaving}
       />
-
-      <FileModal
-        isOpen={editModal.open}
-        title="Update level"
-        onClose={() => {
-          setEditForm({ title: '', file: null });
-          setEditModal({ open: false, levelId: null, bannerUrl: '', bannerMimeType: '', title: '' });
-        }}
-        onSave={handleUpdateLevel}
-        isLoading={updateLevelMutation.isPending}
-        form={editForm}
-        setForm={setEditForm}
-        previewUrl={editPreviewUrl}
-        previewMimeType={editPreviewMimeType}
-        previewLabel="Title yoki PDF yangilanishi mumkin"
-        submitLabel="Save"
-      />
-
-      {bannerViewer.open ? (
-        <div
-          className="fixed inset-0 z-[9999] bg-black/90 p-3 sm:p-6"
-          onClick={() => setBannerViewer({ open: false, url: '', mimeType: '', title: '' })}
-        >
-          <div className="mb-3 flex justify-end" onClick={(e) => e.stopPropagation()}>
-            <button
-              onClick={() => setBannerViewer({ open: false, url: '', mimeType: '', title: '' })}
-              className="rounded-lg bg-white/15 p-2 text-white hover:bg-white/25"
-              type="button"
-            >
-              <XMarkIcon className="h-5 w-5" />
-            </button>
-          </div>
-          <div
-            className="flex h-[calc(100%-52px)] items-center justify-center overflow-auto rounded-xl bg-black/40 p-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {renderPreview({
-              url: bannerViewer.url,
-              mimeType: bannerViewer.mimeType,
-              title: bannerViewer.title || 'Banner',
-              className: 'max-h-full w-full max-w-full object-contain',
-            })}
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 };

@@ -109,19 +109,17 @@ const getAdminLevels = async () => {
   return normalizeLevels(unwrap(response));
 };
 
-const createAdminLevel = async ({ title, banner }) => {
-  const formData = new FormData();
-  if (title !== undefined) formData.append('title', title);
-  formData.append('banner', banner);
-  const response = await instance.post('/api/admin/guides/levels', formData);
+const createAdminLevel = async ({ title, icon, color }) => {
+  const response = await instance.post('/api/admin/guides/levels', { title, icon, color });
   return unwrap(response);
 };
 
-const updateAdminLevel = async ({ levelId, title, banner }) => {
-  const formData = new FormData();
-  if (title !== undefined) formData.append('title', title);
-  if (banner) formData.append('banner', banner);
-  const response = await instance.patch(`/api/admin/guides/levels/${levelId}`, formData);
+const updateAdminLevel = async ({ levelId, title, icon, color }) => {
+  const payload = {};
+  if (title !== undefined) payload.title = title;
+  if (icon !== undefined) payload.icon = icon;
+  if (color !== undefined) payload.color = color;
+  const response = await instance.patch(`/api/admin/guides/levels/${levelId}`, payload);
   return unwrap(response);
 };
 
@@ -205,6 +203,14 @@ const uploadAdminLessonPdf = async ({ lessonId, title, file, banner }) => {
   formData.append('file', file);
   if (banner) formData.append('banner', banner);
   const response = await instance.post(`/api/admin/guides/lessons/${lessonId}/pdfs`, formData);
+  return unwrap(response);
+};
+
+const updateAdminLessonPdf = async ({ lessonId, pdfId, title, file }) => {
+  const formData = new FormData();
+  formData.append('title', (title || '').trim());
+  if (file) formData.append('file', file);
+  const response = await instance.patch(`/api/admin/guides/lessons/${lessonId}/pdfs/${pdfId}`, formData);
   return unwrap(response);
 };
 
@@ -474,6 +480,14 @@ export const useAdminUploadLessonPdf = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: uploadAdminLessonPdf,
+    onSuccess: (_, vars) => invalidateLessonDetails(queryClient, vars.lessonId),
+  });
+};
+
+export const useAdminUpdateLessonPdf = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updateAdminLessonPdf,
     onSuccess: (_, vars) => invalidateLessonDetails(queryClient, vars.lessonId),
   });
 };
