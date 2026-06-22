@@ -2,15 +2,13 @@
 
 import React, { useState } from 'react';
 import { EyeIcon, EyeSlashIcon, KeyIcon } from '@heroicons/react/24/outline';
-import { useChangePassword, useResetAllStudentPasswordsToDefault, useResetAllTeacherPasswordsToDefault, usegetProfile } from '../../../hooks/user';
+import { useChangePassword, usegetProfile } from '../../../hooks/user';
 import { useGetNotify } from '../../../hooks/notify';
 
 const AdminSettingsPage = () => {
   const { data: user } = usegetProfile();
   const notify = useGetNotify();
   const changePasswordMutation = useChangePassword();
-  const resetAllStudentPasswordsMutation = useResetAllStudentPasswordsToDefault();
-  const resetAllTeacherPasswordsMutation = useResetAllTeacherPasswordsToDefault();
 
   const [form, setForm] = useState({
     old_password: '',
@@ -38,24 +36,6 @@ const AdminSettingsPage = () => {
         notify('err', err?.response?.data?.message || 'Parolni yangilashda xatolik');
       },
     });
-  };
-
-  const handleResetAllStudentPasswords = () => {
-    const confirmed = window.confirm(
-      "Haqiqatan barcha student parollarini 123456 ga o'zgartirishni xohlaysizmi?"
-    );
-    if (!confirmed) return;
-
-    resetAllStudentPasswordsMutation.mutate();
-  };
-
-  const handleResetAllTeacherPasswords = () => {
-    const confirmed = window.confirm(
-      "Haqiqatan barcha o'qituvchilar parolini 777777 ga o'zgartirishni xohlaysizmi?"
-    );
-    if (!confirmed) return;
-
-    resetAllTeacherPasswordsMutation.mutate();
   };
 
   return (
@@ -120,32 +100,6 @@ const AdminSettingsPage = () => {
             {changePasswordMutation.isPending ? 'Yuklanmoqda...' : 'Parolni yangilash'}
           </button>
         </form>
-
-        <div className="mt-6 space-y-3 border-t border-gray-200 pt-5">
-          <button
-            type="button"
-            onClick={handleResetAllStudentPasswords}
-            disabled={resetAllStudentPasswordsMutation.isPending}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#A60E07]/20 bg-[#A60E07]/5 px-4 py-3 text-sm font-bold text-[#A60E07] transition hover:bg-[#A60E07]/10 disabled:opacity-60"
-          >
-            <KeyIcon className="h-5 w-5" />
-            {resetAllStudentPasswordsMutation.isPending
-              ? 'Parollar yangilanmoqda...'
-              : "Barcha studentlar parolini 123456 qilish"}
-          </button>
-
-          <button
-            type="button"
-            onClick={handleResetAllTeacherPasswords}
-            disabled={resetAllTeacherPasswordsMutation.isPending}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-bold text-indigo-700 transition hover:bg-indigo-100 disabled:opacity-60"
-          >
-            <KeyIcon className="h-5 w-5" />
-            {resetAllTeacherPasswordsMutation.isPending
-              ? 'Parollar yangilanmoqda...'
-              : "Barcha o'qituvchilar parolini 777777 qilish"}
-          </button>
-        </div>
 
       </div>
     </div>

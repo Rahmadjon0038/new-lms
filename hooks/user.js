@@ -47,54 +47,6 @@ export const useGetProfile = () => {
 // Backward-compatible alias
 export const usegetProfile = useGetProfile;
 
-// -------------- Reset all student passwords to default ----------
-const resetAllStudentPasswordsToDefault = async () => {
-    const response = await instance.post('/api/users/admin/reset-all-student-passwords');
-    return response.data;
-};
-
-export const useResetAllStudentPasswordsToDefault = () => {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: resetAllStudentPasswordsToDefault,
-        onSuccess: (data, vars) => {
-            queryClient.invalidateQueries({ queryKey: ['students'] });
-            queryClient.invalidateQueries({ queryKey: ['groups'] });
-            queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-            toast.success(data?.message || 'Barcha talabalar parollari yangilandi');
-            if (vars?.onSuccess) vars.onSuccess(data);
-        },
-        onError: (err, vars) => {
-            toast.error(err?.response?.data?.message || "Talabalar parollarini yangilashda xatolik");
-            if (vars?.onError) vars.onError(err);
-        },
-    });
-};
-
-// -------------- Reset all teacher passwords to default (777777) ----------
-const resetAllTeacherPasswordsToDefault = async () => {
-    const response = await instance.post('/api/users/admin/reset-all-teacher-passwords');
-    return response.data;
-};
-
-export const useResetAllTeacherPasswordsToDefault = () => {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: resetAllTeacherPasswordsToDefault,
-        onSuccess: (data, vars) => {
-            queryClient.invalidateQueries({ queryKey: ['teachers'] });
-            toast.success(data?.message || "Barcha o'qituvchilar parollari yangilandi");
-            if (vars?.onSuccess) vars.onSuccess(data);
-        },
-        onError: (err, vars) => {
-            toast.error(err?.response?.data?.message || "O'qituvchilar parollarini yangilashda xatolik");
-            if (vars?.onError) vars.onError(err);
-        },
-    });
-};
-
 // -------------- Change password (logged in) ----------
 const changePassword = async ({ username, old_password, new_password }) => {
     const payload = { old_password, new_password };
