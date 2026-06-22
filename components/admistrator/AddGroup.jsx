@@ -141,8 +141,8 @@ const AddGroup = ({
     const bulkRemoveMutation = useBulkRemoveStudentsFromGroup();
 
     const hasGroup = student?.group_name && student.group_name !== 'Guruh biriktirilmagan';
-    const isSingleLoading = joinStudentMutation.isLoading || changeGroupMutation.isLoading || removeStudentMutation.isLoading;
-    const isBulkLoading = bulkJoinMutation.isLoading || bulkChangeMutation.isLoading || bulkRemoveMutation.isLoading;
+    const isSingleLoading = joinStudentMutation.isPending || changeGroupMutation.isPending || removeStudentMutation.isPending;
+    const isBulkLoading = bulkJoinMutation.isPending || bulkChangeMutation.isPending || bulkRemoveMutation.isPending;
 
     const availableGroups = useMemo(
         () => groupsData?.groups?.filter((group) => group.status !== 'blocked') || [],
