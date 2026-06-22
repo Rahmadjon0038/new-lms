@@ -64,6 +64,113 @@ const getTeacherSubjectIdFromTeacherRecord = (teacher = {}) => {
     );
 };
 
+const getScheduleText = (group) => {
+    const schedule = group?.schedule;
+
+    if (typeof schedule === 'string' && schedule.trim()) return schedule;
+    if (schedule && typeof schedule === 'object') {
+        const days = Array.isArray(schedule.days) ? schedule.days.join(', ') : schedule.days;
+        const time = schedule.time || group?.time || '';
+        return [days, time].filter(Boolean).join(' ');
+    }
+
+    return group?.time || group?.class_time || '';
+};
+
+const getGroupOptionLabel = (group) => {
+    const groupName = group?.name || group?.group_name || `Guruh #${group?.id || '-'}`;
+    const subjectName = group?.subject_name || group?.subject?.name || group?.subject || '-';
+    const teacherName = group?.teacher_name || group?.teacher || "-";
+    const scheduleText = getScheduleText(group) || '-';
+
+    return `${groupName} | Fan: ${subjectName} | Jadval: ${scheduleText} | O'qituvchi: ${teacherName}`;
+};
+
+// Modul darajasida ta'riflanadi: AddGroup ichida bo'lsa har render'da qayta yaratilib,
+// remount sodir bo'lardi va dropdown'ning ochiq holati (isOpen) nolga tushardi.
+const GroupSelect = ({ value, onChange, options, placeholder = "Guruhni tanlang...", disabled = false }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const wrapperRef = useRef(null);
+
+    useEffect(() => {
+        if (!isOpen) return undefined;
+        const handleOutside = (event) => {
+            if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleOutside);
+        return () => document.removeEventListener('mousedown', handleOutside);
+    }, [isOpen]);
+
+    const selectedGroup = options.find((group) => String(group.id) === String(value));
+    const query = searchTerm.trim().toLowerCase();
+    const filteredOptions = query
+        ? options.filter((group) => {
+            const groupName = String(group?.name || group?.group_name || '').toLowerCase();
+            const teacherName = String(group?.teacher_name || group?.teacher || '').toLowerCase();
+            const subjectName = String(group?.subject_name || group?.subject?.name || group?.subject || '').toLowerCase();
+            return groupName.includes(query) || teacherName.includes(query) || subjectName.includes(query);
+        })
+        : options;
+
+    return (
+        <div ref={wrapperRef} className="relative w-full">
+            <button
+                type="button"
+                onClick={() => !disabled && setIsOpen((prev) => !prev)}
+                className={`flex w-full items-center justify-between rounded-lg border px-2.5 py-1.5 text-left text-sm sm:px-3 sm:py-2 ${
+                    disabled
+                        ? 'cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400'
+                        : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+            >
+                <span className="truncate">
+                    {selectedGroup ? getGroupOptionLabel(selectedGroup) : placeholder}
+                </span>
+                <ChevronDownIcon className={`h-4 w-4 text-gray-400 transition ${isOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {isOpen ? (
+                <div className="absolute z-50 mt-2 w-full rounded-lg border border-gray-200 bg-white shadow-lg">
+                    <div className="border-b border-gray-100 p-2">
+                        <input
+                            type="text"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            placeholder="Guruh yoki o'qituvchi nomi..."
+                            className="w-full rounded-md border border-gray-200 px-2.5 py-1.5 text-sm outline-none focus:border-[#A60E07]"
+                        />
+                    </div>
+                    <div className="max-h-64 overflow-y-auto">
+                        {filteredOptions.length === 0 ? (
+                            <div className="p-3 text-center text-xs text-gray-500">Guruh topilmadi</div>
+                        ) : (
+                            filteredOptions.map((group) => (
+                                <button
+                                    type="button"
+                                    key={group.id}
+                                    onClick={() => {
+                                        onChange(String(group.id));
+                                        setIsOpen(false);
+                                        setSearchTerm('');
+                                    }}
+                                    className={`w-full px-3 py-2 text-left text-xs sm:text-sm transition hover:bg-gray-50 ${
+                                        String(value) === String(group.id) ? 'bg-orange-50 border-l-4 border-l-[#A60E07]' : ''
+                                    }`}
+                                >
+                                    {getGroupOptionLabel(group)}
+                                </button>
+                            ))
+                        )}
+                    </div>
+                </div>
+            ) : null}
+        </div>
+    );
+};
+
 const AddGroup = ({
     children,
     student,
@@ -153,111 +260,6 @@ const AddGroup = ({
         () => new Map(availableGroups.map((group) => [Number(group.id), group])),
         [availableGroups]
     );
-
-    const getScheduleText = (group) => {
-        const schedule = group?.schedule;
-
-        if (typeof schedule === 'string' && schedule.trim()) return schedule;
-        if (schedule && typeof schedule === 'object') {
-            const days = Array.isArray(schedule.days) ? schedule.days.join(', ') : schedule.days;
-            const time = schedule.time || group?.time || '';
-            return [days, time].filter(Boolean).join(' ');
-        }
-
-        return group?.time || group?.class_time || '';
-    };
-
-    const getGroupOptionLabel = (group) => {
-        const groupName = group?.name || group?.group_name || `Guruh #${group?.id || '-'}`;
-        const subjectName = group?.subject_name || group?.subject?.name || group?.subject || '-';
-        const teacherName = group?.teacher_name || group?.teacher || "-";
-        const scheduleText = getScheduleText(group) || '-';
-
-        return `${groupName} | Fan: ${subjectName} | Jadval: ${scheduleText} | O'qituvchi: ${teacherName}`;
-    };
-
-    const GroupSelect = ({ value, onChange, options, placeholder = "Guruhni tanlang...", disabled = false }) => {
-        const [isOpen, setIsOpen] = useState(false);
-        const [searchTerm, setSearchTerm] = useState('');
-        const wrapperRef = useRef(null);
-
-        useEffect(() => {
-            if (!isOpen) return undefined;
-            const handleOutside = (event) => {
-                if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
-                    setIsOpen(false);
-                }
-            };
-            document.addEventListener('mousedown', handleOutside);
-            return () => document.removeEventListener('mousedown', handleOutside);
-        }, [isOpen]);
-
-        const selectedGroup = options.find((group) => String(group.id) === String(value));
-        const query = searchTerm.trim().toLowerCase();
-        const filteredOptions = query
-            ? options.filter((group) => {
-                const groupName = String(group?.name || group?.group_name || '').toLowerCase();
-                const teacherName = String(group?.teacher_name || group?.teacher || '').toLowerCase();
-                const subjectName = String(group?.subject_name || group?.subject?.name || group?.subject || '').toLowerCase();
-                return groupName.includes(query) || teacherName.includes(query) || subjectName.includes(query);
-            })
-            : options;
-
-        return (
-            <div ref={wrapperRef} className="relative w-full">
-                <button
-                    type="button"
-                    onClick={() => !disabled && setIsOpen((prev) => !prev)}
-                    className={`flex w-full items-center justify-between rounded-lg border px-2.5 py-1.5 text-left text-sm sm:px-3 sm:py-2 ${
-                        disabled
-                            ? 'cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400'
-                            : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-                    }`}
-                >
-                    <span className="truncate">
-                        {selectedGroup ? getGroupOptionLabel(selectedGroup) : placeholder}
-                    </span>
-                    <ChevronDownIcon className={`h-4 w-4 text-gray-400 transition ${isOpen ? 'rotate-180' : ''}`} />
-                </button>
-
-                {isOpen ? (
-                    <div className="absolute z-50 mt-2 w-full rounded-lg border border-gray-200 bg-white shadow-lg">
-                        <div className="border-b border-gray-100 p-2">
-                            <input
-                                type="text"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                placeholder="Guruh yoki o'qituvchi nomi..."
-                                className="w-full rounded-md border border-gray-200 px-2.5 py-1.5 text-sm outline-none focus:border-[#A60E07]"
-                            />
-                        </div>
-                        <div className="max-h-64 overflow-y-auto">
-                            {filteredOptions.length === 0 ? (
-                                <div className="p-3 text-center text-xs text-gray-500">Guruh topilmadi</div>
-                            ) : (
-                                filteredOptions.map((group) => (
-                                    <button
-                                        type="button"
-                                        key={group.id}
-                                        onClick={() => {
-                                            onChange(String(group.id));
-                                            setIsOpen(false);
-                                            setSearchTerm('');
-                                        }}
-                                        className={`w-full px-3 py-2 text-left text-xs sm:text-sm transition hover:bg-gray-50 ${
-                                            String(value) === String(group.id) ? 'bg-orange-50 border-l-4 border-l-[#A60E07]' : ''
-                                        }`}
-                                    >
-                                        {getGroupOptionLabel(group)}
-                                    </button>
-                                ))
-                            )}
-                        </div>
-                    </div>
-                ) : null}
-            </div>
-        );
-    };
 
     const bulkStudents = useMemo(() => {
         const list = allStudentsData?.students || allStudentsData?.data?.students || [];
