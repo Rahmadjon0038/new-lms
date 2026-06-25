@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { XMarkIcon, PercentBadgeIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline';
 import { useApplyDiscount } from '../../hooks/payments';
 import { toast } from 'react-hot-toast';
@@ -13,16 +13,18 @@ const DiscountModal = ({ isOpen, onClose, student, month }) => {
 
   const applyDiscountMutation = useApplyDiscount();
 
-  // Reset form when modal closes
-  useEffect(() => {
-    if (!isOpen) {
-      setDiscountData({
-        discount_type: 'percent',
-        discount_value: '',
-        description: ''
-      });
-    }
-  }, [isOpen]);
+  const resetForm = () => {
+    setDiscountData({
+      discount_type: 'percent',
+      discount_value: '',
+      description: ''
+    });
+  };
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -50,7 +52,7 @@ const DiscountModal = ({ isOpen, onClose, student, month }) => {
         toast.success(`${studentName} - Chegirma muvaffaqiyatli berildi!`);
       }
       
-      onClose();
+      handleClose();
     } catch (error) {
       toast.error(error?.message || 'Chegirma berishda xatolik yuz berdi');
       console.error('Discount application failed:', error);
@@ -101,7 +103,7 @@ const DiscountModal = ({ isOpen, onClose, student, month }) => {
   return (
     <div
       className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-      onClick={onClose}
+      onClick={handleClose}
     >
       <div
         className="bg-white rounded-lg shadow-md w-full max-w-lg mx-auto max-h-[90vh] overflow-y-auto"
@@ -112,7 +114,7 @@ const DiscountModal = ({ isOpen, onClose, student, month }) => {
             Chegirma berish
           </h3>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100"
           >
             <XMarkIcon className="h-6 w-6" />
@@ -189,7 +191,7 @@ const DiscountModal = ({ isOpen, onClose, student, month }) => {
               <div className="mt-2 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700">
                 {baseAmount > 0 ? (
                   <>
-                    Hisoblangan summa: <strong>{formatMoney(calculatedAmount)}</strong> so&apos;m
+              Hisoblangan summa: <strong>{formatMoney(calculatedAmount)}</strong> so&apos;m
                   </>
                 ) : (
                   <>Bazaviy summa topilmadi</>
@@ -220,7 +222,7 @@ const DiscountModal = ({ isOpen, onClose, student, month }) => {
           <div className="flex gap-3 pt-4">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
             >
               Bekor qilish

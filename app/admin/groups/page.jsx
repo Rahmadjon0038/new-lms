@@ -243,7 +243,7 @@ const GroupCard = ({ group, onToggleGroupStatus, onStartClass, onDelete, showDel
 
                 {/* Narxi yuqorida, ko'zga tashlanadigan */}
                 <div className="flex items-center gap-2 mb-3">
-                    <span className="break-words text-xl font-extrabold text-[#A60E07] sm:text-2xl">{group.price ? `${parseFloat(group.price).toLocaleString()} so&apos;m` : 'Narxi belgilanmagan'}</span>
+                    <span className="break-words text-xl font-extrabold text-[#A60E07] sm:text-2xl">{group.price ? `${parseFloat(group.price).toLocaleString()} so'm` : 'Narxi belgilanmagan'}</span>
                 </div>
 
                 <div className="space-y-2 text-sm text-gray-700">
