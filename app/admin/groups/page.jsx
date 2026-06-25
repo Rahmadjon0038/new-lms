@@ -13,6 +13,7 @@ import {
     CalendarIcon,
     PlayIcon,
     TrashIcon,
+    MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
 import { FiFilter } from 'react-icons/fi';
 import Link from "next/link";
@@ -86,7 +87,7 @@ const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm, isLoading }) => {
                     <TrashIcon className="h-14 w-14 text-red-500" />
                 </div>
                 <h3 className="text-xl font-bold text-center text-gray-800 mb-2">
-                    Guruhni o'chirish
+                    Guruhni o&apos;chirish
                 </h3>
                 <p className="text-gray-500 text-center text-sm mb-6">
                     Ushbu guruh va unga tegishli barcha a&apos;zolik ma&apos;lumotlari o&apos;chiriladi. Davom etasizmi?
@@ -215,7 +216,7 @@ const GroupCard = ({ group, onToggleGroupStatus, onStartClass, onDelete, showDel
                                     <div className="flex items-center justify-between px-2 py-1 rounded hover:bg-orange-50 transition-colors">
                                         <div className="flex items-center gap-1.5">
                                             <div className="w-1.5 h-1.5 bg-orange-500 rounded-full"></div>
-                                            <span className="text-xs font-medium text-orange-700">To'xtatilgan</span>
+                                            <span className="text-xs font-medium text-orange-700">To&apos;xtatilgan</span>
                                         </div>
                                         <span className="text-xs font-bold text-orange-800">{group.stopped_students_count || 0}</span>
                                     </div>
@@ -242,7 +243,7 @@ const GroupCard = ({ group, onToggleGroupStatus, onStartClass, onDelete, showDel
 
                 {/* Narxi yuqorida, ko'zga tashlanadigan */}
                 <div className="flex items-center gap-2 mb-3">
-                    <span className="break-words text-xl font-extrabold text-[#A60E07] sm:text-2xl">{group.price ? parseFloat(group.price).toLocaleString() + ' so\'m' : 'Narxi belgilanmagan'}</span>
+                    <span className="break-words text-xl font-extrabold text-[#A60E07] sm:text-2xl">{group.price ? `${parseFloat(group.price).toLocaleString()} so&apos;m` : 'Narxi belgilanmagan'}</span>
                 </div>
 
                 <div className="space-y-2 text-sm text-gray-700">
@@ -260,7 +261,7 @@ const GroupCard = ({ group, onToggleGroupStatus, onStartClass, onDelete, showDel
                     </p>
                     <p className="flex items-start">
                         <PencilSquareIcon className="h-4 w-4 mr-2 text-gray-400" />
-                        <span>O'qituvchi: <span className="ml-1 font-bold text-gray-800 break-words">{group.teacher_name || "Tayinlanmagan"}</span></span>
+                        <span>O&apos;qituvchi: <span className="ml-1 font-bold text-gray-800 break-words">{group.teacher_name || "Tayinlanmagan"}</span></span>
                     </p>
                     {group.subject_name && (
                         <p className="flex items-start">
@@ -369,11 +370,11 @@ function AdminGroupsPageInner() {
     const basePath = isTeacherRoute ? '/teacher' : '/admin';
     const [selectedTeacher, setSelectedTeacher] = useState('all');
     const [selectedSubject, setSelectedSubject] = useState('all');
-    const initialTab = useMemo(() => {
+    const [searchTerm, setSearchTerm] = useState('');
+    const currentTab = useMemo(() => {
         const tab = searchParams.get('tab');
         return ALLOWED_TABS.includes(tab) ? tab : 'active';
     }, [searchParams]);
-    const [currentTab, setCurrentTab] = useState(initialTab);
     const [showMobileFilters, setShowMobileFilters] = useState(false);
     const [showDesktopFilterClear, setShowDesktopFilterClear] = useState(false);
     const mobileFilterRef = useRef(null);
@@ -412,23 +413,32 @@ function AdminGroupsPageInner() {
         }
         
         const groups = backendData.groups;
+        const query = searchTerm.trim().toLowerCase();
         
         // Backend allaqachon status bo'yicha filter qiladi, lekin
-        // additional frontend filtering qilish mumkin
-        return groups;
-    }, [backendData]);
+        // qo'shimcha frontend filter qilish mumkin
+        if (!query) return groups;
+
+        return groups.filter((group) => {
+            const groupName = String(group.name || group.group_name || '').toLowerCase();
+            const teacherName = String(group.teacher_name || group.teacher || '').toLowerCase();
+
+            return groupName.includes(query) || teacherName.includes(query);
+        });
+    }, [backendData, searchTerm]);
 
     const changeGroupStatusMutation = useChangeGroupStatus();
     const deleteGroupMutation = useDeleteGroup();
 
     const groups = filteredGroups;
-    const hasActiveFilters = isTeacherRoute ? false : (selectedTeacher !== 'all' || selectedSubject !== 'all');
+    const hasActiveFilters = isTeacherRoute ? Boolean(searchTerm) : (selectedTeacher !== 'all' || selectedSubject !== 'all' || Boolean(searchTerm.trim()));
     const subjects = subjectsData?.subjects || [];
     const clearFilters = () => {
         if (!isTeacherRoute) {
             setSelectedTeacher('all');
             setSelectedSubject('all');
         }
+        setSearchTerm('');
         setShowDesktopFilterClear(false);
     };
 
@@ -460,21 +470,8 @@ function AdminGroupsPageInner() {
         };
     }, [showMobileFilters, showDesktopFilterClear]);
 
-    useEffect(() => {
-        if (!hasActiveFilters) {
-            setShowDesktopFilterClear(false);
-        }
-    }, [hasActiveFilters]);
-
-    useEffect(() => {
-        const tab = searchParams.get('tab');
-        if (!ALLOWED_TABS.includes(tab)) return;
-        setCurrentTab((prev) => (prev === tab ? prev : tab));
-    }, [searchParams]);
-
     const applyTab = (nextTab) => {
         if (!ALLOWED_TABS.includes(nextTab)) return;
-        setCurrentTab(nextTab);
         const params = new URLSearchParams(searchParams.toString());
         const existing = params.get('tab') || 'active';
         if (existing === nextTab) return;
@@ -588,7 +585,17 @@ function AdminGroupsPageInner() {
 
             <div className="mb-4 p-0 sm:mb-8 sm:rounded-2xl sm:border sm:border-slate-200 sm:bg-gradient-to-br sm:from-white sm:to-slate-50 sm:p-5 sm:shadow-sm">
                 <div className="mb-3 flex flex-col gap-2.5 sm:mb-4 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-                    <div className="flex w-full items-center gap-2 sm:max-w-md">
+                    <div className="flex w-full flex-col gap-2 sm:max-w-2xl">
+                        <div className="relative w-full">
+                            <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                            <input
+                                type="text"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                placeholder="Guruh nomi yoki teacher nomi bilan qidirish"
+                                className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#A60E07] focus:ring-2 focus:ring-red-100"
+                            />
+                        </div>
                         {!isTeacherRoute ? (
                             <div className="hidden w-full items-center gap-2 md:flex">
                                 <div className="relative shrink-0" ref={desktopFilterRef}>
@@ -762,7 +769,10 @@ function AdminGroupsPageInner() {
                 ) : null}
             </div>
 
-            <p className="mb-5 text-sm text-gray-500 sm:text-lg">Jami {backendData?.success ? backendData.count || 0 : 0} ta guruh mavjud</p>
+            <p className="mb-5 text-sm text-gray-500 sm:text-lg">
+                Jami {groups.length} ta guruh mavjud
+                {searchTerm.trim() ? `, "${searchTerm.trim()}" bo'yicha filtrlangan` : ''}
+            </p>
 
             <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
                 {groups.map((group) => (
@@ -798,7 +808,11 @@ function AdminGroupsPageInner() {
 
             {groups.length === 0 && (
                 <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-300 mt-8">
-                    <p className="text-xl text-gray-600 font-medium">Bu bo'limda guruhlar mavjud emas.</p>
+                    <p className="text-xl text-gray-600 font-medium">
+                        {searchTerm.trim()
+                            ? "Qidiruv bo'yicha guruh topilmadi."
+                            : "Bu bo'limda guruhlar mavjud emas."}
+                    </p>
                 </div>
             )}
         </div>
