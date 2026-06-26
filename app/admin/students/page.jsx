@@ -48,7 +48,7 @@ const StudentEditModal = ({ isOpen, onClose, student, formData, onChange, onSubm
                     <div>
                         <h3 className="text-lg font-semibold text-gray-900">Talaba ma'lumotlarini yangilash</h3>
                         <p className="text-xs text-gray-500">
-                            ID: #{student.id} {student.group_name ? `• ${student.group_name}` : ''}
+                            {student.group_name ? `${student.group_name}` : ''}
                         </p>
                     </div>
                     <button
@@ -185,7 +185,7 @@ const StudentDeleteModal = ({ isOpen, onClose, student, onConfirm, isLoading }) 
                 <div className="border-b border-gray-200 p-4">
                     <h3 className="text-lg font-semibold text-gray-900">Talabani o'chirish</h3>
                     <p className="mt-1 text-xs text-gray-500">
-                        {student.surname} {student.name} • ID: #{student.id}
+                        {student.surname} {student.name}
                     </p>
                 </div>
                 <div className="space-y-3 p-4">
@@ -1415,7 +1415,6 @@ const StudentsPageInner = () => {
                                             ) : (
                                                 <div>
                                                     <div className="flex items-center gap-2 mb-2">
-                                                        <span className='text-lg font-bold text-red-500'>#{student.id}</span>
                                                         <User className="h-4 w-4 text-blue-500" />
                                                         <span className="font-semibold text-gray-900">{student.surname} {student.name}</span>
                                                         <button
