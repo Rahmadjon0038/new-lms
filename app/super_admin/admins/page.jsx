@@ -4,11 +4,12 @@ import React, { useMemo, useState } from "react";
 import {
   useAdmins,
   useCreateAdmin,
+  useDeleteAdmin,
   usePayAdminSalary,
   useUpdateAdminStatus,
 } from "../../../hooks/admins";
 import { useGetNotify } from "../../../hooks/notify";
-import { XMarkIcon, PlusIcon, EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
+import { XMarkIcon, PlusIcon, EyeIcon, EyeSlashIcon, TrashIcon } from "@heroicons/react/24/outline";
 
 const MAIN_COLOR = "#A60E07";
 
@@ -51,9 +52,8 @@ const ModalShell = ({ isOpen, title, onClose, children, footer }) => {
 export default function SuperAdminAdminsPage() {
   const notify = useGetNotify();
   const thisMonth = new Date().toISOString().slice(0, 7);
-
-  const [statusFilter, setStatusFilter] = useState("all");
   const [monthFilter, setMonthFilter] = useState(thisMonth);
+
   const [createForm, setCreateForm] = useState({
     name: "",
     surname: "",
@@ -65,6 +65,11 @@ export default function SuperAdminAdminsPage() {
   const [recoveryInfo, setRecoveryInfo] = useState(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  const [deleteModal, setDeleteModal] = useState({
+    open: false,
+    admin: null,
+  });
 
   const [statusModal, setStatusModal] = useState({
     open: false,
@@ -82,8 +87,9 @@ export default function SuperAdminAdminsPage() {
     isEdit: false,
   });
 
-  const adminsQuery = useAdmins({ status: statusFilter, month_name: monthFilter });
+  const adminsQuery = useAdmins({ status: "all", month_name: monthFilter || thisMonth });
   const createAdminMutation = useCreateAdmin();
+  const deleteAdminMutation = useDeleteAdmin();
   const updateStatusMutation = useUpdateAdminStatus();
   const paySalaryMutation = usePayAdminSalary();
 
@@ -168,6 +174,23 @@ export default function SuperAdminAdminsPage() {
     });
   };
 
+  const openDeleteModal = (admin) => {
+    setDeleteModal({ open: true, admin });
+  };
+
+  const submitDeleteAdmin = () => {
+    if (!deleteModal.admin) return;
+    deleteAdminMutation.mutate(deleteModal.admin.id, {
+      onSuccess: (data) => {
+        notify("ok", data?.message || "Admin o'chirildi");
+        setDeleteModal({ open: false, admin: null });
+      },
+      onError: (error) => {
+        notify("err", error?.response?.data?.message || error?.message || "Adminni o'chirishda xatolik");
+      },
+    });
+  };
+
   const submitSalary = () => {
     if (!salaryModal.admin) return;
     if (!salaryModal.month_name || !salaryModal.amount) {
@@ -206,10 +229,6 @@ export default function SuperAdminAdminsPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-extrabold" style={{ color: MAIN_COLOR }}>Adminlar boshqaruvi</h1>
-          <p className="text-sm text-gray-600">Admin yaratish, holatini o'zgartirish va oylik berish.</p>
-        </div>
         <button
           type="button"
           onClick={() => setCreateModalOpen(true)}
@@ -219,33 +238,21 @@ export default function SuperAdminAdminsPage() {
           <PlusIcon className="h-4 w-4" />
           Admin yaratish
         </button>
+
+        <div className="flex items-center gap-2">
+          <input
+            type="month"
+            value={monthFilter}
+            onChange={(e) => setMonthFilter(e.target.value)}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm"
+            title="Oy bo'yicha oylik"
+          />
+        </div>
       </div>
 
-      <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-base font-semibold text-gray-900">Adminlar ro'yxati</h2>
-            <p className="text-xs text-gray-500">Status, oy va admin ID bo'yicha filterlang.</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-            >
-              <option value="all">Barchasi</option>
-              <option value="active">Active</option>
-              <option value="on_leave">On leave</option>
-              <option value="terminated">Terminated</option>
-            </select>
-            <input
-              type="month"
-              value={monthFilter}
-              onChange={(e) => setMonthFilter(e.target.value)}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-              title="Oy bo'yicha oylik"
-            />
-          </div>
+      <section className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-4 shadow-sm">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-base font-semibold text-gray-900">Adminlar</h2>
         </div>
 
         {adminsQuery.isLoading ? (
@@ -255,42 +262,40 @@ export default function SuperAdminAdminsPage() {
             {adminsQuery.error?.response?.data?.message || adminsQuery.error?.message || "Adminlar yuklanmadi"}
           </div>
         ) : (
-          <div className="mt-3 overflow-x-auto">
-            <table className="min-w-[1200px] w-full text-sm">
+          <div className="overflow-x-auto border-x border-t border-slate-700">
+            <table className="min-w-[900px] w-full border-collapse text-sm">
               <thead>
-                <tr className="border-b bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
-                  <th className="py-2 pr-2">ID</th>
-                  <th className="py-2 pr-2">FIO</th>
-                  <th className="py-2 pr-2">Username</th>
+                <tr className="border-b border-slate-700 bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                  <th className="py-2 pl-4 pr-2">FIO</th>
+                  <th className="py-2 pr-2">Foydalanuvchi nomi</th>
                   <th className="py-2 pr-2">Telefon</th>
                   <th className="py-2 pr-2">Holat</th>
-                  <th className="py-2 pr-2">Bo'shatilgan sana</th>
                   <th className="py-2 pr-2">Yaratilgan</th>
                   <th className="py-2 pr-2">Oylik</th>
-                  <th className="py-2 pr-2">Tavsif</th>
-                  <th className="py-2 pr-2">Yangilangan</th>
-                  <th className="py-2 pr-2">Amallar</th>
+                  <th className="py-2 pr-4">Amallar</th>
                 </tr>
               </thead>
               <tbody>
                 {admins.length === 0 ? (
                   <tr>
-                    <td colSpan={11} className="py-4 text-gray-500">
+                    <td colSpan={7} className="py-4 pl-4 text-gray-500">
                       Adminlar topilmadi
                     </td>
                   </tr>
                 ) : (
                   admins.map((admin) => (
-                    <tr key={String(admin.id)} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="py-2 pr-2 text-gray-600">{admin.id}</td>
-                      <td className="py-2 pr-2 font-medium text-gray-900">
+                    <tr
+                      key={String(admin.id)}
+                      className="border-b border-slate-500 bg-white transition-colors duration-150 hover:bg-slate-100/80"
+                    >
+                      <td className="py-3 pl-4 pr-2 font-medium text-gray-900">
                         {admin.name} {admin.surname}
                       </td>
-                      <td className="py-2 pr-2">{admin.username || "-"}</td>
-                      <td className="py-2 pr-2">{admin.phone || "-"}</td>
-                      <td className="py-2 pr-2">
+                      <td className="py-3 pr-2 text-gray-700">{admin.username || "-"}</td>
+                      <td className="py-3 pr-2 text-gray-700">{admin.phone || "-"}</td>
+                      <td className="py-3 pr-2">
                         <span
-                          className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
                             admin.status === "active"
                               ? "bg-emerald-100 text-emerald-700"
                               : admin.status === "on_leave"
@@ -301,28 +306,33 @@ export default function SuperAdminAdminsPage() {
                           {admin.status}
                         </span>
                       </td>
-                      <td className="py-2 pr-2">{formatDate(admin.terminationDate)}</td>
-                      <td className="py-2 pr-2">{formatDate(admin.createdAt || admin.created_at)}</td>
-                      <td className="py-2 pr-2">
+                      <td className="py-3 pr-2 text-gray-700">{formatDate(admin.createdAt || admin.created_at)}</td>
+                      <td className="py-3 pr-2 text-gray-700">
                         {admin.salary ? formatCurrency(admin.salary.amount) : "-"}
                       </td>
-                      <td className="py-2 pr-2">{admin.salary?.description || "-"}</td>
-                      <td className="py-2 pr-2">{formatDate(admin.salary?.updated_at)}</td>
-                      <td className="py-2 pr-2">
+                      <td className="py-3 pr-4">
                         <div className="flex flex-wrap gap-2">
                           <button
                             type="button"
                             onClick={() => openStatusModal(admin)}
-                            className="rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                            className="rounded-md border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-gray-700 transition hover:border-slate-400 hover:bg-slate-50"
                           >
                             Holat
                           </button>
                           <button
                             type="button"
                             onClick={() => openSalaryModal(admin)}
-                            className="rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                            className="rounded-md border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-gray-700 transition hover:border-slate-400 hover:bg-slate-50"
                           >
                             Oylik berish
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => openDeleteModal(admin)}
+                            className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-100"
+                          >
+                            <TrashIcon className="h-3.5 w-3.5" />
+                            O&apos;chirish
                           </button>
                         </div>
                       </td>
@@ -429,6 +439,43 @@ export default function SuperAdminAdminsPage() {
       </ModalShell>
 
       <ModalShell
+        isOpen={deleteModal.open}
+        title="Adminni o'chirish"
+        onClose={() => setDeleteModal({ open: false, admin: null })}
+        footer={
+          <div className="flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setDeleteModal({ open: false, admin: null })}
+              className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700"
+            >
+              Bekor qilish
+            </button>
+            <button
+              type="button"
+              onClick={submitDeleteAdmin}
+              disabled={deleteAdminMutation.isLoading}
+              className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+            >
+              {deleteAdminMutation.isLoading ? "O'chirilmoqda..." : "O'chirish"}
+            </button>
+          </div>
+        }
+      >
+        <div className="space-y-2 text-sm text-gray-700">
+          <p>
+            <strong>
+              {deleteModal.admin?.name} {deleteModal.admin?.surname}
+            </strong>{" "}
+            adminini o&apos;chirmoqchimisiz?
+          </p>
+          <p className="text-gray-500">
+            Bu amal qaytarilmaydi. Oylik yozuvlari avtomatik o&apos;chadi.
+          </p>
+        </div>
+      </ModalShell>
+
+      <ModalShell
         isOpen={statusModal.open}
         title="Admin holatini o'zgartirish"
         onClose={() => setStatusModal({ open: false, admin: null, status: "active", terminationDate: "" })}
@@ -468,9 +515,9 @@ export default function SuperAdminAdminsPage() {
                 onChange={(e) => setStatusModal((prev) => ({ ...prev, status: e.target.value }))}
                 className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
               >
-                <option value="active">active</option>
-                <option value="on_leave">on_leave</option>
-                <option value="terminated">terminated</option>
+                <option value="active">Faol</option>
+                <option value="on_leave">Ta&apos;tilda</option>
+                <option value="terminated">Bo&apos;shatilgan</option>
               </select>
             </div>
             {statusModal.status === "terminated" ? (

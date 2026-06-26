@@ -32,6 +32,11 @@ const updateAdminStatus = async ({ adminId, status, terminationDate }) => {
   return extractData(res);
 };
 
+const deleteAdmin = async (adminId) => {
+  const res = await instance.delete(`/api/users/admins/${adminId}`);
+  return extractData(res);
+};
+
 const payAdminSalary = async (payload) => {
   const res = await instance.post("/api/admin-salary/pay", payload);
   return extractData(res);
@@ -63,6 +68,16 @@ export const useUpdateAdminStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: updateAdminStatus,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admins"] });
+    },
+  });
+};
+
+export const useDeleteAdmin = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteAdmin,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admins"] });
     },
