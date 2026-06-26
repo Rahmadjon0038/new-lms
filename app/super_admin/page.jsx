@@ -375,13 +375,13 @@ export default function SuperAdminDashboardPage() {
 
       <Section title="Fanlar bo&apos;yicha tahlil">
         <div className="mb-4 overflow-x-auto">
-          <table className="min-w-[900px] w-full text-sm">
+          <table className="min-w-[920px] w-full text-sm">
             <thead>
               <tr className="border-b bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
-                <th className="py-2 pr-2">Fan ID</th>
                 <th className="py-2 pr-2">Fan nomi</th>
                 <th className="py-2 pr-2">Jami talabalar</th>
                 <th className="py-2 pr-2">Jami tushum</th>
+                <th className="py-2 pr-2">Teacherlar</th>
               </tr>
             </thead>
             <tbody>
@@ -390,14 +390,45 @@ export default function SuperAdminDashboardPage() {
                   <td colSpan={4} className="py-4 text-gray-500">Fanlar bo&apos;yicha ma&apos;lumot yo&apos;q</td>
                 </tr>
               ) : (
-                subjects.map((item) => (
-                  <tr key={String(item.subject_id)} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-2 pr-2 text-gray-600">{item.subject_id}</td>
-                    <td className="py-2 pr-2 font-medium text-gray-900">{item.subject_name || "-"}</td>
-                    <td className="py-2 pr-2">{formatNumber(item.total_students_count)}</td>
-                    <td className="py-2 pr-2">{formatCurrency(item.total_revenue)}</td>
-                  </tr>
-                ))
+                subjects.flatMap((item) => {
+                  const teachers = Array.isArray(item.teachers) ? item.teachers : [];
+
+                  const subjectRow = (
+                    <tr key={`subject-${String(item.subject_id)}`} className="border-b border-gray-100 bg-white hover:bg-gray-50">
+                      <td className="py-3 pr-2 font-semibold text-gray-900">{item.subject_name || "-"}</td>
+                      <td className="py-3 pr-2">{formatNumber(item.total_students_count)}</td>
+                      <td className="py-3 pr-2">{formatCurrency(item.total_revenue)}</td>
+                      <td className="py-3 pr-2 text-gray-600">{formatNumber(item.teachers_count)} ta teacher</td>
+                    </tr>
+                  );
+
+                  const teacherRows = teachers.length
+                    ? teachers.map((teacher) => (
+                        <tr
+                          key={`teacher-${String(item.subject_id)}-${String(teacher.teacher_id)}`}
+                          className="border-b border-gray-100 bg-slate-50/80"
+                        >
+                          <td className="py-3 pr-2 pl-6 text-gray-800">
+                            <div className="flex items-center gap-2">
+                              <span className="h-2 w-2 rounded-full bg-[#A60E07]" />
+                              <span className="font-medium">{teacher.teacher_name || "Noma'lum teacher"}</span>
+                            </div>
+                          </td>
+                          <td className="py-3 pr-2 text-gray-700">{formatNumber(teacher.total_students_count)}</td>
+                          <td className="py-3 pr-2 font-semibold text-[#A60E07]">{formatCurrency(teacher.total_revenue)}</td>
+                          <td className="py-3 pr-2 text-gray-500">Teacher bo&apos;yicha</td>
+                        </tr>
+                      ))
+                    : [
+                        <tr key={`teacher-empty-${String(item.subject_id)}`} className="border-b border-gray-100 bg-slate-50/60">
+                          <td colSpan={4} className="py-3 pl-6 text-sm text-gray-500">
+                            Bu fandagi teacherlar bo&apos;yicha ma&apos;lumot yo&apos;q
+                          </td>
+                        </tr>,
+                      ];
+
+                  return [subjectRow, ...teacherRows];
+                })
               )}
             </tbody>
           </table>
