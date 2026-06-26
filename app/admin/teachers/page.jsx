@@ -517,13 +517,34 @@ function TeacherCard({ teacher, onEdit, onDelete, onStatusChange, notify }) {
     return formatDateYMD(dateString);
   };
 
-  const login = teacher.username || "";
-  const password = teacher.password || "";
+  const login = teacher.username || teacher.user_name || "";
+  const password = teacher.password || teacher.password_plain || teacher.temp_password || "";
+
+  const copyToClipboard = async (text) => {
+    if (!text) throw new Error("empty");
+    if (navigator?.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "true");
+    textarea.style.position = "fixed";
+    textarea.style.left = "-9999px";
+    document.body.appendChild(textarea);
+    textarea.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(textarea);
+    if (!ok) throw new Error("copy_failed");
+  };
 
   const handleCopyCreds = async () => {
-    if (!login) return;
+    if (!login || !password) {
+      notify("err", "Login yoki parol topilmadi");
+      return;
+    }
     try {
-      await navigator.clipboard.writeText(`Login: ${login}\nParol: ${password}`);
+      await copyToClipboard(`Login: ${login}\nParol: ${password}`);
       setCopiedCreds(true);
       notify("ok", "Hisob ma'lumotlari nusxalandi");
       setTimeout(() => setCopiedCreds(false), 1500);
@@ -636,6 +657,7 @@ function TeacherCard({ teacher, onEdit, onDelete, onStatusChange, notify }) {
             <button
               type="button"
               onClick={handleCopyCreds}
+              disabled={!login || !password}
               className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-indigo-700 bg-indigo-100 hover:bg-indigo-200 rounded-md transition-colors"
             >
               {copiedCreds ? <CheckIcon className="h-3.5 w-3.5" /> : <ClipboardDocumentIcon className="h-3.5 w-3.5" />}
@@ -647,7 +669,7 @@ function TeacherCard({ teacher, onEdit, onDelete, onStatusChange, notify }) {
               <span className="font-medium text-gray-600">Login:</span> {login || "—"}
             </p>
             <p className="text-sm text-gray-800">
-              <span className="font-medium text-gray-600">Parol:</span> {password || "—"}
+              <span className="font-medium text-gray-600">Parol:</span> {password || "Parol belgilanmagan"}
             </p>
           </div>
         </div>

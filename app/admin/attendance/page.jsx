@@ -87,12 +87,14 @@ export default function AdminAttendancePage() {
 
   const filteredTeachers = useMemo(() => {
     const key = search.trim().toLowerCase();
-    if (!key) return teachers;
-    return teachers.filter((item) =>
-      String(item.full_name || `${item.surname || ""} ${item.name || ""}`)
+    return teachers.filter((item) => {
+      const hasTodayLessons = Number(item.today_groups_count || 0) > 0;
+      if (!hasTodayLessons) return false;
+      if (!key) return true;
+      return String(item.full_name || `${item.surname || ""} ${item.name || ""}`)
         .toLowerCase()
-        .includes(key)
-    );
+        .includes(key);
+    });
   }, [teachers, search]);
 
   const handleToggleHoliday = () => {
