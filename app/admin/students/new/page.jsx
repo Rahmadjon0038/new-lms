@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   XMarkIcon,
   UserIcon,
@@ -21,29 +21,56 @@ import GroupsSelect from '../../../../components/admistrator/GroupsSelect';
 
 const MAIN_COLOR = "#A60E07";
 
+const generateSixDigitPassword = () => String(Math.floor(100000 + Math.random() * 900000));
+
+const createEmptyStudentFormData = () => ({
+    name: '',
+    surname: '',
+    username: '',
+    password: generateSixDigitPassword(),
+    phone: '',
+    phone2: '',
+    father_name: '',
+    father_phone: '',
+    address: '',
+    age: '',
+    subject_id: ''
+});
+
+const loadInitialStudentFormData = () => {
+    if (typeof window === 'undefined') {
+        return createEmptyStudentFormData();
+    }
+
+    try {
+        const savedFormData = window.localStorage.getItem('studentFormData');
+        if (savedFormData) {
+            const parsed = JSON.parse(savedFormData);
+            const password = String(parsed?.password || '').trim() || generateSixDigitPassword();
+            return {
+                ...createEmptyStudentFormData(),
+                ...parsed,
+                password,
+            };
+        }
+    } catch (error) {
+        console.error('Student form data loading failed:', error);
+    }
+
+    return createEmptyStudentFormData();
+};
+
 export default function NewStudentPage() {
     const router = useRouter();
     const pathname = usePathname();
     const basePath = pathname?.startsWith('/teacher') ? '/teacher' : '/admin';
     const [step, setStep] = useState(1); // 1: registration, 2: group selection
     const [registeredStudent, setRegisteredStudent] = useState(null);
+    const [submittedPassword, setSubmittedPassword] = useState('');
     
-    const [formData, setFormData] = useState({
-        name: '',
-        surname: '',
-        username: '',
-        password: '',
-        phone: '',
-        phone2: '',
-        father_name: '',
-        father_phone: '',
-        address: '',
-        age: '',
-        subject_id: ''
-    });
+    const [formData, setFormData] = useState(loadInitialStudentFormData);
     
     const [selectedGroup, setSelectedGroup] = useState('');
-    const [showPassword, setShowPassword] = useState(true); // Default: show password
     const [subjectFilter, setSubjectFilter] = useState(''); // Filter by subject
     
     const { data: groupsData, isLoading: groupsLoading } = usegetAllgroups();
@@ -73,46 +100,61 @@ export default function NewStudentPage() {
     
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-    };
-    
-    const clearForm = () => {
-        setFormData({
-            name: '',
-            surname: '',
-            username: '',
-            password: '',
-            phone: '',
-            phone2: '',
-            father_name: '',
-            father_phone: '',
-            address: '',
-            age: '',
-            subject_id: ''
+        setFormData(prev => {
+            const nextState = { ...prev, [name]: value };
+            try {
+                window.localStorage.setItem('studentFormData', JSON.stringify(nextState));
+            } catch (error) {
+                console.error('Student form data saving failed:', error);
+            }
+            return nextState;
         });
-        localStorage.removeItem('studentFormData');
+    };
+
+    const clearForm = ({ password } = {}) => {
+        const nextPassword = password || generateSixDigitPassword();
+        setFormData({
+            ...createEmptyStudentFormData(),
+            password: nextPassword,
+        });
+        try {
+            window.localStorage.removeItem('studentFormData');
+        } catch (error) {
+            console.error('Student form data clearing failed:', error);
+        }
     };
     
     const handleRegister = async (e) => {
         e.preventDefault();
         
         // Validate required fields
-        if (!formData.name || !formData.surname || !formData.username || !formData.password || !formData.phone || !formData.subject_id) {
-            toast.error('Iltimos, barcha majburiy maydonlarni to\'ldiring!');
+        if (!formData.name || !formData.surname || !formData.username || !formData.phone || !formData.subject_id) {
+            toast.error("Iltimos, barcha majburiy maydonlarni to'ldiring!");
             return;
         }
         
         // Save to localStorage
-        localStorage.setItem('studentFormData', JSON.stringify(formData));
+        const nextPassword = String(formData.password || '').trim() || generateSixDigitPassword();
+        const payload = {
+            ...formData,
+            password: nextPassword,
+        };
+
+        try {
+            window.localStorage.setItem('studentFormData', JSON.stringify(payload));
+        } catch (error) {
+            console.error('Student form data saving failed:', error);
+        }
         
         registerMutation.mutate({
-            ...formData,
+            ...payload,
             subject_id: Number(formData.subject_id)
         }, {
             onSuccess: (data) => {
+                const returnedPassword = String(data?.generated_password || payload.password || '').trim();
                 setRegisteredStudent(data.user);
-                toast.success(data.message || 'Student muvaffaqiyatli ro\'yxatdan o\'tdi!');
-                // Clear form after successful registration
+                setSubmittedPassword(returnedPassword);
+                toast.success(data.message || "Student muvaffaqiyatli ro'yxatdan o'tdi!");
                 clearForm();
                 setStep(2);
             },
@@ -133,19 +175,19 @@ export default function NewStudentPage() {
             group_id: selectedGroup
         }, {
             onSuccess: (data) => {
-                toast.success('Student muvaffaqiyatli guruhga qo\'shildi!');
-                localStorage.removeItem('studentFormData');
+                toast.success("Student muvaffaqiyatli guruhga qo'shildi!");
+                window.localStorage.removeItem('studentFormData');
                 router.push(`${basePath}/students`);
             },
             onError: (error) => {
-                toast.error(error.response?.data?.message || 'Guruhga qo\'shishda xatolik!');
+                toast.error(error.response?.data?.message || "Guruhga qo'shishda xatolik!");
             }
         });
     };
     
     const handleFinish = () => {
-        toast.success('Student ro\'yxatdan o\'tdi. Guruhni keyinroq tanlashingiz mumkin.');
-        localStorage.removeItem('studentFormData');
+        toast.success("Student ro'yxatdan o'tdi. Guruhni keyinroq tanlashingiz mumkin.");
+        window.localStorage.removeItem('studentFormData');
         router.push(`${basePath}/students`);
     };
     
@@ -157,14 +199,6 @@ export default function NewStudentPage() {
         }
     };
     
-    // Load form data from localStorage on mount
-    useEffect(() => {
-        const savedFormData = localStorage.getItem('studentFormData');
-        if (savedFormData) {
-            setFormData(JSON.parse(savedFormData));
-        }
-    }, []);
-
     return (
         <div className="min-h-screen bg-gray-50 py-4 sm:py-6">
             <div className="mx-auto w-full  px-3 sm:px-4 lg:px-6">
@@ -196,11 +230,11 @@ export default function NewStudentPage() {
                     </div>
                     
                     <h1 className="text-2xl font-bold text-gray-800 sm:text-3xl">
-                        {step === 1 ? 'Yangi student ro\'yxatdan o\'tkazish' : 'Guruhga biriktirish'}
+                        {step === 1 ? "Yangi student ro'yxatdan o'tkazish" : 'Guruhga biriktirish'}
                     </h1>
                     <p className="text-gray-600 mt-1">
                         {step === 1 
-                            ? 'Student ma\'lumotlarini to\'ldiring' 
+                            ? "Student ma'lumotlarini to'ldiring" 
                             : 'Studentni guruhga biriktiring (ixtiyoriy)'
                         }
                     </p>
@@ -340,32 +374,22 @@ export default function NewStudentPage() {
                                 </div>
                                 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Parol *
-                                    </label>
-                                    <div className="relative">
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Parol *
+                                        </label>
                                         <input
-                                            type={showPassword ? "text" : "password"}
+                                            type="text"
                                             name="password"
                                             value={formData.password}
-                                            onChange={handleInputChange}
                                             required
-                                            className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition-all"
+                                            readOnly
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition-all"
                                             style={{ focusRingColor: `${MAIN_COLOR}40` }}
-                                            placeholder="Parolni kiriting"
+                                            placeholder="Avtomatik 6 xonali parol"
                                         />
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowPassword(!showPassword)}
-                                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
-                                        >
-                                            {showPassword ? (
-                                                <EyeSlashIcon className="w-5 h-5" />
-                                            ) : (
-                                                <EyeIcon className="w-5 h-5" />
-                                            )}
-                                        </button>
-                                    </div>
+                                        <div className="mt-1 text-xs text-gray-500">
+                                            Parol avtomatik yaratiladi va o&apos;zgartirilmaydi.
+                                        </div>
                                 </div>
                                 
                                 {/* Important Note */}
@@ -385,7 +409,7 @@ export default function NewStudentPage() {
                                             </h4>
                                             <p className="text-sm text-gray-700">
                                                 Yaratilgan <span className="font-medium">foydalanuvchi nomi</span> va <span className="font-medium">parolni</span> studentga bering. 
-                                                Student shu ma'lumotlar orqali o'z shaxsiy kabinetiga kiradi.
+                                                Student shu ma&apos;lumotlar orqali o&apos;z shaxsiy kabinetiga kiradi.
                                             </p>
                                         </div>
                                     </div>
@@ -409,9 +433,9 @@ export default function NewStudentPage() {
                                 </div>
                                 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
                                         <PhoneIcon className="w-4 h-4 inline mr-1" />
-                                        Qo'shimcha telefon (ixtiyoriy)
+                                        Qo&apos;shimcha telefon (ixtiyoriy)
                                     </label>
                                     <input
                                         type="tel"
@@ -446,7 +470,7 @@ export default function NewStudentPage() {
                                         className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                                     >
                                         <XMarkIcon className="w-4 h-4" />
-                                        <span>Ma'lumotlarni tozalash</span>
+                                        <span>Ma&apos;lumotlarni tozalash</span>
                                     </button>
                                     
                                     <button 
@@ -461,7 +485,7 @@ export default function NewStudentPage() {
                                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                                 </svg>
-                                                <span>Ro'yxatdan o'tkazilmoqda...</span>
+                                                <span>Ro&apos;yxatdan o&apos;tkazilmoqda...</span>
                                             </>
                                         ) : (
                                             <>
@@ -484,10 +508,16 @@ export default function NewStudentPage() {
                                     <CheckCircleIcon className="w-6 h-6" style={{ color: MAIN_COLOR }} />
                                     <div>
                                         <h3 className="font-medium text-gray-800">
-                                            Student muvaffaqiyatli ro'yxatdan o'tdi!
+                                            Student muvaffaqiyatli ro&apos;yxatdan o&apos;tdi!
                                         </h3>
                                         <p className="text-sm text-gray-600">
                                             {registeredStudent?.surname} {registeredStudent?.name}
+                                        </p>
+                                        <p className="text-sm text-gray-700 mt-1">
+                                            <span className="font-medium">Login:</span> {registeredStudent?.username || formData.username}
+                                        </p>
+                                        <p className="text-sm text-gray-700">
+                                            <span className="font-medium">Parol:</span> {submittedPassword || formData.password}
                                         </p>
                                     </div>
                                 </div>
@@ -500,7 +530,7 @@ export default function NewStudentPage() {
                                     {/* Subject Filter */}
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Fan bo'yicha filter
+                                            Fan bo&apos;yicha filter
                                         </label>
                                         <select
                                             value={subjectFilter}
@@ -550,12 +580,12 @@ export default function NewStudentPage() {
                                                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                                     </svg>
-                                                    <span>Guruhga qo'shilmoqda...</span>
+                                                    <span>Guruhga qo&apos;shilmoqda...</span>
                                                 </>
                                             ) : (
                                                 <>
                                                     <UserGroupIcon className="w-4 h-4" />
-                                                    <span>Guruhga qo'shish</span>
+                                                    <span>Guruhga qo&apos;shish</span>
                                                 </>
                                             )}
                                         </button>

@@ -3,12 +3,14 @@
 import React, { useState } from 'react';
 import { EyeIcon, EyeSlashIcon, KeyIcon } from '@heroicons/react/24/outline';
 import { useChangePassword, usegetProfile } from '../../../hooks/user';
+import { useDeleteUnassignedStudents } from '../../../hooks/students';
 import { useGetNotify } from '../../../hooks/notify';
 
 const AdminSettingsPage = () => {
   const { data: user } = usegetProfile();
   const notify = useGetNotify();
   const changePasswordMutation = useChangePassword();
+  const deleteUnassignedMutation = useDeleteUnassignedStudents();
 
   const [form, setForm] = useState({
     old_password: '',
@@ -16,6 +18,7 @@ const AdminSettingsPage = () => {
   });
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -34,6 +37,18 @@ const AdminSettingsPage = () => {
       },
       onError: (err) => {
         notify('err', err?.response?.data?.message || 'Parolni yangilashda xatolik');
+      },
+    });
+  };
+
+  const handleDeleteUnassigned = () => {
+    deleteUnassignedMutation.mutate({
+      onSuccess: (data) => {
+        notify('ok', data?.message || "Guruhsiz talabalar o'chirildi");
+        setConfirmDeleteOpen(false);
+      },
+      onError: (err) => {
+        notify('err', err?.response?.data?.message || "Guruhsiz talabalarni o'chirishda xatolik");
       },
     });
   };
@@ -101,7 +116,50 @@ const AdminSettingsPage = () => {
           </button>
         </form>
 
+        <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-4">
+          <h2 className="text-sm font-semibold text-red-800">Xavfli amallar</h2>
+          <p className="mt-1 text-xs text-red-700">
+            Bu tugma faqat guruhga biriktirilmagan studentlarni o&apos;chiradi. Guruhli studentlarga tegmaydi.
+          </p>
+          <button
+            type="button"
+            onClick={() => setConfirmDeleteOpen(true)}
+            disabled={deleteUnassignedMutation.isPending}
+            className="mt-3 inline-flex items-center rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-60"
+          >
+            {deleteUnassignedMutation.isPending ? 'O\'chirilmoqda...' : 'Guruhsiz talabalarni o\'chirish'}
+          </button>
+        </div>
+
       </div>
+
+      {confirmDeleteOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
+            <h3 className="text-lg font-bold text-gray-900">Tasdiqlash</h3>
+            <p className="mt-2 text-sm text-gray-600">
+              Faqat guruhga biriktirilmagan talabalar o&apos;chiriladi. Bu amal qaytarib bo&apos;lmaydi.
+            </p>
+            <div className="mt-4 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteOpen(false)}
+                className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50"
+              >
+                Bekor qilish
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteUnassigned}
+                disabled={deleteUnassignedMutation.isPending}
+                className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+              >
+                Tasdiqlash
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };

@@ -220,3 +220,27 @@ export const useDeleteStudent = () => {
         }
     });
 };
+
+// -------------- Delete all unassigned students ----------
+const deleteUnassignedStudents = async () => {
+    const response = await instance.delete('/api/students/unassigned');
+    return response.data;
+};
+
+export const useDeleteUnassignedStudents = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: deleteUnassignedStudents,
+        onSuccess: (data, vars) => {
+            queryClient.invalidateQueries(['students']);
+            if (vars?.onSuccess) {
+                vars.onSuccess(data);
+            }
+        },
+        onError: (err, vars) => {
+            if (vars?.onError) {
+                vars.onError(err);
+            }
+        }
+    });
+};
