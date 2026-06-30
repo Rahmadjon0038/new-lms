@@ -2,8 +2,8 @@ import axios from "axios";
 import Cookies from "js-cookie";
 
 export const instance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.taraqqiyot-teaching-center.uz",
-  // baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5001",
+  // baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.taraqqiyot-teaching-center.uz",
+  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5001",
 });
 
 let isRefreshing = false;

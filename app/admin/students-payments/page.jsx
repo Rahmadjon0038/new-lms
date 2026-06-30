@@ -817,7 +817,7 @@ const StudentPaymentsInner = () => {
                                 onClick={handleCreateSnapshotsForNew}
                                 disabled={!filters.month || createSnapshotsMutation.isPending}
                                 className="group relative inline-flex w-full items-center justify-center gap-1 rounded-lg bg-green-600 px-2 py-1.5 text-xs font-medium text-white transition-all duration-300 hover:scale-[1.01] hover:opacity-90 hover:shadow-lg focus:ring-2 focus:ring-offset-2 disabled:opacity-50 sm:gap-2 sm:px-4 sm:py-2 sm:text-sm"
-                                title="Yangi qo'shilgan talabalar uchun snapshot yaratish"
+                                title="Yangi qo'shilgan yozuvlar uchun snapshot yaratish"
                             >
                                 {createSnapshotsMutation.isPending ? (
                                     <>
@@ -827,7 +827,7 @@ const StudentPaymentsInner = () => {
                                 ) : (
                                     <>
                                         <ArrowRightIcon className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                                        <span className="hidden sm:inline">Yangi talabalar uchun</span>
+                                        <span className="hidden sm:inline">Yangi yozuvlar uchun</span>
                                         <span className="sm:hidden">Yangi</span>
                                         {newStudentsNotification?.data?.count > 0 && (
                                             <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center animate-bounce">
@@ -846,7 +846,7 @@ const StudentPaymentsInner = () => {
                                     <div className="flex items-center justify-between mb-2">
                                         <div className="flex items-center gap-2">
                                             <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                                            <span className="text-sm font-medium text-gray-900">Yangi talabalar</span>
+                                            <span className="text-sm font-medium text-gray-900">Yangi yozuvlar</span>
                                         </div>
                                         <button
                                             onClick={() => setShowNotificationPopup(false)}
@@ -857,7 +857,7 @@ const StudentPaymentsInner = () => {
                                     </div>
                                     
                                     <p className="text-sm text-gray-600 mb-3">
-                                        Shu oyda <span className="font-semibold text-gray-900">{newStudentsNotification.data.count}</span> ta yangi talaba qo'shildi.
+                                        Shu oyda <span className="font-semibold text-gray-900">{newStudentsNotification.data.count}</span> ta yangi yozuv qo'shildi.
                                     </p>
                                     
                                     <div className="flex items-center justify-between text-xs text-gray-500">

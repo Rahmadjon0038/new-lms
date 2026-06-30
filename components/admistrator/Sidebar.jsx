@@ -18,6 +18,7 @@ import {
   ChevronRightIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
+import { useNewStudentsNotification } from "../../hooks/payments";
 
 // Asosiy rang konstantasi
 const MAIN_COLOR = "#A60E07";
@@ -95,6 +96,8 @@ const secondarySidebarItems = [
 function AdministratorSidebar({ isOpen = false, onClose = () => {} }) {
   const pathname = usePathname();
   const [isExtraOpen, setIsExtraOpen] = useState(false);
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const { data: newStudentsNotification } = useNewStudentsNotification(currentMonth);
 
   const isItemActive = (itemHref) => {
     if (!pathname) return false;
@@ -108,6 +111,7 @@ function AdministratorSidebar({ isOpen = false, onClose = () => {} }) {
   const renderMenuItems = (items) =>
     items.map((item) => {
       const currentActive = isItemActive(item.href);
+      const showPaymentBadge = item.href === "/admin/students-payments" && (newStudentsNotification?.data?.count || 0) > 0;
 
       return (
         <Link
@@ -132,7 +136,15 @@ function AdministratorSidebar({ isOpen = false, onClose = () => {} }) {
             }`}
             aria-hidden="true"
           />
-          <span>{item.name}</span>
+          <span className="flex-1">{item.name}</span>
+          {showPaymentBadge && (
+            <span
+              className="ml-2 inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-bold leading-none"
+              style={currentActive ? { backgroundColor: "white", color: MAIN_COLOR } : { backgroundColor: "#ef4444", color: "white" }}
+            >
+              {newStudentsNotification.data.count}
+            </span>
+          )}
         </Link>
       );
     });
