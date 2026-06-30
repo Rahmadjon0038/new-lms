@@ -1221,6 +1221,15 @@ const StudentsPageInner = () => {
                 </div>
             </div>
 
+            {stats ? (
+                <div className="mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-[#A60E07]/10 bg-white px-4 py-3 shadow-sm">
+                    <span className="text-sm font-semibold text-gray-700">Jami talabalar:</span>
+                    <span className="inline-flex items-center rounded-full bg-[#A60E07] px-3 py-1 text-sm font-bold text-white">
+                        {stats.total_students || 0}
+                    </span>
+                </div>
+            ) : null}
+
             {error ? (
                 <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                     Talabalar ro&apos;yxatini yuklab bo&apos;lmadi. Backend vaqtincha ishlamayotgan yoki schema yangilanmagan bo&apos;lishi mumkin.

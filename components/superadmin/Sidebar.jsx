@@ -33,7 +33,7 @@ function SuperAdminSidebar({ isOpen = false, onClose = () => {} }) {
 
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-50 w-56 transform bg-white shadow-xl transition-transform duration-200 lg:static lg:min-h-screen lg:translate-x-0 ${
+      className={`fixed inset-y-0 left-0 z-50 flex h-dvh w-56 transform flex-col overflow-hidden bg-white shadow-xl transition-transform duration-200 lg:static lg:translate-x-0 lg:h-screen ${
         isOpen ? "translate-x-0" : "-translate-x-full"
       }`}
     >
@@ -43,7 +43,7 @@ function SuperAdminSidebar({ isOpen = false, onClose = () => {} }) {
           <XMarkIcon className="h-5 w-5 text-gray-600" />
         </button>
       </div>
-      <nav className="flex-1 px-4 py-6 space-y-2">
+      <nav className="flex-1 space-y-2 overflow-y-auto px-4 py-6 overscroll-contain">
         {sidebarItems.map((item) => {
           const isActive = item.href === activeHref;
           return (
