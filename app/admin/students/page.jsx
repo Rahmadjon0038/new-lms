@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useGetAllStudents, useGetAllStudentsAll, useUpdateStudentStatus, useUpdateStudentInfo, useDeleteStudent } from '../../../hooks/students';
+import { useGetAllStudents, useGetDuplicateStudents, useUpdateStudentStatus, useUpdateStudentInfo, useDeleteStudent } from '../../../hooks/students';
 import { usegetTeachers } from '../../../hooks/teacher';
 import { useGetAllSubjects } from '../../../hooks/subjects';
 import { usegetProfile } from '../../../hooks/user';
@@ -254,14 +254,14 @@ const DuplicateStudentsModal = ({ isOpen, onClose, isLoading, groups = [] }) => 
                                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-slate-800 px-4 py-3">
                                         <div>
                                             <p className="text-sm font-semibold text-white">
-                                                {groupIndex + 1}. {group.fieldLabel}
+                                                {groupIndex + 1}. {group.field_label || group.fieldLabel}
                                             </p>
                                             <p className="break-all text-xs text-slate-400">
-                                                Qiymat: {group.fieldValue}
+                                                Qiymat: {group.field_value || group.fieldValue}
                                             </p>
                                         </div>
                                         <span className="rounded-full bg-emerald-900/80 px-3 py-1 text-xs font-semibold text-emerald-200 ring-1 ring-emerald-700">
-                                            {group.students.length} ta yozuv
+                                            {group.count || group.students.length} ta yozuv
                                         </span>
                                     </div>
 
@@ -289,11 +289,11 @@ const DuplicateStudentsModal = ({ isOpen, onClose, isLoading, groups = [] }) => 
                                                         <td className="px-4 py-2 text-slate-300">{student.phone2 || '-'}</td>
                                                         <td className="px-4 py-2 text-slate-300">{student.father_phone || '-'}</td>
                                                         <td className="px-4 py-2 text-slate-300">
-                                                            {student.group_name || 'Guruhga biriktirilmagan'}
+                                                            {student.group_name || student.groups?.[0]?.group_name || 'Guruhga biriktirilmagan'}
                                                         </td>
                                                         <td className="px-4 py-2">
                                                             <span className="inline-flex rounded-full bg-slate-800 px-2 py-0.5 text-[11px] font-semibold text-slate-200 ring-1 ring-slate-700">
-                                                                {student.group_status || 'unknown'}
+                                                                {student.group_status || student.groups?.[0]?.group_status || 'unknown'}
                                                             </span>
                                                         </td>
                                                     </tr>
@@ -384,54 +384,6 @@ const getStudentPassword = (student) => (
     ''
 );
 
-const normalizeDigits = (value) => String(value || '').replace(/\D/g, '');
-const normalizeLower = (value) => String(value || '').toLowerCase().trim();
-
-const buildDuplicateGroups = (students = []) => {
-    const fields = [
-        { key: 'phone', label: 'Telefon', getValue: (s) => normalizeDigits(s?.phone) },
-        { key: 'phone2', label: "Qo'shimcha telefon", getValue: (s) => normalizeDigits(s?.phone2) },
-        { key: 'father_phone', label: "Ota telefoni", getValue: (s) => normalizeDigits(s?.father_phone) },
-        { key: 'username', label: 'Foydalanuvchi nomi', getValue: (s) => normalizeLower(getStudentUsername(s)) },
-    ];
-
-    const groups = [];
-
-    fields.forEach((field) => {
-        const map = new Map();
-        students.forEach((student, index) => {
-            const value = field.getValue(student);
-            if (!value || value.length < 3) return;
-            if (!map.has(value)) map.set(value, []);
-            map.get(value).push({
-                ...student,
-                _rowKey: `${student?.id || 'x'}-${student?.group_id || 'none'}-${index}`,
-            });
-        });
-
-        map.forEach((items, value) => {
-            if (items.length < 2) return;
-            groups.push({
-                id: `${field.key}-${value}`,
-                fieldLabel: field.label,
-                fieldValue: value,
-                students: items,
-            });
-        });
-    });
-
-    return groups.sort((a, b) => b.students.length - a.students.length);
-};
-
-const extractStudentsArray = (payload) => {
-    if (!payload) return [];
-    if (Array.isArray(payload.students)) return payload.students;
-    if (Array.isArray(payload?.data?.students)) return payload.data.students;
-    if (Array.isArray(payload?.data?.data)) return payload.data.data;
-    if (Array.isArray(payload?.data)) return payload.data;
-    return [];
-};
-
 const StudentsPageInner = () => {
     const pathname = usePathname();
     const router = useRouter();
@@ -489,9 +441,9 @@ const StudentsPageInner = () => {
     const {
         data: duplicateStudentsData,
         isLoading: duplicateStudentsLoading,
-    } = useGetAllStudentsAll({}, {
+    } = useGetDuplicateStudents({
         enabled: showDuplicateModal,
-        staleTime: 1000 * 60 * 2,
+        staleTime: 1000 * 60 * 5,
         refetchOnWindowFocus: false
     });
 
@@ -554,9 +506,8 @@ const StudentsPageInner = () => {
         enabled: isTeacherRoute ? Boolean(teacherId) : true,
         keepPreviousData: true
     });
-    const rawStudents = useMemo(() => extractStudentsArray(backendData), [backendData]);
-    const duplicateStudents = useMemo(() => extractStudentsArray(duplicateStudentsData), [duplicateStudentsData]);
-    const duplicateGroups = useMemo(() => buildDuplicateGroups(duplicateStudents), [duplicateStudents]);
+    const rawStudents = useMemo(() => (Array.isArray(backendData?.students) ? backendData.students : []), [backendData]);
+    const duplicateGroups = useMemo(() => Array.isArray(duplicateStudentsData?.groups) ? duplicateStudentsData.groups : [], [duplicateStudentsData]);
     const hasLoadedStudents = Boolean(
         backendData &&
         (backendData?.success ||
@@ -618,7 +569,6 @@ const StudentsPageInner = () => {
     useEffect(() => {
         if (hasLoadedStudents) {
             // Har bir guruh uchun alohida qator yaratish
-            const rawStudents = extractStudentsArray(backendData);
             const expandedStudents = [];
             rawStudents.forEach(student => {
                 if (student.groups && student.groups.length > 0) {

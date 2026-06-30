@@ -104,6 +104,21 @@ export const useGetAllStudentsAll = (filters = {}, options = {}) => {
     return { data, isLoading, isFetching, error, refetch };
 };
 
+const fetchDuplicateStudents = async () => {
+    const response = await instance.get('/api/students/duplicates');
+    return response.data;
+};
+
+export const useGetDuplicateStudents = (options = {}) => {
+    const { data, isLoading, isFetching, error, refetch } = useQuery({
+        queryKey: ['duplicate-students'],
+        queryFn: fetchDuplicateStudents,
+        ...options,
+    });
+
+    return { data, isLoading, isFetching, error, refetch };
+};
+
 // Register new student
 const registerStudent = async (studentData) => {
     const response = await instance.post('/api/users/register', studentData);
