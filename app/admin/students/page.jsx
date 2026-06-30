@@ -1222,36 +1222,46 @@ const StudentsPageInner = () => {
             </div>
 
             {stats ? (
-                <div className="mb-4 rounded-2xl border border-[#A60E07]/10 bg-white px-4 py-4 shadow-sm">
-                    <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-semibold text-gray-700">Jami talabalar:</span>
-                        <span className="inline-flex items-center rounded-full bg-[#A60E07] px-3 py-1 text-sm font-bold text-white">
+                <div className="mb-4 flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-semibold text-gray-700">Jami talabalar:</span>
+                    <span className="inline-flex items-center rounded-full bg-[#A60E07] px-3 py-1 text-sm font-bold text-white">
+                        {stats.total_students || 0}
+                    </span>
+
+                    <span className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wide text-gray-600">
+                        Guruhsiz
+                        <span className="ml-2 rounded-full bg-gray-100 px-2 py-0.5 text-sm font-bold text-gray-900">
+                            {stats.unassigned_students || 0}
+                        </span>
+                    </span>
+
+                    <span className="inline-flex items-center rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-green-700">
+                        Faol
+                        <span className="ml-2 rounded-full bg-green-100 px-2 py-0.5 text-sm font-bold text-green-800">
+                            {stats.group_memberships?.active || 0}
+                        </span>
+                    </span>
+
+                    <span className="inline-flex items-center rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-orange-700">
+                        To'xtatgan
+                        <span className="ml-2 rounded-full bg-orange-100 px-2 py-0.5 text-sm font-bold text-orange-800">
+                            {stats.group_memberships?.stopped || 0}
+                        </span>
+                    </span>
+
+                    <span className="inline-flex items-center rounded-full border border-purple-200 bg-purple-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-purple-700">
+                        Bitirgan
+                        <span className="ml-2 rounded-full bg-purple-100 px-2 py-0.5 text-sm font-bold text-purple-800">
+                            {stats.group_memberships?.finished || 0}
+                        </span>
+                    </span>
+
+                    <span className="inline-flex items-center rounded-full border border-[#A60E07]/15 bg-[#A60E07]/5 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#A60E07]">
+                        Jami birikishlar
+                        <span className="ml-2 rounded-full bg-[#A60E07] px-2 py-0.5 text-sm font-bold text-white">
                             {stats.total_students || 0}
                         </span>
-                    </div>
-
-                    <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
-                        <div className="rounded-xl border border-gray-200 bg-white px-4 py-3">
-                            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Guruhsiz</p>
-                            <p className="mt-1 text-xl font-bold text-gray-900">{stats.unassigned_students || 0}</p>
-                        </div>
-                        <div className="rounded-xl border border-green-100 bg-green-50 px-4 py-3">
-                            <p className="text-xs font-medium uppercase tracking-wide text-green-700">Faol</p>
-                            <p className="mt-1 text-xl font-bold text-green-800">{stats.group_memberships?.active || 0}</p>
-                        </div>
-                        <div className="rounded-xl border border-orange-100 bg-orange-50 px-4 py-3">
-                            <p className="text-xs font-medium uppercase tracking-wide text-orange-700">To'xtatgan</p>
-                            <p className="mt-1 text-xl font-bold text-orange-800">{stats.group_memberships?.stopped || 0}</p>
-                        </div>
-                        <div className="rounded-xl border border-purple-100 bg-purple-50 px-4 py-3">
-                            <p className="text-xs font-medium uppercase tracking-wide text-purple-700">Bitirgan</p>
-                            <p className="mt-1 text-xl font-bold text-purple-800">{stats.group_memberships?.finished || 0}</p>
-                        </div>
-                        <div className="rounded-xl border border-[#A60E07]/10 bg-[#A60E07]/5 px-4 py-3">
-                            <p className="text-xs font-medium uppercase tracking-wide text-[#A60E07]">Jami birikishlar</p>
-                            <p className="mt-1 text-xl font-bold text-[#A60E07]">{stats.total_students || 0}</p>
-                        </div>
-                    </div>
+                    </span>
                 </div>
             ) : null}
 

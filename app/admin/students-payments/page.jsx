@@ -190,6 +190,7 @@ const StudentPaymentsInner = () => {
         partial: parseInt(apiSummary.partial_students || 0),
         unpaid: parseInt(apiSummary.unpaid_students || 0),
         active: parseInt(apiSummary.active_students || 0),
+        stopped: parseInt(apiSummary.stopped_students || 0),
         total_expected: parseFloat(apiSummary.total_required || 0),
         total_collected: parseFloat(apiSummary.total_paid || 0),
         total_debt: parseFloat(apiSummary.total_debt || 0),
@@ -1170,11 +1171,25 @@ const StudentPaymentsInner = () => {
                             {/* <h2 className="text-base font-semibold text-gray-800 sm:text-lg">
                                 To'lov ma'lumotlari ({students.length} ta)
                             </h2> */}
-                            <div className="inline-flex items-center gap-2 rounded-full border border-[#A60E07]/15 bg-[#A60E07]/5 px-3 py-1 text-sm font-semibold text-[#A60E07]">
-                                <span>Jami</span>
-                                <span className="rounded-full bg-[#A60E07] px-2.5 py-0.5 text-white">
-                                    {stats.total_students}
-                                </span>
+                            <div className="flex flex-wrap items-center gap-2">
+                                <div className="inline-flex items-center gap-2 rounded-full border border-[#A60E07]/15 bg-[#A60E07]/5 px-3 py-1 text-sm font-semibold text-[#A60E07]">
+                                    <span>Jami</span>
+                                    <span className="rounded-full bg-[#A60E07] px-2.5 py-0.5 text-white">
+                                        {stats.total_students}
+                                    </span>
+                                </div>
+                                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-sm font-semibold text-emerald-700">
+                                    <span>Faol</span>
+                                    <span className="rounded-full bg-emerald-600 px-2.5 py-0.5 text-white">
+                                        {stats.active}
+                                    </span>
+                                </div>
+                                <div className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-sm font-semibold text-orange-700">
+                                    <span>To&apos;xtatgan</span>
+                                    <span className="rounded-full bg-orange-600 px-2.5 py-0.5 text-white">
+                                        {stats.stopped}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                         {/* {stats.total_expected > 0 && (
