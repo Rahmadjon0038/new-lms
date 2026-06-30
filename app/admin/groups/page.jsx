@@ -431,6 +431,10 @@ function AdminGroupsPageInner() {
     const deleteGroupMutation = useDeleteGroup();
 
     const groups = filteredGroups;
+    const totalStudents = useMemo(
+        () => groups.reduce((sum, group) => sum + Number(group.total_students_count || 0), 0),
+        [groups]
+    );
     const hasActiveFilters = isTeacherRoute ? Boolean(searchTerm) : (selectedTeacher !== 'all' || selectedSubject !== 'all' || Boolean(searchTerm.trim()));
     const subjects = subjectsData?.subjects || [];
     const clearFilters = () => {
@@ -769,9 +773,14 @@ function AdminGroupsPageInner() {
                 ) : null}
             </div>
 
-            <p className="mb-5 text-sm text-gray-500 sm:text-lg">
-                Jami {groups.length} ta guruh mavjud
-                {searchTerm.trim() ? `, "${searchTerm.trim()}" bo'yicha filtrlangan` : ''}
+            <p className="mb-5 flex flex-wrap items-center gap-2 text-sm text-gray-500 sm:text-lg">
+                <span className="inline-flex items-center rounded-full border border-[#A60E07]/15 bg-[#A60E07]/5 px-3 py-1 text-sm font-semibold text-[#A60E07]">
+                    Jami {totalStudents} ta talaba
+                </span>
+                <span>
+                    Jami {groups.length} ta guruh mavjud
+                </span>
+                {searchTerm.trim() ? <span>{`"${searchTerm.trim()}" bo'yicha filtrlangan`}</span> : null}
             </p>
 
             <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
