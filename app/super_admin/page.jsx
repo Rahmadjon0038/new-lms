@@ -32,7 +32,6 @@ export default function SuperAdminDashboardPage() {
 
   const monthly = data?.monthly || {};
   const subjects = Array.isArray(data?.subjects) ? data.subjects : [];
-  const overall = data?.overall || {};
   const subjectTotals = subjects.reduce(
     (acc, item) => {
       acc.totalStudents += Number(item.total_students_count || 0);
@@ -50,11 +49,6 @@ export default function SuperAdminDashboardPage() {
     { label: "Yangi talabalar", value: formatNumber(monthly?.new_students_count) },
     { label: "Jami chegirma", value: formatCurrency(monthly?.total_discounts) },
     { label: "Sof foyda (alohida)", value: formatCurrency(monthly?.net_profit) },
-  ];
-
-  const overallRows = [
-    { label: "Jami talabalar", value: formatNumber(overall?.total_students_count) },
-    { label: "Jami teacherlar", value: formatNumber(overall?.total_teachers_count) },
   ];
 
   if (query.isLoading) {
@@ -199,30 +193,6 @@ export default function SuperAdminDashboardPage() {
 
       </Section>
 
-      <Section title="Umumiy markaz statistikasi">
-        <div className="overflow-x-auto border-x border-t border-slate-700">
-          <table className="min-w-[700px] w-full table-fixed border-collapse text-sm">
-            <colgroup>
-              <col className="w-1/2" />
-              <col className="w-1/2" />
-            </colgroup>
-            <thead>
-              <tr className="border-b border-slate-700 bg-emerald-700 text-left text-xs font-semibold uppercase tracking-wide text-white">
-                <th className="border-r border-slate-700 px-6 py-4">Ko&apos;rsatkich</th>
-                <th className="px-6 py-4">Qiymat</th>
-              </tr>
-            </thead>
-            <tbody>
-              {overallRows.map((row) => (
-                <tr key={row.label} className="border-b border-slate-500 bg-white transition-colors duration-150 hover:bg-slate-100/80">
-                  <td className="border-r border-slate-700 px-6 py-5 font-medium text-gray-900">{row.label}</td>
-                  <td className="px-6 py-5 text-base font-semibold text-gray-900">{row.value}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Section>
     </div>
   );
 }
