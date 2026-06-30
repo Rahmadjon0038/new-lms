@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import { CalendarIcon, UserGroupIcon } from "@heroicons/react/24/outline";
-import { useGetAttendanceTeachers } from "../../../hooks/attendance";
+import { useGetAttendanceGroups, useGetAttendanceTeachers } from "../../../hooks/attendance";
 import { parseISO, isValid } from "date-fns";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { instance } from "../../../hooks/api";
@@ -48,6 +48,9 @@ export default function AdminAttendancePage() {
   }, [holidayDate]);
   const teachersQuery = useGetAttendanceTeachers({
     date: date || undefined,
+  });
+  const attendanceGroupsQuery = useGetAttendanceGroups({
+    status_filter: "active",
   });
 
   const holidaysQuery = useQuery({
@@ -97,10 +100,12 @@ export default function AdminAttendancePage() {
     });
   }, [teachers, search]);
 
-  const totalStudents = useMemo(
-    () => teachers.reduce((sum, item) => sum + Number(item.students_count || 0), 0),
-    [teachers]
-  );
+  const totalStudents = useMemo(() => {
+    const groups = Array.isArray(attendanceGroupsQuery.data?.data)
+      ? attendanceGroupsQuery.data.data
+      : [];
+    return groups.reduce((sum, item) => sum + Number(item.students_count || 0), 0);
+  }, [attendanceGroupsQuery.data]);
 
   const handleToggleHoliday = () => {
     if (!holidayDate) {
