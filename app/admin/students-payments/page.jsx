@@ -1166,9 +1166,17 @@ const StudentPaymentsInner = () => {
                 {/* Results */}
                 <div className="bg-transparent shadow-none sm:rounded-lg sm:bg-white sm:shadow-md">
                     <div className="flex flex-col gap-2 border-b border-gray-200 px-2 py-2 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4">
-                        {/* <h2 className="text-base font-semibold text-gray-800 sm:text-lg">
-                            To'lov ma'lumotlari ({students.length} ta)
-                        </h2> */}
+                        <div className="flex items-center gap-2">
+                            {/* <h2 className="text-base font-semibold text-gray-800 sm:text-lg">
+                                To'lov ma'lumotlari ({students.length} ta)
+                            </h2> */}
+                            <div className="inline-flex items-center gap-2 rounded-full border border-[#A60E07]/15 bg-[#A60E07]/5 px-3 py-1 text-sm font-semibold text-[#A60E07]">
+                                <span>Jami</span>
+                                <span className="rounded-full bg-[#A60E07] px-2.5 py-0.5 text-white">
+                                    {stats.total_students}
+                                </span>
+                            </div>
+                        </div>
                         {/* {stats.total_expected > 0 && (
               <div className="text-sm text-gray-600">
                 Yig'ilgan: <span className="font-semibold text-green-600">{formatCurrency(stats.total_collected)}</span>
