@@ -1190,6 +1190,30 @@ const StudentPaymentsInner = () => {
                                         {stats.stopped}
                                     </span>
                                 </div>
+                                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-sm font-semibold text-emerald-700">
+                                    <span>To&apos;liq to&apos;lagan</span>
+                                    <span className="rounded-full bg-emerald-600 px-2.5 py-0.5 text-white">
+                                        {stats.paid}
+                                    </span>
+                                </div>
+                                <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-700">
+                                    <span>Qisman</span>
+                                    <span className="rounded-full bg-amber-600 px-2.5 py-0.5 text-white">
+                                        {stats.partial}
+                                    </span>
+                                </div>
+                                <div className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-sm font-semibold text-rose-700">
+                                    <span>To&apos;lamagan</span>
+                                    <span className="rounded-full bg-rose-600 px-2.5 py-0.5 text-white">
+                                        {stats.unpaid}
+                                    </span>
+                                </div>
+                                <div className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-sm font-semibold text-sky-700">
+                                    <span>Yig&apos;ilgan</span>
+                                    <span className="rounded-full bg-sky-600 px-2.5 py-0.5 text-white">
+                                        {formatCurrency(stats.total_collected)}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                         {/* {stats.total_expected > 0 && (

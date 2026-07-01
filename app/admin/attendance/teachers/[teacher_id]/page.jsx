@@ -62,6 +62,7 @@ export default function AdminTeacherGroupsPage() {
 
   const query = useGetAttendanceTeacherGroups(teacher_id, {
     date: date || undefined,
+    month: selectedMonth || undefined,
     shift: shift || undefined,
   });
 

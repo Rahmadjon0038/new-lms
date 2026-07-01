@@ -13,8 +13,6 @@ const StudentAttendanceModal = ({ isOpen, onClose, student, month }) => {
         student?.subject_id  // subject_id filter
     );
 
-    if (!isOpen) return null;
-
     const formatPhoneNumber = (value) => {
         const digits = String(value || "").replace(/\D/g, "");
         const normalized = digits.startsWith("998") ? digits.slice(3) : digits.startsWith("8") ? digits.slice(1) : digits;
@@ -30,6 +28,30 @@ const StudentAttendanceModal = ({ isOpen, onClose, student, month }) => {
         const date = new Date(year, monthNum - 1, day);
         const weekdays = ["Yakshanba", "Dushanba", "Seshanba", "Chorshanba", "Payshanba", "Juma", "Shanba"];
         return weekdays[date.getDay()] || '';
+    };
+
+    const formatLessonDate = (dateString) => {
+        if (!dateString) return '-';
+        const base = String(dateString).slice(0, 10);
+        const [year, monthNum, day] = base.split('-').map(Number);
+        if (!year || !monthNum || !day) return formatDateYMD(dateString);
+        return `${String(day).padStart(2, '0')}.${String(monthNum).padStart(2, '0')}.${year}`;
+    };
+
+    const parseDateOnly = (dateString) => {
+        if (!dateString) return null;
+        const base = String(dateString).slice(0, 10);
+        const isoMatch = base.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (isoMatch) {
+            const [, year, monthNum, day] = isoMatch.map(Number);
+            return new Date(year, monthNum - 1, day);
+        }
+        const dotMatch = base.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+        if (dotMatch) {
+            const [, day, monthNum, year] = dotMatch.map(Number);
+            return new Date(year, monthNum - 1, day);
+        }
+        return null;
     };
 
     const parseLessonDate = (rawDate) => {
@@ -71,7 +93,27 @@ const StudentAttendanceModal = ({ isOpen, onClose, student, month }) => {
         return null;
     };
 
-    const getStatusIcon = (attendance) => {
+    const monthlyStatus = attendanceData?.data?.monthly_status;
+    const stopBoundaryDate = React.useMemo(() => {
+        if (monthlyStatus !== 'stopped' && monthlyStatus !== 'finished') return null;
+        const snapshotTime = attendanceData?.data?.snapshot_info?.updated_at || attendanceData?.data?.snapshot_info?.created_at;
+        return parseDateOnly(snapshotTime);
+    }, [attendanceData?.data?.snapshot_info?.updated_at, attendanceData?.data?.snapshot_info?.created_at, monthlyStatus]);
+
+    const shouldShowDashAfterStop = (attendance, index) => {
+        if (monthlyStatus !== 'stopped' && monthlyStatus !== 'finished') return false;
+        if (!stopBoundaryDate) return false;
+        const lessonDate = parseDateOnly(attendance?.date || attendance?.lesson_date || attendance?.formatted_date);
+        if (!lessonDate) return false;
+        return lessonDate.getTime() > stopBoundaryDate.getTime();
+    };
+
+    if (!isOpen) return null;
+
+    const getStatusIcon = (attendance, index) => {
+        if (shouldShowDashAfterStop(attendance, index)) {
+            return <span className="text-gray-400">-</span>;
+        }
         const status = getAttendanceStatus(attendance);
         switch (status) {
             case 'keldi':
@@ -84,7 +126,10 @@ const StudentAttendanceModal = ({ isOpen, onClose, student, month }) => {
         }
     };
 
-    const getStatusLabel = (attendance) => {
+    const getStatusLabel = (attendance, index) => {
+        if (shouldShowDashAfterStop(attendance, index)) {
+            return "-";
+        }
         const status = getAttendanceStatus(attendance);
         switch (status) {
             case 'keldi':
@@ -97,11 +142,17 @@ const StudentAttendanceModal = ({ isOpen, onClose, student, month }) => {
     };
 
     const getStatusText = (status) => {
-        if (attendanceData?.data?.monthly_status === 'active') {
+        const monthlyStatus = attendanceData?.data?.monthly_status;
+        if (monthlyStatus === 'active') {
             return <span className="text-green-600 font-medium">Faol</span>;
-        } else {
-            return <span className="text-blue-600 font-medium">O&apos;zgartirishda</span>;
         }
+        if (monthlyStatus === 'stopped') {
+            return <span className="text-orange-600 font-medium">To&apos;xtatilgan</span>;
+        }
+        if (monthlyStatus === 'finished') {
+            return <span className="text-red-600 font-medium">Tugatilgan</span>;
+        }
+        return <span className="text-gray-600 font-medium">{monthlyStatus || '-'}</span>;
     };
 
     return (
@@ -152,11 +203,11 @@ const StudentAttendanceModal = ({ isOpen, onClose, student, month }) => {
                                         <tr>
                                             <th className="w-12 border border-gray-300 px-3 py-3 text-left text-sm font-medium text-gray-700 xl:w-14 xl:px-4 xl:py-4 xl:text-base">#</th>
                                             <th className="min-w-[250px] border border-gray-300 px-3 py-3 text-left text-sm font-medium text-gray-700 xl:px-4 xl:py-4 xl:text-base">Talaba</th>
-                                            <th className="w-24 border border-gray-300 px-3 py-3 text-center text-sm font-medium text-gray-700 xl:w-28 xl:px-4 xl:py-4 xl:text-base">Holati</th>
+                                                    <th className="w-24 border border-gray-300 px-3 py-3 text-center text-sm font-medium text-gray-700 xl:w-28 xl:px-4 xl:py-4 xl:text-base">Holati</th>
                                             {attendanceData.data.daily_attendance?.map((attendance, index) => (
                                                 <th key={index} className="min-w-[110px] border border-gray-300 px-3 py-3 text-center text-sm font-medium text-gray-700 xl:min-w-[120px] xl:px-4 xl:py-4 xl:text-base">
                                                     <div className="whitespace-nowrap">
-                                                        {formatDateYMD(attendance.date || attendance.lesson_date || attendance.formatted_date)}
+                                                        {formatLessonDate(attendance.date || attendance.lesson_date || attendance.formatted_date)}
                                                     </div>
                                                     <div className="text-xs text-gray-500 font-medium whitespace-nowrap xl:text-sm">
                                                         {getWeekdayFull(attendance.date || attendance.lesson_date || attendance.formatted_date)}
@@ -183,7 +234,7 @@ const StudentAttendanceModal = ({ isOpen, onClose, student, month }) => {
                                             </td>
                                             {attendanceData.data.daily_attendance?.map((attendance, index) => (
                                                 <td key={index} className="border border-gray-300 px-3 py-3 text-center xl:px-4 xl:py-4">
-                                                    {getStatusIcon(attendance)}
+                                                    {getStatusIcon(attendance, index)}
                                                 </td>
                                             ))}
                                         </tr>
@@ -198,15 +249,15 @@ const StudentAttendanceModal = ({ isOpen, onClose, student, month }) => {
                                         <div className="flex items-center justify-between gap-2">
                                             <div>
                                                 <p className="text-sm font-semibold text-gray-900 whitespace-nowrap">
-                                                    {formatDateYMD(attendance.date || attendance.lesson_date || attendance.formatted_date)}
+                                                    {formatLessonDate(attendance.date || attendance.lesson_date || attendance.formatted_date)}
                                                 </p>
                                                 <p className="text-xs text-gray-500 whitespace-nowrap">
                                                     {getWeekdayFull(attendance.date || attendance.lesson_date || attendance.formatted_date)}
                                                 </p>
                                             </div>
                                             <div className="flex items-center gap-2">
-                                                {getStatusIcon(attendance)}
-                                                <span className="text-sm font-medium text-gray-700">{getStatusLabel(attendance)}</span>
+                                                {getStatusIcon(attendance, index)}
+                                                <span className="text-sm font-medium text-gray-700">{getStatusLabel(attendance, index)}</span>
                                             </div>
                                         </div>
                                     </div>

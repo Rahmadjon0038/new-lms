@@ -19,6 +19,9 @@ const getAttendanceGroups = async (filters = {}) => {
     if (filters.status_filter) {
         params.append('status_filter', filters.status_filter);
     }
+    if (filters.count_mode) {
+        params.append('count_mode', filters.count_mode);
+    }
     
     const queryString = params.toString();
     const url = `/api/attendance/groups${queryString ? `?${queryString}` : ''}`;
@@ -314,6 +317,7 @@ export const useGetAttendanceTeachers = (filters = {}) => {
 const getAttendanceTeacherGroups = async (teacher_id, filters = {}) => {
     const params = new URLSearchParams();
     if (filters.date) params.append('date', filters.date);
+    if (filters.month) params.append('month', filters.month);
     if (filters.day) params.append('day', filters.day);
     if (filters.shift) params.append('shift', filters.shift);
 
