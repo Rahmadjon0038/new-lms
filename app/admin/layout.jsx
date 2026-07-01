@@ -13,7 +13,7 @@ export default function RootLayout({ children }) {
     <html lang="uz">
       <body>
         <Navbar userName="Dildora Alimjanova" role="Admistrator" />
-        <div className="flex min-h-screen bg-gray-50">
+        <div className="flex h-[calc(100dvh-4rem)] overflow-hidden bg-gray-50">
           {isSidebarOpen ? (
             <button
               type="button"

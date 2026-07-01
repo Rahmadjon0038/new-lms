@@ -20,6 +20,17 @@ const WEEKDAYS_UZ = ["yakshanba", "dushanba", "seshanba", "chorshanba", "payshan
 const STATUS_OPTIONS = ["keldi", "kelmadi"];
 const isHolidayFlag = (value) =>
   value === true || value === 1 || value === "1" || value === "true";
+const getStudentDisplayName = (student) => {
+  if (!student) return "-";
+  const surname = String(student.student_surname || student.surname || "").trim();
+  const name = String(student.student_name || student.name || "").trim();
+
+  if (surname && name) return `${surname} ${name}`;
+  if (surname) return surname;
+  if (name) return name;
+
+  return "-";
+};
 const formatPhoneNumber = (value) => {
   const digits = String(value || "").replace(/\D/g, "");
   const normalized = digits.startsWith("998") ? digits.slice(3) : digits.startsWith("8") ? digits.slice(1) : digits;
@@ -292,7 +303,7 @@ function TeacherAttendancePageContent() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-xs font-semibold text-gray-900 sm:text-sm">
-                        {`${student.surname || ""} ${student.name || ""}`.trim() || student.student_name || "-"}
+                        {getStudentDisplayName(student)}
                       </div>
                       <div className="mt-1 flex flex-wrap gap-1.5 text-[10px]">
                         <span className={`rounded-full px-2 py-0.5 font-semibold ${
@@ -368,7 +379,7 @@ function TeacherAttendancePageContent() {
                   {students.map((student) => (
                     <tr key={student.attendance_id}>
                       <td className="px-2 py-1.5 sm:px-3 sm:py-2">
-                        {`${student.surname || ""} ${student.name || ""}`.trim() || student.student_name || "-"}
+                        {getStudentDisplayName(student)}
                       </td>
                       <td className="hidden px-2 py-1.5 sm:table-cell sm:px-3 sm:py-2">
                         <span className="inline-flex items-center gap-1 text-xs text-gray-600 sm:text-sm">

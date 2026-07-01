@@ -40,6 +40,18 @@ const getTodayYmd = () => {
 const isHolidayFlag = (value) =>
   value === true || value === 1 || value === "1" || value === "true";
 
+const getStudentDisplayName = (student) => {
+  if (!student) return "Talaba";
+  const surname = String(student.student_surname || student.surname || "").trim();
+  const name = String(student.student_name || student.name || "").trim();
+
+  if (surname && name) return `${surname} ${name}`;
+  if (surname) return surname;
+  if (name) return name;
+
+  return "Talaba";
+};
+
 // API functions
 const getGroupLessons = async (groupId, month) => {
   const params = new URLSearchParams();
@@ -635,7 +647,7 @@ const GroupLessonsPage = () => {
     if (!lesson || !student) return;
 
     const confirmed = window.confirm(
-      `${student.student_name} ni guruhdan chiqarishni tasdiqlaysizmi?`
+      `${getStudentDisplayName(student)} ni guruhdan chiqarishni tasdiqlaysizmi?`
     );
     if (!confirmed) return;
 
@@ -762,7 +774,7 @@ const GroupLessonsPage = () => {
               return (
                 <div key={student.student_id} className="flex flex-col gap-2 rounded-lg border border-gray-100 p-2.5 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0">
-                    <div className="text-sm font-medium text-gray-900">{student.student_name}</div>
+                    <div className="text-sm font-medium text-gray-900">{getStudentDisplayName(student)}</div>
                     <div className="text-[11px] text-gray-500">{student.phone}</div>
                     <div className="text-[11px] text-gray-500">
                       Chegirma: {getDiscountDisplay(student)}

@@ -25,6 +25,18 @@ const formatMoney = (value) => {
   return `${amount.toLocaleString("uz-UZ")} so'm`;
 };
 
+const getStudentDisplayName = (student) => {
+  if (!student) return "-";
+  const surname = String(student.student_surname || student.surname || "").trim();
+  const name = String(student.student_name || student.name || "").trim();
+
+  if (surname && name) return `${surname} ${name}`;
+  if (surname) return surname;
+  if (name) return name;
+
+  return "-";
+};
+
 // API functions
 const getLessonStudents = async (lessonId) => {
   const response = await instance.get(`/api/attendance/lessons/${lessonId}/students`);
@@ -286,7 +298,7 @@ const LessonAttendancePage = () => {
                           </div>
                           <div className="ml-3">
                             <div className="text-sm font-medium text-gray-900">
-                              {student.student_name}
+                              {getStudentDisplayName(student)}
                             </div>
                             <div className="text-[11px] text-gray-500">
                               Qo&apos;shilgan: {formatDateYMD(student.joined_at || student.membership_periods?.[0]?.joined_at || "-")}

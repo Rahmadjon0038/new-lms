@@ -10,6 +10,7 @@ import {
   useGetGroupLessons,
   useGetLessonStudents,
   useMarkLessonAttendance,
+  useUpdateStudentMonthlyStatus,
 } from "../../../../../hooks/attendance";
 import { useRemoveStudentFromGroup } from "../../../../../hooks/groups";
 import { useGetNotify } from "../../../../../hooks/notify";
@@ -33,6 +34,175 @@ const formatMoney = (value) => {
   return `${amount.toLocaleString("uz-UZ")} so'm`;
 };
 
+const getStudentDisplayName = (student) => {
+  if (!student) return "Talaba";
+  const surname = String(student.student_surname || student.surname || "").trim();
+  const name = String(student.student_name || student.name || "").trim();
+
+  if (surname && name) return `${surname} ${name}`;
+  if (surname) return surname;
+  if (name) return name;
+
+  return "Talaba";
+};
+
+const MonthlyStatusModal = ({
+  isOpen,
+  onClose,
+  student,
+  groupId,
+  currentMonth,
+  onSubmit,
+}) => {
+  const monthOptions = useMemo(() => {
+    const options = [];
+    for (let year = 2025; year <= 2030; year += 1) {
+      for (let month = 1; month <= 12; month += 1) {
+        options.push(`${year}-${String(month).padStart(2, "0")}`);
+      }
+    }
+    return options;
+  }, []);
+
+  const [newStatus, setNewStatus] = useState(() =>
+    student?.monthly_status === "active" ? "stopped" : "active"
+  );
+  const [updateType, setUpdateType] = useState("single");
+  const [selectedMonths, setSelectedMonths] = useState([]);
+
+  if (!isOpen || !student) return null;
+
+  const toggleMonth = (month) => {
+    setSelectedMonths((prev) =>
+      prev.includes(month) ? prev.filter((item) => item !== month) : [...prev, month]
+    );
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const payload = {
+      student_id: Number(student.student_id),
+      group_id: Number(groupId),
+      monthly_status: newStatus,
+    };
+
+    if (updateType === "single") payload.month = currentMonth;
+    if (updateType === "fromMonth") payload.from_month = currentMonth;
+    if (updateType === "multiple") payload.months = selectedMonths;
+
+    onSubmit(payload);
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md rounded-2xl bg-white p-4 shadow-2xl sm:p-5"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-bold text-gray-900">Talaba holatini o&apos;zgartirish</h3>
+            <p className="text-xs text-gray-500">{getStudentDisplayName(student)}</p>
+          </div>
+          <button type="button" onClick={onClose} className="rounded-full border border-gray-200 px-2 py-1 text-gray-500">
+            ✕
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="rounded-xl bg-gray-50 p-3 text-sm">
+            <div className="text-gray-600">
+              Joriy holat:{" "}
+              <span className={`font-semibold ${student.monthly_status === "active" ? "text-green-600" : "text-orange-600"}`}>
+                {student.monthly_status === "active" ? "Faol" : student.monthly_status === "stopped" ? "To&apos;xtatilgan" : student.monthly_status || "Noma'lum"}
+              </span>
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-700">Yangi holat</label>
+            <select
+              value={newStatus}
+              onChange={(e) => setNewStatus(e.target.value)}
+              className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#A60E07]"
+            >
+              <option value="active">Faol</option>
+              <option value="stopped">To&apos;xtatilgan</option>
+              <option value="finished">Bitirgan</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-700">Qaysi oylar</label>
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  checked={updateType === "single"}
+                  onChange={() => setUpdateType("single")}
+                />
+                Faqat joriy oy ({currentMonth})
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  checked={updateType === "fromMonth"}
+                  onChange={() => setUpdateType("fromMonth")}
+                />
+                Shu oydan boshlab
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  checked={updateType === "multiple"}
+                  onChange={() => setUpdateType("multiple")}
+                />
+                Bir nechta oylar
+              </label>
+            </div>
+          </div>
+
+          {updateType === "multiple" ? (
+            <div className="max-h-40 overflow-y-auto rounded-xl border border-gray-200 p-3">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {monthOptions.map((month) => (
+                  <label key={month} className="flex items-center gap-2 text-xs text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={selectedMonths.includes(month)}
+                      onChange={() => toggleMonth(month)}
+                    />
+                    {month}
+                  </label>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700"
+            >
+              Bekor qilish
+            </button>
+            <button
+              type="submit"
+              className="rounded-xl bg-[#A60E07] px-4 py-2 text-sm font-semibold text-white"
+            >
+              Saqlash
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 export default function AdminTeacherGroupsPage() {
   const { teacher_id } = useParams();
   const pathname = usePathname();
@@ -42,6 +212,7 @@ export default function AdminTeacherGroupsPage() {
   const notify = useGetNotify();
   const queryClient = useQueryClient();
   const removeStudentMutation = useRemoveStudentFromGroup();
+  const updateStudentStatusMutation = useUpdateStudentMonthlyStatus();
 
   const [date, setDate] = useState(searchParams.get("date") || "");
   const [shift, setShift] = useState("");
@@ -53,6 +224,7 @@ export default function AdminTeacherGroupsPage() {
   const [selectedLessonId, setSelectedLessonId] = useState("");
   const [attendanceOverrides, setAttendanceOverrides] = useState({});
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+  const [statusModal, setStatusModal] = useState({ isOpen: false, student: null });
   const hasActiveFilters = Boolean(date || shift);
 
   useEffect(() => {
@@ -220,7 +392,7 @@ export default function AdminTeacherGroupsPage() {
   const handleRemoveStudentFromGroup = (student) => {
     if (!student?.student_id || !activeGroupId) return;
 
-    const fullName = student.student_name || `${student.surname || ""} ${student.name || ""}`.trim() || "talaba";
+    const fullName = getStudentDisplayName(student);
     if (!window.confirm(`${fullName} ni guruhdan chiqarishni tasdiqlaysizmi?`)) return;
 
     removeStudentMutation.mutate(
@@ -247,6 +419,31 @@ export default function AdminTeacherGroupsPage() {
         },
       }
     );
+  };
+
+  const handleOpenStatusModal = (student) => {
+    if (!student) return;
+    setStatusModal({ isOpen: true, student });
+  };
+
+  const handleCloseStatusModal = () => {
+    setStatusModal({ isOpen: false, student: null });
+  };
+
+  const handleUpdateStudentStatus = (payload) => {
+    updateStudentStatusMutation.mutate(payload, {
+      onSuccess: (res) => {
+        notify("ok", res?.message || "Talaba holati yangilandi");
+        handleCloseStatusModal();
+        lessonStudentsQuery.refetch();
+        lessonsQuery.refetch();
+        queryClient.invalidateQueries(["monthly-attendance", activeGroupId, monthlyMonth]);
+        queryClient.invalidateQueries(["groups"]);
+      },
+      onError: (err) => {
+        notify("err", err?.response?.data?.message || "Talaba holatini yangilashda xatolik");
+      },
+    });
   };
 
   const getWeekdayFromDate = (value) => {
@@ -312,18 +509,33 @@ export default function AdminTeacherGroupsPage() {
                 <tr key={student.attendance_id}>
                   <td className="px-2 py-1.5 sm:px-3 sm:py-2">
                     <div className="font-medium text-gray-900">
-                      {student.student_name || `${student.surname || ""} ${student.name || ""}`.trim()}
+                      {getStudentDisplayName(student)}
                     </div>
                     <div className="text-[11px] text-gray-500">
                       Qo&apos;shilgan: {formatDateYMD(student.joined_at || student.membership_periods?.[0]?.joined_at || "-")}
                     </div>
                   </td>
                   <td className="px-2 py-1.5 sm:px-3 sm:py-2">
-                    <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold sm:px-2 sm:py-1 sm:text-xs ${
-                      student.monthly_status === "active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"
-                    }`}>
-                      {student.monthly_status || "active"}
-                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenStatusModal(student)}
+                      className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold sm:px-2 sm:py-1 sm:text-xs ${
+                        student.monthly_status === "active"
+                          ? "bg-green-100 text-green-700 hover:bg-green-200"
+                          : student.monthly_status === "stopped"
+                            ? "bg-orange-100 text-orange-700 hover:bg-orange-200"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      }`}
+                    >
+                      {student.monthly_status === "active"
+                        ? "Faol"
+                        : student.monthly_status === "stopped"
+                          ? "To'xtatilgan"
+                          : student.monthly_status === "finished"
+                            ? "Bitirgan"
+                            : student.monthly_status || "Noma'lum"}
+                      <span className="ml-1 hidden sm:inline text-[10px] font-medium underline decoration-dotted">O&apos;zgartirish</span>
+                    </button>
                   </td>
                   <td className="px-2 py-1.5 text-gray-700 sm:px-3 sm:py-2">
                     {formatMoney(student.paid_amount)}
@@ -387,6 +599,16 @@ export default function AdminTeacherGroupsPage() {
           </table>
         </div>
       ) : null}
+
+      <MonthlyStatusModal
+        key={statusModal.student?.attendance_id || "status-modal"}
+        isOpen={statusModal.isOpen}
+        onClose={handleCloseStatusModal}
+        student={statusModal.student}
+        groupId={activeGroupId}
+        currentMonth={monthlyMonth}
+        onSubmit={handleUpdateStudentStatus}
+      />
 
       {!lessonStudentsQuery.isLoading && !lessonStudentsQuery.isError ? (
         <div className="flex justify-end">

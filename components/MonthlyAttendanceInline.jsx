@@ -25,6 +25,18 @@ const formatPhoneNumber = (value) => {
   return `+998-${normalized.slice(0, 2)}-${normalized.slice(2, 5)}-${normalized.slice(5, 7)}-${normalized.slice(7, 9)}`;
 };
 
+const getStudentDisplayName = (student) => {
+  if (!student) return "Talaba";
+  const surname = String(student.student_surname || student.surname || "").trim();
+  const name = String(student.student_name || student.name || "").trim();
+
+  if (surname && name) return `${surname} ${name}`;
+  if (surname) return surname;
+  if (name) return name;
+
+  return "Talaba";
+};
+
 // Monthly Status Update Modal
 const MonthlyStatusModal = ({ isOpen, onClose, student, groupId, currentMonth, updateStatusMutation }) => {
   const [newStatus, setNewStatus] = useState('');
@@ -104,7 +116,7 @@ const MonthlyStatusModal = ({ isOpen, onClose, student, groupId, currentMonth, u
         </h3>
         
         <div className="mb-4 p-3 bg-gray-50 rounded">
-          <p className="text-sm text-gray-600">Talaba: <strong>{student.student_name}</strong></p>
+          <p className="text-sm text-gray-600">Talaba: <strong>{getStudentDisplayName(student)}</strong></p>
           <p className="text-sm text-gray-600">
             Joriy status: <span className={`font-semibold ${
               student.monthly_status === 'active' ? 'text-green-600' : 'text-orange-600'
@@ -495,7 +507,7 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
                     <td className="border border-gray-400 px-2 py-2 text-[10px] text-gray-600 sm:px-3 sm:text-xs lg:px-3 lg:py-2.5 lg:text-xs">{idx + 1}</td>
                     <td className="border border-gray-400 px-2 py-2 text-[10px] font-medium text-gray-900 whitespace-nowrap sm:px-3 sm:py-2 sm:text-xs lg:px-3 lg:py-2.5 lg:text-xs">
                       <div>
-                        <div className="font-medium lg:text-sm">{student.student_name}</div>
+                        <div className="font-medium lg:text-sm">{getStudentDisplayName(student)}</div>
                         <div className="mt-0.5 text-[9px] text-gray-500 sm:text-[10px] lg:text-xs">
                           {formatPhoneNumber(student.phone)}
                         </div>
