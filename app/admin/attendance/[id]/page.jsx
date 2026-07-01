@@ -21,6 +21,7 @@ import {
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { instance } from "../../../../hooks/api";
+import { useRemoveStudentFromGroup } from "../../../../hooks/groups";
 import MonthlyAttendanceInline from "../../../../components/MonthlyAttendanceInline";
 import { toast } from "react-hot-toast";
 import { normalizeMonth, formatDateYMD } from "../../../../utils/date";
@@ -386,6 +387,7 @@ const GroupLessonsPage = () => {
   const [calendarDate, setCalendarDate] = useState(getTodayYmd());
   const [isHolidayCalendarOpen, setIsHolidayCalendarOpen] = useState(false);
   const holidayCalendarRef = useRef(null);
+  const removeStudentFromGroupMutation = useRemoveStudentFromGroup();
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -629,6 +631,52 @@ const GroupLessonsPage = () => {
     }
   };
 
+  const handleRemoveStudentFromGroup = (lesson, student) => {
+    if (!lesson || !student) return;
+
+    const confirmed = window.confirm(
+      `${student.student_name} ni guruhdan chiqarishni tasdiqlaysizmi?`
+    );
+    if (!confirmed) return;
+
+    removeStudentFromGroupMutation.mutate(
+      {
+        group_id: Number(groupId),
+        student_id: Number(student.student_id),
+      },
+      {
+        onSuccess: () => {
+          toast.success("Student guruhdan chiqarildi");
+
+          setLessonPanels((prev) => {
+            const currentPanel = prev[lesson.id] || {};
+            const nextStudents = (currentPanel.students || []).filter(
+              (item) => item.student_id !== student.student_id
+            );
+            const nextAttendanceData = { ...(currentPanel.attendanceData || {}) };
+            delete nextAttendanceData[student.attendance_id];
+
+            return {
+              ...prev,
+              [lesson.id]: {
+                ...currentPanel,
+                students: nextStudents,
+                attendanceData: nextAttendanceData,
+                hasChanges: false,
+              },
+            };
+          });
+
+          queryClient.invalidateQueries({ queryKey: ['group-lessons', groupId, normalizedMonth] });
+          queryClient.invalidateQueries({ queryKey: ['monthly-attendance', groupId, normalizedMonth] });
+        },
+        onError: (err) => {
+          toast.error(err?.response?.data?.message || "Studentni guruhdan chiqarishda xatolik");
+        },
+      }
+    );
+  };
+
   const formatDate = (dateString) => formatDateYMD(dateString);
   const getWeekdayFull = (dateString) => {
     if (!dateString) return "";
@@ -691,7 +739,7 @@ const GroupLessonsPage = () => {
     <div className="rounded-lg border border-gray-200 bg-white p-3 sm:p-4">
       {isHolidayFlag(lesson?.is_holiday) ? (
         <div className="rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-700">
-          Dam olish kuni. Bu dars uchun davomat belgilab bo'lmaydi.
+          Dam olish kuni. Bu dars uchun davomat belgilab bo&apos;lmaydi.
         </div>
       ) : panel.isLoading ? (
         <div className="text-sm text-gray-500">Yuklanmoqda...</div>
@@ -742,6 +790,16 @@ const GroupLessonsPage = () => {
                       <option value="keldi">Keldi</option>
                       <option value="kelmadi">Kelmadi</option>
                     </select>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveStudentFromGroup(lesson, student)}
+                      disabled={removeStudentFromGroupMutation.isLoading}
+                      className="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs font-semibold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+                      title="Studentni guruhdan chiqarish"
+                    >
+                      <XCircleIcon className="h-4 w-4" />
+                      <span className="hidden sm:inline">Chiqarish</span>
+                    </button>
                     {!student.can_mark && (
                       <span className="text-[11px] text-gray-400">Yopiq</span>
                     )}

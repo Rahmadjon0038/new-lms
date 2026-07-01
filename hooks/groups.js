@@ -279,6 +279,9 @@ export const useRemoveStudentFromGroup = () => {
         onSuccess: () => {
             queryClient.invalidateQueries(['students']);
             queryClient.invalidateQueries(['groups']);
+            queryClient.invalidateQueries({ queryKey: ['lesson-students'] });
+            queryClient.invalidateQueries({ queryKey: ['group-lessons'] });
+            queryClient.invalidateQueries({ queryKey: ['monthly-attendance'] });
         }
     });
     return removeStudentMutation;
