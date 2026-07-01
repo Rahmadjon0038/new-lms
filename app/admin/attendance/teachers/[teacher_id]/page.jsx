@@ -11,6 +11,7 @@ import {
   useGetLessonStudents,
   useMarkLessonAttendance,
 } from "../../../../../hooks/attendance";
+import { useRemoveStudentFromGroup } from "../../../../../hooks/groups";
 import { useGetNotify } from "../../../../../hooks/notify";
 import MonthlyAttendanceInline from "../../../../../components/MonthlyAttendanceInline";
 import { normalizeMonth, formatDateYMD } from "../../../../../utils/date";
@@ -40,6 +41,7 @@ export default function AdminTeacherGroupsPage() {
   const searchString = searchParams.toString();
   const notify = useGetNotify();
   const queryClient = useQueryClient();
+  const removeStudentMutation = useRemoveStudentFromGroup();
 
   const [date, setDate] = useState(searchParams.get("date") || "");
   const [shift, setShift] = useState("");
@@ -215,6 +217,38 @@ export default function AdminTeacherGroupsPage() {
     [attendanceOverrides]
   );
 
+  const handleRemoveStudentFromGroup = (student) => {
+    if (!student?.student_id || !activeGroupId) return;
+
+    const fullName = student.student_name || `${student.surname || ""} ${student.name || ""}`.trim() || "talaba";
+    if (!window.confirm(`${fullName} ni guruhdan chiqarishni tasdiqlaysizmi?`)) return;
+
+    removeStudentMutation.mutate(
+      {
+        group_id: Number(activeGroupId),
+        student_id: Number(student.student_id),
+      },
+      {
+        onSuccess: (data) => {
+          notify("ok", data?.message || "Talaba guruhdan chiqarildi");
+          setAttendanceOverrides((prev) => {
+            const next = { ...prev };
+            delete next[student.attendance_id];
+            return next;
+          });
+          lessonStudentsQuery.refetch();
+          lessonsQuery.refetch();
+          queryClient.invalidateQueries(["groups"]);
+          queryClient.invalidateQueries(["student-groups"]);
+          queryClient.invalidateQueries(["monthly-attendance", activeGroupId, monthlyMonth]);
+        },
+        onError: (err) => {
+          notify("err", err?.response?.data?.message || "Talabani guruhdan chiqarishda xatolik");
+        },
+      }
+    );
+  };
+
   const getWeekdayFromDate = (value) => {
     if (!value) return "";
     const dateOnly = String(value).slice(0, 10);
@@ -270,6 +304,7 @@ export default function AdminTeacherGroupsPage() {
                 <th className="px-2 py-1.5 text-left font-semibold text-gray-600 sm:px-3 sm:py-2">Chegirma</th>
                 <th className="px-2 py-1.5 text-left font-semibold text-gray-600 sm:px-3 sm:py-2">Qarz</th>
                 <th className="px-2 py-1.5 text-left font-semibold text-gray-600 sm:px-3 sm:py-2">Davomat</th>
+                <th className="px-2 py-1.5 text-left font-semibold text-gray-600 sm:px-3 sm:py-2">Amal</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 bg-white">
@@ -335,6 +370,16 @@ export default function AdminTeacherGroupsPage() {
                         );
                       })}
                     </div>
+                  </td>
+                  <td className="px-2 py-1.5 sm:px-3 sm:py-2">
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveStudentFromGroup(student)}
+                      disabled={removeStudentMutation.isPending}
+                      className="inline-flex items-center justify-center rounded-lg bg-red-600 px-3 py-1.5 text-[11px] font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60 sm:px-3 sm:py-2 sm:text-xs"
+                    >
+                      Guruhdan chiqarish
+                    </button>
                   </td>
                 </tr>
               ))}
