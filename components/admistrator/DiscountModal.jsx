@@ -30,6 +30,10 @@ const DiscountModal = ({ isOpen, onClose, student, month }) => {
     e.preventDefault();
     
     if (!student?.student_id) return;
+    if (!month) {
+      toast.error('Oy tanlanmagan');
+      return;
+    }
 
     try {
       const payload = {
@@ -37,7 +41,7 @@ const DiscountModal = ({ isOpen, onClose, student, month }) => {
         group_id: student.group_id,
         discount_type: discountData.discount_type,
         discount_value: Number(discountData.discount_value),
-        month: new Date().toISOString().slice(0, 7), // Current month (YYYY-MM format)
+        month, // Tanlangan oy (YYYY-MM format)
         description: discountData.description
       };
 
