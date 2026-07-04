@@ -39,6 +39,17 @@ const getStudentDisplayName = (student) => {
   const surname = String(student.student_surname || student.surname || "").trim();
   const name = String(student.student_name || student.name || "").trim();
 
+  if (surname && name) {
+    const normalizedSurname = surname.toLowerCase();
+    const normalizedName = name.toLowerCase();
+
+    // Backend ba'zi joylarda student_name ni allaqachon "familiya ism" qilib yuboradi.
+    // Shunda qayta qo'shib yubormaslik uchun shu holatni ushlaymiz.
+    if (normalizedName.includes(normalizedSurname) || normalizedSurname === normalizedName) {
+      return name;
+    }
+  }
+
   if (surname && name) return `${surname} ${name}`;
   if (surname) return surname;
   if (name) return name;
