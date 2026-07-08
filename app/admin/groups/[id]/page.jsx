@@ -39,7 +39,19 @@ const getStudentStatusLabel = (status) => {
     return "Noma'lum";
 };
 
-const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText, isLoading, type = 'danger' }) => {
+const ConfirmModal = ({
+    isOpen,
+    onClose,
+    onConfirm,
+    title,
+    message,
+    confirmText,
+    isLoading,
+    type = 'danger',
+    showReasonInput = false,
+    reason = '',
+    onReasonChange,
+}) => {
     if (!isOpen) return null;
 
     const getIconColor = () => {
@@ -63,7 +75,21 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText,
                         <ExclamationTriangleIcon className={`h-12 w-12 ${getIconColor()}`} />
                     </div>
                     <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-2">{title}</h3>
-                    <p className="text-gray-600 mb-6">{message}</p>
+                    <p className="text-gray-600 mb-4 whitespace-pre-line">{message}</p>
+                    {showReasonInput && (
+                        <div className="mb-5 text-left">
+                            <label className="mb-2 block text-sm font-semibold text-gray-700">
+                                Sabab (ixtiyoriy)
+                            </label>
+                            <textarea
+                                value={reason}
+                                onChange={(event) => onReasonChange?.(event.target.value)}
+                                rows={3}
+                                className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800 outline-none transition focus:border-red-400 focus:bg-white focus:ring-2 focus:ring-red-100"
+                                placeholder="Masalan: boshqa guruhga otdi"
+                            />
+                        </div>
+                    )}
                     <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
                         <button
                             onClick={onClose}
@@ -72,7 +98,7 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText,
                             Bekor qilish
                         </button>
                         <button
-                            onClick={onConfirm}
+                            onClick={() => onConfirm?.(reason)}
                             disabled={isLoading}
                             className={`flex-1 py-2.5 rounded-xl font-medium text-white transition disabled:opacity-50 ${getButtonColor()}`}
                         >
@@ -103,22 +129,24 @@ const GroupDetailPage = () => {
         type: 'danger',
         isLoading: false,
         onConfirm: null,
+        showReasonInput: false,
+        reason: '',
     });
 
     const handleRemoveStudent = useCallback((student) => {
         if (!student?.id || !groupId) return;
         const fullName = student.full_name || `${student.surname || ''} ${student.name || ''}`.trim() || 'talaba';
-        const reason = window.prompt(`${fullName} nima sababdan guruhdan chiqarilmoqda?`);
-        if (reason === null) return;
-        const trimmedReason = reason.trim();
         setConfirmModal({
             isOpen: true,
             title: "Talabani guruhdan chiqarish",
-            message: `${fullName} guruhdan chiqarilsinmi?${trimmedReason ? `\nSabab: ${trimmedReason}` : ''}`,
+            message: `${fullName} guruhdan chiqarilsinmi?`,
             confirmText: "Chiqarish",
             type: 'warning',
             isLoading: false,
-            onConfirm: () => {
+            showReasonInput: true,
+            reason: '',
+            onConfirm: (reasonValue) => {
+                const trimmedReason = String(reasonValue || '').trim();
                 setConfirmModal((prev) => ({ ...prev, isLoading: true }));
                 setRemovingId(student.id);
                 removeStudentMutation.mutate(
@@ -133,7 +161,7 @@ const GroupDetailPage = () => {
                         },
                         onSettled: () => {
                             setRemovingId(null);
-                            setConfirmModal((prev) => ({ ...prev, isOpen: false, isLoading: false }));
+                            setConfirmModal((prev) => ({ ...prev, isOpen: false, isLoading: false, reason: '', showReasonInput: false }));
                         }
                     }
                 );
@@ -151,6 +179,8 @@ const GroupDetailPage = () => {
             confirmText: "O'chirish",
             type: 'danger',
             isLoading: false,
+            showReasonInput: false,
+            reason: '',
             onConfirm: () => {
                 setConfirmModal((prev) => ({ ...prev, isLoading: true }));
                 setDeletingId(student.id);
@@ -216,7 +246,7 @@ const GroupDetailPage = () => {
                             </div>
                             <div className="w-full sm:w-auto text-left sm:text-right">
                                 <div className="text-xl sm:text-2xl font-extrabold text-[#A60E07] leading-tight">
-                                    {parseFloat(group.price).toLocaleString()} so'm
+                                    {parseFloat(group.price).toLocaleString()} so&apos;m
                                 </div>
                                 <div className="text-xs font-medium text-gray-500">Kurs narxi</div>
                             </div>
@@ -228,7 +258,7 @@ const GroupDetailPage = () => {
                             <div className="flex items-center space-x-2">
                                 <UserIcon className="h-4 w-4 text-[#A60E07] shrink-0" />
                                 <div className="min-w-0">
-                                    <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">O'qituvchi</p>
+                                    <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">O&apos;qituvchi</p>
                                     <p className="text-xs font-semibold text-gray-800 truncate">
                                         {group.teacher_name || 'Tayinlanmagan'}
                                     </p>
@@ -307,7 +337,7 @@ const GroupDetailPage = () => {
                                             </p>
                                             {group.room_capacity && (
                                                 <p className="text-xs text-gray-600 mt-0.5">
-                                                    {group.room_capacity} o'rinlik
+                                                    {group.room_capacity} o&apos;rinlik
                                                 </p>
                                             )}
                                         </>
@@ -376,7 +406,7 @@ const GroupDetailPage = () => {
                         <div className="flex items-center justify-between">
                             <h3 className="text-sm sm:text-lg font-bold text-gray-800 flex items-center uppercase tracking-tight">
                                 <UsersIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2 text-[#A60E07]" />
-                                Talabalar Ro'yxati
+                                Talabalar Ro&apos;yxati
                             </h3>
                             <span className="px-2.5 sm:px-3 py-1 text-[11px] sm:text-sm bg-[#A60E07] text-white rounded-lg font-bold shadow-sm">
                                 {students.length} ta talaba
@@ -390,13 +420,13 @@ const GroupDetailPage = () => {
                                 <thead className="bg-gray-100">
                                     <tr>
                                         <th className="px-2.5 sm:px-3 py-2 text-left text-[11px] sm:text-xs font-bold text-gray-700 uppercase tracking-wider border-b border-gray-200">
-                                            Talaba ma'lumotlari
+                                            Talaba ma&apos;lumotlari
                                         </th>
                                         <th className="px-2.5 sm:px-3 py-2 text-left text-[11px] sm:text-xs font-bold text-gray-700 uppercase tracking-wider border-b border-gray-200">
-                                            Guruhga qo'shilgan
+                                            Guruhga qo&apos;shilgan
                                         </th>
                                         <th className="px-2.5 sm:px-3 py-2 text-left text-[11px] sm:text-xs font-bold text-gray-700 uppercase tracking-wider border-b border-gray-200 hidden md:table-cell">
-                                            Ro'yxatdan o'tgan
+                                            Ro&apos;yxatdan o&apos;tgan
                                         </th>
                                         <th className="px-2.5 sm:px-3 py-2 text-left text-[11px] sm:text-xs font-bold text-gray-700 uppercase tracking-wider border-b border-gray-200">
                                             Holati
@@ -462,9 +492,9 @@ const GroupDetailPage = () => {
                             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-100 rounded-full flex items-center justify-center">
                                 <UsersIcon className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400" />
                             </div>
-                            <div className="text-sm sm:text-base font-medium text-gray-500">Talabalar yo'q</div>
+                            <div className="text-sm sm:text-base font-medium text-gray-500">Talabalar yo&apos;q</div>
                             <p className="text-xs text-gray-400 max-w-md text-center px-3">
-                                Bu guruhda hali hech qanday talaba ro'yxatdan o'tmagan.
+                                Bu guruhda hali hech qanday talaba ro&apos;yxatdan o&apos;tmagan.
                             </p>
                         </div>
                     )}
@@ -472,13 +502,16 @@ const GroupDetailPage = () => {
             </div>
             <ConfirmModal
                 isOpen={confirmModal.isOpen}
-                onClose={() => setConfirmModal((prev) => ({ ...prev, isOpen: false, isLoading: false }))}
+                onClose={() => setConfirmModal((prev) => ({ ...prev, isOpen: false, isLoading: false, reason: '', showReasonInput: false }))}
                 onConfirm={confirmModal.onConfirm}
                 title={confirmModal.title}
                 message={confirmModal.message}
                 confirmText={confirmModal.confirmText}
                 isLoading={confirmModal.isLoading}
                 type={confirmModal.type}
+                showReasonInput={confirmModal.showReasonInput}
+                reason={confirmModal.reason}
+                onReasonChange={(value) => setConfirmModal((prev) => ({ ...prev, reason: value }))}
             />
         </div>
     );

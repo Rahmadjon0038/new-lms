@@ -57,6 +57,57 @@ const getStudentDisplayName = (student) => {
   return "Talaba";
 };
 
+const RemoveStudentModal = ({
+  isOpen,
+  studentName,
+  reason,
+  isLoading,
+  onReasonChange,
+  onClose,
+  onConfirm,
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
+        <h3 className="text-lg font-bold text-gray-900">Talabani guruhdan chiqarish</h3>
+        <p className="mt-2 text-sm text-gray-600">
+          {studentName} guruhdan chiqarilsinmi?
+        </p>
+        <label className="mt-4 block text-sm font-semibold text-gray-700">
+          Sabab (ixtiyoriy)
+        </label>
+        <textarea
+          value={reason}
+          onChange={(event) => onReasonChange(event.target.value)}
+          rows={3}
+          className="mt-2 w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800 outline-none transition focus:border-red-400 focus:bg-white focus:ring-2 focus:ring-red-100"
+          placeholder="Masalan: boshqa guruhga otdi"
+        />
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-xl bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-200"
+          >
+            Bekor qilish
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={isLoading}
+            className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
+          >
+            {isLoading ? "Bajarilmoqda..." : "Chiqarish"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const MonthlyStatusModal = ({
   isOpen,
   onClose,
@@ -236,6 +287,7 @@ export default function AdminTeacherGroupsPage() {
   const [attendanceOverrides, setAttendanceOverrides] = useState({});
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   const [statusModal, setStatusModal] = useState({ isOpen: false, student: null });
+  const [removeModal, setRemoveModal] = useState({ isOpen: false, student: null, reason: "" });
   const hasActiveFilters = Boolean(date || shift);
 
   useEffect(() => {
@@ -402,12 +454,13 @@ export default function AdminTeacherGroupsPage() {
 
   const handleRemoveStudentFromGroup = (student) => {
     if (!student?.student_id || !activeGroupId) return;
+    setRemoveModal({ isOpen: true, student, reason: "" });
+  };
 
-    const fullName = getStudentDisplayName(student);
-    const reason = window.prompt(`${fullName} nima sababdan guruhdan chiqarilmoqda?`);
-    if (reason === null) return;
-    const trimmedReason = reason.trim();
-    if (!window.confirm(`${fullName} ni guruhdan chiqarishni tasdiqlaysizmi?${trimmedReason ? `\nSabab: ${trimmedReason}` : ''}`)) return;
+  const confirmRemoveStudentFromGroup = () => {
+    const { student, reason } = removeModal;
+    if (!student?.student_id || !activeGroupId) return;
+    const trimmedReason = String(reason || "").trim();
 
     removeStudentMutation.mutate(
       {
@@ -431,6 +484,9 @@ export default function AdminTeacherGroupsPage() {
         },
         onError: (err) => {
           notify("err", err?.response?.data?.message || "Talabani guruhdan chiqarishda xatolik");
+        },
+        onSettled: () => {
+          setRemoveModal({ isOpen: false, student: null, reason: "" });
         },
       }
     );
@@ -950,6 +1006,16 @@ export default function AdminTeacherGroupsPage() {
           <MonthlyAttendanceInline groupId={activeGroupId} selectedMonth={monthlyMonth} />
         </div>
       ) : null}
+
+      <RemoveStudentModal
+        isOpen={removeModal.isOpen}
+        studentName={getStudentDisplayName(removeModal.student)}
+        reason={removeModal.reason}
+        isLoading={removeStudentMutation.isPending}
+        onReasonChange={(reason) => setRemoveModal((prev) => ({ ...prev, reason }))}
+        onClose={() => setRemoveModal({ isOpen: false, student: null, reason: "" })}
+        onConfirm={confirmRemoveStudentFromGroup}
+      />
 
     </div>
   );

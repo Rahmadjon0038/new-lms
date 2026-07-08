@@ -203,6 +203,7 @@ const AddGroup = ({
     // Single action states
     const [selectedGroupId, setSelectedGroupId] = useState('');
     const [actionType, setActionType] = useState('join'); // 'join' | 'change' | 'remove'
+    const [removeReason, setRemoveReason] = useState('');
 
     // Bulk action states
     const [bulkSearchTerm, setBulkSearchTerm] = useState('');
@@ -358,6 +359,7 @@ const AddGroup = ({
         setBulkSubjectFilter('all');
         setBulkOnlyUnassigned(!allowBulkAllStudents);
         setActiveTab(defaultActiveTab);
+        setRemoveReason('');
     }, [allowBulkAllStudents, defaultActiveTab, fixedBulkTargetGroupId]);
 
     const handleSingleSubmit = (e) => {
@@ -368,14 +370,11 @@ const AddGroup = ({
                 toast.error('Talabaning guruhi topilmadi');
                 return;
             }
-            const reason = window.prompt(`${student?.surname || ''} ${student?.name || ''} nima sababdan guruhdan chiqarilmoqda?`);
-            if (reason === null) return;
-            const trimmedReason = reason.trim();
             removeStudentMutation.mutate(
                 {
                     group_id: Number(student.group_id),
                     student_id: Number(student.id),
-                    reason: trimmedReason
+                    reason: removeReason.trim()
                 },
                 {
                     onSuccess: () => {
@@ -494,9 +493,7 @@ const AddGroup = ({
                     return;
                 }
 
-                const reason = window.prompt("Tanlangan talabalar nima sababdan guruhdan chiqarilmoqda?");
-                if (reason === null) return;
-                const trimmedReason = reason.trim();
+                const trimmedReason = removeReason.trim();
 
                 let removed = 0;
                 let skipped = 0;
@@ -541,6 +538,7 @@ const AddGroup = ({
     const handleActionTypeChange = (type) => {
         setActionType(type);
         setSelectedGroupId('');
+        setRemoveReason('');
     };
 
     const handleOpenModal = () => {
@@ -550,6 +548,7 @@ const AddGroup = ({
         setBulkTargetGroupId(fixedBulkTargetGroupId || '');
         setBulkActionType('join');
         setBulkOnlyUnassigned(!allowBulkAllStudents);
+        setRemoveReason('');
         setIsModalOpen(true);
     };
 
@@ -719,6 +718,16 @@ const AddGroup = ({
                                                     </p>
                                                 </div>
                                             </div>
+                                            <label className="mt-3 block text-xs font-semibold text-red-800 sm:text-sm">
+                                                Sabab (ixtiyoriy)
+                                            </label>
+                                            <textarea
+                                                value={removeReason}
+                                                onChange={(event) => setRemoveReason(event.target.value)}
+                                                rows={3}
+                                                className="mt-1.5 w-full resize-none rounded-lg border border-red-200 bg-white px-3 py-2 text-sm text-gray-800 outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                                                placeholder="Masalan: boshqa guruhga otdi"
+                                            />
                                         </div>
                                     )}
 
@@ -825,6 +834,21 @@ const AddGroup = ({
                                             />
                                         ) : null}
                                     </div>
+
+                                    {bulkActionType === 'remove' ? (
+                                        <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3">
+                                            <label className="block text-xs font-semibold text-red-800 sm:text-sm">
+                                                Sabab (ixtiyoriy)
+                                            </label>
+                                            <textarea
+                                                value={removeReason}
+                                                onChange={(event) => setRemoveReason(event.target.value)}
+                                                rows={3}
+                                                className="mt-1.5 w-full resize-none rounded-lg border border-red-200 bg-white px-3 py-2 text-sm text-gray-800 outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                                                placeholder="Masalan: boshqa guruhga otdi"
+                                            />
+                                        </div>
+                                    ) : null}
 
                                     <div className="mt-3 flex flex-wrap items-center gap-2">
                                         <button
