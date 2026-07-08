@@ -1928,9 +1928,15 @@ const StudentsPageInner = () => {
                                                         </div>
                                                     ) : (
                                                         /* Display for unassigned students */
-                                                        <div className="flex items-center gap-1.5 bg-orange-50 px-2 py-1 rounded-lg border border-orange-200">
-                                                            <AlertCircle className="h-3 w-3 text-orange-500" />
-                                                            <span className="text-xs text-orange-700 font-medium">Guruhga biriktirilmagan</span>
+                                                        <div className="space-y-1.5">
+                                                            <div className="inline-flex items-center gap-1.5 bg-orange-50 px-2 py-1 rounded-lg border border-orange-200">
+                                                                <AlertCircle className="h-3 w-3 text-orange-500" />
+                                                                <span className="text-xs text-orange-700 font-medium">Guruhga biriktirilmagan</span>
+                                                            </div>
+                                                            <div className="max-w-xs rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-xs text-gray-700">
+                                                                <span className="font-semibold text-gray-900">Sabab: </span>
+                                                                {student.unassigned_reason || "Yangi qo'shilgan"}
+                                                            </div>
                                                         </div>
                                                     )}
                                                 </div>

@@ -108,10 +108,13 @@ const GroupDetailPage = () => {
     const handleRemoveStudent = useCallback((student) => {
         if (!student?.id || !groupId) return;
         const fullName = student.full_name || `${student.surname || ''} ${student.name || ''}`.trim() || 'talaba';
+        const reason = window.prompt(`${fullName} nima sababdan guruhdan chiqarilmoqda?`);
+        if (reason === null) return;
+        const trimmedReason = reason.trim();
         setConfirmModal({
             isOpen: true,
             title: "Talabani guruhdan chiqarish",
-            message: `${fullName} guruhdan chiqarilsinmi?`,
+            message: `${fullName} guruhdan chiqarilsinmi?${trimmedReason ? `\nSabab: ${trimmedReason}` : ''}`,
             confirmText: "Chiqarish",
             type: 'warning',
             isLoading: false,
@@ -119,7 +122,7 @@ const GroupDetailPage = () => {
                 setConfirmModal((prev) => ({ ...prev, isLoading: true }));
                 setRemovingId(student.id);
                 removeStudentMutation.mutate(
-                    { group_id: groupId, student_id: student.id },
+                    { group_id: groupId, student_id: student.id, reason: trimmedReason },
                     {
                         onSuccess: (data) => {
                             notify('ok', data?.message || "Talaba guruhdan chiqarildi");

@@ -368,10 +368,14 @@ const AddGroup = ({
                 toast.error('Talabaning guruhi topilmadi');
                 return;
             }
+            const reason = window.prompt(`${student?.surname || ''} ${student?.name || ''} nima sababdan guruhdan chiqarilmoqda?`);
+            if (reason === null) return;
+            const trimmedReason = reason.trim();
             removeStudentMutation.mutate(
                 {
                     group_id: Number(student.group_id),
-                    student_id: Number(student.id)
+                    student_id: Number(student.id),
+                    reason: trimmedReason
                 },
                 {
                     onSuccess: () => {
@@ -490,6 +494,10 @@ const AddGroup = ({
                     return;
                 }
 
+                const reason = window.prompt("Tanlangan talabalar nima sababdan guruhdan chiqarilmoqda?");
+                if (reason === null) return;
+                const trimmedReason = reason.trim();
+
                 let removed = 0;
                 let skipped = 0;
                 let failed = 0;
@@ -497,7 +505,8 @@ const AddGroup = ({
                 for (const [groupId, studentSet] of groupStudentMap.entries()) {
                     const removeResult = await bulkRemoveMutation.mutateAsync({
                         group_id: groupId,
-                        student_ids: Array.from(studentSet)
+                        student_ids: Array.from(studentSet),
+                        reason: trimmedReason
                     });
                     const summary = removeResult?.summary || {};
                     removed += Number(summary.removed || 0);

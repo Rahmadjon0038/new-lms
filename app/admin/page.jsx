@@ -9,7 +9,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { FiUserPlus } from 'react-icons/fi';
 import {
-  User, Phone, Calendar, AlertCircle, BookOpen
+  User, Phone, Calendar, AlertCircle, BookOpen, AlertTriangle
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -713,6 +713,12 @@ function AdminDashboard() {
                           <div className="flex items-center gap-1 text-[10px] sm:text-xs text-gray-600">
                             <BookOpen className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-emerald-500" />
                             <span className="truncate"><strong>Fan:</strong> {getStudentSubjectName(student)}</span>
+                          </div>
+                          <div className="flex items-start gap-1 text-[10px] sm:text-xs text-orange-700">
+                            <AlertTriangle className="mt-0.5 h-2.5 w-2.5 sm:h-3 sm:w-3 text-orange-500" />
+                            <span className="line-clamp-2">
+                              <strong>Sabab:</strong> {student.unassigned_reason || "Yangi qo'shilgan"}
+                            </span>
                           </div>
                           <div className="sm:hidden flex items-center gap-1 text-[10px] text-gray-600">
                             <Calendar className="h-2.5 w-2.5 text-orange-500" />

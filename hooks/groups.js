@@ -267,8 +267,12 @@ export const useBulkJoinStudentsToGroup = () => {
 }
 
 // ----------- remove student from group -----------------
-const removeStudentFromGroup = async ({ group_id, student_id }) => {
-    const response = await instance.delete(`/api/groups/${group_id}/remove-student/${student_id}`);
+const removeStudentFromGroup = async ({ group_id, student_id, reason }) => {
+    const response = await instance.delete(`/api/groups/${group_id}/remove-student/${student_id}`, {
+        data: {
+            reason: String(reason || '').trim()
+        }
+    });
     return response.data;
 }
 
@@ -288,10 +292,11 @@ export const useRemoveStudentFromGroup = () => {
 }
 
 // ----------- bulk remove students from group -----------------
-const bulkRemoveStudentsFromGroup = async ({ group_id, student_ids }) => {
+const bulkRemoveStudentsFromGroup = async ({ group_id, student_ids, reason }) => {
     const response = await instance.delete(`/api/groups/${group_id}/remove-students`, {
         data: {
-            student_ids: student_ids.map((id) => Number(id))
+            student_ids: student_ids.map((id) => Number(id)),
+            reason: String(reason || '').trim()
         }
     });
     return response.data;

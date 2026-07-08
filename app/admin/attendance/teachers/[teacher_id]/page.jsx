@@ -404,12 +404,16 @@ export default function AdminTeacherGroupsPage() {
     if (!student?.student_id || !activeGroupId) return;
 
     const fullName = getStudentDisplayName(student);
-    if (!window.confirm(`${fullName} ni guruhdan chiqarishni tasdiqlaysizmi?`)) return;
+    const reason = window.prompt(`${fullName} nima sababdan guruhdan chiqarilmoqda?`);
+    if (reason === null) return;
+    const trimmedReason = reason.trim();
+    if (!window.confirm(`${fullName} ni guruhdan chiqarishni tasdiqlaysizmi?${trimmedReason ? `\nSabab: ${trimmedReason}` : ''}`)) return;
 
     removeStudentMutation.mutate(
       {
         group_id: Number(activeGroupId),
         student_id: Number(student.student_id),
+        reason: trimmedReason,
       },
       {
         onSuccess: (data) => {

@@ -654,8 +654,14 @@ const GroupLessonsPage = () => {
   const handleRemoveStudentFromGroup = (lesson, student) => {
     if (!lesson || !student) return;
 
+    const reason = window.prompt(
+      `${getStudentDisplayName(student)} nima sababdan guruhdan chiqarilmoqda?`
+    );
+    if (reason === null) return;
+    const trimmedReason = reason.trim();
+
     const confirmed = window.confirm(
-      `${getStudentDisplayName(student)} ni guruhdan chiqarishni tasdiqlaysizmi?`
+      `${getStudentDisplayName(student)} ni guruhdan chiqarishni tasdiqlaysizmi?${trimmedReason ? `\nSabab: ${trimmedReason}` : ''}`
     );
     if (!confirmed) return;
 
@@ -663,6 +669,7 @@ const GroupLessonsPage = () => {
       {
         group_id: Number(groupId),
         student_id: Number(student.student_id),
+        reason: trimmedReason,
       },
       {
         onSuccess: () => {
