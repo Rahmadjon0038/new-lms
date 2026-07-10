@@ -1256,12 +1256,6 @@ const StudentsPageInner = () => {
                         </span>
                     </span>
 
-                    <span className="inline-flex items-center rounded-full border border-[#A60E07]/15 bg-[#A60E07]/5 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#A60E07]">
-                        Jami birikishlar
-                        <span className="ml-2 rounded-full bg-[#A60E07] px-2 py-0.5 text-sm font-bold text-white">
-                            {stats.total_students || 0}
-                        </span>
-                    </span>
                 </div>
             ) : null}
 
