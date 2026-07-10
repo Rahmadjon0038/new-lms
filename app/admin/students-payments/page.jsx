@@ -611,6 +611,10 @@ const StudentPaymentsInner = () => {
 
             if (response.data.success) {
                 queryClient.invalidateQueries({ queryKey: ['monthly-payments'] });
+                // Talaba guruhda faol qolgan bo'lsa, snapshot o'chgach u yana
+                // "yangi yozuv" hisoblanadi — notification darhol qayta chiqishi kerak
+                queryClient.invalidateQueries({ queryKey: ['new-students-notification'] });
+                queryClient.refetchQueries({ queryKey: ['new-students-notification'], type: 'active' });
 
                 setShowRemoveStudentModal(false);
                 setSelectedStudent(null);

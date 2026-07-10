@@ -295,11 +295,13 @@ export const useRemoveStudentFromGroup = () => {
     const removeStudentMutation = useMutation({
         mutationFn: removeStudentFromGroup,
         onSuccess: () => {
-            queryClient.invalidateQueries(['students']);
-            queryClient.invalidateQueries(['groups']);
+            queryClient.invalidateQueries({ queryKey: ['students'] });
+            queryClient.invalidateQueries({ queryKey: ['groups'] });
             queryClient.invalidateQueries({ queryKey: ['lesson-students'] });
             queryClient.invalidateQueries({ queryKey: ['group-lessons'] });
             queryClient.invalidateQueries({ queryKey: ['monthly-attendance'] });
+            queryClient.invalidateQueries({ queryKey: ['new-students-notification'] });
+            queryClient.invalidateQueries({ queryKey: ['monthly-payments'] });
         }
     });
     return removeStudentMutation;
@@ -325,8 +327,10 @@ export const useBulkRemoveStudentsFromGroup = () => {
     const bulkRemoveMutation = useMutation({
         mutationFn: bulkRemoveStudentsFromGroup,
         onSuccess: () => {
-            queryClient.invalidateQueries(['students']);
-            queryClient.invalidateQueries(['groups']);
+            queryClient.invalidateQueries({ queryKey: ['students'] });
+            queryClient.invalidateQueries({ queryKey: ['groups'] });
+            queryClient.invalidateQueries({ queryKey: ['new-students-notification'] });
+            queryClient.invalidateQueries({ queryKey: ['monthly-payments'] });
         }
     });
     return bulkRemoveMutation;
