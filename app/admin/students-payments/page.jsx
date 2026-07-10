@@ -161,6 +161,15 @@ const StudentPaymentsInner = () => {
         limit: 20
     });
 
+    // Yangi yozuvlar soni o'zgarsa popupni qayta ochamiz —
+    // admin oldin yopgan bo'lsa ham yangi qo'shilgan talaba haqida xabar chiqadi
+    const newStudentsCount = newStudentsNotification?.data?.count || 0;
+    useEffect(() => {
+        if (newStudentsCount > 0) {
+            setShowNotificationPopup(true);
+        }
+    }, [newStudentsCount]);
+
     // Use payment history hook
     const { data: paymentHistoryData, isLoading: paymentHistoryLoading } = usePaymentHistory(
         historyFilters,

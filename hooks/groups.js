@@ -225,11 +225,17 @@ export const useJoinGroupByCode = () => {
 }
 
 // ----------- change student group -----------------
-const changeStudentGroup = async ({ student_id, new_group_id }) => {
-    const response = await instance.post('/api/groups/change-student-group', {
+const changeStudentGroup = async ({ student_id, new_group_id, old_group_id }) => {
+    const payload = {
         student_id: parseInt(student_id),
         new_group_id: parseInt(new_group_id)
-    });
+    };
+    // Admin aynan qaysi guruh qatoridan o'zgartirganini backendga yuboramiz —
+    // talaba bir nechta guruhda bo'lsa, to'g'ri a'zolik o'chiriladi
+    if (old_group_id) {
+        payload.old_group_id = parseInt(old_group_id);
+    }
+    const response = await instance.post('/api/groups/change-student-group', payload);
     return response.data;
 }
 
@@ -238,8 +244,10 @@ export const useChangeStudentGroup = () => {
     const changeGroupMutation = useMutation({
         mutationFn: changeStudentGroup,
         onSuccess: () => {
-            queryClient.invalidateQueries(['students']);
-            queryClient.invalidateQueries(['groups']);
+            queryClient.invalidateQueries({ queryKey: ['students'] });
+            queryClient.invalidateQueries({ queryKey: ['groups'] });
+            queryClient.invalidateQueries({ queryKey: ['new-students-notification'] });
+            queryClient.invalidateQueries({ queryKey: ['monthly-payments'] });
         }
     });
     return changeGroupMutation;
@@ -259,8 +267,10 @@ export const useBulkJoinStudentsToGroup = () => {
     const bulkJoinMutation = useMutation({
         mutationFn: bulkJoinStudentsToGroup,
         onSuccess: () => {
-            queryClient.invalidateQueries(['students']);
-            queryClient.invalidateQueries(['groups']);
+            queryClient.invalidateQueries({ queryKey: ['students'] });
+            queryClient.invalidateQueries({ queryKey: ['groups'] });
+            queryClient.invalidateQueries({ queryKey: ['new-students-notification'] });
+            queryClient.invalidateQueries({ queryKey: ['monthly-payments'] });
         }
     });
     return bulkJoinMutation;
@@ -342,8 +352,10 @@ export const useBulkChangeStudentsGroup = () => {
     const bulkChangeMutation = useMutation({
         mutationFn: bulkChangeStudentsGroup,
         onSuccess: () => {
-            queryClient.invalidateQueries(['students']);
-            queryClient.invalidateQueries(['groups']);
+            queryClient.invalidateQueries({ queryKey: ['students'] });
+            queryClient.invalidateQueries({ queryKey: ['groups'] });
+            queryClient.invalidateQueries({ queryKey: ['new-students-notification'] });
+            queryClient.invalidateQueries({ queryKey: ['monthly-payments'] });
         }
     });
     return bulkChangeMutation;

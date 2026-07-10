@@ -150,8 +150,10 @@ export const useJoinStudentToGroup = () => {
             if (vars.onSuccess) {
                 vars.onSuccess(data)
             }
-            queryClient.invalidateQueries(['students']);
-            queryClient.invalidateQueries(['groups']);
+            queryClient.invalidateQueries({ queryKey: ['students'] });
+            queryClient.invalidateQueries({ queryKey: ['groups'] });
+            queryClient.invalidateQueries({ queryKey: ['new-students-notification'] });
+            queryClient.invalidateQueries({ queryKey: ['monthly-payments'] });
         },
         onError: (error, vars) => {
             if (vars.onError) {
@@ -173,7 +175,7 @@ export const useUpdateStudentStatus = () => {
     const updateStatusMutation = useMutation({
         mutationFn: updateStudentStatus,
         onSuccess: (data, vars) => {
-            queryClient.invalidateQueries(['students']);
+            queryClient.invalidateQueries({ queryKey: ['students'] });
             if (vars.onSuccess) {
                 vars.onSuccess(data);
             }

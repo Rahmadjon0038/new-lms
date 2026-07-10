@@ -399,7 +399,10 @@ const AddGroup = ({
             changeGroupMutation.mutate(
                 {
                     student_id: Number(student.id),
-                    new_group_id: Number(selectedGroupId)
+                    new_group_id: Number(selectedGroupId),
+                    // Admin aynan shu qatordagi guruhdan o'tkazyapti —
+                    // talaba bir nechta guruhda bo'lsa ham to'g'ri a'zolik o'chiriladi
+                    old_group_id: student?.group_id ? Number(student.group_id) : undefined
                 },
                 {
                     onSuccess: () => {
