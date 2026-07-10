@@ -19,6 +19,7 @@ import {
     MagnifyingGlassIcon,
     FunnelIcon,
     EyeIcon,
+    EyeSlashIcon,
     ArrowDownTrayIcon,
     TrashIcon,
     ExclamationTriangleIcon,
@@ -150,6 +151,8 @@ const StudentPaymentsInner = () => {
     const [editRequiredLoading, setEditRequiredLoading] = useState(false);
     const [editRequiredStudent, setEditRequiredStudent] = useState(null);
     const [showStats, setShowStats] = useState(false);
+    // Yig'ilgan summa default yashirin turadi — hamma ko'rmasligi uchun
+    const [showCollectedAmount, setShowCollectedAmount] = useState(false);
     const [clearLoading, setClearLoading] = useState(false);
     const [removeStudentLoading, setRemoveStudentLoading] = useState(false);
     const [snapshotLoading, setSnapshotLoading] = useState(false);
@@ -1228,12 +1231,25 @@ const StudentPaymentsInner = () => {
                                         {stats.unpaid}
                                     </span>
                                 </div>
-                                <div className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-sm font-semibold text-sky-700">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowCollectedAmount((prev) => !prev)}
+                                    title={showCollectedAmount ? "Summani yashirish" : "Summani ko'rish"}
+                                    className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-sm font-semibold text-sky-700 transition-colors hover:bg-sky-100 focus:outline-none focus:ring-2 focus:ring-sky-300"
+                                >
                                     <span>Yig&apos;ilgan</span>
-                                    <span className="rounded-full bg-sky-600 px-2.5 py-0.5 text-white">
-                                        {formatCurrency(stats.total_collected)}
-                                    </span>
-                                </div>
+                                    {showCollectedAmount ? (
+                                        <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-600 px-2.5 py-0.5 text-white">
+                                            {formatCurrency(stats.total_collected)}
+                                            <EyeSlashIcon className="h-3.5 w-3.5" />
+                                        </span>
+                                    ) : (
+                                        <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-600 px-2.5 py-0.5 text-white">
+                                            <span className="tracking-widest">••••••</span>
+                                            <EyeIcon className="h-3.5 w-3.5" />
+                                        </span>
+                                    )}
+                                </button>
                             </div>
                         </div>
                         {/* {stats.total_expected > 0 && (
