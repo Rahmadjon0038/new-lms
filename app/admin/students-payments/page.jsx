@@ -150,37 +150,6 @@ const StudentPaymentsInner = () => {
     const [editRequiredLoading, setEditRequiredLoading] = useState(false);
     const [editRequiredStudent, setEditRequiredStudent] = useState(null);
     const [showStats, setShowStats] = useState(false);
-    // Yig'ilgan summa default yashirin turadi — hamma ko'rmasligi uchun.
-    // Ochish maxfiy: chip ustiga ketma-ket 5 marta tez bosish kerak,
-    // ochilgach 15 soniyadan keyin avtomatik yashirinadi.
-    const [showCollectedAmount, setShowCollectedAmount] = useState(false);
-    const collectedTapsRef = useRef({ count: 0, last: 0 });
-    const collectedHideTimerRef = useRef(null);
-
-    const handleCollectedSecretTap = () => {
-        // Ochiq turganda bitta bosish darhol yashiradi
-        if (showCollectedAmount) {
-            if (collectedHideTimerRef.current) clearTimeout(collectedHideTimerRef.current);
-            setShowCollectedAmount(false);
-            collectedTapsRef.current = { count: 0, last: 0 };
-            return;
-        }
-        const now = Date.now();
-        if (now - collectedTapsRef.current.last > 700) {
-            collectedTapsRef.current.count = 0;
-        }
-        collectedTapsRef.current.count += 1;
-        collectedTapsRef.current.last = now;
-        if (collectedTapsRef.current.count >= 5) {
-            collectedTapsRef.current = { count: 0, last: 0 };
-            setShowCollectedAmount(true);
-            collectedHideTimerRef.current = setTimeout(() => setShowCollectedAmount(false), 15000);
-        }
-    };
-
-    useEffect(() => () => {
-        if (collectedHideTimerRef.current) clearTimeout(collectedHideTimerRef.current);
-    }, []);
     const [clearLoading, setClearLoading] = useState(false);
     const [removeStudentLoading, setRemoveStudentLoading] = useState(false);
     const [snapshotLoading, setSnapshotLoading] = useState(false);
@@ -1257,15 +1226,6 @@ const StudentPaymentsInner = () => {
                                     <span>To&apos;lamagan</span>
                                     <span className="rounded-full bg-rose-600 px-2.5 py-0.5 text-white">
                                         {stats.unpaid}
-                                    </span>
-                                </div>
-                                <div
-                                    onClick={handleCollectedSecretTap}
-                                    className="inline-flex cursor-default select-none items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-sm font-semibold text-sky-700"
-                                >
-                                    <span>Yig&apos;ilgan</span>
-                                    <span className="rounded-full bg-sky-600 px-2.5 py-0.5 text-white">
-                                        {showCollectedAmount ? formatCurrency(stats.total_collected) : <span className="tracking-widest">••••••</span>}
                                     </span>
                                 </div>
                             </div>
