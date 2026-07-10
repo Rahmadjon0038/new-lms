@@ -19,7 +19,6 @@ import {
     MagnifyingGlassIcon,
     FunnelIcon,
     EyeIcon,
-    EyeSlashIcon,
     ArrowDownTrayIcon,
     TrashIcon,
     ExclamationTriangleIcon,
@@ -151,8 +150,37 @@ const StudentPaymentsInner = () => {
     const [editRequiredLoading, setEditRequiredLoading] = useState(false);
     const [editRequiredStudent, setEditRequiredStudent] = useState(null);
     const [showStats, setShowStats] = useState(false);
-    // Yig'ilgan summa default yashirin turadi — hamma ko'rmasligi uchun
+    // Yig'ilgan summa default yashirin turadi — hamma ko'rmasligi uchun.
+    // Ochish maxfiy: chip ustiga ketma-ket 5 marta tez bosish kerak,
+    // ochilgach 15 soniyadan keyin avtomatik yashirinadi.
     const [showCollectedAmount, setShowCollectedAmount] = useState(false);
+    const collectedTapsRef = useRef({ count: 0, last: 0 });
+    const collectedHideTimerRef = useRef(null);
+
+    const handleCollectedSecretTap = () => {
+        // Ochiq turganda bitta bosish darhol yashiradi
+        if (showCollectedAmount) {
+            if (collectedHideTimerRef.current) clearTimeout(collectedHideTimerRef.current);
+            setShowCollectedAmount(false);
+            collectedTapsRef.current = { count: 0, last: 0 };
+            return;
+        }
+        const now = Date.now();
+        if (now - collectedTapsRef.current.last > 700) {
+            collectedTapsRef.current.count = 0;
+        }
+        collectedTapsRef.current.count += 1;
+        collectedTapsRef.current.last = now;
+        if (collectedTapsRef.current.count >= 5) {
+            collectedTapsRef.current = { count: 0, last: 0 };
+            setShowCollectedAmount(true);
+            collectedHideTimerRef.current = setTimeout(() => setShowCollectedAmount(false), 15000);
+        }
+    };
+
+    useEffect(() => () => {
+        if (collectedHideTimerRef.current) clearTimeout(collectedHideTimerRef.current);
+    }, []);
     const [clearLoading, setClearLoading] = useState(false);
     const [removeStudentLoading, setRemoveStudentLoading] = useState(false);
     const [snapshotLoading, setSnapshotLoading] = useState(false);
@@ -1231,25 +1259,15 @@ const StudentPaymentsInner = () => {
                                         {stats.unpaid}
                                     </span>
                                 </div>
-                                <button
-                                    type="button"
-                                    onClick={() => setShowCollectedAmount((prev) => !prev)}
-                                    title={showCollectedAmount ? "Summani yashirish" : "Summani ko'rish"}
-                                    className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-sm font-semibold text-sky-700 transition-colors hover:bg-sky-100 focus:outline-none focus:ring-2 focus:ring-sky-300"
+                                <div
+                                    onClick={handleCollectedSecretTap}
+                                    className="inline-flex cursor-default select-none items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-sm font-semibold text-sky-700"
                                 >
                                     <span>Yig&apos;ilgan</span>
-                                    {showCollectedAmount ? (
-                                        <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-600 px-2.5 py-0.5 text-white">
-                                            {formatCurrency(stats.total_collected)}
-                                            <EyeSlashIcon className="h-3.5 w-3.5" />
-                                        </span>
-                                    ) : (
-                                        <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-600 px-2.5 py-0.5 text-white">
-                                            <span className="tracking-widest">••••••</span>
-                                            <EyeIcon className="h-3.5 w-3.5" />
-                                        </span>
-                                    )}
-                                </button>
+                                    <span className="rounded-full bg-sky-600 px-2.5 py-0.5 text-white">
+                                        {showCollectedAmount ? formatCurrency(stats.total_collected) : <span className="tracking-widest">••••••</span>}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                         {/* {stats.total_expected > 0 && (
