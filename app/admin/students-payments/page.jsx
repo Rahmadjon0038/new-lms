@@ -472,15 +472,22 @@ const StudentPaymentsInner = () => {
             const result = await createSnapshotsMutation.mutateAsync(filters.month);
             if (result.success) {
                 notify('ok', result.message || `${result.count} ta yangi talaba uchun snapshot yaratildi!`);
-                // Clear notification after creating snapshots
-                queryClient.invalidateQueries({ queryKey: ['new-students-notification', filters.month] });
+
+                setAllStudents([]);
+                setFilters(prev => ({ ...prev, page: 1 }));
+                await Promise.all([
+                    queryClient.invalidateQueries({ queryKey: ['monthly-payments'] }),
+                    queryClient.invalidateQueries({ queryKey: ['new-students-notification', filters.month] }),
+                    queryClient.refetchQueries({ queryKey: ['monthly-payments'], type: 'active' }),
+                    queryClient.refetchQueries({ queryKey: ['new-students-notification', filters.month], type: 'active' }),
+                ]);
                 setShowNotificationPopup(false); // Hide popup after successful action
             } else {
                 notify('err', result.message || 'Xatolik yuz berdi');
             }
         } catch (error) {
             console.error('Snapshot creation error:', error);
-            notify('err', 'Snapshot yaratishda xatolik yuz berdi');
+            notify('err', error?.response?.data?.message || 'Snapshot yaratishda xatolik yuz berdi');
         }
     };
 
