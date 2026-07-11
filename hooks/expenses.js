@@ -20,10 +20,25 @@ const getExpenses = async (filters = {}) => {
   return normalize(res);
 };
 
-const getExpenseSummary = async ({ month } = {}) => {
-  const query = buildQuery({ month });
+const getExpenseSummary = async ({ month, category_id } = {}) => {
+  const query = buildQuery({ month, category_id });
   const url = query ? `/api/expenses/summary?${query}` : '/api/expenses/summary';
   const res = await instance.get(url);
+  return normalize(res);
+};
+
+const getExpenseCategories = async () => {
+  const res = await instance.get('/api/expenses/categories');
+  return normalize(res);
+};
+
+const createExpenseCategory = async (payload) => {
+  const res = await instance.post('/api/expenses/categories', payload);
+  return normalize(res);
+};
+
+const deleteExpenseCategory = async (categoryId) => {
+  const res = await instance.delete(`/api/expenses/categories/${categoryId}`);
   return normalize(res);
 };
 
@@ -62,10 +77,16 @@ export const useGetExpenses = (filters = {}) =>
     queryFn: () => getExpenses(filters),
   });
 
-export const useGetExpenseSummary = ({ month } = {}) =>
+export const useGetExpenseSummary = ({ month, category_id } = {}) =>
   useQuery({
-    queryKey: ['expenses-summary', month],
-    queryFn: () => getExpenseSummary({ month }),
+    queryKey: ['expenses-summary', month, category_id],
+    queryFn: () => getExpenseSummary({ month, category_id }),
+  });
+
+export const useGetExpenseCategories = () =>
+  useQuery({
+    queryKey: ['expense-categories'],
+    queryFn: getExpenseCategories,
   });
 
 export const useGetExpenseDailyStats = ({ from, to } = {}) =>
@@ -108,5 +129,24 @@ export const useDeleteExpense = () => {
   return useMutation({
     mutationFn: deleteExpense,
     onSuccess: () => invalidateExpenseQueries(queryClient),
+  });
+};
+
+export const useCreateExpenseCategory = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createExpenseCategory,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['expense-categories'] }),
+  });
+};
+
+export const useDeleteExpenseCategory = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteExpenseCategory,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expense-categories'] });
+      invalidateExpenseQueries(queryClient);
+    },
   });
 };

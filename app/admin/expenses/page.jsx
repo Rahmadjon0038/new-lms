@@ -1,9 +1,18 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { BanknotesIcon, CalendarDaysIcon, PencilSquareIcon, PlusIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { BanknotesIcon, CalendarDaysIcon, CheckIcon, PencilSquareIcon, PlusIcon, TagIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
-import { useCreateExpense, useDeleteExpense, useGetExpenseSummary, useGetExpenses, useUpdateExpense } from '../../../hooks/expenses';
+import {
+  useCreateExpense,
+  useCreateExpenseCategory,
+  useDeleteExpense,
+  useDeleteExpenseCategory,
+  useGetExpenseCategories,
+  useGetExpenseSummary,
+  useGetExpenses,
+  useUpdateExpense,
+} from '../../../hooks/expenses';
 
 const MAIN_COLOR = '#A60E07';
 const currentMonth = new Date().toISOString().slice(0, 7);
@@ -24,19 +33,62 @@ const formatAmountInput = (value = '') => {
 
 const parseAmountInput = (value = '') => Number(String(value).replace(/\D/g, '') || 0);
 
+const CategoryChipPicker = ({ categories, selectedId, onSelect }) => {
+  if (!categories.length) {
+    return <p className="text-xs text-gray-500">Hozircha kategoriya yo‘q. Sahifadagi «+» tugmasi orqali qo‘shing.</p>;
+  }
+  return (
+    <div className="flex flex-wrap gap-2">
+      {categories.map((cat) => {
+        const isSelected = selectedId === cat.id;
+        return (
+          <button
+            key={cat.id}
+            type="button"
+            onClick={() => onSelect(isSelected ? null : cat.id)}
+            className={`inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+              isSelected
+                ? 'border-[#A60E07] bg-[#A60E07] text-white'
+                : 'border-gray-300 bg-white text-gray-700 hover:border-[#A60E07] hover:text-[#A60E07]'
+            }`}
+          >
+            {isSelected ? <CheckIcon className="h-3.5 w-3.5" /> : <TagIcon className="h-3.5 w-3.5" />}
+            {cat.name}
+          </button>
+        );
+      })}
+    </div>
+  );
+};
+
 const AdminExpensesPage = () => {
   const [month, setMonth] = useState(currentMonth);
   const [adminName, setAdminName] = useState('');
+  const [categoryId, setCategoryId] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [form, setForm] = useState({ reason: '', amount: '' });
+  const [form, setForm] = useState({ reason: '', amount: '', category_id: null });
   const [editingExpense, setEditingExpense] = useState(null);
-  const [editForm, setEditForm] = useState({ reason: '', amount: '', expense_date: currentDay });
+  const [editForm, setEditForm] = useState({ reason: '', amount: '', expense_date: currentDay, category_id: null });
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
 
-  const listQuery = useGetExpenses({ month, admin_name: adminName.trim() || undefined });
-  const summaryQuery = useGetExpenseSummary({ month });
+  const listQuery = useGetExpenses({
+    month,
+    admin_name: adminName.trim() || undefined,
+    category_id: categoryId || undefined,
+  });
+  const summaryQuery = useGetExpenseSummary({ month, category_id: categoryId || undefined });
+  const categoriesQuery = useGetExpenseCategories();
   const createExpense = useCreateExpense();
   const updateExpense = useUpdateExpense();
   const deleteExpense = useDeleteExpense();
+  const createCategory = useCreateExpenseCategory();
+  const deleteCategory = useDeleteExpenseCategory();
+
+  const categories = useMemo(
+    () => (Array.isArray(categoriesQuery.data?.items) ? categoriesQuery.data.items : []),
+    [categoriesQuery.data]
+  );
 
   const items = useMemo(() => (Array.isArray(listQuery.data?.items) ? listQuery.data.items : []), [listQuery.data]);
   const adminOptions = useMemo(() => {
@@ -54,7 +106,44 @@ const AdminExpensesPage = () => {
   const closeModal = () => {
     if (createExpense.isPending) return;
     setIsAddModalOpen(false);
-    setForm({ reason: '', amount: '' });
+    setForm({ reason: '', amount: '', category_id: null });
+  };
+
+  const openAddModal = () => {
+    // filtrda kategoriya tanlangan bo'lsa modalda ham oldindan tanlab qo'yamiz
+    setForm({ reason: '', amount: '', category_id: categoryId || null });
+    setIsAddModalOpen(true);
+  };
+
+  const onAddCategory = async (e) => {
+    e.preventDefault();
+    const name = newCategoryName.trim();
+    if (!name) {
+      toast.error('Kategoriya nomini kiriting');
+      return;
+    }
+    try {
+      await createCategory.mutateAsync({ name });
+      toast.success('Kategoriya qo‘shildi');
+      setNewCategoryName('');
+      setIsAddingCategory(false);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Kategoriya qo‘shishda xatolik');
+    }
+  };
+
+  const onDeleteCategory = async (cat) => {
+    const confirmed = window.confirm(
+      `"${cat.name}" kategoriyasini o‘chirasizmi? Unga biriktirilgan rasxodlar kategoriyasiz qoladi.`
+    );
+    if (!confirmed) return;
+    try {
+      await deleteCategory.mutateAsync(cat.id);
+      if (categoryId === cat.id) setCategoryId(null);
+      toast.success(`"${cat.name}" o‘chirildi`);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Kategoriyani o‘chirishda xatolik');
+    }
   };
 
   const onAddExpense = async (e) => {
@@ -73,6 +162,7 @@ const AdminExpensesPage = () => {
       await createExpense.mutateAsync({
         reason: form.reason.trim(),
         amount: parsedAmount,
+        category_id: form.category_id || undefined,
       });
       toast.success('Rasxod qo‘shildi');
       closeModal();
@@ -84,7 +174,7 @@ const AdminExpensesPage = () => {
   const closeEditModal = () => {
     if (updateExpense.isPending) return;
     setEditingExpense(null);
-    setEditForm({ reason: '', amount: '', expense_date: currentDay });
+    setEditForm({ reason: '', amount: '', expense_date: currentDay, category_id: null });
   };
 
   const openEditModal = (item) => {
@@ -93,6 +183,7 @@ const AdminExpensesPage = () => {
       reason: item.reason || item.title || '',
       amount: formatAmountInput(String(item.amount || '')),
       expense_date: item.expense_date || currentDay,
+      category_id: item.category_id || null,
     });
   };
 
@@ -117,6 +208,12 @@ const AdminExpensesPage = () => {
     const prevDate = editingExpense.expense_date;
     if (nextDate && nextDate !== prevDate) {
       payload.expense_date = nextDate;
+    }
+
+    const nextCategoryId = editForm.category_id || null;
+    const prevCategoryId = editingExpense.category_id || null;
+    if (nextCategoryId !== prevCategoryId) {
+      payload.category_id = nextCategoryId;
     }
 
     if (Object.keys(payload).length === 0) {
@@ -170,7 +267,7 @@ const AdminExpensesPage = () => {
     <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6">
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <button
-          onClick={() => setIsAddModalOpen(true)}
+          onClick={openAddModal}
           className="inline-flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white sm:w-auto"
           style={{ backgroundColor: MAIN_COLOR }}
         >
@@ -206,6 +303,116 @@ const AdminExpensesPage = () => {
           </div>
           <p className="mt-1 text-2xl font-bold text-gray-900">{formatCurrency(summary.month_total_expense || 0)}</p>
           <p className="mt-1 text-xs text-gray-500">{summary.month || month}</p>
+        </div>
+      </div>
+
+      <div className="mb-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+        <div className="mb-2 flex items-center gap-2">
+          <TagIcon className="h-5 w-5 text-gray-600" />
+          <p className="text-xs font-semibold uppercase text-gray-500">Kategoriyalar</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setCategoryId(null)}
+            className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+              !categoryId
+                ? 'border-[#A60E07] bg-[#A60E07] text-white'
+                : 'border-gray-300 bg-white text-gray-700 hover:border-[#A60E07] hover:text-[#A60E07]'
+            }`}
+          >
+            Barchasi
+          </button>
+
+          {categories.map((cat) => {
+            const isActive = categoryId === cat.id;
+            return (
+              <span
+                key={cat.id}
+                className={`group inline-flex items-center overflow-hidden rounded-full border text-xs font-semibold transition ${
+                  isActive
+                    ? 'border-[#A60E07] bg-[#A60E07] text-white'
+                    : 'border-gray-300 bg-white text-gray-700 hover:border-[#A60E07] hover:text-[#A60E07]'
+                }`}
+              >
+                <button
+                  type="button"
+                  onClick={() => setCategoryId(isActive ? null : cat.id)}
+                  className="inline-flex items-center gap-1 py-1.5 pl-3 pr-1"
+                >
+                  <TagIcon className="h-3.5 w-3.5" />
+                  {cat.name}
+                  {typeof cat.expense_count === 'number' ? (
+                    <span className={`ml-0.5 rounded-full px-1.5 text-[10px] ${isActive ? 'bg-white/20' : 'bg-gray-100 text-gray-500'}`}>
+                      {cat.expense_count}
+                    </span>
+                  ) : null}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onDeleteCategory(cat)}
+                  disabled={deleteCategory.isPending}
+                  className={`py-1.5 pl-0.5 pr-2 opacity-0 transition group-hover:opacity-100 ${
+                    isActive ? 'text-white/80 hover:text-white' : 'text-gray-400 hover:text-red-600'
+                  }`}
+                  title="Kategoriyani o‘chirish"
+                  aria-label={`${cat.name} kategoriyasini o‘chirish`}
+                >
+                  <XMarkIcon className="h-3.5 w-3.5" />
+                </button>
+              </span>
+            );
+          })}
+
+          {isAddingCategory ? (
+            <form onSubmit={onAddCategory} className="inline-flex items-center gap-1">
+              <input
+                autoFocus
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    setIsAddingCategory(false);
+                    setNewCategoryName('');
+                  }
+                }}
+                placeholder="Masalan: Kommunal to‘lovlar"
+                className="w-44 rounded-full border border-gray-300 px-3 py-1.5 text-xs outline-none focus:border-[#A60E07]"
+              />
+              <button
+                type="submit"
+                disabled={createCategory.isPending}
+                className="rounded-full p-1.5 text-white disabled:opacity-60"
+                style={{ backgroundColor: MAIN_COLOR }}
+                title="Saqlash"
+                aria-label="Kategoriyani saqlash"
+              >
+                <CheckIcon className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsAddingCategory(false);
+                  setNewCategoryName('');
+                }}
+                className="rounded-full border border-gray-300 p-1.5 text-gray-500 hover:bg-gray-100"
+                title="Bekor qilish"
+                aria-label="Bekor qilish"
+              >
+                <XMarkIcon className="h-3.5 w-3.5" />
+              </button>
+            </form>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsAddingCategory(true)}
+              className="inline-flex items-center gap-1 rounded-full border border-dashed border-gray-400 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-[#A60E07] hover:text-[#A60E07]"
+              title="Kategoriya qo‘shish"
+            >
+              <PlusIcon className="h-3.5 w-3.5" />
+              Kategoriya
+            </button>
+          )}
         </div>
       </div>
 
@@ -247,7 +454,15 @@ const AdminExpensesPage = () => {
                 <div key={item.id} className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-gray-900">{item.reason || item.title}</p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="truncate text-sm font-semibold text-gray-900">{item.reason || item.title}</p>
+                        {item.category_name ? (
+                          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-600">
+                            <TagIcon className="h-3 w-3" />
+                            {item.category_name}
+                          </span>
+                        ) : null}
+                      </div>
                       <p className="text-xs text-gray-500">{item.expense_date}</p>
                       <p className="text-xs text-gray-500">
                         Kim yozdi:{' '}
@@ -308,6 +523,15 @@ const AdminExpensesPage = () => {
 
             <form onSubmit={onAddExpense} className="space-y-4">
               <div>
+                <label className="mb-2 block text-xs font-semibold uppercase text-gray-500">Kategoriya (ixtiyoriy)</label>
+                <CategoryChipPicker
+                  categories={categories}
+                  selectedId={form.category_id}
+                  onSelect={(id) => setForm((p) => ({ ...p, category_id: id }))}
+                />
+              </div>
+
+              <div>
                 <label className="mb-1 block text-xs font-semibold uppercase text-gray-500">Sabab</label>
                 <input
                   value={form.reason}
@@ -360,6 +584,15 @@ const AdminExpensesPage = () => {
             </div>
 
             <form onSubmit={onEditExpense} className="space-y-4">
+              <div>
+                <label className="mb-2 block text-xs font-semibold uppercase text-gray-500">Kategoriya</label>
+                <CategoryChipPicker
+                  categories={categories}
+                  selectedId={editForm.category_id}
+                  onSelect={(id) => setEditForm((p) => ({ ...p, category_id: id }))}
+                />
+              </div>
+
               <div>
                 <label className="mb-1 block text-xs font-semibold uppercase text-gray-500">Sabab</label>
                 <input
