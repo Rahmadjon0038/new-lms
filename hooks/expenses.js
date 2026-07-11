@@ -20,15 +20,17 @@ const getExpenses = async (filters = {}) => {
   return normalize(res);
 };
 
-const getExpenseSummary = async ({ month, category_id } = {}) => {
-  const query = buildQuery({ month, category_id });
+const getExpenseSummary = async ({ month, date, category_id } = {}) => {
+  const query = buildQuery({ month, date, category_id });
   const url = query ? `/api/expenses/summary?${query}` : '/api/expenses/summary';
   const res = await instance.get(url);
   return normalize(res);
 };
 
-const getExpenseCategories = async () => {
-  const res = await instance.get('/api/expenses/categories');
+const getExpenseCategories = async ({ month, date } = {}) => {
+  const query = buildQuery({ month, date });
+  const url = query ? `/api/expenses/categories?${query}` : '/api/expenses/categories';
+  const res = await instance.get(url);
   return normalize(res);
 };
 
@@ -77,16 +79,16 @@ export const useGetExpenses = (filters = {}) =>
     queryFn: () => getExpenses(filters),
   });
 
-export const useGetExpenseSummary = ({ month, category_id } = {}) =>
+export const useGetExpenseSummary = ({ month, date, category_id } = {}) =>
   useQuery({
-    queryKey: ['expenses-summary', month, category_id],
-    queryFn: () => getExpenseSummary({ month, category_id }),
+    queryKey: ['expenses-summary', month, date, category_id],
+    queryFn: () => getExpenseSummary({ month, date, category_id }),
   });
 
-export const useGetExpenseCategories = () =>
+export const useGetExpenseCategories = ({ month, date } = {}) =>
   useQuery({
-    queryKey: ['expense-categories'],
-    queryFn: getExpenseCategories,
+    queryKey: ['expense-categories', month, date],
+    queryFn: () => getExpenseCategories({ month, date }),
   });
 
 export const useGetExpenseDailyStats = ({ from, to } = {}) =>
@@ -104,6 +106,8 @@ export const useGetExpenseMonthlyStats = ({ from_month, to_month } = {}) =>
 const invalidateExpenseQueries = (queryClient) => {
   queryClient.invalidateQueries({ queryKey: ['expenses'] });
   queryClient.invalidateQueries({ queryKey: ['expenses-summary'] });
+  // chip'lardagi soni va summasi ham rasxod o'zgarganda yangilanadi
+  queryClient.invalidateQueries({ queryKey: ['expense-categories'] });
   queryClient.invalidateQueries({ queryKey: ['expenses-stats-daily'] });
   queryClient.invalidateQueries({ queryKey: ['expenses-stats-monthly'] });
 };

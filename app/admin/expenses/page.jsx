@@ -63,6 +63,7 @@ const CategoryChipPicker = ({ categories, selectedId, onSelect }) => {
 
 const AdminExpensesPage = () => {
   const [month, setMonth] = useState(currentMonth);
+  const [day, setDay] = useState('');
   const [adminName, setAdminName] = useState('');
   const [categoryId, setCategoryId] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -74,11 +75,12 @@ const AdminExpensesPage = () => {
 
   const listQuery = useGetExpenses({
     month,
+    date: day || undefined,
     admin_name: adminName.trim() || undefined,
     category_id: categoryId || undefined,
   });
-  const summaryQuery = useGetExpenseSummary({ month, category_id: categoryId || undefined });
-  const categoriesQuery = useGetExpenseCategories();
+  const summaryQuery = useGetExpenseSummary({ month, date: day || undefined, category_id: categoryId || undefined });
+  const categoriesQuery = useGetExpenseCategories({ month, date: day || undefined });
   const createExpense = useCreateExpense();
   const updateExpense = useUpdateExpense();
   const deleteExpense = useDeleteExpense();
@@ -163,6 +165,8 @@ const AdminExpensesPage = () => {
         reason: form.reason.trim(),
         amount: parsedAmount,
         category_id: form.category_id || undefined,
+        // kun filteri tanlangan bo'lsa, rasxod shu kunga yoziladi
+        expense_date: day || undefined,
       });
       toast.success('Rasxod qo‘shildi');
       closeModal();
@@ -285,15 +289,46 @@ const AdminExpensesPage = () => {
           <input
             type="month"
             value={month}
-            onChange={(e) => setMonth(e.target.value)}
+            onChange={(e) => {
+              setMonth(e.target.value);
+              setDay('');
+            }}
             className="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#A60E07]"
           />
+          <div className="mt-2 flex items-center gap-2">
+            <input
+              type="date"
+              value={day}
+              onChange={(e) => {
+                const value = e.target.value;
+                setDay(value);
+                if (value) setMonth(value.slice(0, 7));
+              }}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#A60E07]"
+            />
+            {day ? (
+              <button
+                type="button"
+                onClick={() => setDay('')}
+                className="shrink-0 rounded-lg border border-gray-300 p-2 text-gray-500 hover:bg-gray-100"
+                title="Kun filterini tozalash"
+                aria-label="Kun filterini tozalash"
+              >
+                <XMarkIcon className="h-4 w-4" />
+              </button>
+            ) : null}
+          </div>
+          <p className="mt-1 text-xs text-gray-500">Kun tanlansa, ro‘yxat va summalar shu kun bo‘yicha ko‘rsatiladi.</p>
         </div>
 
         <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase text-gray-500">Bugungi rasxod</p>
-          <p className="mt-1 text-2xl font-bold text-[#A60E07]">{formatCurrency(summary.today_total_expense || 0)}</p>
-          <p className="mt-1 text-xs text-gray-500">{summary.today || currentDay}</p>
+          <p className="text-xs font-semibold uppercase text-gray-500">
+            {day && day !== currentDay ? 'Tanlangan kun rasxodi' : 'Bugungi rasxod'}
+          </p>
+          <p className="mt-1 text-2xl font-bold text-[#A60E07]">
+            {formatCurrency(day ? summary.date_total_expense || 0 : summary.today_total_expense || 0)}
+          </p>
+          <p className="mt-1 text-xs text-gray-500">{day || summary.today || currentDay}</p>
         </div>
 
         <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
@@ -347,6 +382,9 @@ const AdminExpensesPage = () => {
                       {cat.expense_count}
                     </span>
                   ) : null}
+                  <span className={`ml-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${isActive ? 'bg-white/20' : 'bg-[#A60E07]/10 text-[#A60E07]'}`}>
+                    {new Intl.NumberFormat('uz-UZ').format(Number(cat.total_amount) || 0)}
+                  </span>
                 </button>
                 <button
                   type="button"
@@ -500,7 +538,7 @@ const AdminExpensesPage = () => {
               ))}
             </div>
           ) : (
-            <p className="text-sm text-gray-500">Bu oyda rasxod topilmadi.</p>
+            <p className="text-sm text-gray-500">{day ? 'Bu kunda rasxod topilmadi.' : 'Bu oyda rasxod topilmadi.'}</p>
           )
         ) : null}
       </div>
@@ -551,7 +589,9 @@ const AdminExpensesPage = () => {
                   placeholder="Masalan: 350 000"
                   className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-[#A60E07]"
                 />
-                <p className="mt-1 text-xs text-gray-500">Sana umumiy oy filteri orqali boshqariladi.</p>
+                <p className="mt-1 text-xs text-gray-500">
+                  {day ? `Rasxod ${day} sanasiga yoziladi (kun filteri tanlangan).` : 'Sana umumiy oy filteri orqali boshqariladi.'}
+                </p>
               </div>
 
               <button
