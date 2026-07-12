@@ -15,7 +15,8 @@ import { TrophyIcon } from "@heroicons/react/24/solid";
 import Link from "next/link";
 import { useGetTeacherGroupById } from "../../../../hooks/groups";
 import PointModal from "../../../../components/teacher/PointModal";
-import { MEDAL_COLORS } from "../../../../components/teacher/TopStudentsSection";
+import { MEDAL_COLORS, StudentAvatar } from "../../../../components/teacher/TopStudentsSection";
+import { normalizeAvatarUrl } from "../../../../utils/avatar";
 
 const formatPhoneNumber = (value) => {
   const digits = String(value || "").replace(/\D/g, "");
@@ -217,6 +218,7 @@ function TeacherGroupDetail() {
                 const medalColor = hasMedal
                   ? MEDAL_COLORS[Math.min(index, MEDAL_COLORS.length - 1)]
                   : null;
+                const avatarUrl = normalizeAvatarUrl(student.avatar_url);
 
                 return (
                   <div
@@ -240,20 +242,11 @@ function TeacherGroupDetail() {
                             </span>
                           )}
                           {/* Avatar */}
-                          {student.avatar_url ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={student.avatar_url}
-                              alt={student.full_name}
-                              className="h-9 w-9 shrink-0 rounded-full object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center bg-[#A60E07] text-white rounded-full">
-                              <span className="text-xs font-bold">
-                                {student.surname?.charAt(0)}{student.name?.charAt(0)}
-                              </span>
-                            </div>
-                          )}
+                          <StudentAvatar
+                            url={avatarUrl}
+                            initials={`${student.surname?.charAt(0) || ""}${student.name?.charAt(0) || ""}`}
+                            className="h-9 w-9"
+                          />
                           <div className="min-w-0">
                             <div
                               className="truncate text-sm font-semibold sm:text-base"

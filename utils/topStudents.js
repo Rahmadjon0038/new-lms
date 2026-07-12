@@ -1,6 +1,7 @@
 // Oyning eng yaxshi o'quvchilari uchun umumiy mantiq.
 // Mobil ilova (Taraqqiyot_mobile) bilan bir xil qoida:
 // guruhda 3 tagacha faol o'quvchi -> 1 ta, 4-5 ta -> 2 ta, ko'p bo'lsa -> 3 ta.
+import { normalizeAvatarUrl } from './avatar';
 
 export const topCountForGroupSize = (totalStudents) => {
     if (totalStudents <= 3) return 1;
@@ -27,7 +28,7 @@ export const buildGroupTop = (groupResponse) => {
             id: s.id,
             name: [s.surname, s.name].filter(Boolean).join(' '),
             points: Number(s.monthly_points) || 0,
-            avatarUrl: s.avatar_url || null,
+            avatarUrl: normalizeAvatarUrl(s.avatar_url),
             initials: `${(s.surname || '').charAt(0)}${(s.name || '').charAt(0)}`,
         })),
     };

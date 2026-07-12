@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { TrophyIcon, ChevronRightIcon } from "@heroicons/react/24/solid";
 import { useGetGroupsDetails } from "../../hooks/groups";
@@ -7,6 +7,29 @@ import { buildGroupTop } from "../../utils/topStudents";
 
 // Medal ranglari: oltin, kumush, bronza
 export const MEDAL_COLORS = ["#D4A017", "#8E9AAB", "#B4691E"];
+
+// Avatar: rasm yuklanmasa (yoki yo'q bo'lsa) bosh harflar doirasi ko'rsatiladi
+export const StudentAvatar = ({ url, initials, className = "h-8 w-8 sm:h-9 sm:w-9" }) => {
+  const [failed, setFailed] = useState(false);
+  if (!url || failed) {
+    return (
+      <span
+        className={`${className} flex shrink-0 items-center justify-center rounded-full bg-[#A60E07] text-[11px] font-bold text-white`}
+      >
+        {initials}
+      </span>
+    );
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={url}
+      alt=""
+      onError={() => setFailed(true)}
+      className={`${className} shrink-0 rounded-full object-cover`}
+    />
+  );
+};
 
 // Bitta o'quvchi qatori: medal + avatar + ism + ball
 export const TopStudentRow = ({ student, rank }) => {
@@ -19,18 +42,7 @@ export const TopStudentRow = ({ student, rank }) => {
       >
         <TrophyIcon className="h-3.5 w-3.5 text-white" />
       </span>
-      {student.avatarUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={student.avatarUrl}
-          alt={student.name}
-          className="h-8 w-8 sm:h-9 sm:w-9 shrink-0 rounded-full object-cover"
-        />
-      ) : (
-        <span className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-full bg-[#A60E07] text-[11px] font-bold text-white">
-          {student.initials}
-        </span>
-      )}
+      <StudentAvatar url={student.avatarUrl} initials={student.initials} />
       <span
         className="min-w-0 flex-1 truncate text-xs sm:text-sm font-bold"
         style={{ color }}
