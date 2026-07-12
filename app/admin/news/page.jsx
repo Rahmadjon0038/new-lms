@@ -20,6 +20,7 @@ import {
   useUpdateNews,
   useDeleteNews,
 } from "../../../hooks/content";
+import { normalizeAvatarUrl } from "../../../utils/avatar";
 
 const MAIN_COLOR = "#A60E07";
 
@@ -394,9 +395,9 @@ function AdminNewsPage() {
                     story.is_active ? "border-gray-100" : "border-gray-200 opacity-60"
                   }`}
                 >
-                  {/* Video preview */}
+                  {/* Video preview — localhost URL bo'lsa API bazasiga almashtiriladi */}
                   <video
-                    src={story.video_url}
+                    src={normalizeAvatarUrl(story.video_url)}
                     className="h-44 w-full bg-gray-900 object-cover"
                     controls
                     preload="metadata"
