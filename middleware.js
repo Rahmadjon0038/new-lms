@@ -24,6 +24,13 @@ export function middleware(request) {
     super_admin: '/super_admin',
   };
 
+  // Ochiq sahifalar — login talab qilinmaydi (App Store/Play Market
+  // tekshiruvchilari ham ko'ra olishi kerak)
+  const publicPaths = ['/privacy-policy'];
+  if (publicPaths.some((path) => pathname === path || pathname.startsWith(`${path}/`))) {
+    return NextResponse.next();
+  }
+
   // 1. Agar login qilmagan bo'lsa va login sahifasida bo'lmasa -> Loginga haydash
   if (!token && pathname !== '/login') {
     return NextResponse.redirect(new URL('/login', request.url));
