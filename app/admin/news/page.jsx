@@ -25,7 +25,6 @@ const MAIN_COLOR = "#A60E07";
 
 // ============================ STORIS FORMASI ============================
 const StoryFormModal = ({ story, onClose }) => {
-  const [title, setTitle] = useState(story?.title || "");
   const [videoFile, setVideoFile] = useState(null);
   const [error, setError] = useState(null);
   const createStory = useCreateStory();
@@ -36,23 +35,15 @@ const StoryFormModal = ({ story, onClose }) => {
   const submit = async (e) => {
     e.preventDefault();
     setError(null);
-    if (!title.trim()) {
-      setError("Sarlavha kiritilishi kerak");
-      return;
-    }
-    if (!isEdit && !videoFile) {
+    if (!videoFile) {
       setError("Video fayl tanlang");
       return;
     }
     try {
       if (isEdit) {
-        await updateStory.mutateAsync({
-          id: story.id,
-          title: title.trim(),
-          ...(videoFile ? { videoFile } : {}),
-        });
+        await updateStory.mutateAsync({ id: story.id, videoFile });
       } else {
-        await createStory.mutateAsync({ title: title.trim(), videoFile });
+        await createStory.mutateAsync({ title: "", videoFile });
       }
       onClose();
     } catch (err) {
@@ -72,7 +63,7 @@ const StoryFormModal = ({ story, onClose }) => {
       >
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-base font-black text-gray-900">
-            {isEdit ? "Storisni tahrirlash" : "Yangi storis"}
+            {isEdit ? "Videoni almashtirish" : "Yangi storis"}
           </h3>
           <button
             type="button"
@@ -84,18 +75,7 @@ const StoryFormModal = ({ story, onClose }) => {
         </div>
 
         <label className="mb-1 block text-xs font-bold text-gray-500">
-          Sarlavha
-        </label>
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Masalan: Yozgi kurslar"
-          className="mb-3 w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-sm font-semibold outline-none focus:border-[#A60E07]"
-        />
-
-        <label className="mb-1 block text-xs font-bold text-gray-500">
-          Video fayl {isEdit && "(o'zgartirmasangiz bo'sh qoldiring)"}
+          Video fayl
         </label>
         <input
           type="file"
@@ -333,15 +313,15 @@ function AdminNewsPage() {
               {news.map((item) => (
                 <div
                   key={item.id}
-                  className={`rounded-2xl border bg-white p-4 shadow-sm ${
+                  className={`rounded-2xl border bg-white p-4 sm:p-5 shadow-sm ${
                     item.is_active ? "border-gray-100" : "border-gray-200 opacity-60"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
-                      <div className="mb-1 flex items-center gap-2">
+                      <div className="mb-1.5 flex items-center gap-2">
                         <span
-                          className="rounded-full px-2.5 py-0.5 text-[10px] font-extrabold"
+                          className="rounded-full px-3 py-1 text-xs font-extrabold"
                           style={{
                             color: MAIN_COLOR,
                             backgroundColor: `${MAIN_COLOR}14`,
@@ -350,20 +330,20 @@ function AdminNewsPage() {
                           {item.tag}
                         </span>
                         {!item.is_active && (
-                          <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-[10px] font-bold text-gray-500">
+                          <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-500">
                             Yashirilgan
                           </span>
                         )}
                       </div>
-                      <h3 className="text-sm font-black text-gray-900">
+                      <h3 className="text-base sm:text-lg font-black text-gray-900">
                         {item.title}
                       </h3>
                       {item.subtitle && (
-                        <p className="mt-0.5 text-xs font-semibold text-gray-500">
+                        <p className="mt-1 text-sm font-bold text-gray-700">
                           {item.subtitle}
                         </p>
                       )}
-                      <p className="mt-1.5 line-clamp-2 text-xs text-gray-400">
+                      <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-gray-600">
                         {item.body}
                       </p>
                     </div>
@@ -455,9 +435,11 @@ function AdminNewsPage() {
                   <div className="p-3">
                     <div className="flex items-center justify-between gap-2">
                       <div className="min-w-0">
-                        <h3 className="truncate text-sm font-black text-gray-900">
-                          {story.title}
-                        </h3>
+                        <p className="text-xs font-bold text-gray-500">
+                          {story.created_at
+                            ? new Date(story.created_at).toLocaleDateString("uz-UZ")
+                            : ""}
+                        </p>
                         {!story.is_active && (
                           <span className="text-[10px] font-bold text-gray-400">
                             Yashirilgan
