@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import { useParams } from "next/navigation";
 import {
   ChevronLeftIcon,
@@ -9,9 +9,13 @@ import {
   BuildingOfficeIcon,
   ClockIcon,
   PhoneIcon,
+  StarIcon,
 } from "@heroicons/react/24/outline";
+import { TrophyIcon } from "@heroicons/react/24/solid";
 import Link from "next/link";
 import { useGetTeacherGroupById } from "../../../../hooks/groups";
+import PointModal from "../../../../components/teacher/PointModal";
+import { MEDAL_COLORS } from "../../../../components/teacher/TopStudentsSection";
 
 const formatPhoneNumber = (value) => {
   const digits = String(value || "").replace(/\D/g, "");
@@ -35,7 +39,9 @@ function TeacherGroupDetail() {
   const params = useParams();
   const groupId = params.id;
   const { data: groupData, isLoading, error } = useGetTeacherGroupById(groupId);
-  
+  // Ball qo'yish modali ochilgan o'quvchi
+  const [pointStudent, setPointStudent] = useState(null);
+
 
   if (isLoading) {
     return (
@@ -72,7 +78,23 @@ function TeacherGroupDetail() {
   const subjectInfo = groupData.data.subject_info;
   const roomInfo = groupData.data.room_info;
   const studentsStats = groupData.data.students_stats;
-  const students = groupData.data.students || [];
+
+  // Ball bo'yicha kamayish tartibida — mobil ilova bilan bir xil.
+  // Teng ball to'plaganlar bir xil o'rinni oladi.
+  const students = [...(groupData.data.students || [])].sort(
+    (a, b) => (Number(b.monthly_points) || 0) - (Number(a.monthly_points) || 0)
+  );
+  const ranks = {};
+  let rank = 0;
+  let previousPoints = null;
+  students.forEach((student, index) => {
+    const points = Number(student.monthly_points) || 0;
+    if (previousPoints === null || points !== previousPoints) {
+      rank = index + 1;
+      previousPoints = points;
+    }
+    ranks[student.id] = rank;
+  });
 
   return (
     <div className="min-h-full bg-gradient-to-br from-gray-50 to-gray-100 p-1 sm:p-4 md:p-6 lg:p-0">
@@ -188,55 +210,109 @@ function TeacherGroupDetail() {
 
           {students.length > 0 ? (
             <div className="space-y-2 sm:space-y-3">
-              {students.map((student) => (
-                <div
-                  key={student.id}
-                  className="rounded-[8px] border border-gray-200 bg-white p-2.5 shadow-sm sm:p-4"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center bg-[#A60E07] text-white rounded-[8px]">
-                          <span className="text-xs font-bold">
-                            {student.surname?.charAt(0)}{student.name?.charAt(0)}
-                          </span>
-                        </div>
-                        <div className="min-w-0">
-                          <div className="truncate text-sm font-semibold text-gray-800 sm:text-base">
-                            {student.full_name}
+              {students.map((student, index) => {
+                const points = Number(student.monthly_points) || 0;
+                // Medal faqat ro'yxatdagi birinchi uchtaga va ball to'plaganlarga
+                const hasMedal = index < 3 && points > 0;
+                const medalColor = hasMedal
+                  ? MEDAL_COLORS[Math.min(index, MEDAL_COLORS.length - 1)]
+                  : null;
+
+                return (
+                  <div
+                    key={student.id}
+                    className="rounded-[8px] border border-gray-200 bg-white p-2.5 shadow-sm sm:p-4"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          {/* O'rin raqami yoki medal */}
+                          {hasMedal ? (
+                            <span
+                              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
+                              style={{ backgroundColor: medalColor }}
+                            >
+                              <TrophyIcon className="h-3.5 w-3.5 text-white" />
+                            </span>
+                          ) : (
+                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gray-100 text-[11px] font-extrabold text-gray-500">
+                              {ranks[student.id]}
+                            </span>
+                          )}
+                          {/* Avatar */}
+                          {student.avatar_url ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={student.avatar_url}
+                              alt={student.full_name}
+                              className="h-9 w-9 shrink-0 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center bg-[#A60E07] text-white rounded-full">
+                              <span className="text-xs font-bold">
+                                {student.surname?.charAt(0)}{student.name?.charAt(0)}
+                              </span>
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <div
+                              className="truncate text-sm font-semibold sm:text-base"
+                              style={{ color: medalColor || "#1f2937" }}
+                            >
+                              {student.full_name}
+                            </div>
+                            <span
+                              className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-extrabold ${
+                                points > 0
+                                  ? "bg-amber-50 text-amber-700"
+                                  : "bg-gray-100 text-gray-400"
+                              }`}
+                            >
+                              {points} ball
+                            </span>
                           </div>
+                        </div>
+
+                        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-gray-600 sm:mt-2 sm:text-sm">
+                          <a href={`tel:${student.phone}`} className="inline-flex items-center gap-1 text-blue-600 hover:underline">
+                            <PhoneIcon className="h-3 w-3 shrink-0" />
+                            <span className="truncate">{formatPhoneNumber(student.phone)}</span>
+                          </a>
+                          {student.phone2 && (
+                            <a href={`tel:${student.phone2}`} className="inline-flex items-center gap-1 text-gray-500 hover:underline">
+                              <PhoneIcon className="h-3 w-3 shrink-0" />
+                              <span className="truncate">{formatPhoneNumber(student.phone2)}</span>
+                            </a>
+                          )}
+                          {student.father_name && (
+                            <span className="truncate">
+                              Ota-ona: {student.father_name}
+                            </span>
+                          )}
                         </div>
                       </div>
 
-                      <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-gray-600 sm:mt-2 sm:text-sm">
-                        <a href={`tel:${student.phone}`} className="inline-flex items-center gap-1 text-blue-600 hover:underline">
-                          <PhoneIcon className="h-3 w-3 shrink-0" />
-                          <span className="truncate">{formatPhoneNumber(student.phone)}</span>
-                        </a>
-                        {student.phone2 && (
-                          <a href={`tel:${student.phone2}`} className="inline-flex items-center gap-1 text-gray-500 hover:underline">
-                            <PhoneIcon className="h-3 w-3 shrink-0" />
-                            <span className="truncate">{formatPhoneNumber(student.phone2)}</span>
-                          </a>
-                        )}
-                        {student.father_name && (
-                          <span className="truncate">
-                            Ota-ona: {student.father_name}
-                          </span>
-                        )}
+                      <div className="flex shrink-0 flex-col items-end gap-1.5">
+                        <span className={`px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-bold ${getStatusColor(student.group_status)}`}>
+                          {student.status_description || "Noma'lum"}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setPointStudent(student)}
+                          className="inline-flex items-center gap-1 rounded-lg bg-[#A60E07] px-2.5 py-1.5 text-[10px] sm:text-xs font-extrabold text-white transition hover:bg-[#8b0c06]"
+                        >
+                          <StarIcon className="h-3.5 w-3.5" />
+                          Ball qo&apos;yish
+                        </button>
                       </div>
                     </div>
 
-                    <span className={`shrink-0 px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-bold ${getStatusColor(student.group_status)}`}>
-                      {student.status_description || "Noma&apos;lum"}
-                    </span>
+                    <div className="mt-1.5 text-[9px] text-gray-400 sm:mt-2 sm:text-xs">
+                      Qo&apos;shilgan sana: {student.join_date || "-"}
+                    </div>
                   </div>
-
-                  <div className="mt-1.5 text-[9px] text-gray-400 sm:mt-2 sm:text-xs">
-                    Qo&apos;shilgan sana: {student.join_date || "-"}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-8 sm:py-12">
@@ -251,6 +327,15 @@ function TeacherGroupDetail() {
           )}
         </div>
       </div>
+
+      {/* Ball qo'yish modali */}
+      {pointStudent && (
+        <PointModal
+          student={pointStudent}
+          groupId={parseInt(groupId)}
+          onClose={() => setPointStudent(null)}
+        />
+      )}
     </div>
   );
 }

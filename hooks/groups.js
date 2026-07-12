@@ -412,3 +412,33 @@ export const useGetTeacherGroupById = (id) => {
     });
     return { data, isLoading, error, refetch };
 }
+
+// ----------- o'quvchiga ball qo'shish/ayirish (teacher) -----------------
+// Mobil ilova bilan bir xil endpoint: POST /api/students/point-events
+const createPointEvent = async ({ student_id, group_id, points, title, description }) => {
+    const payload = {
+        student_id: parseInt(student_id),
+        group_id: parseInt(group_id),
+        points: parseInt(points),
+        title,
+        source_type: 'bonus',
+    };
+    if (description && description.trim()) {
+        payload.description = description.trim();
+    }
+    const response = await instance.post('/api/students/point-events', payload);
+    return response.data;
+}
+
+export const useCreatePointEvent = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: createPointEvent,
+        onSuccess: (data, vars) => {
+            // Ball o'zgardi — guruh tafsiloti va eng yaxshilar ro'yxatini yangilaymiz
+            queryClient.invalidateQueries({ queryKey: ['teacher-group', String(vars.group_id)] });
+            queryClient.invalidateQueries({ queryKey: ['teacher-group', parseInt(vars.group_id)] });
+            queryClient.invalidateQueries({ queryKey: ['group'] });
+        },
+    });
+}

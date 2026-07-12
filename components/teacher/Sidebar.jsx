@@ -10,6 +10,7 @@ import {
   BriefcaseIcon,
   BookmarkIcon, // Qo'llanma uchun
   Cog6ToothIcon,
+  Squares2X2Icon, // Bosh sahifa uchun
 } from "@heroicons/react/24/outline";
 
 // API function for checking English teacher status
@@ -21,15 +22,15 @@ const checkEnglishTeacher = async () => {
 // --- O'qituvchi Menyu elementlari ma'lumotlari ---
 const getTeacherSidebarItems = (isEnglishTeacher) => {
   const baseItems = [
-    // {
-    //   name: "Dashboard",
-    //   icon: Squares2X2Icon,
-    //   href: "/teacher", // O'qituvchining asosiy yo'li (Dashboard)
-    // },
+    {
+      name: "Bosh sahifa",
+      icon: Squares2X2Icon,
+      href: "/teacher", // Statistikali dashboard
+    },
     {
       name: "Mening Guruhlarim",
       icon: BookOpenIcon,
-      href: "/teacher",
+      href: "/teacher/my-groups",
     },
     {
       name: "Davomat",

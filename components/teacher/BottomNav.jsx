@@ -9,6 +9,7 @@ import {
   BriefcaseIcon,
   Cog6ToothIcon,
   BookmarkIcon,
+  Squares2X2Icon,
 } from "@heroicons/react/24/outline";
 import { instance } from "../../hooks/api";
 
@@ -19,7 +20,8 @@ const checkEnglishTeacher = async () => {
 
 const getTeacherNavItems = (isEnglishTeacher) => {
   const items = [
-    { label: "Guruhlar", href: "/teacher", icon: BookOpenIcon },
+    { label: "Asosiy", href: "/teacher", icon: Squares2X2Icon },
+    { label: "Guruhlar", href: "/teacher/my-groups", icon: BookOpenIcon },
     { label: "Davomat", href: "/teacher/attendance", icon: CalendarDaysIcon },
     { label: "To'lovlar", href: "/teacher/payments-info", icon: BriefcaseIcon },
     { label: "Sozlamalar", href: "/teacher/settings", icon: Cog6ToothIcon },
