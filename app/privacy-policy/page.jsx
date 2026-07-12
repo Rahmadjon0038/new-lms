@@ -87,7 +87,7 @@ const SECTIONS = [
       "O'quv markazi: Taraqqiyot Teaching Center, Namangan shahri;",
       "Telegram: t.me/taraqqiyot_namangan_rasmiy;",
       "Instagram: @taraqqiyot_namangan;",
-      "Veb-sayt: taraqqiyot-teaching-center.uz",
+      "Veb-sayt: taraqqiyot-center.uz",
     ],
   },
 ];
