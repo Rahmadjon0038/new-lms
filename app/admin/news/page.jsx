@@ -101,9 +101,7 @@ const StoryFormModal = ({ story, onClose }) => {
 // ============================ YANGILIK FORMASI ============================
 const NewsFormModal = ({ item, onClose }) => {
   const [form, setForm] = useState({
-    tag: item?.tag || "Yangilik",
     title: item?.title || "",
-    subtitle: item?.subtitle || "",
     body: item?.body || "",
   });
   const [error, setError] = useState(null);
@@ -157,24 +155,6 @@ const NewsFormModal = ({ item, onClose }) => {
           </button>
         </div>
 
-        <div className="mb-3 grid grid-cols-2 gap-3">
-          <div>
-            <label className="mb-1 block text-xs font-bold text-gray-500">
-              Teg
-            </label>
-            <select
-              value={form.tag}
-              onChange={setField("tag")}
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm font-semibold outline-none focus:border-[#A60E07]"
-            >
-              <option value="Yangilik">Yangilik</option>
-              <option value="E'lon">E&apos;lon</option>
-              <option value="Tadbir">Tadbir</option>
-              <option value="Aksiya">Aksiya</option>
-            </select>
-          </div>
-        </div>
-
         <label className="mb-1 block text-xs font-bold text-gray-500">
           Sarlavha
         </label>
@@ -187,24 +167,13 @@ const NewsFormModal = ({ item, onClose }) => {
         />
 
         <label className="mb-1 block text-xs font-bold text-gray-500">
-          Qisqa tavsif
-        </label>
-        <input
-          type="text"
-          value={form.subtitle}
-          onChange={setField("subtitle")}
-          placeholder="Karta ostida ko'rinadigan bir qatorli matn"
-          className="mb-3 w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-sm font-semibold outline-none focus:border-[#A60E07]"
-        />
-
-        <label className="mb-1 block text-xs font-bold text-gray-500">
-          To&apos;liq matn
+          Matn (Markdown qo&apos;llab-quvvatlanadi: **qalin**, # sarlavha, - ro&apos;yxat)
         </label>
         <textarea
           value={form.body}
           onChange={setField("body")}
-          rows={6}
-          placeholder="Yangilikning to'liq matni — mobil ilovada 'Batafsil' sahifasida ko'rinadi"
+          rows={10}
+          placeholder={"Yangilikning to'liq matni...\n\n**Qalin matn**, # Sarlavha, - ro'yxat kabi markdown belgilaridan foydalanishingiz mumkin."}
           className="mb-3 w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-sm font-semibold outline-none focus:border-[#A60E07]"
         />
 
