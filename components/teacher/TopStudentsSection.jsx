@@ -103,25 +103,36 @@ const TopStudentsSection = ({ groups }) => {
   if (!groupTops.length) return null;
 
   return (
-    <Link
-      href="/teacher/top-students"
-      className="mb-4 sm:mb-6 block rounded-[8px] border border-gray-100 bg-white p-3 sm:p-5 shadow-md transition hover:shadow-xl"
-    >
-      <div className="mb-3 flex items-center gap-2">
+    <div className="mb-4 sm:mb-6 rounded-[8px] border border-gray-100 bg-white p-3 sm:p-5 shadow-md">
+      {/* Sarlavha — o'tgan oylar tarixini ko'rish sahifasiga olib boradi */}
+      <Link
+        href="/teacher/top-students"
+        className="mb-3 flex items-center gap-2 transition hover:opacity-80"
+      >
         <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#D4A017] to-[#F0C24B]">
           <TrophyIcon className="h-4 w-4 text-white" />
         </span>
         <h2 className="flex-1 text-sm sm:text-base font-black text-gray-800">
           Oyning eng yaxshi o&apos;quvchilari
         </h2>
+        <span className="text-[10px] sm:text-xs font-bold text-gray-400">
+          O&apos;tgan oylar
+        </span>
         <ChevronRightIcon className="h-4 w-4 text-gray-400" />
-      </div>
+      </Link>
+      {/* Guruh bo'limi bosilsa — o'sha guruhning detail sahifasi */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {groupTops.map((groupTop) => (
-          <GroupTopBlock key={groupTop.groupId} groupTop={groupTop} />
+          <Link
+            key={groupTop.groupId}
+            href={`/teacher/my-groups/${groupTop.groupId}`}
+            className="rounded-lg p-1.5 -m-1.5 transition hover:bg-gray-50"
+          >
+            <GroupTopBlock groupTop={groupTop} />
+          </Link>
         ))}
       </div>
-    </Link>
+    </div>
   );
 };
 

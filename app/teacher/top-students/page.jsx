@@ -85,12 +85,13 @@ function TeacherTopStudentsPage() {
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 sm:gap-4">
           {groupTops.map((groupTop) => (
-            <div
+            <Link
               key={groupTop.groupId}
-              className="rounded-[8px] border border-gray-100 bg-white p-3 sm:p-4 shadow-md"
+              href={`/teacher/my-groups/${groupTop.groupId}`}
+              className="rounded-[8px] border border-gray-100 bg-white p-3 sm:p-4 shadow-md transition hover:shadow-xl"
             >
               <GroupTopBlock groupTop={groupTop} showEmpty />
-            </div>
+            </Link>
           ))}
         </div>
       )}
