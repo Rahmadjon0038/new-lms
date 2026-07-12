@@ -10,6 +10,7 @@ import {
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { useGetTeacherGroups } from "../../hooks/groups";
+import TopStudentsSection from "../../components/teacher/TopStudentsSection";
 
 // --- Guruh Kartochkasi ---
 const GroupCard = ({ group }) => {
@@ -146,6 +147,9 @@ function TeacherGroups() {
           Jami {groupsData?.data?.total_groups || 0} ta faol guruh
         </p>
       </header> */}
+
+      {/* Oyning eng yaxshi o'quvchilari — bosilganda oy filtri bilan sahifa ochiladi */}
+      <TopStudentsSection groups={groups} />
 
       {/* Grid: Mobil - 1 ta, Planshet - 2 ta, Desktop - 3 ta */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-2 sm:gap-4 md:gap-6 lg:gap-8">

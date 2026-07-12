@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { instance } from './api';
 import { useGetNotify } from './notify';
 
@@ -163,18 +163,37 @@ export const useCreateGroup = () => {
 }
 
 // ----------- get group by id -----------------
-const getGroupById = async (id) => {
-    const response = await instance.get(`/api/groups/${id}`);
+// month (YYYY-MM) berilsa studentlarning monthly_points balli o'sha oy uchun keladi
+const getGroupById = async (id, month) => {
+    const response = await instance.get(`/api/groups/${id}`, {
+        params: month ? { month } : {},
+    });
     return response.data;
 }
 
-export const useGetGroupById = (id) => {
+export const useGetGroupById = (id, month) => {
     const { data, isLoading, error } = useQuery({
-        queryKey: ['group', id],
-        queryFn: () => getGroupById(id),
+        queryKey: month ? ['group', id, month] : ['group', id],
+        queryFn: () => getGroupById(id, month),
         enabled: !!id, // Only run query if id exists
     });
     return { data, isLoading, error };
+}
+
+// ----------- bir nechta guruh tafsiloti (eng yaxshi o'quvchilar uchun) -----------------
+// Har bir guruh uchun /api/groups/:id ni parallel chaqiradi
+export const useGetGroupsDetails = (groupIds, month) => {
+    const results = useQueries({
+        queries: (groupIds || []).map((id) => ({
+            queryKey: month ? ['group', id, month] : ['group', id],
+            queryFn: () => getGroupById(id, month),
+            enabled: !!id,
+        })),
+    });
+    return {
+        details: results.map((r) => r.data).filter(Boolean),
+        isLoading: results.some((r) => r.isLoading),
+    };
 }
 
 // ----------- get group view (for students) -----------------
