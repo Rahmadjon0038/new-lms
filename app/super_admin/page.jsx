@@ -45,6 +45,7 @@ export default function SuperAdminDashboardPage() {
     { label: "Joriy oy", value: monthly?.current_month || month },
     { label: "Umumiy tushum", value: formatCurrency(monthly?.total_revenue) },
     { label: "Jami o'qituvchilarga berilgan oylik summasi", value: formatCurrency(monthly?.total_teacher_salary) },
+    { label: "Jami adminlarga berilgan oylik summasi", value: formatCurrency(monthly?.total_admin_salary) },
     { label: "Umumiy rasxod", value: formatCurrency(monthly?.total_expenses) },
     { label: "Yangi talabalar", value: formatNumber(monthly?.new_students_count) },
     { label: "Jami chegirma", value: formatCurrency(monthly?.total_discounts) },
@@ -110,7 +111,7 @@ export default function SuperAdminDashboardPage() {
               ))}
               <tr className="border-b border-slate-500 bg-slate-50">
                 <td className="border-r border-slate-700 px-6 py-5 font-semibold text-gray-900">Formula</td>
-                <td className="px-6 py-5 font-medium text-gray-700">tushum - teacher oyligi - rasxod - chegirma</td>
+                <td className="px-6 py-5 font-medium text-gray-700">tushum - teacher oyligi - admin oyligi - rasxod - chegirma</td>
               </tr>
             </tbody>
           </table>
