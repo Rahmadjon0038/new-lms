@@ -265,7 +265,7 @@ function AdminNewsPage() {
   };
 
   return (
-    <div className="min-h-full p-1 sm:p-4 md:p-0">
+    <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6">
       {/* Sarlavha */}
       <div className="mb-4 flex items-center gap-3">
         <span
