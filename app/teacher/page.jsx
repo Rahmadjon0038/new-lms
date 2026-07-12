@@ -8,6 +8,7 @@ import {
   BanknotesIcon,
   UserGroupIcon,
   CheckBadgeIcon,
+  XCircleIcon,
 } from "@heroicons/react/24/outline";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { useGetTeacherGroups } from "../../hooks/groups";
@@ -121,8 +122,14 @@ const AttendanceStatsCard = ({ students }) => {
         Number(b.missed_marked_lessons) - Number(a.missed_marked_lessons)
     );
 
-  const StudentLine = ({ snapshot, trailing, color }) => (
-    <div className="flex items-center gap-2 py-1">
+  const StudentLine = ({ snapshot, trailing, color, position }) => (
+    <div className="flex items-center gap-2.5 border-b border-gray-50 py-2 last:border-b-0">
+      <span
+        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-black"
+        style={{ color, backgroundColor: `${color}1A` }}
+      >
+        {position}
+      </span>
       <div className="min-w-0 flex-1">
         <p className="truncate text-xs sm:text-sm font-bold text-gray-800">
           {[snapshot.student_surname, snapshot.student_name]
@@ -142,52 +149,55 @@ const AttendanceStatsCard = ({ students }) => {
     </div>
   );
 
+  // Har biri alohida karta: eng yaxshi davomat (yashil) va qoldirganlar (qizil)
   return (
-    <div className="rounded-[8px] border border-gray-100 bg-white p-4 sm:p-5 shadow-md">
-      <div className="mb-3 flex items-center gap-2">
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-600/10">
-          <CheckBadgeIcon className="h-4 w-4 text-teal-700" />
-        </span>
-        <h2 className="text-sm sm:text-base font-black text-gray-800">
-          Davomat ko&apos;rsatkichlari
-        </h2>
-      </div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {best.length > 0 && (
-          <div>
-            <p className="mb-1 text-[11px] font-extrabold uppercase tracking-wider text-green-700">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      {best.length > 0 && (
+        <div className="rounded-[8px] border border-gray-100 bg-white p-4 sm:p-5 shadow-md">
+          <div className="mb-2 flex items-center gap-2">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-teal-700 to-teal-400">
+              <CheckBadgeIcon className="h-4 w-4 text-white" />
+            </span>
+            <h2 className="text-sm sm:text-base font-black text-gray-800">
               Eng yaxshi davomat
-            </p>
-            {best.slice(0, 3).map((s) => (
-              <StudentLine
-                key={`best-${s.student_id}-${s.group_id}`}
-                snapshot={s}
-                color="#16934F"
-                trailing={`${Math.round(
-                  (Number(s.attended_marked_lessons) /
-                    Number(s.marked_lessons)) *
-                    100
-                )}% • ${s.attended_marked_lessons}/${s.marked_lessons}`}
-              />
-            ))}
+            </h2>
           </div>
-        )}
-        {mostMissed.length > 0 && (
-          <div>
-            <p className="mb-1 text-[11px] font-extrabold uppercase tracking-wider text-red-600">
+          {best.slice(0, 3).map((s, index) => (
+            <StudentLine
+              key={`best-${s.student_id}-${s.group_id}`}
+              snapshot={s}
+              position={index + 1}
+              color="#16934F"
+              trailing={`${Math.round(
+                (Number(s.attended_marked_lessons) /
+                  Number(s.marked_lessons)) *
+                  100
+              )}% • ${s.attended_marked_lessons}/${s.marked_lessons}`}
+            />
+          ))}
+        </div>
+      )}
+      {mostMissed.length > 0 && (
+        <div className="rounded-[8px] border border-gray-100 bg-white p-4 sm:p-5 shadow-md">
+          <div className="mb-2 flex items-center gap-2">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-red-700 to-red-400">
+              <XCircleIcon className="h-4 w-4 text-white" />
+            </span>
+            <h2 className="text-sm sm:text-base font-black text-gray-800">
               Ko&apos;p dars qoldirganlar
-            </p>
-            {mostMissed.slice(0, 3).map((s) => (
-              <StudentLine
-                key={`missed-${s.student_id}-${s.group_id}`}
-                snapshot={s}
-                color="#DC2626"
-                trailing={`${s.missed_marked_lessons} dars qoldirgan`}
-              />
-            ))}
+            </h2>
           </div>
-        )}
-      </div>
+          {mostMissed.slice(0, 3).map((s, index) => (
+            <StudentLine
+              key={`missed-${s.student_id}-${s.group_id}`}
+              snapshot={s}
+              position={index + 1}
+              color="#DC2626"
+              trailing={`${s.missed_marked_lessons} dars qoldirgan`}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

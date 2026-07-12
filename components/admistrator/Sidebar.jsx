@@ -14,6 +14,7 @@ import {
   WalletIcon, // To'lovlar uchun
   BuildingLibraryIcon, // Xonalar
   ReceiptPercentIcon, // Rasxodlar
+  MegaphoneIcon, // Yangiliklar va storislar
   Cog6ToothIcon,
   ChevronRightIcon,
   XMarkIcon,
@@ -79,6 +80,11 @@ const secondarySidebarItems = [
     name: "Rasxodlar",
     icon: ReceiptPercentIcon,
     href: "/admin/expenses",
+  },
+  {
+    name: "Yangiliklar",
+    icon: MegaphoneIcon,
+    href: "/admin/news",
   },
   
   {
