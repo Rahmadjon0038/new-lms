@@ -3,6 +3,7 @@
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import { UserGroupIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { useGetAttendanceGroups, useGetAttendanceTeachers, useGetStudentAttendanceSnapshot } from "../../../hooks/attendance";
 import { format, parseISO, isValid } from "date-fns";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -324,6 +325,15 @@ export default function AdminAttendancePage() {
     return groups.reduce((sum, item) => sum + Number(item.students_count || 0), 0);
   }, [allGroupsQuery.data]);
 
+  // Tanlangan kunda darsi bor guruhlar bo'yicha davomat holati (mobil dashboarddagi donut kabi)
+  const dailyAttendanceStats = useMemo(() => {
+    const total = teachers.reduce((sum, t) => sum + (Number(t.today_groups_count) || 0), 0);
+    const marked = teachers.reduce((sum, t) => sum + (Number(t.today_marked_groups_count) || 0), 0);
+    const pending = Math.max(0, total - marked);
+    const percent = total > 0 ? Math.round((marked / total) * 100) : 0;
+    return { total, marked, pending, percent };
+  }, [teachers]);
+
   const handleToggleHoliday = () => {
     if (!holidayDate) {
       toast.error("Iltimos, sana tanlang");
@@ -423,6 +433,87 @@ export default function AdminAttendancePage() {
           />
         </div>
       </div>
+
+      {!teachersQuery.isLoading && !teachersQuery.isError ? (
+        <div className="rounded-xl border border-gray-200 bg-white p-4">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <h3 className="flex items-center gap-2 text-base font-bold text-gray-900">
+              <span
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg"
+                style={{ backgroundColor: MAIN_COLOR }}
+              >
+                <UserGroupIcon className="h-5 w-5 text-white" />
+              </span>
+              {attendanceDate === getTodayYmd() ? "Bugungi davomat" : `${attendanceDate} davomati`}
+            </h3>
+            <span className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-sm font-bold text-gray-700">
+              Jami: {dailyAttendanceStats.total} guruh
+            </span>
+          </div>
+          {dailyAttendanceStats.total === 0 ? (
+            <p className="py-4 text-center text-sm text-gray-500">
+              Bu kunda jadval bo&apos;yicha darsi bor guruhlar yo&apos;q.
+            </p>
+          ) : (
+            <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-8">
+              <div className="relative h-44 w-44 shrink-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={[
+                        { label: "Davomat qilingan", value: dailyAttendanceStats.marked },
+                        { label: "Qilinmagan", value: dailyAttendanceStats.pending },
+                      ].filter((item) => item.value > 0)}
+                      dataKey="value"
+                      nameKey="label"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={55}
+                      outerRadius={80}
+                      startAngle={90}
+                      endAngle={-270}
+                      paddingAngle={
+                        dailyAttendanceStats.marked > 0 && dailyAttendanceStats.pending > 0 ? 3 : 0
+                      }
+                      stroke="#ffffff"
+                      strokeWidth={2}
+                    >
+                      {dailyAttendanceStats.marked > 0 ? <Cell key="marked" fill="#10B981" /> : null}
+                      {dailyAttendanceStats.pending > 0 ? <Cell key="pending" fill="#F59E0B" /> : null}
+                    </Pie>
+                    <Tooltip formatter={(value) => `${value} guruh`} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                  <span className="text-2xl font-black text-gray-900">
+                    {dailyAttendanceStats.percent}%
+                  </span>
+                </div>
+              </div>
+              <div className="w-full space-y-3 sm:w-auto sm:min-w-64">
+                <div className="flex items-center justify-between gap-6">
+                  <span className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                    <span className="h-3 w-3 rounded-full bg-emerald-500" />
+                    Davomat qilingan
+                  </span>
+                  <span className="text-sm font-bold text-emerald-600">
+                    {dailyAttendanceStats.marked} guruh
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-6">
+                  <span className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                    <span className="h-3 w-3 rounded-full bg-amber-500" />
+                    Qilinmagan
+                  </span>
+                  <span className="text-sm font-bold text-amber-600">
+                    {dailyAttendanceStats.pending} guruh
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : null}
 
       <div className="text-xs text-gray-600 space-y-1">
         {holidayDateSet.has(holidayDate) ? (
