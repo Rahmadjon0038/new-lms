@@ -15,6 +15,7 @@ import {
   ResponsiveContainer,
   LineChart,
   Line,
+  LabelList,
   PieChart,
   Pie,
   Cell,
@@ -81,6 +82,20 @@ const filterRowsFromMonth = (rows = [], fromMonth = "2026-01") =>
     if (!match) return true;
     return match[0] >= fromMonth;
   });
+
+const UZ_MONTHS = [
+  'Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun',
+  'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr',
+];
+
+// "2026-07" -> "Iyul"; agar format boshqacha bo'lsa, o'zini qaytaradi
+const formatMonthLabel = (value) => {
+  const match = String(value || "").match(/(\d{4})-(\d{2})/);
+  if (!match) return String(value || "");
+  const monthIndex = parseInt(match[2], 10) - 1;
+  const name = UZ_MONTHS[monthIndex];
+  return name ? name : String(value || "");
+};
 
 const getStudentSubjectName = (student) =>
   student?.registered_subject_name || student?.subject_name || 'Belgilanmagan';
@@ -636,11 +651,25 @@ function AdminDashboard() {
                 <ChartCard title="Qabul (12 oy)" className="p-3 sm:p-4">
                   <div className="h-[200px] sm:h-[280px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={admissionsRows} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                      <LineChart data={admissionsRows} margin={{ top: 10, right: 10, left: 0, bottom: 8 }}>
                         <CartesianGrid strokeDasharray="3 3" />
-                        {/* <XAxis dataKey="label" tick={{ fontSize: 10 }} minTickGap={10} /> */}
+                        <XAxis
+                          dataKey="label"
+                          tickFormatter={formatMonthLabel}
+                          tick={{ fontSize: 10 }}
+                          interval={0}
+                          tickMargin={8}
+                          minTickGap={0}
+                        />
                         <YAxis allowDecimals={false} tick={{ fontSize: 10 }} width={28} />
-                        <Line type="monotone" dataKey="admissions_count" stroke={MAIN_COLOR} strokeWidth={2} />
+                        <Line type="monotone" dataKey="admissions_count" stroke={MAIN_COLOR} strokeWidth={2}>
+                          <LabelList
+                            dataKey="admissions_count"
+                            position="top"
+                            offset={8}
+                            style={{ fontSize: 11, fontWeight: 600, fill: MAIN_COLOR }}
+                          />
+                        </Line>
                       </LineChart>
                     </ResponsiveContainer>
                   </div>

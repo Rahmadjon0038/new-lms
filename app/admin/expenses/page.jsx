@@ -3,6 +3,7 @@
 import React, { useMemo, useState } from 'react';
 import { BanknotesIcon, CalendarDaysIcon, CheckIcon, PencilSquareIcon, PlusIcon, TagIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import {
   useCreateExpense,
   useCreateExpenseCategory,
@@ -32,6 +33,93 @@ const formatAmountInput = (value = '') => {
 }; 
 
 const parseAmountInput = (value = '') => Number(String(value).replace(/\D/g, '') || 0);
+
+// Pie chart ranglari — validatsiyalangan (ko'rlikка xavfsiz) kategoriya palitrasi.
+// Tartib muhim: eng katta bo'lak 1-slot (ko'k), keyin aqua, sariq, yashil...
+const PIE_COLORS = ['#2a78d6', '#1baf7a', '#eda100', '#008300', '#4a3aa7', '#e34948', '#e87ba4', '#eb6834'];
+const UNCATEGORIZED_COLOR = '#9ca3af'; // kategoriyasiz uchun neytral kulrang
+
+// Kategoriya summalaridan pie ma'lumotini quradi; total > sum bo'lsa "Kategoriyasiz" bo'lak qo'shadi
+const buildPieData = (catItems, total) => {
+  const cats = (Array.isArray(catItems) ? catItems : [])
+    .map((c) => ({ label: c.name, value: Number(c.total_amount) || 0 }))
+    .filter((c) => c.value > 0)
+    .sort((a, b) => b.value - a.value);
+  const catSum = cats.reduce((acc, c) => acc + c.value, 0);
+  const uncategorized = Math.max(0, (Number(total) || 0) - catSum);
+  if (uncategorized > 0) cats.push({ label: 'Kategoriyasiz', value: uncategorized, _uncategorized: true });
+  return cats;
+};
+
+const ExpensePieCard = ({ title, periodLabel, data, total, loading, amountClass = 'text-gray-900', icon: Icon }) => {
+  const sum = Number(total) || 0;
+  const hasData = Array.isArray(data) && data.length > 0 && sum > 0;
+  const colorFor = (item, index) => (item._uncategorized ? UNCATEGORIZED_COLOR : PIE_COLORS[index % PIE_COLORS.length]);
+
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          {Icon ? <Icon className="h-5 w-5 text-gray-600" /> : null}
+          <p className="text-xs font-semibold uppercase text-gray-500">{title}</p>
+        </div>
+        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-600">{periodLabel}</span>
+      </div>
+      <p className={`mt-1 text-2xl font-bold ${amountClass}`}>{formatCurrency(sum)}</p>
+
+      {loading ? (
+        <p className="py-6 text-center text-sm text-gray-400">Yuklanmoqda...</p>
+      ) : !hasData ? (
+        <p className="py-8 text-center text-sm text-gray-400">Bu davrda rasxod yo'q</p>
+      ) : (
+        <div className="mt-3 flex flex-col items-center gap-4 border-t border-gray-100 pt-3 sm:flex-row sm:gap-8">
+          <div className="relative h-44 w-44 shrink-0">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={data}
+                  dataKey="value"
+                  nameKey="label"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={55}
+                  outerRadius={80}
+                  startAngle={90}
+                  endAngle={-270}
+                  paddingAngle={data.length > 1 ? 2 : 0}
+                  stroke="#ffffff"
+                  strokeWidth={2}
+                >
+                  {data.map((item, index) => (
+                    <Cell key={item.label} fill={colorFor(item, index)} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value) => formatCurrency(value)} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="w-full space-y-3 sm:w-auto sm:min-w-[200px] sm:flex-1">
+            {data.map((item, index) => {
+              const pct = sum > 0 ? Math.round((item.value / sum) * 100) : 0;
+              const color = colorFor(item, index);
+              return (
+                <div key={item.label} className="flex items-center justify-between gap-4">
+                  <span className="flex min-w-0 items-center gap-2 text-sm font-semibold text-gray-700">
+                    <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: color }} />
+                    <span className="truncate">{item.label}</span>
+                    <span className="shrink-0 text-[11px] font-medium text-gray-400">{pct}%</span>
+                  </span>
+                  <span className="shrink-0 text-sm font-bold text-gray-900">{formatCurrency(item.value)}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const CategoryChipPicker = ({ categories, selectedId, onSelect }) => {
   if (!categories.length) {
@@ -81,6 +169,14 @@ const AdminExpensesPage = () => {
   });
   const summaryQuery = useGetExpenseSummary({ month, date: day || undefined, category_id: categoryId || undefined });
   const categoriesQuery = useGetExpenseCategories({ month, date: day || undefined });
+
+  // Pie chartlar uchun — kategoriya filtridan mustaqil, toza taqsimot
+  const dailyDateStr = day || currentDay;
+  const monthlyCatQuery = useGetExpenseCategories({ month });
+  const dailyCatQuery = useGetExpenseCategories({ date: dailyDateStr });
+  const monthlyTotalQuery = useGetExpenseSummary({ month });
+  const dailyTotalQuery = useGetExpenseSummary({ date: dailyDateStr });
+
   const createExpense = useCreateExpense();
   const updateExpense = useUpdateExpense();
   const deleteExpense = useDeleteExpense();
@@ -103,7 +199,18 @@ const AdminExpensesPage = () => {
     });
     return Array.from(unique).sort((a, b) => a.localeCompare(b, 'uz-UZ'));
   }, [items]);
-  const summary = summaryQuery.data || {};
+
+  // Pie chartlar uchun toza summalar va taqsimot
+  const dailyTotal = dailyTotalQuery.data?.date_total_expense ?? dailyTotalQuery.data?.today_total_expense ?? 0;
+  const monthlyTotal = monthlyTotalQuery.data?.month_total_expense ?? 0;
+  const dailyPieData = useMemo(
+    () => buildPieData(dailyCatQuery.data?.items, dailyTotal),
+    [dailyCatQuery.data, dailyTotal]
+  );
+  const monthlyPieData = useMemo(
+    () => buildPieData(monthlyCatQuery.data?.items, monthlyTotal),
+    [monthlyCatQuery.data, monthlyTotal]
+  );
 
   const closeModal = () => {
     if (createExpense.isPending) return;
@@ -269,7 +376,7 @@ const AdminExpensesPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6">
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <button
           onClick={openAddModal}
           className="inline-flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white sm:w-auto"
@@ -278,14 +385,10 @@ const AdminExpensesPage = () => {
           <PlusIcon className="h-4 w-4" />
           Rasxod qo‘shish
         </button>
-      </div>
 
-      <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-3">
-        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-          <div className="mb-1 flex items-center gap-2">
-            <CalendarDaysIcon className="h-5 w-5 text-gray-600" />
-            <p className="text-xs font-semibold uppercase text-gray-500">Tanlangan oy</p>
-          </div>
+        {/* Filtr — oy va kun (o'ng chetda) */}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center lg:justify-end">
+          <CalendarDaysIcon className="hidden h-5 w-5 shrink-0 text-gray-400 sm:block" />
           <input
             type="month"
             value={month}
@@ -293,9 +396,9 @@ const AdminExpensesPage = () => {
               setMonth(e.target.value);
               setDay('');
             }}
-            className="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#A60E07]"
+            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#A60E07] sm:w-40"
           />
-          <div className="mt-2 flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <input
               type="date"
               value={day}
@@ -304,7 +407,7 @@ const AdminExpensesPage = () => {
                 setDay(value);
                 if (value) setMonth(value.slice(0, 7));
               }}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#A60E07]"
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#A60E07] sm:w-40"
             />
             {day ? (
               <button
@@ -318,27 +421,29 @@ const AdminExpensesPage = () => {
               </button>
             ) : null}
           </div>
-          <p className="mt-1 text-xs text-gray-500">Kun tanlansa, ro‘yxat va summalar shu kun bo‘yicha ko‘rsatiladi.</p>
         </div>
+      </div>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase text-gray-500">
-            {day && day !== currentDay ? 'Tanlangan kun rasxodi' : 'Bugungi rasxod'}
-          </p>
-          <p className="mt-1 text-2xl font-bold text-[#A60E07]">
-            {formatCurrency(day ? summary.date_total_expense || 0 : summary.today_total_expense || 0)}
-          </p>
-          <p className="mt-1 text-xs text-gray-500">{day || summary.today || currentDay}</p>
-        </div>
-
-        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-          <div className="flex items-center gap-2">
-            <BanknotesIcon className="h-5 w-5 text-gray-600" />
-            <p className="text-xs font-semibold uppercase text-gray-500">Oylik rasxod</p>
-          </div>
-          <p className="mt-1 text-2xl font-bold text-gray-900">{formatCurrency(summary.month_total_expense || 0)}</p>
-          <p className="mt-1 text-xs text-gray-500">{summary.month || month}</p>
-        </div>
+      {/* Rasxod kartalari — summa + taqsimot charti bir kartada */}
+      <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <ExpensePieCard
+          title={day && day !== currentDay ? 'Tanlangan kun rasxodi' : 'Bugungi rasxod'}
+          periodLabel={dailyDateStr}
+          data={dailyPieData}
+          total={dailyTotal}
+          loading={dailyCatQuery.isLoading || dailyTotalQuery.isLoading}
+          amountClass="text-[#A60E07]"
+          icon={CalendarDaysIcon}
+        />
+        <ExpensePieCard
+          title="Oylik rasxod"
+          periodLabel={month}
+          data={monthlyPieData}
+          total={monthlyTotal}
+          loading={monthlyCatQuery.isLoading || monthlyTotalQuery.isLoading}
+          amountClass="text-gray-900"
+          icon={BanknotesIcon}
+        />
       </div>
 
       <div className="mb-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">

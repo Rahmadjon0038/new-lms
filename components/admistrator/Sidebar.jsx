@@ -11,6 +11,7 @@ import {
   AcademicCapIcon, // Fanlar uchun
   BookmarkIcon, // Qollanma
   ClipboardDocumentListIcon, // Davomat uchun
+  ClockIcon, // Kechikish uchun
   WalletIcon, // To'lovlar uchun
   BuildingLibraryIcon, // Xonalar
   ReceiptPercentIcon, // Rasxodlar
@@ -61,6 +62,11 @@ const primarySidebarItems = [
     name: "Xonalar",
     icon: BuildingLibraryIcon,
     href: "/admin/rooms",
+  },
+  {
+    name: "Kechikishlar",
+    icon: ClockIcon,
+    href: "/admin/teachers-lateness",
   },
 ];
 

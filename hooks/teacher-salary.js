@@ -56,8 +56,12 @@ const getTeacherGiven = async ({ teacher_id, month_name }) => {
   return extractData(res);
 };
 
-const closeTeacherSalaryMonth = async ({ month_name, teacher_id }) => {
-  const res = await instance.post(`${baseUrl}/months/${month_name}/teachers/${teacher_id}/close`);
+const closeTeacherSalaryMonth = async ({ month_name, teacher_id, expected_salary }) => {
+  const body =
+    expected_salary !== undefined && expected_salary !== null && expected_salary !== ""
+      ? { expected_salary }
+      : undefined;
+  const res = await instance.post(`${baseUrl}/months/${month_name}/teachers/${teacher_id}/close`, body);
   return extractData(res);
 };
 
