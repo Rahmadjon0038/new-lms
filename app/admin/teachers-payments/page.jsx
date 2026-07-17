@@ -546,6 +546,7 @@ const TeacherPayments = () => {
                 const isDetailsOpen = !!openDetailsByTeacher[teacherId];
                 const regularPayable = num(t, ["final_salary", "available_balance", "close_balance"]);
                 const postCloseAvailable = num(t, ["post_close_available"]);
+                const hasPostCloseDebt = Boolean(t?.is_closed) && postCloseAvailable > 0;
                 const canGive = resolveCanGive(t, {
                   isClosed: Boolean(t?.is_closed),
                   regularPayable,
@@ -558,7 +559,7 @@ const TeacherPayments = () => {
                   (num(t, ["final_salary", "close_balance"]) + num(t, ["post_close_given"]));
                 const totalGivenDisplay = isReset ? 0 : computedGiven;
                 return (
-                  <div key={`${teacherId}-${i}`} className="rounded-xl border border-gray-200 bg-white shadow-sm">
+                  <div key={`${teacherId}-${i}`} className={`rounded-xl border border-gray-200 shadow-sm ${getRowToneClass(t)}`}>
                     <button
                       type="button"
                       onClick={() => toggleDetails(teacherId)}
@@ -568,10 +569,17 @@ const TeacherPayments = () => {
                         <p className="text-sm font-semibold text-gray-900 sm:text-base">{teacherName}</p>
                         <StudentPaymentProgress stats={studentStats} />
                       </div>
-                      <div className="flex shrink-0 items-center gap-2 pt-0.5">
-                        <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold sm:px-3 sm:text-xs ${salaryStatusStyle(t?.is_closed)}`}>
-                          {salaryStatusLabel(t?.is_closed)}
-                        </span>
+                      <div className="flex shrink-0 flex-col items-end gap-1 pt-0.5 sm:flex-row sm:items-center sm:gap-2">
+                        <div className="flex flex-wrap justify-end gap-1.5">
+                          {hasPostCloseDebt && (
+                            <span className="inline-flex rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-semibold text-amber-800 ring-1 ring-amber-200 sm:px-3 sm:text-xs">
+                              Yana berish kerak: {fmtMoney(postCloseAvailable)}
+                            </span>
+                          )}
+                          <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold sm:px-3 sm:text-xs ${salaryStatusStyle(t?.is_closed)}`}>
+                            {salaryStatusLabel(t?.is_closed)}
+                          </span>
+                        </div>
                         {isDetailsOpen ? (
                           <ChevronUpIcon className="h-4 w-4 text-gray-500" />
                         ) : (
