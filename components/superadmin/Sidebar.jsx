@@ -1,8 +1,7 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   BanknotesIcon,
   ChartBarIcon,
@@ -50,6 +49,7 @@ const sidebarItems = [
 
 function SuperAdminSidebar({ isOpen = false, onClose = () => {} }) {
   const pathname = usePathname();
+  const router = useRouter();
   const activeHref = sidebarItems.reduce((best, item) => {
     const isMatch =
       item.href === "/super_admin"
@@ -75,18 +75,21 @@ function SuperAdminSidebar({ isOpen = false, onClose = () => {} }) {
         {sidebarItems.map((item) => {
           const isActive = item.href === activeHref;
           return (
-            <Link
+            <button
+              type="button"
               key={item.name}
-              href={item.href}
-              onClick={onClose}
-              className={`flex items-center px-3 py-3 rounded-lg text-sm font-medium transition ${
+              onClick={() => {
+                onClose();
+                if (pathname !== item.href) router.push(item.href);
+              }}
+              className={`flex w-full items-center rounded-lg px-3 py-3 text-left text-sm font-medium transition ${
                 isActive ? "text-white shadow-md" : "text-gray-700 hover:bg-gray-100"
               }`}
               style={isActive ? { backgroundColor: MAIN_COLOR } : {}}
             >
               <item.icon className={`mr-3 h-5 w-5 ${isActive ? "text-white" : "text-gray-500"}`} />
               {item.name}
-            </Link>
+            </button>
           );
         })}
       </nav>

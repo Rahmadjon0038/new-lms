@@ -37,9 +37,9 @@ const monthLabel = (value) => {
 };
 
 const Section = ({ title, right, children }) => (
-  <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-    <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-      <h2 className="text-base font-semibold text-gray-900">{title}</h2>
+  <section className="rounded-xl border border-gray-200 bg-white p-2.5 shadow-sm sm:p-4">
+    <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2 sm:mb-4">
+      <h2 className="text-sm font-semibold text-gray-900 sm:text-base">{title}</h2>
       {right}
     </div>
     {children}
@@ -110,13 +110,13 @@ export default function SuperAdminDashboardPage() {
   }
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+    <div className="space-y-3 sm:space-y-5">
+      <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold" style={{ color: MAIN_COLOR }}>
+          <h1 className="text-lg font-extrabold sm:text-2xl" style={{ color: MAIN_COLOR }}>
             Super Administrator Statistikasi
           </h1>
-          <p className="mt-1 text-sm text-gray-500">{monthLabel(month)} bo&apos;yicha umumiy nazorat</p>
+          <p className="mt-0.5 text-xs text-gray-500 sm:mt-1 sm:text-sm">{monthLabel(month)} bo&apos;yicha umumiy nazorat</p>
         </div>
         <div className="w-full sm:w-60">
           <input
@@ -129,9 +129,9 @@ export default function SuperAdminDashboardPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1.2fr_2fr]">
+      <div className="grid gap-2.5 sm:gap-4 lg:grid-cols-[1.2fr_2fr]">
         <NetProfitCard value={monthly?.net_profit} />
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
           <MetricCard label="Umumiy tushum" value={formatCurrency(monthly?.total_revenue)} tone="green" />
           <MetricCard label="Teacher oyligi" value={formatCurrency(monthly?.total_teacher_salary)} tone="red" />
           <MetricCard label="Admin oyligi" value={formatCurrency(monthly?.total_admin_salary)} tone="blue" />
@@ -140,37 +140,37 @@ export default function SuperAdminDashboardPage() {
       </div>
 
       <Section title="Talabalar statistikasi">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3 xl:grid-cols-6">
           {studentStats.map((item) => (
             <SmallStat key={item.label} {...item} />
           ))}
         </div>
       </Section>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
         <Section title="Oylik KPI">
-          <div className="overflow-x-auto border-x border-t border-slate-700">
-            <table className="min-w-[700px] w-full table-fixed border-collapse text-sm">
+          <div className="overflow-x-auto rounded-lg border border-slate-300">
+            <table className="min-w-[520px] w-full table-fixed border-collapse text-xs sm:min-w-[700px] sm:text-sm">
               <colgroup>
                 <col className="w-1/2" />
                 <col className="w-1/2" />
               </colgroup>
               <thead>
                 <tr className="border-b border-slate-700 bg-emerald-700 text-left text-xs font-semibold uppercase tracking-wide text-white">
-                  <th className="border-r border-slate-700 px-6 py-4">Ko&apos;rsatkich</th>
-                  <th className="px-6 py-4">Qiymat</th>
+                  <th className="border-r border-slate-700 px-3 py-2.5 sm:px-6 sm:py-4">Ko&apos;rsatkich</th>
+                  <th className="px-3 py-2.5 sm:px-6 sm:py-4">Qiymat</th>
                 </tr>
               </thead>
               <tbody>
                 {monthlyRows.map((row) => (
                   <tr key={row.label} className="border-b border-slate-500 bg-white transition-colors duration-150 hover:bg-slate-100/80">
-                    <td className="border-r border-slate-700 px-6 py-5 font-medium text-gray-900">{row.label}</td>
-                    <td className="px-6 py-5 text-base font-semibold text-gray-900">{row.value}</td>
+                    <td className="border-r border-slate-700 px-3 py-3 font-medium text-gray-900 sm:px-6 sm:py-5">{row.label}</td>
+                    <td className="px-3 py-3 text-sm font-semibold text-gray-900 sm:px-6 sm:py-5 sm:text-base">{row.value}</td>
                   </tr>
                 ))}
                 <tr className="border-b border-slate-500 bg-slate-50">
-                  <td className="border-r border-slate-700 px-6 py-5 font-semibold text-gray-900">Formula</td>
-                  <td className="px-6 py-5 font-medium text-gray-700">tushum - teacher oyligi - admin oyligi - rasxod - chegirma</td>
+                  <td className="border-r border-slate-700 px-3 py-3 font-semibold text-gray-900 sm:px-6 sm:py-5">Formula</td>
+                  <td className="px-3 py-3 font-medium text-gray-700 sm:px-6 sm:py-5">tushum - teacher oyligi - admin oyligi - rasxod - chegirma</td>
                 </tr>
               </tbody>
             </table>
@@ -179,17 +179,17 @@ export default function SuperAdminDashboardPage() {
 
         <Section title="Rasxod taqsimoti">
           {expensesByCategory.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-gray-200 p-8 text-center text-sm text-gray-500">
+            <div className="rounded-xl border border-dashed border-gray-200 p-5 text-center text-sm text-gray-500 sm:p-8">
               Bu oy uchun rasxod kategoriyalari yo&apos;q
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2.5 sm:space-y-3">
               {expensesByCategory.map((item) => {
                 const name = item.category_name || item.name || "Kategoriya";
                 const total = Number(item.total || item.amount || 0);
                 const ratio = totalExpensesByCategory > 0 ? total / totalExpensesByCategory : 0;
                 return (
-                  <div key={name} className="rounded-xl border border-gray-100 bg-gray-50 p-3">
+                  <div key={name} className="rounded-xl border border-gray-100 bg-gray-50 p-2.5 sm:p-3">
                     <div className="mb-2 flex items-center justify-between gap-3">
                       <span className="text-sm font-semibold text-gray-800">{name}</span>
                       <span className="text-sm font-bold text-gray-900">{formatCurrency(total)}</span>
@@ -210,13 +210,13 @@ export default function SuperAdminDashboardPage() {
 
       <Section
         title="Oylik fanlar bo&apos;yicha tahlil"
-        right={<span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-600">{formatNumber(subjectTotals.totalTeachers)} teacher</span>}
+        right={<span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-bold text-gray-600">{formatNumber(subjectTotals.totalTeachers)} teacher</span>}
       >
-        <div className="mb-4 overflow-x-auto border-x border-t border-slate-700">
-          <table className="min-w-[920px] w-full text-sm">
+        <div className="mb-2 overflow-x-auto rounded-lg border border-slate-300 sm:mb-4">
+          <table className="min-w-[680px] w-full text-xs sm:min-w-[920px] sm:text-sm">
             <thead>
               <tr className="border-b border-slate-700 bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
-                <th className="py-2 pl-4 pr-2">Fan nomi</th>
+                <th className="py-2 pl-3 pr-2 sm:pl-4">Fan nomi</th>
                 <th className="py-2 pr-2">Jami talabalar</th>
                 <th className="py-2 pr-2">Jami tushum</th>
                 <th className="py-2 pr-2">Teacherlar</th>
@@ -236,10 +236,10 @@ export default function SuperAdminDashboardPage() {
                       key={`subject-${String(item.subject_id)}`}
                       className="border-b border-slate-700 bg-emerald-700 font-semibold text-white shadow-sm transition-colors duration-150 hover:bg-emerald-800 hover:shadow-md"
                     >
-                      <td className="py-4 pl-4 pr-2 text-base">{item.subject_name || "-"}</td>
-                      <td className="py-4 px-2 text-base">{formatNumber(item.total_students_count)}</td>
-                      <td className="py-4 px-2 text-base">{formatCurrency(item.total_revenue)}</td>
-                      <td className="py-4 pr-4 pl-2 text-sm font-semibold text-emerald-50">{formatNumber(item.teachers_count)}</td>
+                      <td className="py-3 pl-3 pr-2 text-sm sm:py-4 sm:pl-4 sm:text-base">{item.subject_name || "-"}</td>
+                      <td className="px-2 py-3 text-sm sm:py-4 sm:text-base">{formatNumber(item.total_students_count)}</td>
+                      <td className="px-2 py-3 text-sm sm:py-4 sm:text-base">{formatCurrency(item.total_revenue)}</td>
+                      <td className="py-3 pr-3 pl-2 text-xs font-semibold text-emerald-50 sm:py-4 sm:pr-4 sm:text-sm">{formatNumber(item.teachers_count)}</td>
                     </tr>
                   );
 
@@ -253,20 +253,20 @@ export default function SuperAdminDashboardPage() {
                             key={`teacher-${String(item.subject_id)}-${String(teacher.teacher_id)}`}
                             className="border-b border-slate-500 bg-slate-50/90 transition-colors duration-150 hover:bg-slate-200/90"
                           >
-                            <td className="py-3 pr-2 pl-10 text-gray-800">
+                            <td className="py-2.5 pr-2 pl-5 text-gray-800 sm:py-3 sm:pl-10">
                               <div className="flex items-center gap-2">
                                 <span className="h-2.5 w-2.5 rounded-full bg-[#A60E07]" />
                                 <span className="font-medium">{teacher.teacher_name || "Noma'lum teacher"}</span>
                               </div>
                             </td>
-                            <td className="py-3 pr-2 pl-2 text-gray-700 border-l border-slate-500">{formatNumber(teacher.total_students_count)}</td>
-                            <td className="py-3 pr-2 pl-2 font-semibold text-[#A60E07] border-l border-slate-500">
+                            <td className="border-l border-slate-500 py-2.5 pr-2 pl-2 text-gray-700 sm:py-3">{formatNumber(teacher.total_students_count)}</td>
+                            <td className="border-l border-slate-500 py-2.5 pr-2 pl-2 font-semibold text-[#A60E07] sm:py-3">
                               <div>{formatCurrency(teacher.total_revenue)}</div>
                               <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white">
                                 <div className="h-full rounded-full bg-[#A60E07]" style={{ width: formatPercent(ratio) }} />
                               </div>
                             </td>
-                            <td className="py-3 pr-2 pl-2 border-l border-slate-500" aria-hidden="true" />
+                            <td className="border-l border-slate-500 py-2.5 pr-2 pl-2 sm:py-3" aria-hidden="true" />
                           </tr>
                         );
                       })
@@ -285,10 +285,10 @@ export default function SuperAdminDashboardPage() {
             {subjects.length > 0 ? (
               <tfoot>
                 <tr className="border-t border-slate-700 bg-slate-100 font-bold text-gray-900">
-                  <td className="py-4 pl-4 pr-2 text-base">Jami</td>
-                  <td className="py-4 px-2 text-base">{formatNumber(subjectTotals.totalStudents)}</td>
-                  <td className="py-4 px-2 text-base">{formatCurrency(subjectTotals.totalRevenue)}</td>
-                  <td className="py-4 pr-4 pl-2 text-sm">{formatNumber(subjectTotals.totalTeachers)}</td>
+                  <td className="py-3 pl-3 pr-2 text-sm sm:py-4 sm:pl-4 sm:text-base">Jami</td>
+                  <td className="px-2 py-3 text-sm sm:py-4 sm:text-base">{formatNumber(subjectTotals.totalStudents)}</td>
+                  <td className="px-2 py-3 text-sm sm:py-4 sm:text-base">{formatCurrency(subjectTotals.totalRevenue)}</td>
+                  <td className="py-3 pr-3 pl-2 text-xs sm:py-4 sm:pr-4 sm:text-sm">{formatNumber(subjectTotals.totalTeachers)}</td>
                 </tr>
               </tfoot>
             ) : null}
@@ -305,16 +305,16 @@ function NetProfitCard({ value }) {
   const isPositive = amount >= 0;
   return (
     <section
-      className="rounded-2xl p-5 text-white shadow-sm"
+      className="rounded-2xl p-3.5 text-white shadow-sm sm:p-5"
       style={{
         background: isPositive
           ? "linear-gradient(135deg, #A60E07 0%, #D9231B 100%)"
           : "linear-gradient(135deg, #7F1D1D 0%, #991B1B 100%)",
       }}
     >
-      <p className="text-sm font-semibold text-white/75">Sof foyda</p>
-      <p className="mt-3 text-3xl font-black">{formatCurrency(amount)}</p>
-      <p className="mt-3 max-w-sm text-xs font-medium text-white/80">
+      <p className="text-xs font-semibold text-white/75 sm:text-sm">Sof foyda</p>
+      <p className="mt-2 break-words text-2xl font-black sm:mt-3 sm:text-3xl">{formatCurrency(amount)}</p>
+      <p className="mt-2 max-w-sm text-[11px] font-medium text-white/80 sm:mt-3 sm:text-xs">
         Tushumdan teacher oyligi, admin oyligi, rasxod va chegirmalar ayirilgan holat.
       </p>
     </section>
@@ -329,9 +329,9 @@ function MetricCard({ label, value, tone = "red" }) {
     amber: "bg-amber-50 text-amber-800 ring-amber-100",
   };
   return (
-    <div className={`rounded-2xl p-4 ring-1 ${tones[tone] || tones.red}`}>
-      <p className="text-xs font-bold uppercase tracking-wide opacity-70">{label}</p>
-      <p className="mt-3 text-xl font-black">{value}</p>
+    <div className={`rounded-2xl p-2.5 ring-1 sm:p-4 ${tones[tone] || tones.red}`}>
+      <p className="text-[10px] font-bold uppercase tracking-wide opacity-70 sm:text-xs">{label}</p>
+      <p className="mt-1.5 break-words text-sm font-black sm:mt-3 sm:text-xl">{value}</p>
     </div>
   );
 }
@@ -346,9 +346,9 @@ function SmallStat({ label, value, tone = "red" }) {
     blue: "border-blue-200 bg-blue-50 text-blue-800",
   };
   return (
-    <div className={`rounded-2xl border px-4 py-3 ${tones[tone] || tones.red}`}>
-      <p className="text-xs font-bold uppercase tracking-wide opacity-70">{label}</p>
-      <p className="mt-2 text-2xl font-black">{formatNumber(value)}</p>
+    <div className={`rounded-2xl border px-3 py-2.5 sm:px-4 sm:py-3 ${tones[tone] || tones.red}`}>
+      <p className="text-[10px] font-bold uppercase tracking-wide opacity-70 sm:text-xs">{label}</p>
+      <p className="mt-1 text-xl font-black sm:mt-2 sm:text-2xl">{formatNumber(value)}</p>
     </div>
   );
 }

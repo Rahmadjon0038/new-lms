@@ -23,17 +23,17 @@ export default function RootLayout({ children }) {
           ) : null}
           <SuperAdminSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
           <main className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
-            <div className="sticky top-0 z-30 border-b border-gray-200 bg-white px-3 py-2 lg:hidden">
+            <div className="sticky top-0 z-30 border-b border-gray-200 bg-white px-2 py-1.5 lg:hidden">
               <button
                 type="button"
                 onClick={() => setIsSidebarOpen(true)}
-                className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-700"
+                className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-2.5 py-1.5 text-sm font-semibold text-gray-700"
               >
                 <Bars3Icon className="h-5 w-5" />
                 Menu
               </button>
             </div>
-            <div className="p-3 sm:p-4 md:p-6">
+            <div className="p-2 sm:p-4 md:p-6">
               {children}
             </div>
           </main>
