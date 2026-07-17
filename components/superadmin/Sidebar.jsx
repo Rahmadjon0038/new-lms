@@ -33,7 +33,7 @@ function SuperAdminSidebar({ isOpen = false, onClose = () => {} }) {
 
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-50 flex h-dvh w-56 transform flex-col overflow-hidden bg-white shadow-xl transition-transform duration-200 lg:static lg:translate-x-0 lg:h-screen ${
+      className={`fixed inset-y-0 left-0 z-50 flex h-dvh w-56 shrink-0 transform flex-col overflow-hidden bg-white shadow-xl transition-transform duration-200 lg:sticky lg:top-0 lg:h-full lg:translate-x-0 ${
         isOpen ? "translate-x-0" : "-translate-x-full"
       }`}
     >

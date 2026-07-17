@@ -31,6 +31,7 @@ export default function SuperAdminDashboardPage() {
   const data = query.data || {};
 
   const monthly = data?.monthly || {};
+  const students = data?.students || {};
   const subjects = Array.isArray(data?.subjects) ? data.subjects : [];
   const subjectTotals = subjects.reduce(
     (acc, item) => {
@@ -48,6 +49,7 @@ export default function SuperAdminDashboardPage() {
     { label: "Jami adminlarga berilgan oylik summasi", value: formatCurrency(monthly?.total_admin_salary) },
     { label: "Umumiy rasxod", value: formatCurrency(monthly?.total_expenses) },
     { label: "Yangi talabalar", value: formatNumber(monthly?.new_students_count) },
+    { label: "Faol davomat qilinayotgan talabalar", value: formatNumber(students?.active_students ?? students?.active_attendance_students) },
     { label: "Jami chegirma", value: formatCurrency(monthly?.total_discounts) },
     { label: "Sof foyda (alohida)", value: formatCurrency(monthly?.net_profit) },
   ];

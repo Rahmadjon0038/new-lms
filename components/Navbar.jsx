@@ -60,6 +60,7 @@ function Navbar() {
   const fullName = user ? `${user.surname} ${user.name}` : "";
   const userRole = user?.role || "Foydalanuvchi";
   const roleColorClass = getRoleColor(userRole);
+  const branchName = user?.branch_name || "Asosiy filial";
 
   return (
     <header 
@@ -71,9 +72,14 @@ function Navbar() {
         {/* 1. Logotip - mobil ekranlarda shrifti biroz kichrayadi */}
         <Link
           href="/"
-          className="text-xl md:text-2xl font-black text-white tracking-tighter transition duration-200 hover:opacity-90 shrink-0"
+          className="flex flex-col leading-none text-white transition duration-200 hover:opacity-90 shrink-0"
         >
-          TARAQQIYOT
+          <span className="text-xl md:text-2xl font-black tracking-tighter">
+            TARAQQIYOT
+          </span>
+          <span className="mt-1 max-w-[180px] truncate text-[10px] md:text-xs font-semibold tracking-wide text-white/80">
+            {branchName}
+          </span>
         </Link>
 
         {/* 2. O'ng tomon */}

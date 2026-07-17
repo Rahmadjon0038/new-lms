@@ -447,9 +447,9 @@ export default function AdminTeacherGroupsPage() {
 
   const canStudentMark = (student) => Boolean(student.can_mark) && student.monthly_status === "active";
 
-  const hasAttendanceChanges = useMemo(
-    () => Object.keys(attendanceOverrides).length > 0,
-    [attendanceOverrides]
+  const hasMarkableStudents = useMemo(
+    () => students.some((student) => canStudentMark(student)),
+    [students]
   );
 
   const handleRemoveStudentFromGroup = (student) => {
@@ -685,7 +685,7 @@ export default function AdminTeacherGroupsPage() {
         <div className="flex justify-end">
           <button
             type="button"
-            disabled={!hasAttendanceChanges || markMutation.isPending}
+            disabled={!hasMarkableStudents || markMutation.isPending}
             onClick={() => {
               const attendance_records = students
                 .filter((student) => canStudentMark(student))

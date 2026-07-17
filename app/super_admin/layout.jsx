@@ -12,7 +12,7 @@ export default function RootLayout({ children }) {
     <html lang="uz">
       <body>
         <Navbar />
-        <div className="flex min-h-screen bg-gray-50">
+        <div className="flex h-[calc(100dvh-4rem)] overflow-hidden bg-gray-50">
           {isSidebarOpen ? (
             <button
               type="button"
@@ -22,7 +22,7 @@ export default function RootLayout({ children }) {
             />
           ) : null}
           <SuperAdminSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-          <main className="min-w-0 flex-1 overflow-y-auto">
+          <main className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
             <div className="sticky top-0 z-30 border-b border-gray-200 bg-white px-3 py-2 lg:hidden">
               <button
                 type="button"
