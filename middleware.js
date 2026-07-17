@@ -44,10 +44,6 @@ export function middleware(request) {
 
   // 3. Rolga tegishli bo'lmagan sahifaga kirsa -> o'z home sahifasiga qaytarish
   if (token && role) {
-    if (role === 'super_admin' && pathname.startsWith('/super_admin/attendance')) {
-      return NextResponse.redirect(new URL('/super_admin', request.url));
-    }
-
     const roleBase = roleBaseMap[role];
     if (roleBase) {
       if (role === 'teacher' && pathname.startsWith('/teacher')) {
