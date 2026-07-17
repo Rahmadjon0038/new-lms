@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
-import { CalendarDaysIcon, ChartBarIcon, CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/outline";
+import { UserGroupIcon } from "@heroicons/react/24/outline";
 import { useGetAttendanceTeachers } from "../../../hooks/attendance";
 
 const MAIN_COLOR = "#A60E07";
+const DONE_COLOR = "#10B981";
+const PENDING_COLOR = "#F59E0B";
 
 const getTodayYmd = () => {
   const now = new Date();
@@ -30,7 +32,6 @@ export default function SuperAdminAttendancePage() {
   const totalGroups = teachers.reduce((sum, item) => sum + (Number(item.today_groups_count) || 0), 0);
   const completedGroups = teachers.reduce((sum, item) => sum + (Number(item.today_marked_groups_count) || 0), 0);
   const pendingGroups = Math.max(totalGroups - completedGroups, 0);
-  const totalStudents = teachers.reduce((sum, item) => sum + (Number(item.students_count) || 0), 0);
   const percent = totalGroups > 0 ? Math.round((completedGroups / totalGroups) * 100) : 0;
 
   if (teachersQuery.isError) {
@@ -66,26 +67,40 @@ export default function SuperAdminAttendancePage() {
         </div>
       ) : (
         <>
-          <section className="grid gap-3 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm sm:grid-cols-[260px_1fr] sm:p-5">
-            <div className="flex items-center justify-center">
-              <div
-                className="relative flex h-44 w-44 items-center justify-center rounded-full sm:h-56 sm:w-56"
-                style={{
-                  background: `conic-gradient(${MAIN_COLOR} 0 ${percent}%, #F3F4F6 ${percent}% 100%)`,
-                }}
-              >
-                <div className="flex h-32 w-32 flex-col items-center justify-center rounded-full bg-white shadow-inner sm:h-40 sm:w-40">
-                  <span className="text-4xl font-black text-gray-900 sm:text-5xl">{percent}%</span>
-                  <span className="mt-1 text-xs font-semibold text-gray-500">bajarildi</span>
-                </div>
+          <section className="rounded-2xl border border-gray-200 bg-white p-3 shadow-sm sm:p-4">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white" style={{ backgroundColor: MAIN_COLOR }}>
+                  <UserGroupIcon className="h-5 w-5" />
+                </span>
+                <h2 className="truncate text-lg font-black text-gray-900 sm:text-xl">Bugungi davomat</h2>
               </div>
+              <span className="shrink-0 rounded-full bg-gray-100 px-3 py-1.5 text-xs font-black text-gray-700 sm:text-sm">
+                Jami: {formatNumber(totalGroups)} guruh
+              </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
-              <StatCard icon={CalendarDaysIcon} label="Bugungi guruhlar" value={totalGroups} tone="blue" />
-              <StatCard icon={CheckCircleIcon} label="Davomat qilingan" value={completedGroups} tone="green" />
-              <StatCard icon={XCircleIcon} label="Qilinmagan" value={pendingGroups} tone="amber" />
-              <StatCard icon={ChartBarIcon} label="Talabalar" value={totalStudents} tone="red" />
+            <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center sm:gap-8">
+              <div className="flex shrink-0 items-center justify-center">
+                <div
+                  className="relative flex h-40 w-40 items-center justify-center rounded-full sm:h-52 sm:w-52"
+                  style={{
+                    background:
+                      totalGroups > 0
+                        ? `conic-gradient(${DONE_COLOR} 0 ${percent}%, ${PENDING_COLOR} ${percent}% 100%)`
+                        : "conic-gradient(#E5E7EB 0 100%)",
+                  }}
+                >
+                  <div className="flex h-24 w-24 items-center justify-center rounded-full bg-white sm:h-32 sm:w-32">
+                    <span className="text-3xl font-black text-gray-900 sm:text-4xl">{percent}%</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="w-full max-w-sm space-y-3 sm:max-w-md">
+                <LegendRow color={DONE_COLOR} label="Davomat qilingan" value={`${formatNumber(completedGroups)} guruh`} />
+                <LegendRow color={PENDING_COLOR} label="Qilinmagan" value={`${formatNumber(pendingGroups)} guruh`} />
+              </div>
             </div>
           </section>
 
@@ -111,8 +126,8 @@ export default function SuperAdminAttendancePage() {
                     <div key={item.teacher_id} className="rounded-xl border border-gray-100 bg-gray-50 p-2.5 sm:p-3">
                       <div className="mb-2 flex items-center justify-between gap-2">
                         <p className="truncate text-sm font-bold text-gray-900">{fullName || "Teacher"}</p>
-                        <span className="shrink-0 text-xs font-bold text-gray-600">
-                          {teacherDone}/{teacherTotal} guruh
+                        <span className="shrink-0 rounded-full bg-white px-2 py-1 text-xs font-black text-gray-700">
+                          {teacherDone}/{teacherTotal} guruh • {teacherPercent}%
                         </span>
                       </div>
                       <div className="h-2 overflow-hidden rounded-full bg-white">
@@ -133,19 +148,14 @@ export default function SuperAdminAttendancePage() {
   );
 }
 
-function StatCard({ icon: Icon, label, value, tone }) {
-  const tones = {
-    red: "bg-red-50 text-red-800",
-    green: "bg-emerald-50 text-emerald-800",
-    amber: "bg-amber-50 text-amber-800",
-    blue: "bg-blue-50 text-blue-800",
-  };
-
+function LegendRow({ color, label, value }) {
   return (
-    <div className={`rounded-2xl p-3 ${tones[tone] || tones.red}`}>
-      <Icon className="mb-3 h-6 w-6" />
-      <p className="text-[10px] font-bold uppercase tracking-wide opacity-70 sm:text-xs">{label}</p>
-      <p className="mt-1 text-2xl font-black">{formatNumber(value)}</p>
+    <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2 text-sm sm:text-base">
+      <span className="h-3 w-3 rounded-full" style={{ backgroundColor: color }} />
+      <span className="font-bold text-gray-700">{label}</span>
+      <span className="font-black" style={{ color }}>
+        {value}
+      </span>
     </div>
   );
 }

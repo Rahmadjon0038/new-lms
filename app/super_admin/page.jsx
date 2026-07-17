@@ -85,10 +85,8 @@ export default function SuperAdminDashboardPage() {
   ];
   const studentStats = [
     { label: "Jami", value: students?.total_students, tone: "red" },
-    { label: "Faol", value: students?.active_students, tone: "green" },
+    { label: "Faol", value: students?.active_attendance_students ?? students?.active_students, tone: "green" },
     { label: "Guruhsiz", value: students?.unassigned_students, tone: "gray" },
-    { label: "To'xtatgan", value: students?.stopped_students, tone: "amber" },
-    { label: "Bitirgan", value: students?.finished_students, tone: "purple" },
     { label: "To'lov jadvalida", value: students?.snapshot_students, tone: "blue" },
   ];
 
@@ -126,16 +124,6 @@ export default function SuperAdminDashboardPage() {
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
             title="Statistika oyi"
           />
-        </div>
-      </div>
-
-      <div className="grid gap-2.5 sm:gap-4 lg:grid-cols-[1.2fr_2fr]">
-        <NetProfitCard value={monthly?.net_profit} />
-        <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
-          <MetricCard label="Umumiy tushum" value={formatCurrency(monthly?.total_revenue)} tone="green" />
-          <MetricCard label="Teacher oyligi" value={formatCurrency(monthly?.total_teacher_salary)} tone="red" />
-          <MetricCard label="Admin oyligi" value={formatCurrency(monthly?.total_admin_salary)} tone="blue" />
-          <MetricCard label="Rasxodlar" value={formatCurrency(monthly?.total_expenses)} tone="amber" />
         </div>
       </div>
 
@@ -296,42 +284,6 @@ export default function SuperAdminDashboardPage() {
         </div>
       </Section>
 
-    </div>
-  );
-}
-
-function NetProfitCard({ value }) {
-  const amount = Number(value) || 0;
-  const isPositive = amount >= 0;
-  return (
-    <section
-      className="rounded-2xl p-3.5 text-white shadow-sm sm:p-5"
-      style={{
-        background: isPositive
-          ? "linear-gradient(135deg, #A60E07 0%, #D9231B 100%)"
-          : "linear-gradient(135deg, #7F1D1D 0%, #991B1B 100%)",
-      }}
-    >
-      <p className="text-xs font-semibold text-white/75 sm:text-sm">Sof foyda</p>
-      <p className="mt-2 break-words text-2xl font-black sm:mt-3 sm:text-3xl">{formatCurrency(amount)}</p>
-      <p className="mt-2 max-w-sm text-[11px] font-medium text-white/80 sm:mt-3 sm:text-xs">
-        Tushumdan teacher oyligi, admin oyligi, rasxod va chegirmalar ayirilgan holat.
-      </p>
-    </section>
-  );
-}
-
-function MetricCard({ label, value, tone = "red" }) {
-  const tones = {
-    red: "bg-red-50 text-red-800 ring-red-100",
-    green: "bg-emerald-50 text-emerald-800 ring-emerald-100",
-    blue: "bg-blue-50 text-blue-800 ring-blue-100",
-    amber: "bg-amber-50 text-amber-800 ring-amber-100",
-  };
-  return (
-    <div className={`rounded-2xl p-2.5 ring-1 sm:p-4 ${tones[tone] || tones.red}`}>
-      <p className="text-[10px] font-bold uppercase tracking-wide opacity-70 sm:text-xs">{label}</p>
-      <p className="mt-1.5 break-words text-sm font-black sm:mt-3 sm:text-xl">{value}</p>
     </div>
   );
 }
