@@ -178,9 +178,9 @@ export default function SuperAdminDashboardPage() {
                 const ratio = totalExpensesByCategory > 0 ? total / totalExpensesByCategory : 0;
                 return (
                   <div key={name} className="rounded-xl border border-gray-100 bg-gray-50 p-2.5 sm:p-3">
-                    <div className="mb-2 flex items-center justify-between gap-3">
-                      <span className="text-sm font-semibold text-gray-800">{name}</span>
-                      <span className="text-sm font-bold text-gray-900">{formatCurrency(total)}</span>
+                    <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+                      <span className="min-w-0 break-words text-sm font-semibold text-gray-800">{name}</span>
+                      <span className="shrink-0 whitespace-nowrap text-sm font-bold text-gray-900">{formatCurrency(total)}</span>
                     </div>
                     <div className="h-2 overflow-hidden rounded-full bg-white">
                       <div
