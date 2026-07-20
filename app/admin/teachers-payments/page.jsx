@@ -728,7 +728,7 @@ const TeacherPayments = () => {
                           </div>
                           <div className="rounded-md bg-slate-50 px-3 py-2.5">
                             <span className="text-gray-600">Jami tushum:</span>{" "}
-                            <span className="font-semibold text-gray-900">{fmtMoney(num(t, ["total_collected", "close_revenue"]))}</span>
+                            <span className="font-semibold text-gray-900">{fmtMoney(num(t, ["actual_collected", "total_collected", "close_revenue"]))}</span>
                           </div>
                           <div className="rounded-md bg-orange-50 px-3 py-2.5">
                             <span className="text-gray-600">Markaz chegirmasi:</span>{" "}
