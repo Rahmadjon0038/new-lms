@@ -6,6 +6,7 @@ import { toast } from 'react-hot-toast';
 
 const DiscountModal = ({ isOpen, onClose, student, month }) => {
   const [discountData, setDiscountData] = useState({
+    discount_scope: 'center',
     discount_type: 'percent',
     discount_value: '',
     description: ''
@@ -15,6 +16,7 @@ const DiscountModal = ({ isOpen, onClose, student, month }) => {
 
   const resetForm = () => {
     setDiscountData({
+      discount_scope: 'center',
       discount_type: 'percent',
       discount_value: '',
       description: ''
@@ -39,6 +41,7 @@ const DiscountModal = ({ isOpen, onClose, student, month }) => {
       const payload = {
         student_id: student.student_id,
         group_id: student.group_id,
+        discount_scope: discountData.discount_scope,
         discount_type: discountData.discount_type,
         discount_value: Number(discountData.discount_value),
         month, // Tanlangan oy (YYYY-MM format)
@@ -128,6 +131,40 @@ const DiscountModal = ({ isOpen, onClose, student, month }) => {
       
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {/* Discount Scope */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Chegirma tomoni:
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => handleChange('discount_scope', 'center')}
+                className={`rounded-lg border p-3 text-sm font-medium transition-colors ${
+                  discountData.discount_scope === 'center'
+                    ? 'border-red-500 bg-red-50 text-red-700'
+                    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Markaz tomonidan
+              </button>
+              <button
+                type="button"
+                onClick={() => handleChange('discount_scope', 'teacher')}
+                className={`rounded-lg border p-3 text-sm font-medium transition-colors ${
+                  discountData.discount_scope === 'teacher'
+                    ? 'border-red-500 bg-red-50 text-red-700'
+                    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Teacher tomonidan
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-gray-500">
+              Markaz chegirmasi teacher oyligiga ta'sir qilmaydi. Teacher chegirmasi teacher ulushidan ayriladi.
+            </p>
+          </div>
+
           {/* Discount Type */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">

@@ -77,12 +77,18 @@ const computeStudentStats = (students) => {
   let partial = 0;
   let unpaid = 0;
   let collected = 0;
+  let requiredTotal = 0;
+  let centerDiscountTotal = 0;
+  let teacherDiscountTotal = 0;
   for (const s of list) {
     const state = s?.payment_state;
     if (state === "paid") paid += 1;
     else if (state === "partial") partial += 1;
     else unpaid += 1;
     collected += Number(s?.paid_amount) || 0;
+    requiredTotal += Number(s?.required_amount) || 0;
+    centerDiscountTotal += Number(s?.center_discount_amount) || 0;
+    teacherDiscountTotal += Number(s?.teacher_discount_amount) || 0;
   }
   const total = list.length;
   const paidAny = paid + partial; // to'lov qilganlar (paid_amount > 0)
@@ -94,6 +100,9 @@ const computeStudentStats = (students) => {
     unpaid,
     paidAny,
     collected,
+    requiredTotal,
+    centerDiscountTotal,
+    teacherDiscountTotal,
     paidPct: pct(paid),
     partialPct: pct(partial),
     unpaidPct: pct(unpaid),
@@ -601,6 +610,7 @@ const TeacherPayments = () => {
                               <tr className="border-b bg-slate-50 text-left text-gray-500">
                                 <th className="py-1.5 pr-2 pl-2 sm:py-2">ID</th>
                                 <th className="py-1.5 pr-2 sm:py-2">F.I.Sh</th>
+                                <th className="py-1.5 pr-2 sm:py-2">Guruh</th>
                                 <th className="py-1.5 pr-2 sm:py-2">Telefon</th>
                                 <th className="py-1.5 pr-2 sm:py-2">Qo'shimcha telefon</th>
                                 <th className="py-1.5 pr-2 sm:py-2">Ota ismi</th>
@@ -609,20 +619,24 @@ const TeacherPayments = () => {
                                 <th className="py-1.5 pr-2 sm:py-2">Yosh</th>
                                 <th className="py-1.5 pr-2 sm:py-2">Holat</th>
                                 <th className="py-1.5 pr-2 sm:py-2">Kerakli summa</th>
-                                <th className="py-1.5 pr-2 sm:py-2">Chegirma</th>
+                                <th className="py-1.5 pr-2 sm:py-2">Markaz chegirmasi</th>
+                                <th className="py-1.5 pr-2 sm:py-2">Teacher chegirmasi</th>
                                 <th className="py-1.5 pr-2 sm:py-2">To'lagan summa</th>
                               </tr>
                             </thead>
                             <tbody>
                               {students.length === 0 ? (
                                 <tr>
-                                  <td colSpan={12} className="py-2 pl-2 text-gray-500">O'quvchi topilmadi</td>
+                                  <td colSpan={14} className="py-2 pl-2 text-gray-500">O'quvchi topilmadi</td>
                                 </tr>
                               ) : (
-                                students.map((s) => (
-                                  <tr key={String(s.student_id)} className="border-b border-gray-100">
+                                students.map((s) => {
+                                  const rowKey = `${s.student_id}-${s.group_id ?? "na"}`;
+                                  return (
+                                    <tr key={rowKey} className="border-b border-gray-100">
                                     <td className="py-1.5 pr-2 pl-2 sm:py-2">{s.student_id}</td>
                                     <td className="py-1.5 pr-2 sm:py-2">{s.full_name || `${s.surname || ""} ${s.name || ""}`.trim()}</td>
+                                    <td className="py-1.5 pr-2 sm:py-2">{s.group_name || "-"}</td>
                                     <td className="py-1.5 pr-2 sm:py-2">{s.phone || "-"}</td>
                                     <td className="py-1.5 pr-2 sm:py-2">{s.phone2 || "-"}</td>
                                     <td className="py-1.5 pr-2 sm:py-2">{s.father_name || "-"}</td>
@@ -635,16 +649,21 @@ const TeacherPayments = () => {
                                       </span>
                                     </td>
                                     <td className="py-1.5 pr-2 sm:py-2">{fmtMoney(num(s, ["required_amount"]))}</td>
-                                    <td className="py-1.5 pr-2 sm:py-2">{fmtMoney(num(s, ["discount_amount"]))}</td>
+                                    <td className="py-1.5 pr-2 sm:py-2">{fmtMoney(num(s, ["center_discount_amount"]))}</td>
+                                    <td className="py-1.5 pr-2 sm:py-2">{fmtMoney(num(s, ["teacher_discount_amount"]))}</td>
                                     <td className="py-1.5 pr-2 sm:py-2">{fmtMoney(num(s, ["paid_amount"]))}</td>
                                   </tr>
-                                ))
+                                  );
+                                })
                               )}
                             </tbody>
                             {students.length > 0 && (
                               <tfoot>
                                 <tr className="border-t-2 border-gray-200 bg-slate-50 font-semibold text-gray-800">
-                                  <td colSpan={11} className="py-2 pr-2 pl-2 text-right">Joriy oyda yig'ilgan summa:</td>
+                                  <td colSpan={10} className="py-2 pr-2 pl-2 text-right">Jami:</td>
+                                  <td className="py-2 pr-2 text-gray-900">{fmtMoney(studentStats.requiredTotal)}</td>
+                                  <td className="py-2 pr-2 text-orange-700">{fmtMoney(studentStats.centerDiscountTotal)}</td>
+                                  <td className="py-2 pr-2 text-purple-700">{fmtMoney(studentStats.teacherDiscountTotal)}</td>
                                   <td className="py-2 pr-2 text-emerald-700">{fmtMoney(studentStats.collected)}</td>
                                 </tr>
                               </tfoot>
@@ -710,6 +729,14 @@ const TeacherPayments = () => {
                           <div className="rounded-md bg-slate-50 px-3 py-2.5">
                             <span className="text-gray-600">Jami tushum:</span>{" "}
                             <span className="font-semibold text-gray-900">{fmtMoney(num(t, ["total_collected", "close_revenue"]))}</span>
+                          </div>
+                          <div className="rounded-md bg-orange-50 px-3 py-2.5">
+                            <span className="text-gray-600">Markaz chegirmasi:</span>{" "}
+                            <span className="font-semibold text-orange-700">{fmtMoney(num(t, ["center_discount_total"]))}</span>
+                          </div>
+                          <div className="rounded-md bg-purple-50 px-3 py-2.5">
+                            <span className="text-gray-600">Teacher chegirmasi:</span>{" "}
+                            <span className="font-semibold text-purple-700">{fmtMoney(num(t, ["teacher_discount_total"]))}</span>
                           </div>
                           <div className="rounded-md bg-slate-50 px-3 py-2.5">
                             <div className="flex items-center justify-between gap-2">
