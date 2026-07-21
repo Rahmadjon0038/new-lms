@@ -167,7 +167,6 @@ const PaymentModal = ({ isOpen, onClose, student, month }) => {
               <input
                 type="text"
                 inputMode="numeric"
-                pattern="[0-9]*"
                 autoComplete="off"
                 enterKeyHint="done"
                 value={formatAmountForDisplay(paymentData.amount)}
