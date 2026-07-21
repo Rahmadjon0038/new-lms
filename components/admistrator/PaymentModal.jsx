@@ -109,14 +109,14 @@ const PaymentModal = ({ isOpen, onClose, student, month }) => {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-2 backdrop-blur-sm sm:items-center sm:p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-1 backdrop-blur-sm sm:items-center sm:p-4"
       onClick={handleClose}
     >
       <div 
-        className="mx-auto flex max-h-[94vh] w-full max-w-xl flex-col overflow-hidden rounded-2xl bg-white shadow-md sm:max-h-[90vh]"
+        className="mx-auto flex h-[95vh] w-full max-w-xl flex-col overflow-hidden rounded-t-2xl bg-white shadow-md sm:h-auto sm:max-h-[90vh] sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sticky top-0 z-10 border-b border-gray-100 bg-white px-4 py-3 sm:px-6 sm:py-4">
+        <div className="sticky top-0 z-10 border-b border-gray-100 bg-white px-4 py-3 relative sm:px-6 sm:py-4">
           <button
             type="button"
             onClick={handleClose}
@@ -124,10 +124,10 @@ const PaymentModal = ({ isOpen, onClose, student, month }) => {
           >
             <XMarkIcon className="h-5 w-5" />
           </button>
-          <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-red-50 sm:h-12 sm:w-12">
+          <div className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-red-50 sm:h-12 sm:w-12">
             <CreditCardIcon className="h-5 w-5 text-red-500 sm:h-6 sm:w-6" />
           </div>
-          <h3 className="text-center text-base font-semibold text-gray-900 sm:text-lg">
+          <h3 className="text-center text-sm font-semibold text-gray-900 sm:text-lg">
             To&apos;lov qabul qilish
           </h3>
         </div>
@@ -135,19 +135,19 @@ const PaymentModal = ({ isOpen, onClose, student, month }) => {
         <div className="overflow-y-auto px-4 pb-4 pt-3 sm:px-6 sm:pb-6 sm:pt-4">
         {/* Student Information */}
         {student && (
-          <div className="mb-4 rounded-lg bg-gray-50 p-3 sm:p-4">
-              <h4 className="mb-3 text-center text-base font-medium text-gray-900 sm:text-lg">
+          <div className="mb-3 rounded-xl bg-gray-50 p-3 sm:mb-4 sm:p-4">
+              <h4 className="mb-2 text-center text-sm font-semibold text-gray-900 sm:mb-3 sm:text-lg">
                 {student.student_surname || student.surname} {student.student_name || student.name}
               </h4>
-              <div className="space-y-2.5">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs text-gray-600 sm:text-sm">Qarzlik miqdori:</span>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3">
+                <div className="flex items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 shadow-sm">
+                  <span className="text-[11px] text-gray-600 sm:text-sm">Qarzlik miqdori:</span>
                   <span className={`text-sm font-semibold sm:text-base ${parseFloat(student.debt_amount || student.group_price || 0) > 0 ? 'text-red-500' : 'text-gray-600'}`}>
                     {formatCurrency(Math.abs(parseFloat(student.debt_amount || student.group_price || 0)))}
                   </span>
                 </div>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs text-gray-600 sm:text-sm">Oylik to&apos;lov:</span>
+                <div className="flex items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 shadow-sm">
+                  <span className="text-[11px] text-gray-600 sm:text-sm">Oylik to&apos;lov:</span>
                   <span className="text-sm font-semibold text-blue-600 sm:text-base">
                     {formatCurrency(parseFloat(student.effective_required || student.required_amount || student.group_price || 0))}
                   </span>
@@ -157,18 +157,22 @@ const PaymentModal = ({ isOpen, onClose, student, month }) => {
         )}
 
         <form onSubmit={handleSubmit}>
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {/* Payment Amount */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="mb-2 block text-sm font-medium text-gray-700">
                   To&apos;lov miqdori:
             </label>
             <div className="relative">
               <input
                 type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                autoComplete="off"
+                enterKeyHint="done"
                 value={formatAmountForDisplay(paymentData.amount)}
                 onChange={(e) => handleChange('amount', e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 pr-16 text-base focus:border-transparent focus:ring-2 sm:py-3 sm:text-lg"
+                className="w-full rounded-xl border border-gray-300 px-4 py-2.5 pr-16 text-base focus:border-transparent focus:ring-2 sm:py-3 sm:text-lg"
                 style={{ '--tw-ring-color': '#A60E07' }}
                 placeholder="100,000"
                 required
@@ -181,10 +185,10 @@ const PaymentModal = ({ isOpen, onClose, student, month }) => {
 
           {/* Payment Method */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="mb-2 block text-sm font-medium text-gray-700">
                   To&apos;lov usuli:
             </label>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {paymentMethods.map((method) => {
                 const IconComponent = method.icon;
                 return (
@@ -192,7 +196,9 @@ const PaymentModal = ({ isOpen, onClose, student, month }) => {
                     key={method.value}
                     type="button"
                     onClick={() => handleChange('payment_method', method.value)}
-                    className={`flex items-center gap-2 rounded-lg border p-3 transition-colors sm:flex-col sm:justify-center ${
+                    className={`flex items-center gap-2 rounded-xl border p-3 transition-colors sm:flex-col sm:justify-center ${
+                      method.value === 'transfer' ? 'col-span-2 sm:col-span-1' : ''
+                    } ${
                       paymentData.payment_method === method.value
                         ? 'bg-red-50 text-red-700 border-red-200'
                         : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
@@ -208,13 +214,13 @@ const PaymentModal = ({ isOpen, onClose, student, month }) => {
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="mb-2 block text-sm font-medium text-gray-700">
               Izoh (ixtiyoriy):
             </label>
             <textarea
               value={paymentData.description}
               onChange={(e) => handleChange('description', e.target.value)}
-              className="w-full resize-none rounded-lg border border-gray-300 px-4 py-2.5 focus:border-transparent focus:ring-2 sm:py-3"
+              className="w-full resize-none rounded-xl border border-gray-300 px-4 py-2.5 focus:border-transparent focus:ring-2 sm:py-3"
               style={{ '--tw-ring-color': '#A60E07' }}
               rows="3"
                   placeholder="To'lov haqida qo'shimcha ma'lumot..."
@@ -222,18 +228,18 @@ const PaymentModal = ({ isOpen, onClose, student, month }) => {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:gap-3 sm:pt-4">
+          <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:gap-3 sm:pt-4">
             <button
               type="button"
                   onClick={handleClose}
-              className="w-full rounded-lg bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 sm:flex-1 sm:py-3"
+              className="w-full rounded-xl bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 sm:flex-1 sm:py-3"
             >
               Bekor qilish
             </button>
             <button
               type="submit"
               disabled={processPaymentMutation.isPending}
-              className="w-full rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-colors hover:opacity-90 disabled:opacity-50 sm:flex-1 sm:py-3"
+              className="w-full rounded-xl px-4 py-2.5 text-sm font-medium text-white transition-colors hover:opacity-90 disabled:opacity-50 sm:flex-1 sm:py-3"
               style={{ backgroundColor: '#A60E07' }}
             >
               {processPaymentMutation.isPending ? 'Bajarilmoqda...' : 'To\'lov qilish'}
