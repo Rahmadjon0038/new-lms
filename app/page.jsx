@@ -6,6 +6,7 @@ const roleHomeRedirectMap = {
   teacher: "/teacher/attendance",
   student: "/student",
   super_admin: "/super_admin",
+  "english-manager": "/english-manager",
 };
 
 export default function HomePage() {

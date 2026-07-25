@@ -23,6 +23,9 @@ const getRoleColor = (role = "") => {
   if (normalizedRole.includes("admin")) {
     return "bg-white text-red-700";
   }
+  if (normalizedRole.includes("english-manager")) {
+    return "bg-amber-100 text-amber-800";
+  }
   return "bg-gray-200 text-gray-800";
 };
 

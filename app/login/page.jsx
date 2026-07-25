@@ -20,6 +20,7 @@ function Login() {
     admin: "/admin/attendance",
     super_admin: "/super_admin",
     student: "/student",
+    "english-manager": "/english-manager",
   };
 
   const handleSubmit = (e) => {
@@ -29,11 +30,11 @@ function Login() {
       logindata,
       onSuccess: (data) => {
         const role = data?.user?.role;
-        navigate.push(roleRouteMap[role] || `/${role}`);
-        notify('ok', 'Tizimga kirish mofaqqiyatli');
         Cookies.set('accessToken', data.accessToken);
         Cookies.set('refreshToken', data.refreshToken);
         Cookies.set('role', data.user.role);
+        navigate.push(roleRouteMap[role] || `/${role}`);
+        notify('ok', 'Tizimga kirish mofaqqiyatli');
       },
       onError: (err) => {
         notify('err', err.response?.data?.message || 'Server xatosi');

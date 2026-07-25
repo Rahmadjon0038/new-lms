@@ -16,12 +16,14 @@ export function middleware(request) {
     teacher: '/teacher/attendance',
     student: '/student',
     super_admin: '/super_admin',
+    'english-manager': '/english-manager',
   };
   const roleBaseMap = {
     admin: '/admin',
     teacher: '/teacher',
     student: '/student',
     super_admin: '/super_admin',
+    'english-manager': '/english-manager',
   };
 
   // Ochiq sahifalar — login talab qilinmaydi (App Store/Play Market
