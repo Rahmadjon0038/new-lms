@@ -86,7 +86,7 @@ const computeStudentStats = (students) => {
     else if (state === "partial") partial += 1;
     else unpaid += 1;
     collected += Number(s?.paid_amount) || 0;
-    requiredTotal += Number(s?.required_amount) || 0;
+    requiredTotal += Number(s?.effective_required_amount ?? s?.effective_required ?? s?.required_amount) || 0;
     centerDiscountTotal += Number(s?.center_discount_amount) || 0;
     teacherDiscountTotal += Number(s?.teacher_discount_amount) || 0;
   }
@@ -632,6 +632,7 @@ const TeacherPayments = () => {
                               ) : (
                                 students.map((s) => {
                                   const rowKey = `${s.student_id}-${s.group_id ?? "na"}`;
+                                  const requiredAmount = num(s, ["effective_required_amount", "effective_required", "required_amount"]);
                                   return (
                                     <tr key={rowKey} className="border-b border-gray-100">
                                     <td className="py-1.5 pr-2 pl-2 sm:py-2">{s.student_id}</td>
@@ -648,7 +649,7 @@ const TeacherPayments = () => {
                                         {paymentStateLabel(s.payment_state)}
                                       </span>
                                     </td>
-                                    <td className="py-1.5 pr-2 sm:py-2">{fmtMoney(num(s, ["required_amount"]))}</td>
+                                    <td className="py-1.5 pr-2 sm:py-2">{fmtMoney(requiredAmount)}</td>
                                     <td className="py-1.5 pr-2 sm:py-2">{fmtMoney(num(s, ["center_discount_amount"]))}</td>
                                     <td className="py-1.5 pr-2 sm:py-2">{fmtMoney(num(s, ["teacher_discount_amount"]))}</td>
                                     <td className="py-1.5 pr-2 sm:py-2">{fmtMoney(num(s, ["paid_amount"]))}</td>
