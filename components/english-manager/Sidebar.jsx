@@ -12,6 +12,7 @@ import {
   Cog6ToothIcon,
   XMarkIcon,
   AcademicCapIcon,
+  ChartBarIcon,
 } from "@heroicons/react/24/outline";
 
 const MAIN_COLOR = "#A60E07";
@@ -21,6 +22,7 @@ const items = [
   { name: "Guruhlar", icon: BookOpenIcon, href: "/english-manager/groups" },
   { name: "Talabalar", icon: UsersIcon, href: "/english-manager/students" },
   { name: "To'lovlar", icon: BanknotesIcon, href: "/english-manager/payments" },
+  { name: "Statistika", icon: ChartBarIcon, href: "/english-manager/statistics" },
   { name: "Sozlamalar", icon: Cog6ToothIcon, href: "/english-manager/settings" },
 ];
 
