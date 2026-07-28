@@ -60,8 +60,7 @@ export default function EnglishManagerDashboardPage() {
 
   const subjectsQuery = useGetAllSubjects();
   const subjects = useMemo(() => subjectsQuery.data?.subjects || [], [subjectsQuery.data]);
-  const englishSubject = useMemo(() => findEnglishSubject(subjects), [subjects]);
-  const subjectId = englishSubject?.id;
+  const subjectId = useMemo(() => findEnglishSubject(subjects)?.id, [subjects]);
 
   const subjectStatsQuery = useGetSubjectStats(subjectId);
   const groupsQuery = useGetAllgroups("all", "all", subjectId, { enabled: !!subjectId });
@@ -96,29 +95,8 @@ export default function EnglishManagerDashboardPage() {
   return (
     <div className="space-y-4 sm:space-y-6">
       <section className="overflow-hidden rounded-[2rem] border border-white bg-gradient-to-br from-white via-amber-50 to-orange-50 p-5 shadow-sm sm:p-7">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-3xl">
-            <div className="inline-flex rounded-full bg-[#A60E07]/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.25em] text-[#A60E07]">
-              English manager
-            </div>
-            <h1 className="mt-4 text-3xl font-black tracking-tight text-gray-900 sm:text-4xl">
-              Hush kelibsiz, English manager.
-            </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-gray-600 sm:text-base">
-              Bu dashboard faqat English subject bilan bog'langan guruhlar, talabalar va to'lovlarni ko'rsatadi.
-              Qolgan bo'limlar ko'rinmaydi.
-            </p>
-          </div>
-
-          <div className="min-w-[220px] rounded-2xl border border-amber-100 bg-white/90 p-4 shadow-sm">
-            <div className="text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400">Current subject</div>
-            <div className="mt-2 text-lg font-black text-gray-900">
-              {englishSubject?.name || "English Language"}
-            </div>
-            <div className="mt-1 text-sm text-gray-500">
-              Subject ID: {subjectId ? formatCount(subjectId) : "-"}
-            </div>
-          </div>
+        <div className="inline-flex rounded-full bg-[#A60E07]/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.25em] text-[#A60E07]">
+          English manager
         </div>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -126,25 +104,21 @@ export default function EnglishManagerDashboardPage() {
             title="Jami guruhlar"
             value={subjectReady ? formatCount(subjectStats.total_groups || groups.length) : "-"}
             icon={BookOpenIcon}
-            note="English subject bo'yicha"
           />
           <StatCard
             title="Faol guruhlar"
             value={subjectReady ? formatCount(subjectStats.active_groups || groups.filter((item) => item.status === "active").length) : "-"}
             icon={UserGroupIcon}
-            note="Hozir darsi ketayotgan guruhlar"
           />
           <StatCard
             title="Jami talabalar"
             value={subjectReady ? formatCount(subjectStats.total_students || students.length) : "-"}
             icon={UsersIcon}
-            note="Faqat English yo'nalishi"
           />
           <StatCard
             title="Jami o'qituvchilar"
             value={subjectReady ? formatCount(subjectStats.total_teachers || 0) : "-"}
             icon={AcademicCapIcon}
-            note="English guruhlarga biriktirilgan"
           />
         </div>
       </section>

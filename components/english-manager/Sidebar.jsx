@@ -1,5 +1,4 @@
 "use client";
-/* eslint-disable react/no-unescaped-entities */
 
 import React from "react";
 import Link from "next/link";
@@ -11,7 +10,6 @@ import {
   BanknotesIcon,
   Cog6ToothIcon,
   XMarkIcon,
-  AcademicCapIcon,
   ChartBarIcon,
 } from "@heroicons/react/24/outline";
 
@@ -47,26 +45,10 @@ export default function EnglishManagerSidebar({ isOpen = false, onClose = () => 
           <div className="text-sm font-black tracking-[0.25em] text-[#A60E07] uppercase">
             English Manager
           </div>
-          <p className="text-xs text-gray-500">Only English data</p>
         </div>
         <button type="button" onClick={onClose} className="rounded-md p-1 hover:bg-gray-100">
           <XMarkIcon className="h-5 w-5 text-gray-600" />
         </button>
-      </div>
-
-      <div className="hidden border-b border-gray-100 px-5 py-5 lg:block">
-        <div className="inline-flex rounded-full bg-[#A60E07]/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.3em] text-[#A60E07]">
-          English Manager
-        </div>
-        <div className="mt-3 flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#A60E07] to-[#f97316] text-white shadow-lg">
-            <AcademicCapIcon className="h-5 w-5" />
-          </div>
-          <div>
-            <div className="text-sm font-bold text-gray-900">English dashboard</div>
-            <div className="text-xs text-gray-500">Faqat ingliz tili bo'limi</div>
-          </div>
-        </div>
       </div>
 
       <nav className="flex-1 overflow-y-auto px-4 py-5">
@@ -88,13 +70,6 @@ export default function EnglishManagerSidebar({ isOpen = false, onClose = () => 
               </Link>
             );
           })}
-        </div>
-
-        <div className="mt-6 rounded-2xl border border-amber-100 bg-amber-50 p-4">
-          <div className="text-xs font-bold uppercase tracking-[0.3em] text-amber-700">Scope</div>
-          <p className="mt-2 text-sm leading-6 text-amber-900">
-            Bu bo'lim faqat English subject bilan bog'langan ma'lumotlarni ko'rsatadi.
-          </p>
         </div>
       </nav>
     </aside>
