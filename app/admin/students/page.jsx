@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useGetAllStudents, useGetDuplicateStudents, useUpdateStudentStatus, useUpdateStudentInfo, useDeleteStudent } from '../../../hooks/students';
+import { useGetAllStudents, useUpdateStudentStatus, useUpdateStudentInfo, useDeleteStudent } from '../../../hooks/students';
 import { usegetTeachers } from '../../../hooks/teacher';
 import { useGetAllSubjects } from '../../../hooks/subjects';
 import { usegetProfile } from '../../../hooks/user';
@@ -215,112 +215,6 @@ const StudentDeleteModal = ({ isOpen, onClose, student, onConfirm, isLoading }) 
     );
 };
 
-const DuplicateStudentsModal = ({ isOpen, onClose, isLoading, groups = [] }) => {
-    if (!isOpen) return null;
-
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3" onClick={onClose}>
-            <div className="w-full max-w-6xl rounded-2xl bg-slate-950 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-                <div className="flex items-start justify-between gap-4 border-b border-slate-800 px-4 py-4">
-                    <div>
-                        <h3 className="text-lg font-semibold text-white">Bir xil talabalar</h3>
-                        <p className="text-xs text-slate-400">
-                            Telefon, qo'shimcha telefon, ota telefoni yoki username bo'yicha topilgan takrorlar.
-                        </p>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="rounded-lg border border-slate-700 p-2 text-slate-300 transition hover:bg-slate-900"
-                        aria-label="Modalni yopish"
-                    >
-                        <X className="h-4 w-4" />
-                    </button>
-                </div>
-
-                <div className="max-h-[80vh] overflow-y-auto px-4 py-4">
-                    {isLoading ? (
-                        <div className="rounded-xl border border-slate-800 bg-slate-900 p-4 text-sm text-slate-300">
-                            Talabalar tekshirilmoqda...
-                        </div>
-                    ) : groups.length === 0 ? (
-                        <div className="rounded-xl border border-slate-800 bg-slate-900 p-4 text-sm text-slate-300">
-                            Takrorlangan talabalar topilmadi.
-                        </div>
-                    ) : (
-                        <div className="space-y-4">
-                            {groups.map((group, groupIndex) => (
-                                <div key={group.id} className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
-                                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-slate-800 px-4 py-3">
-                                        <div>
-                                            <p className="text-sm font-semibold text-white">
-                                                {groupIndex + 1}. {group.field_label || group.fieldLabel}
-                                            </p>
-                                            <p className="break-all text-xs text-slate-400">
-                                                Qiymat: {group.field_value || group.fieldValue}
-                                            </p>
-                                        </div>
-                                        <span className="rounded-full bg-emerald-900/80 px-3 py-1 text-xs font-semibold text-emerald-200 ring-1 ring-emerald-700">
-                                            {group.count || group.students.length} ta yozuv
-                                        </span>
-                                    </div>
-
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full min-w-[900px] text-xs sm:text-sm">
-                                            <thead className="bg-slate-950 text-slate-300">
-                                                <tr className="text-left">
-                                                    <th className="px-4 py-2">#</th>
-                                                    <th className="px-4 py-2">F.I.Sh</th>
-                                                    <th className="px-4 py-2">Telefon</th>
-                                                    <th className="px-4 py-2">Qo'shimcha</th>
-                                                    <th className="px-4 py-2">Ota telefoni</th>
-                                                    <th className="px-4 py-2">Guruh</th>
-                                                    <th className="px-4 py-2">Holat</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-slate-800 text-slate-100">
-                                                {group.students.map((student, index) => (
-                                                    <tr key={student._rowKey} className="align-top">
-                                                        <td className="px-4 py-2 text-slate-400">{index + 1}</td>
-                                                        <td className="px-4 py-2 font-medium text-white">
-                                                            {student.surname} {student.name}
-                                                        </td>
-                                                        <td className="px-4 py-2 text-slate-300">{student.phone || '-'}</td>
-                                                        <td className="px-4 py-2 text-slate-300">{student.phone2 || '-'}</td>
-                                                        <td className="px-4 py-2 text-slate-300">{student.father_phone || '-'}</td>
-                                                        <td className="px-4 py-2 text-slate-300">
-                                                            {student.group_name || student.groups?.[0]?.group_name || 'Guruhga biriktirilmagan'}
-                                                        </td>
-                                                        <td className="px-4 py-2">
-                                                            <span className="inline-flex rounded-full bg-slate-800 px-2 py-0.5 text-[11px] font-semibold text-slate-200 ring-1 ring-slate-700">
-                                                                {student.group_status || student.groups?.[0]?.group_status || 'unknown'}
-                                                            </span>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-
-                <div className="border-t border-slate-800 px-4 py-3">
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
-                    >
-                        Yopish
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-};
-
 const getTeacherIdFromProfile = (profile) => {
     const payload = profile?.data || profile;
     return (
@@ -429,7 +323,6 @@ const StudentsPageInner = () => {
     const [statusDropdownOpen, setStatusDropdownOpen] = useState(null); // Status dropdown state
     const [page, setPage] = useState(1);
     const [limit] = useState(20);
-    const [showDuplicateModal, setShowDuplicateModal] = useState(false);
     const filtersDropdownRef = useRef(null);
     const desktopFilterRef = useRef(null);
 
@@ -438,15 +331,6 @@ const StudentsPageInner = () => {
     const { data: subjectsData } = useGetAllSubjects();
     const { data: profileData } = usegetProfile();
     const teacherId = String(getTeacherIdFromProfile(profileData) || '');
-    const {
-        data: duplicateStudentsData,
-        isLoading: duplicateStudentsLoading,
-    } = useGetDuplicateStudents({
-        enabled: showDuplicateModal,
-        staleTime: 1000 * 60 * 5,
-        refetchOnWindowFocus: false
-    });
-
     // URL -> state sync is intentionally one-time via initialFilters to avoid UI flicker.
 
     useEffect(() => {
@@ -507,7 +391,6 @@ const StudentsPageInner = () => {
         keepPreviousData: true
     });
     const rawStudents = useMemo(() => (Array.isArray(backendData?.students) ? backendData.students : []), [backendData]);
-    const duplicateGroups = useMemo(() => Array.isArray(duplicateStudentsData?.groups) ? duplicateStudentsData.groups : [], [duplicateStudentsData]);
     const hasLoadedStudents = Boolean(
         backendData &&
         (backendData?.success ||
@@ -1155,16 +1038,6 @@ const StudentsPageInner = () => {
                                 </div>
                             ) : null}
                         </div>
-
-                        <button
-                            type="button"
-                            onClick={() => setShowDuplicateModal(true)}
-                            className="inline-flex h-10 shrink-0 items-center gap-1 rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm font-semibold text-slate-100 transition hover:bg-slate-800 md:order-2 lg:order-none"
-                        >
-                            <Users className="h-4 w-4" />
-                            <span className="hidden sm:inline">Dublikatlar</span>
-                            <span className="sm:hidden">Dublikat</span>
-                        </button>
 
                         <Link href={`${basePath}/students/new`} className="md:hidden">
                             <button
@@ -2007,12 +1880,6 @@ const StudentsPageInner = () => {
                 student={studentDeleteModal.student}
                 onConfirm={handleStudentDelete}
                 isLoading={deleteStudentMutation.isLoading}
-            />
-            <DuplicateStudentsModal
-                isOpen={showDuplicateModal}
-                onClose={() => setShowDuplicateModal(false)}
-                isLoading={duplicateStudentsLoading}
-                groups={duplicateGroups}
             />
             {showScrollTop && (
                 <button
