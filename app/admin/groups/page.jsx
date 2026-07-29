@@ -130,6 +130,7 @@ const GroupCard = ({ group, onToggleGroupStatus, onStartClass, onDelete, showDel
     const startDate = group.class_start_date
         ? formatDateYMD(group.class_start_date)
         : "Belgilanmagan";
+    const canStartClass = Boolean(group.teacher_id);
 
     // Updated status logic to include class_status
     const getStatusInfo = () => {
@@ -247,13 +248,19 @@ const GroupCard = ({ group, onToggleGroupStatus, onStartClass, onDelete, showDel
                 </div>
 
                 <div className="space-y-2 text-sm text-gray-700">
-                    <p className="flex items-start">
-                        <UsersIcon className="h-4 w-4 mr-2 text-gray-400" />
-                        <span>Holati: <span className="ml-1 font-semibold text-[#A60E07]">{statusText}</span></span>
+                <p className="flex items-start">
+                    <UsersIcon className="h-4 w-4 mr-2 text-gray-400" />
+                    <span>Holati: <span className="ml-1 font-semibold text-[#A60E07]">{statusText}</span></span>
+                </p>
+                {!group.teacher_id && (
+                    <p className="flex items-start text-xs font-medium text-amber-700">
+                        <span className="mr-2 text-amber-500">!</span>
+                        Darsni boshlash uchun o&apos;qituvchi biriktiring.
                     </p>
-                    <p className="flex items-start">
-                        <CalendarDaysIcon className="h-4 w-4 mr-2 text-gray-400" />
-                        <span>Jadval: <span className="ml-1 font-semibold break-words">{scheduleDays}</span></span>
+                )}
+                <p className="flex items-start">
+                    <CalendarDaysIcon className="h-4 w-4 mr-2 text-gray-400" />
+                    <span>Jadval: <span className="ml-1 font-semibold break-words">{scheduleDays}</span></span>
                     </p>
                     <p className="flex items-start">
                         <Clock className="h-4 w-4 mr-2 text-gray-400" />
@@ -338,8 +345,13 @@ const GroupCard = ({ group, onToggleGroupStatus, onStartClass, onDelete, showDel
                 {isDraft && (
                     <button
                         onClick={() => onStartClass(group.id)}
-                        className="flex w-full items-center justify-center rounded-lg bg-green-600 px-4 py-2.5 font-semibold text-white shadow-md transition duration-150 hover:bg-green-700 sm:w-auto"
-                        disabled={updateGroupLoading}
+                        className={`flex w-full items-center justify-center rounded-lg px-4 py-2.5 font-semibold text-white shadow-md transition duration-150 sm:w-auto ${
+                            canStartClass
+                                ? "bg-green-600 hover:bg-green-700"
+                                : "cursor-not-allowed bg-green-400 opacity-70"
+                        }`}
+                        disabled={updateGroupLoading || !canStartClass}
+                        title={canStartClass ? "Darsni boshlash" : "O'qituvchi biriktirilmagan"}
                     >
                         <PlayIcon className="mr-2 h-5 w-5" />
                         Darsni Boshlash

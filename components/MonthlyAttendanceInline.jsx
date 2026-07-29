@@ -399,31 +399,12 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
     return parsedLessonDate.getTime() > todayStart.getTime();
   };
 
-  const isLessonWithinMembership = (lessonDate, membershipPeriods = []) => {
-    if (!Array.isArray(membershipPeriods) || membershipPeriods.length === 0) {
-      return true;
-    }
-
-    const lesson = parseYmdDate(lessonDate);
-    if (!lesson) return true;
-
-    return membershipPeriods.some((period) => {
-      const joinedAt = parseYmdDate(period?.joined_at);
-      const leftAt = parseYmdDate(period?.left_at);
-      if (!joinedAt) return false;
-      if (lesson < joinedAt) return false;
-      if (leftAt && lesson > leftAt) return false;
-      return true;
-    });
-  };
-
   const isHolidayFlag = (value) =>
     value === true || value === 1 || value === "1" || value === "true";
 
-  const renderAttendanceSymbol = (attendanceRecord, lessonDate, membershipPeriods = [], isHoliday = false) => {
+  const renderAttendanceSymbol = (attendanceRecord, lessonDate, isHoliday = false) => {
     const status = attendanceRecord?.status;
     const isMarked = attendanceRecord?.is_marked;
-    const isInMembership = isLessonWithinMembership(lessonDate, membershipPeriods);
 
     if (isHoliday) {
       return (
@@ -431,9 +412,6 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
           Dam
         </span>
       );
-    }
-    if (!isInMembership) {
-      return <span className="text-gray-400 text-xs">-</span>;
     }
     if (!attendanceRecord || isMarked === false) {
       return <span className="text-gray-400 text-xs">-</span>;
@@ -564,7 +542,6 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
                             attendanceMap[lesson.lesson_id] ||
                             attendanceByDate[String(lesson?.date || "").slice(0, 10)],
                           lesson.date,
-                          student.membership_periods || [],
                           lessonIsHoliday ||
                             isHolidayFlag(
                               attendanceMap[lesson.id]?.is_holiday ||

@@ -72,6 +72,7 @@ function TeacherAttendancePageContent() {
 
   const groupsQuery = useGetMyAttendanceGroups({
     month: selectedMonth || undefined,
+    date: TODAY_DATE,
   });
 
   const groups = useMemo(() => {
@@ -533,12 +534,9 @@ function TeacherAttendancePageContent() {
             {groups.map((group) => {
               const groupId = group.group_id || group.id;
               const isActive = String(groupId) === activeGroupId;
-              const markedCount = Number(group.today_marked_students_count ?? 0);
-              const activeCount = Number(group.today_active_students_count ?? 0);
               const hasTodayAttendance =
-                group.today_attendance_completed === true ||
-                group.today_attendance_fully_completed === true ||
-                (activeCount > 0 && markedCount >= activeCount);
+                group.today_report_sent === true ||
+                group.today_report_fully_sent === true;
               return (
                 <button
                   type="button"
@@ -635,7 +633,7 @@ function TeacherAttendancePageContent() {
                 {lessons.map((lesson) => {
                   const lessonId = String(lesson.id || lesson.lesson_id);
                   const isActiveLesson = lessonId === String(activeLessonId);
-                  const isCompleted = lesson.attendance_completed === true;
+                  const isCompleted = lesson.report_sent === true;
                   const isHoliday = isHolidayFlag(lesson.is_holiday);
                   return (
                     <div key={lessonId}>

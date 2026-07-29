@@ -278,6 +278,18 @@ const getStudentPassword = (student) => (
     ''
 );
 
+const getPrimaryStudentGroup = (student) => {
+    const groups = Array.isArray(student?.groups) ? student.groups : [];
+    if (groups.length === 0) return null;
+
+    return (
+        groups.find((group) => group?.group_status === 'active' && !group?.group_left_at) ||
+        groups.find((group) => group?.group_status === 'active') ||
+        groups[0] ||
+        null
+    );
+};
+
 const StudentsPageInner = () => {
     const pathname = usePathname();
     const router = useRouter();
@@ -451,58 +463,42 @@ const StudentsPageInner = () => {
     // Ma'lumot kelganda state-ni yangilash
     useEffect(() => {
         if (hasLoadedStudents) {
-            // Har bir guruh uchun alohida qator yaratish
-            const expandedStudents = [];
-            rawStudents.forEach(student => {
-                if (student.groups && student.groups.length > 0) {
-                    // Har bir guruh uchun alohida qator
-                    student.groups.forEach(group => {
-                        expandedStudents.push({
-                            ...student,
-                            group_id: group.group_id,
-                            group_name: group.group_name,
-                            group_status: group.group_status,
-                            group_admin_status: group.group_admin_status,
-                            group_class_status: group.group_class_status,
-                            teacher_name: group.teacher_name,
-                            subject_name: group.subject_name,
-                            room_number: group.room_number,
-                            room_capacity: group.room_capacity,
-                            has_projector: group.has_projector,
-                            group_joined_at: group.group_joined_at,
-                            group_left_at: group.group_left_at,
-                            price: group.price,
-                            class_start_date: group.class_start_date,
-                            started_at: group.started_at
-                        });
-                    });
-                } else {
-                    // Guruhsiz studentlar
-                    expandedStudents.push({
-                        ...student,
-                        group_id: null,
-                        group_name: 'Guruhga biriktirilmagan',
-                        group_status: null
-                    });
-                }
+            const normalizedStudents = rawStudents.map((student) => {
+                const primaryGroup = getPrimaryStudentGroup(student);
+
+                return {
+                    ...student,
+                    group_id: primaryGroup?.group_id || null,
+                    group_name: primaryGroup?.group_name || 'Guruhga biriktirilmagan',
+                    group_status: primaryGroup?.group_status || null,
+                    group_admin_status: primaryGroup?.group_admin_status || null,
+                    group_class_status: primaryGroup?.group_class_status || null,
+                    teacher_name: primaryGroup?.teacher_name || null,
+                    subject_name: primaryGroup?.subject_name || student.subject_name || null,
+                    room_number: primaryGroup?.room_number || null,
+                    room_capacity: primaryGroup?.room_capacity || null,
+                    has_projector: primaryGroup?.has_projector || null,
+                    group_joined_at: primaryGroup?.group_joined_at || null,
+                    group_left_at: primaryGroup?.group_left_at || null,
+                    price: primaryGroup?.price || null,
+                    class_start_date: primaryGroup?.class_start_date || null,
+                    started_at: primaryGroup?.started_at || null,
+                };
             });
-            setStudents(expandedStudents);
+
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setStudents(normalizedStudents);
             setStats(backendData?.stats || backendData?.data?.stats || null);
             setAllStudents((prev) => {
-                if (currentPage <= 1) return expandedStudents;
-                const seen = new Set(prev.map((s) => `${s.id}-${s.group_id ?? 'none'}`));
-                const merged = [...prev];
-                expandedStudents.forEach((s) => {
-                    const key = `${s.id}-${s.group_id ?? 'none'}`;
-                    if (!seen.has(key)) {
-                        seen.add(key);
-                        merged.push(s);
-                    }
+                if (currentPage <= 1) return normalizedStudents;
+                const merged = new Map(prev.map((student) => [student.id, student]));
+                normalizedStudents.forEach((student) => {
+                    merged.set(student.id, student);
                 });
-                return merged;
+                return Array.from(merged.values());
             });
         }
-    }, [backendData, currentPage]);
+    }, [backendData, currentPage, hasLoadedStudents, rawStudents]);
 
     useEffect(() => {
         if (isLoading) return;

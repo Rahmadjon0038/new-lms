@@ -59,25 +59,7 @@ export const useGetMyAttendanceGroups = (filters = {}) => {
     });
 };
 
-// 2️⃣ Bugungi darsni yaratish
-// POST /api/attendance/groups/{group_id}/create-lesson
-const createTodayLesson = async (group_id) => {
-    const response = await instance.post(`/api/attendance/groups/${group_id}/create-lesson`);
-    return response.data;
-}
-
-export const useCreateTodayLesson = () => {
-    const queryClient = useQueryClient();
-    
-    return useMutation({
-        mutationFn: createTodayLesson,
-        onSuccess: () => {
-            queryClient.invalidateQueries(['attendance-groups']);
-        }
-    });
-}
-
-// 3️⃣ Talabaning oylik davomat hisoboti (snapshot API)
+// 2️⃣ Talabaning oylik davomat hisoboti (snapshot API)
 // GET /api/snapshots/attendance?group_id={group_id}&month={month}[&student_id={student_id}]
 const getStudentMonthlyAttendance = async (group_id, month, student_id = null) => {
     const params = new URLSearchParams();

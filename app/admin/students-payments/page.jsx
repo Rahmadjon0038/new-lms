@@ -154,6 +154,7 @@ const StudentPaymentsInner = () => {
     const [removeStudentLoading, setRemoveStudentLoading] = useState(false);
     const [snapshotLoading, setSnapshotLoading] = useState(false);
     const [snapshotDeleteLoading, setSnapshotDeleteLoading] = useState(false);
+    const showSnapshotDeleteButton = false;
     const [historyFilters, setHistoryFilters] = useState({
         month: null,
         groupId: null,
@@ -814,25 +815,27 @@ const StudentPaymentsInner = () => {
                                 </>
                             )}
                         </button>
-                        <button
-                            onClick={handleDeleteSnapshot}
-                            disabled={snapshotDeleteLoading || !filters.month}
-                            className="inline-flex w-full items-center justify-center gap-1 rounded-lg bg-red-600 px-2 py-1.5 text-xs font-medium text-white transition-colors hover:opacity-90 focus:ring-2 focus:ring-offset-2 disabled:opacity-50 sm:gap-2 sm:px-4 sm:py-2 sm:text-sm"
-                            title="Tanlangan oy uchun to'lov jadvalini o'chirish"
-                        >
-                            {snapshotDeleteLoading ? (
-                                <>
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                    <span className="hidden sm:inline">O'chirilmoqda...</span>
-                                </>
-                            ) : (
-                                <>
-                                    <TrashIcon className="h-4 w-4" />
-                                    <span className="hidden sm:inline">Jadvalni o'chirish</span>
-                                    <span className="sm:hidden">O'chirish</span>
-                                </>
-                            )}
-                        </button>
+                        {showSnapshotDeleteButton ? (
+                            <button
+                                onClick={handleDeleteSnapshot}
+                                disabled={snapshotDeleteLoading || !filters.month}
+                                className="inline-flex w-full items-center justify-center gap-1 rounded-lg bg-red-600 px-2 py-1.5 text-xs font-medium text-white transition-colors hover:opacity-90 focus:ring-2 focus:ring-offset-2 disabled:opacity-50 sm:gap-2 sm:px-4 sm:py-2 sm:text-sm"
+                                title="Tanlangan oy uchun to'lov jadvalini o'chirish"
+                            >
+                                {snapshotDeleteLoading ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                        <span className="hidden sm:inline">O'chirilmoqda...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <TrashIcon className="h-4 w-4" />
+                                        <span className="hidden sm:inline">Jadvalni o'chirish</span>
+                                        <span className="sm:hidden">O'chirish</span>
+                                    </>
+                                )}
+                            </button>
+                        ) : null}
                         <div className="relative">
                             <button
                                 onClick={handleCreateSnapshotsForNew}
