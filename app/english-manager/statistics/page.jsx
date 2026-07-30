@@ -32,100 +32,63 @@ const monthLabel = (value) => {
   return `${months[month - 1] || month} ${year}`;
 };
 
+const dayLabel = (value) => {
+  if (!value) return "-";
+  const raw = String(value).slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return String(value);
+  const date = new Date(`${raw}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return raw;
+  const months = [
+    "Yanvar",
+    "Fevral",
+    "Mart",
+    "Aprel",
+    "May",
+    "Iyun",
+    "Iyul",
+    "Avgust",
+    "Sentabr",
+    "Oktabr",
+    "Noyabr",
+    "Dekabr",
+  ];
+  const weekdays = [
+    "Yakshanba",
+    "Dushanba",
+    "Seshanba",
+    "Chorshanba",
+    "Payshanba",
+    "Juma",
+    "Shanba",
+  ];
+  return `${raw.slice(8, 10)} ${months[date.getMonth()]} ${raw.slice(0, 4)} • ${weekdays[date.getDay()]}`;
+};
+
+const formatTimeRange = (value) => {
+  const raw = String(value || "").trim();
+  if (!raw) return "-";
+
+  const normalizeClock = (part) => {
+    const match = String(part || "")
+      .trim()
+      .match(/(\d{2}:\d{2})/);
+    return match ? match[1] : String(part || "").trim();
+  };
+
+  const cleaned = raw.replace(/[–—]/g, "-");
+  const parts = cleaned.split("-").map((part) => part.trim());
+  if (parts.length === 2) {
+    return `${normalizeClock(parts[0])}-${normalizeClock(parts[1])}`;
+  }
+
+  return cleaned;
+};
+
 const statusTone = (feedback) => {
   const status = String(feedback || "").toUpperCase();
   if (status === "PERFECT") return "bg-blue-100 text-blue-700 border-blue-200";
   if (status === "GOOD") return "bg-emerald-100 text-emerald-700 border-emerald-200";
   return "bg-red-100 text-red-700 border-red-200";
-};
-
-const Modal = ({ report, onClose }) => {
-  if (!report) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-3 sm:items-center">
-      <div className="max-h-[92dvh] w-full max-w-5xl overflow-hidden rounded-[2rem] bg-white shadow-2xl">
-        <div className="flex items-start justify-between gap-4 border-b border-gray-100 p-5">
-          <div>
-            <div className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#A60E07]">
-              Hisobot
-            </div>
-            <h3 className="mt-2 text-xl font-black text-gray-900">{report.group_name}</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              {report.lesson_date} • {report.lesson_time} • {report.teacher_name || "-"}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-2xl border border-gray-200 p-2 text-gray-500 hover:bg-gray-50"
-          >
-            ✕
-          </button>
-        </div>
-
-        <div className="max-h-[calc(92dvh-90px)] overflow-auto p-5">
-          <div className="grid gap-3 sm:grid-cols-4">
-            <div className="rounded-2xl bg-gray-50 p-4">
-              <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Total</div>
-              <div className="mt-2 text-2xl font-black text-gray-900">{report.total}</div>
-            </div>
-            <div className="rounded-2xl bg-gray-50 p-4">
-              <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Percent</div>
-              <div className="mt-2 text-2xl font-black text-gray-900">{report.percent}%</div>
-            </div>
-            <div className="rounded-2xl bg-gray-50 p-4">
-              <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Feedback</div>
-              <div className={`mt-2 inline-flex rounded-full border px-3 py-1.5 text-sm font-black ${statusTone(report.feedback)}`}>
-                {report.feedback}
-              </div>
-            </div>
-            <div className="rounded-2xl bg-gray-50 p-4">
-              <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Sana</div>
-              <div className="mt-2 text-lg font-black text-gray-900">{monthLabel(report.report_month)}</div>
-            </div>
-          </div>
-
-          <div className="mt-5 overflow-hidden rounded-[1.75rem] border border-gray-100">
-            <table className="min-w-full text-left text-sm">
-              <thead className="bg-[#0B4A7A] text-white">
-                <tr>
-                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-[0.2em]">Talaba</th>
-                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-[0.2em]">Homework</th>
-                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-[0.2em]">Vocab</th>
-                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-[0.2em]">Attend</th>
-                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-[0.2em]">Part</th>
-                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-[0.2em]">Total</th>
-                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-[0.2em]">Pct</th>
-                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-[0.2em]">FB</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 bg-white">
-                {(report.rows || []).map((row) => (
-                  <tr key={row.student_id}>
-                    <td className="px-4 py-3">
-                      <div className="font-semibold text-gray-900">{row.student_name || "-"}</div>
-                    </td>
-                    <td className="px-4 py-3 font-bold text-gray-900">{row.homework}</td>
-                    <td className="px-4 py-3 font-bold text-gray-900">{row.vocabulary}</td>
-                    <td className="px-4 py-3 font-bold text-gray-900">{row.attendance}</td>
-                    <td className="px-4 py-3 font-bold text-gray-900">{row.participation}</td>
-                    <td className="px-4 py-3 font-bold text-gray-900">{row.total}</td>
-                    <td className="px-4 py-3 font-bold text-gray-900">{row.percent}%</td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-black ${statusTone(row.feedback)}`}>
-                        {row.feedback}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 };
 
 export default function EnglishManagerStatisticsPage() {
@@ -136,8 +99,9 @@ export default function EnglishManagerStatisticsPage() {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [selected, setSelected] = useState(null);
-  const [detailLoading, setDetailLoading] = useState(false);
+  const [expandedLessonId, setExpandedLessonId] = useState(null);
+  const [detailsByLessonId, setDetailsByLessonId] = useState({});
+  const [loadingLessonId, setLoadingLessonId] = useState(null);
 
   useEffect(() => {
     let alive = true;
@@ -196,15 +160,20 @@ export default function EnglishManagerStatisticsPage() {
     [teachers, teacherId]
   );
 
-  const openDetail = async (lessonId) => {
-    setDetailLoading(true);
+  const toggleDetail = async (lessonId) => {
+    setExpandedLessonId((current) => (current === lessonId ? null : lessonId));
+    if (detailsByLessonId[lessonId]) return;
+    setLoadingLessonId(lessonId);
     try {
       const response = await instance.get(`/api/teacher-statistics/lessons/${lessonId}`);
-      setSelected(response.data?.data || null);
+      setDetailsByLessonId((current) => ({
+        ...current,
+        [lessonId]: response.data?.data || null,
+      }));
     } catch (err) {
       setError(err?.response?.data?.message || "Hisobot yuklanmadi");
     } finally {
-      setDetailLoading(false);
+      setLoadingLessonId(null);
     }
   };
 
@@ -325,7 +294,7 @@ export default function EnglishManagerStatisticsPage() {
           <div className="space-y-5">
             {groupedByDate.map(([date, items]) => (
               <div key={date}>
-                <div className="mb-3 text-sm font-black text-gray-900">{date}</div>
+                <div className="mb-3 text-sm font-black text-gray-900">{dayLabel(date)}</div>
                 <div className="overflow-hidden rounded-[1.5rem] border border-gray-100">
                   <table className="min-w-full text-left text-sm">
                     <thead className="bg-[#0B4A7A] text-white">
@@ -339,29 +308,115 @@ export default function EnglishManagerStatisticsPage() {
                     </thead>
                     <tbody className="divide-y divide-gray-100 bg-white">
                       {items.map((report) => (
-                        <tr key={report.id}>
-                          <td className="px-4 py-4 font-semibold text-gray-900">{report.lesson_time || "-"}</td>
-                          <td className="px-4 py-4">
-                            <div className="font-semibold text-gray-900">{report.group_name}</div>
-                            <div className="text-xs text-gray-500">{report.subject_name || "English"}</div>
-                          </td>
-                          <td className="px-4 py-4 text-gray-700">{report.teacher_name || "-"}</td>
-                          <td className="px-4 py-4">
-                            <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-black ${statusTone(report.feedback)}`}>
-                              {report.feedback}
-                            </span>
-                          </td>
-                          <td className="px-4 py-4">
-                            <button
-                              type="button"
-                              onClick={() => openDetail(report.lesson_id)}
-                              className="inline-flex items-center gap-2 rounded-full border border-[#A60E07]/20 bg-[#A60E07]/5 px-3 py-2 text-xs font-bold text-[#A60E07] transition hover:bg-[#A60E07]/10"
-                            >
-                              <EyeIcon className="h-4 w-4" />
-                              Ko&apos;rish
-                            </button>
-                          </td>
-                        </tr>
+                        <React.Fragment key={report.id}>
+                          <tr>
+                            <td className="px-4 py-4 font-semibold text-gray-900">{formatTimeRange(report.lesson_time)}</td>
+                            <td className="px-4 py-4">
+                              <div className="font-semibold text-gray-900">{report.group_name}</div>
+                              <div className="text-xs text-gray-500">{report.subject_name || "English"}</div>
+                            </td>
+                            <td className="px-4 py-4 text-gray-700">{report.teacher_name || "-"}</td>
+                            <td className="px-4 py-4">
+                              <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-black ${statusTone(report.feedback)}`}>
+                                {report.feedback}
+                              </span>
+                            </td>
+                            <td className="px-4 py-4">
+                              <button
+                                type="button"
+                                onClick={() => toggleDetail(report.lesson_id)}
+                                className="inline-flex items-center gap-2 rounded-full border border-[#A60E07]/20 bg-[#A60E07]/5 px-3 py-2 text-xs font-bold text-[#A60E07] transition hover:bg-[#A60E07]/10"
+                              >
+                                <EyeIcon className="h-4 w-4" />
+                                {expandedLessonId === report.lesson_id ? "Yopish" : "Ko'rish"}
+                              </button>
+                            </td>
+                          </tr>
+                          {expandedLessonId === report.lesson_id ? (
+                            <tr>
+                              <td colSpan={5} className="bg-[#F8FAFC] px-4 pb-4">
+                                {loadingLessonId === report.lesson_id ? (
+                                  <div className="rounded-2xl border border-dashed border-gray-200 bg-white px-4 py-5 text-sm font-semibold text-gray-500">
+                                    Hisobot yuklanmoqda...
+                                  </div>
+                                ) : detailsByLessonId[report.lesson_id] ? (
+                                  <div className="rounded-2xl border border-gray-200 bg-white p-4">
+                                    <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                                      <div>
+                                        <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">
+                                          Hisobot tafsiloti
+                                        </div>
+                                        <div className="mt-1 text-sm font-black text-gray-900">
+                                          {detailsByLessonId[report.lesson_id].group_name || report.group_name}
+                                        </div>
+                                        <div className="text-xs text-gray-500">
+                                          {dayLabel(report.lesson_date)} • {formatTimeRange(report.lesson_time)} • {report.teacher_name || "-"}
+                                        </div>
+                                      </div>
+                                      <div className="flex gap-2">
+                                        <div className="rounded-2xl bg-gray-50 px-4 py-2">
+                                          <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Total</div>
+                                          <div className="text-lg font-black text-gray-900">{detailsByLessonId[report.lesson_id].total}</div>
+                                        </div>
+                                        <div className="rounded-2xl bg-gray-50 px-4 py-2">
+                                          <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Pct</div>
+                                          <div className="text-lg font-black text-gray-900">{detailsByLessonId[report.lesson_id].percent}%</div>
+                                        </div>
+                                        <div className="rounded-2xl bg-gray-50 px-4 py-2">
+                                          <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">FB</div>
+                                          <div className={`mt-1 inline-flex rounded-full border px-3 py-1 text-xs font-black ${statusTone(detailsByLessonId[report.lesson_id].feedback)}`}>
+                                            {detailsByLessonId[report.lesson_id].feedback}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    <div className="overflow-hidden rounded-[1.25rem] border border-gray-100">
+                                      <table className="min-w-full text-left text-sm">
+                                        <thead className="bg-[#0B4A7A] text-white">
+                                          <tr>
+                                            <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Students</th>
+                                            <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Homework</th>
+                                            <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Vocabulary</th>
+                                            <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Attendance</th>
+                                            <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Participation</th>
+                                            <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Total</th>
+                                            <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Percent</th>
+                                            <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Feedback</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100 bg-white">
+                                          {(detailsByLessonId[report.lesson_id].rows || []).map((row) => (
+                                            <tr key={row.student_id}>
+                                              <td className="px-3 py-3">
+                                                <div className="font-semibold text-gray-900">{row.student_name || "-"}</div>
+                                              </td>
+                                              <td className="px-3 py-3 font-bold text-gray-900">{row.homework}</td>
+                                              <td className="px-3 py-3 font-bold text-gray-900">{row.vocabulary}</td>
+                                              <td className="px-3 py-3 font-bold text-gray-900">{row.attendance}</td>
+                                              <td className="px-3 py-3 font-bold text-gray-900">{row.participation}</td>
+                                              <td className="px-3 py-3 font-bold text-gray-900">{row.total}</td>
+                                              <td className="px-3 py-3 font-bold text-gray-900">{row.percent}%</td>
+                                              <td className="px-3 py-3">
+                                                <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-black ${statusTone(row.feedback)}`}>
+                                                  {row.feedback}
+                                                </span>
+                                              </td>
+                                            </tr>
+                                          ))}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="rounded-2xl border border-dashed border-gray-200 bg-white px-4 py-5 text-sm font-semibold text-gray-500">
+                                    Hisobot topilmadi.
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
+                          ) : null}
+                        </React.Fragment>
                       ))}
                     </tbody>
                   </table>
@@ -376,15 +431,6 @@ export default function EnglishManagerStatisticsPage() {
         </div>
       </section>
 
-      {detailLoading ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="rounded-2xl bg-white px-5 py-4 text-sm font-semibold text-gray-600">
-            Hisobot yuklanmoqda...
-          </div>
-        </div>
-      ) : null}
-
-      <Modal report={selected} onClose={() => setSelected(null)} />
     </div>
   );
 }
