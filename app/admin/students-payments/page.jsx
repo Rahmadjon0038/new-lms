@@ -38,6 +38,13 @@ import PaymentModal from "../../../components/admistrator/PaymentModal";
 import StudentAttendanceModal from "../../../components/modals/StudentAttendanceModal";
 import { formatDateYMD } from "../../../utils/date";
 
+const formatDateOnly = (value) => {
+    if (!value) return "-";
+    const raw = String(value).trim();
+    const datePart = raw.split(/[ T]/)[0];
+    return datePart || raw;
+};
+
 const MAIN_COLOR = "#A60E07";
 const STATS_VISIBILITY_KEY = "students_payments_stats_visibility";
 const PAYMENTS_FILTERS_KEY = "students_payments_filters";
@@ -1639,7 +1646,7 @@ const StudentPaymentsInner = () => {
                                                                 So'nggi to'lov
                                                             </div>
                                                             <div className="text-xs text-gray-500">
-                                                                {student.last_payment_date}
+                                                                {formatDateOnly(student.last_payment_date)}
                                                             </div>
                                                             {(student.payment_admin_full_name || student.last_payment_admin || student.admin_name || student.processed_by) && (
                                                                 <div className="text-xs text-blue-600 font-medium">
