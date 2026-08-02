@@ -1,15 +1,13 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import {
-  ArrowLeftIcon,
+  ChevronDownIcon,
   EyeIcon,
-  FunnelIcon,
-  UserGroupIcon,
-  ClockIcon,
-  CalendarDaysIcon,
+  MagnifyingGlassIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { instance } from "../../../hooks/api";
 
 const monthLabel = (value) => {
@@ -91,77 +89,357 @@ const statusTone = (feedback) => {
   return "bg-red-100 text-red-700 border-red-200";
 };
 
+const cardTone = (feedback) => {
+  const status = String(feedback || "").toUpperCase();
+  if (status === "PERFECT") {
+    return "border-blue-500 bg-blue-50/60 shadow-blue-100/40";
+  }
+  if (status === "GOOD") {
+    return "border-emerald-500 bg-emerald-50/60 shadow-emerald-100/40";
+  }
+  return "border-red-500 bg-red-50/60 shadow-red-100/40";
+};
+
+const SEEN_REPORTS_STORAGE_KEY = "english-manager-seen-report-ids";
+
+const formatCreatedAt = (value) => {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+
+  return new Intl.DateTimeFormat("uz-UZ", {
+    timeZone: "UTC",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(date);
+};
+
+const formatScheduleDays = (schedule) => {
+  const rawDays = Array.isArray(schedule?.days)
+    ? schedule.days
+    : Array.isArray(schedule)
+      ? schedule
+      : [];
+
+  if (!rawDays.length) return "-";
+
+  const dayMap = {
+    dushanba: "Du",
+    seshanba: "Se",
+    chorshanba: "Ch",
+    payshanba: "Pa",
+    juma: "Ju",
+    shanba: "Sh",
+    yakshanba: "Ya",
+    monday: "Mon",
+    tuesday: "Tue",
+    wednesday: "Wed",
+    thursday: "Thu",
+    friday: "Fri",
+    saturday: "Sat",
+    sunday: "Sun",
+  };
+
+  return rawDays
+    .map((day) => dayMap[String(day || "").trim().toLowerCase()] || String(day || "").trim())
+    .filter(Boolean)
+    .join(", ");
+};
+
+const StatisticsPageLoader = () => {
+  return (
+    <div className="flex min-h-[60vh] items-center justify-center rounded border border-gray-200 bg-white shadow-sm">
+      <div className="flex flex-col items-center gap-3 px-6 py-10">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-[#A60E07]" />
+        <div className="text-sm font-semibold text-gray-500">Yuklanmoqda...</div>
+      </div>
+    </div>
+  );
+};
+
+const normalizeText = (value) => String(value || "").trim().toLowerCase();
+
+const isEnglishReport = (report) => {
+  const subject = normalizeText(report?.subject_name);
+  return subject.includes("english") || subject.includes("ingliz");
+};
+
+const TeacherFilterSelect = ({ teachers, value, onChange }) => {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const wrapperRef = React.useRef(null);
+
+  useEffect(() => {
+    const onDocumentClick = (event) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+        setOpen(false);
+        setSearch("");
+      }
+    };
+
+    const onEscape = (event) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+        setSearch("");
+      }
+    };
+
+    document.addEventListener("mousedown", onDocumentClick);
+    document.addEventListener("keydown", onEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", onDocumentClick);
+      document.removeEventListener("keydown", onEscape);
+    };
+  }, []);
+
+  const selectedTeacher = useMemo(
+    () => teachers.find((teacher) => String(teacher.teacher_id) === String(value)) || null,
+    [teachers, value]
+  );
+
+  const filteredTeachers = useMemo(() => {
+    const text = normalizeText(search);
+    if (!text) return teachers;
+    return teachers.filter((teacher) => {
+      const teacherName = normalizeText(teacher.teacher_name);
+      return teacherName.includes(text) || String(teacher.teacher_id).includes(text);
+    });
+  }, [teachers, search]);
+
+  const selectTeacher = (teacherId) => {
+    onChange(teacherId);
+    setOpen(false);
+    setSearch("");
+  };
+
+  return (
+    <div ref={wrapperRef} className="relative w-full max-w-full sm:min-w-[300px] sm:max-w-[420px]">
+      <button
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+        className="flex w-full items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-left shadow-sm transition hover:border-[#A60E07]/40 hover:shadow-md"
+      >
+        <div className="min-w-0">
+          <div className="text-[10px] font-black uppercase tracking-[0.28em] text-gray-400">
+            Teacher
+          </div>
+          <div className="truncate text-sm font-bold text-gray-900">
+            {value === "all" ? "Barchasi" : selectedTeacher?.teacher_name || "Tanlang"}
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          {value !== "all" ? (
+            <span
+              role="button"
+              tabIndex={0}
+              aria-label="Tozalash"
+              onClick={(event) => {
+                event.stopPropagation();
+                onChange("all");
+                setOpen(false);
+                setSearch("");
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onChange("all");
+                  setOpen(false);
+                  setSearch("");
+                }
+              }}
+              className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 text-gray-400 transition hover:border-[#A60E07] hover:text-[#A60E07]"
+            >
+              <XMarkIcon className="h-4 w-4" />
+            </span>
+          ) : null}
+          <ChevronDownIcon
+            className={`h-5 w-5 text-gray-400 transition ${open ? "rotate-180" : ""}`}
+          />
+        </div>
+      </button>
+
+      {open ? (
+        <div className="absolute left-0 right-0 top-[calc(100%+10px)] z-40 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
+          <div className="border-b border-gray-100 p-3">
+            <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
+              <MagnifyingGlassIcon className="h-4 w-4 text-gray-400" />
+              <input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Teacher qidirish..."
+                className="w-full bg-transparent text-sm font-medium text-gray-900 outline-none placeholder:text-gray-400"
+              />
+            </div>
+          </div>
+
+          <div className="max-h-72 overflow-y-auto p-2">
+            <button
+              type="button"
+              onClick={() => selectTeacher("all")}
+              className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition ${
+                value === "all"
+                  ? "bg-[#A60E07]/10 text-[#A60E07]"
+                  : "text-gray-700 hover:bg-gray-50"
+              }`}
+            >
+              <span>Barchasi</span>
+              {value === "all" ? <span className="text-xs font-black">✓</span> : null}
+            </button>
+
+            {filteredTeachers.length === 0 ? (
+              <div className="px-3 py-6 text-center text-sm font-medium text-gray-400">
+                Natija topilmadi
+              </div>
+            ) : (
+              filteredTeachers.map((teacher) => {
+                const active = String(teacher.teacher_id) === String(value);
+                return (
+                  <button
+                    key={teacher.teacher_id}
+                    type="button"
+                    onClick={() => selectTeacher(String(teacher.teacher_id))}
+                    className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition ${
+                      active
+                        ? "bg-[#A60E07]/10 text-[#A60E07]"
+                        : "text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    <span className="truncate">{teacher.teacher_name}</span>
+                    {active ? <span className="text-xs font-black">✓</span> : null}
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+};
+
 export default function EnglishManagerStatisticsPage() {
   const currentMonth = useMemo(() => new Date().toISOString().slice(0, 7), []);
   const [month, setMonth] = useState(currentMonth);
   const [teacherId, setTeacherId] = useState("all");
-  const [teachers, setTeachers] = useState([]);
-  const [reports, setReports] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [expandedLessonId, setExpandedLessonId] = useState(null);
   const [detailsByLessonId, setDetailsByLessonId] = useState({});
   const [loadingLessonId, setLoadingLessonId] = useState(null);
+  const [error, setError] = useState("");
+  const [seenReportIds, setSeenReportIds] = useState(() => new Set());
 
   useEffect(() => {
-    let alive = true;
-
-    const loadTeachers = async () => {
-      try {
-        const response = await instance.get("/api/teacher-statistics/manager/teachers", {
-          params: { month },
-        });
-        if (!alive) return;
-        setTeachers(Array.isArray(response.data?.data) ? response.data.data : []);
-      } catch (_) {
-        if (!alive) return;
-        setTeachers([]);
+    try {
+      const raw = window.localStorage.getItem(SEEN_REPORTS_STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        setSeenReportIds(new Set(parsed.map((value) => String(value))));
       }
-    };
+    } catch {
+      // ignore localStorage errors
+    }
+  }, []);
 
-    loadTeachers();
+  const persistSeenReportIds = (nextSet) => {
+    try {
+      window.localStorage.setItem(
+        SEEN_REPORTS_STORAGE_KEY,
+        JSON.stringify(Array.from(nextSet))
+      );
+      window.dispatchEvent(new Event("english-manager-seen-report-ids-changed"));
+    } catch {
+      // ignore localStorage errors
+    }
+  };
 
-    return () => {
-      alive = false;
-    };
-  }, [month]);
+  const markReportSeen = (reportId) => {
+    const key = String(reportId);
+    setSeenReportIds((current) => {
+      if (current.has(key)) return current;
+      const next = new Set(current);
+      next.add(key);
+      persistSeenReportIds(next);
+      return next;
+    });
+  };
 
-  useEffect(() => {
-    let alive = true;
-    const loadReports = async () => {
-      setLoading(true);
-      setError("");
-      try {
-        const params = { month };
-        if (teacherId !== "all") params.teacher_id = teacherId;
-        const response = await instance.get("/api/teacher-statistics/manager/reports", {
-          params,
-        });
-        if (!alive) return;
-        setReports(Array.isArray(response.data?.data) ? response.data.data : []);
-      } catch (err) {
-        if (!alive) return;
-        setError(err?.response?.data?.message || "Statistikalar yuklanmadi");
-        setReports([]);
-      } finally {
-        if (alive) setLoading(false);
-      }
-    };
+  const monthsQuery = useQuery({
+    queryKey: ["english-manager-months"],
+    queryFn: async () => {
+      const response = await instance.get("/api/teacher-statistics/manager/months");
+      const months = Array.isArray(response.data?.data) ? response.data.data : [];
+      return Array.from(
+        new Set(
+          [
+            ...months.filter((value) => /^\d{4}-\d{2}$/.test(String(value || "").trim())),
+            currentMonth,
+          ]
+        )
+      ).sort();
+    },
+    staleTime: 30 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  });
 
-    loadReports();
+  const availableMonths = useMemo(() => {
+    const months = Array.isArray(monthsQuery.data) ? monthsQuery.data : [];
+    return months.length ? months : [currentMonth];
+  }, [monthsQuery.data, currentMonth]);
 
-    return () => {
-      alive = false;
-    };
-  }, [month, teacherId]);
+  const teachersQuery = useQuery({
+    queryKey: ["english-manager-teachers", month],
+    queryFn: async () => {
+      const response = await instance.get("/api/teacher-statistics/manager/teachers", {
+        params: { month },
+      });
+      return Array.isArray(response.data?.data) ? response.data.data : [];
+    },
+    enabled: !!month,
+    placeholderData: keepPreviousData,
+    staleTime: 10 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  });
 
-  const selectedTeacher = useMemo(
-    () => teachers.find((item) => String(item.teacher_id) === String(teacherId)),
-    [teachers, teacherId]
+  const reportsQuery = useQuery({
+    queryKey: ["english-manager-reports", month, teacherId],
+    queryFn: async () => {
+      const params = { month };
+      if (teacherId !== "all") params.teacher_id = teacherId;
+      const response = await instance.get("/api/teacher-statistics/manager/reports", {
+        params,
+      });
+      return Array.isArray(response.data?.data) ? response.data.data : [];
+    },
+    enabled: !!month,
+    placeholderData: keepPreviousData,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  });
+
+  const teachers = useMemo(() => teachersQuery.data ?? [], [teachersQuery.data]);
+  const reports = useMemo(
+    () => (Array.isArray(reportsQuery.data) ? reportsQuery.data.filter(isEnglishReport) : []),
+    [reportsQuery.data]
   );
+  const loading = monthsQuery.isLoading || teachersQuery.isLoading || reportsQuery.isLoading;
+  const monthsLoading = monthsQuery.isLoading;
+  const reportError = reportsQuery.error?.response?.data?.message || reportsQuery.error?.message || "";
 
   const toggleDetail = async (lessonId) => {
+    const willOpen = expandedLessonId !== lessonId;
     setExpandedLessonId((current) => (current === lessonId ? null : lessonId));
+    if (willOpen) markReportSeen(lessonId);
     if (detailsByLessonId[lessonId]) return;
     setLoadingLessonId(lessonId);
     try {
@@ -184,253 +462,221 @@ export default function EnglishManagerStatisticsPage() {
       if (!map.has(key)) map.set(key, []);
       map.get(key).push(report);
     }
-    return Array.from(map.entries());
+    return Array.from(map.entries()).sort(([a], [b]) => String(a).localeCompare(String(b)));
   }, [reports]);
+
+  const monthChips = useMemo(() => {
+    return availableMonths.length ? availableMonths : [currentMonth];
+  }, [availableMonths, currentMonth]);
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <section className="rounded-[2rem] border border-white bg-gradient-to-br from-white via-amber-50 to-orange-50 p-5 shadow-sm sm:p-7">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <Link href="/english-manager" className="inline-flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-gray-900">
-              <ArrowLeftIcon className="h-4 w-4" />
-              Orqaga
-            </Link>
-            <h1 className="mt-3 text-3xl font-black tracking-tight text-gray-900">Statistika jadvali</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-7 text-gray-600">
-              Faqat English teacherlar yuborgan statistika va English guruhlar uchun kunlik yozuvlar.
-            </p>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="block">
-              <span className="mb-2 block text-[11px] font-bold uppercase tracking-[0.25em] text-gray-400">Oy</span>
-              <input
-                type="month"
-                value={month}
-                onChange={(e) => setMonth(e.target.value)}
-                className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#A60E07]"
-              />
-            </label>
-            <label className="block">
-              <span className="mb-2 block text-[11px] font-bold uppercase tracking-[0.25em] text-gray-400">Teacher</span>
-              <select
+      {loading ? <StatisticsPageLoader /> : null}
+
+      {!loading ? (
+        <>
+          <section className="space-y-4">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <h1 className="text-2xl font-black tracking-tight text-gray-900 sm:text-3xl">
+                Statistika
+              </h1>
+
+              <div className="flex gap-2 overflow-x-auto pb-1 lg:max-w-[70%] lg:justify-end">
+                {monthsLoading && availableMonths.length === 0 ? (
+                  <div className="flex h-10 w-24 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-white">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-200 border-t-[#A60E07]" />
+                  </div>
+                ) : null}
+                {monthChips.map((value) => {
+                  const isActive = String(value) === String(month);
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setMonth(value)}
+                      className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                        isActive
+                          ? "border-[#A60E07] bg-[#A60E07] text-white shadow-sm"
+                          : "border-gray-200 bg-white text-gray-600 hover:border-[#A60E07] hover:text-[#A60E07]"
+                      }`}
+                    >
+                      {monthLabel(value)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 sm:max-w-[420px]">
+              <div className="text-[11px] font-black uppercase tracking-[0.28em] text-gray-400">
+                Teacher
+              </div>
+              <TeacherFilterSelect
+                teachers={teachers}
                 value={teacherId}
-                onChange={(e) => setTeacherId(e.target.value)}
-                className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#A60E07]"
-              >
-                <option value="all">Barchasi</option>
-                {teachers.map((teacher) => (
-                  <option key={teacher.teacher_id} value={teacher.teacher_id}>
-                    {teacher.teacher_name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-        </div>
-
-        <div className="mt-5 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-2xl bg-white p-4 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#A60E07]/10 text-[#A60E07]">
-                <UserGroupIcon className="h-5 w-5" />
-              </div>
-              <div>
-                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Teacherlar</div>
-                <div className="text-xl font-black text-gray-900">{teachers.length}</div>
-              </div>
+                onChange={setTeacherId}
+              />
             </div>
-          </div>
-          <div className="rounded-2xl bg-white p-4 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
-                <CalendarDaysIcon className="h-5 w-5" />
-              </div>
-              <div>
-                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Yozuvlar</div>
-                <div className="text-xl font-black text-gray-900">{reports.length}</div>
-              </div>
-            </div>
-          </div>
-          <div className="rounded-2xl bg-white p-4 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
-                <ClockIcon className="h-5 w-5" />
-              </div>
-              <div>
-                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Filtr</div>
-                <div className="text-sm font-black text-gray-900">
-                  {selectedTeacher ? selectedTeacher.teacher_name : monthLabel(month)}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+          </section>
 
-      <section className="rounded-[2rem] border border-white bg-white p-5 shadow-sm">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-black text-gray-900">Kunlik jadval</h2>
-            <p className="text-sm text-gray-500">Sana, vaqt, guruh va teacher bo‘yicha</p>
-          </div>
-          <div className="inline-flex items-center gap-2 rounded-full bg-[#A60E07]/10 px-3 py-1.5 text-xs font-bold text-[#A60E07]">
-            <FunnelIcon className="h-4 w-4" />
-            {monthLabel(month)}
-          </div>
-        </div>
-
+      <section className="space-y-4">
         {loading ? (
-          <div className="py-12 text-center text-sm font-semibold text-gray-500">Statistikalar yuklanmoqda...</div>
-        ) : error ? (
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
-            {error}
+          null
+        ) : reportError || error ? (
+          <div className="rounded border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
+            {reportError || error}
           </div>
         ) : groupedByDate.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-gray-200 p-8 text-center text-sm text-gray-500">
+          <div className="rounded border border-dashed border-gray-200 p-8 text-center text-sm text-gray-500">
             Bu oy uchun statistika topilmadi.
           </div>
         ) : (
-          <div className="space-y-5">
+          <div className="space-y-6">
             {groupedByDate.map(([date, items]) => (
-              <div key={date}>
-                <div className="mb-3 text-sm font-black text-gray-900">{dayLabel(date)}</div>
-                <div className="overflow-hidden rounded-[1.5rem] border border-gray-100">
-                  <table className="min-w-full text-left text-sm">
-                    <thead className="bg-[#0B4A7A] text-white">
-                      <tr>
-                        <th className="px-4 py-3 text-xs font-bold uppercase tracking-[0.2em]">Vaqt</th>
-                        <th className="px-4 py-3 text-xs font-bold uppercase tracking-[0.2em]">Guruh</th>
-                        <th className="px-4 py-3 text-xs font-bold uppercase tracking-[0.2em]">Teacher</th>
-                        <th className="px-4 py-3 text-xs font-bold uppercase tracking-[0.2em]">Holat</th>
-                        <th className="px-4 py-3 text-xs font-bold uppercase tracking-[0.2em]">Amal</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100 bg-white">
-                      {items.map((report) => (
-                        <React.Fragment key={report.id}>
-                          <tr>
-                            <td className="px-4 py-4 font-semibold text-gray-900">{formatTimeRange(report.lesson_time)}</td>
-                            <td className="px-4 py-4">
-                              <div className="font-semibold text-gray-900">{report.group_name}</div>
-                              <div className="text-xs text-gray-500">{report.subject_name || "English"}</div>
-                            </td>
-                            <td className="px-4 py-4 text-gray-700">{report.teacher_name || "-"}</td>
-                            <td className="px-4 py-4">
-                              <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-black ${statusTone(report.feedback)}`}>
-                                {report.feedback}
+              <div key={date} className="space-y-3">
+                <div className="text-sm font-black text-gray-900">{dayLabel(date)}</div>
+                <div className="space-y-3">
+                  {items.map((report) => {
+                    const detail = detailsByLessonId[report.lesson_id];
+                    const reportCreatedTime =
+                      report.created_at_label ||
+                      report.updated_at_label ||
+                      formatCreatedAt(report.created_at || report.updated_at);
+                    const isNewReport = !seenReportIds.has(String(report.lesson_id));
+                    const scheduleDays = formatScheduleDays(report.group_schedule);
+                    return (
+                      <article
+                        key={report.id}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => toggleDetail(report.lesson_id)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            toggleDetail(report.lesson_id);
+                          }
+                        }}
+                        className={`cursor-pointer overflow-hidden rounded border shadow-sm transition hover:shadow-md ${
+                          isNewReport ? "ring-2 ring-[#A60E07]/20 ring-offset-0" : ""
+                        } ${cardTone(report.feedback)}`}
+                      >
+                        <div className="flex flex-col gap-4 px-4 py-4 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="min-w-0 space-y-2">
+                            <div className="flex flex-wrap items-center gap-2 text-sm font-black text-gray-900">
+                              <span className="truncate">Teacher: {report.teacher_name || "-"}</span>
+                              <span className="text-gray-300">•</span>
+                              <span className="truncate">Guruh: {report.group_name || "-"}</span>
+                              {isNewReport ? (
+                                <>
+                                  <span className="text-gray-300">•</span>
+                                  <span className="inline-flex items-center rounded-full border border-[#A60E07] bg-[#A60E07]/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#A60E07]">
+                                    Yangi
+                                  </span>
+                                </>
+                              ) : null}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-gray-700">
+                              <span className="truncate">Fan: {report.subject_name || "-"}</span>
+                              <span className="text-gray-300">•</span>
+                              <span className="truncate">Vaqt: {formatTimeRange(report.lesson_time)}</span>
+                              <span className="text-gray-300">•</span>
+                              <span className="truncate">Dars kunlari: {scheduleDays}</span>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-gray-500">
+                                Report yuborildi
                               </span>
-                            </td>
-                            <td className="px-4 py-4">
-                              <button
-                                type="button"
-                                onClick={() => toggleDetail(report.lesson_id)}
-                                className="inline-flex items-center gap-2 rounded-full border border-[#A60E07]/20 bg-[#A60E07]/5 px-3 py-2 text-xs font-bold text-[#A60E07] transition hover:bg-[#A60E07]/10"
-                              >
-                                <EyeIcon className="h-4 w-4" />
-                                {expandedLessonId === report.lesson_id ? "Yopish" : "Ko'rish"}
-                              </button>
-                            </td>
-                          </tr>
-                          {expandedLessonId === report.lesson_id ? (
-                            <tr>
-                              <td colSpan={5} className="bg-[#F8FAFC] px-4 pb-4">
-                                {loadingLessonId === report.lesson_id ? (
-                                  <div className="rounded-2xl border border-dashed border-gray-200 bg-white px-4 py-5 text-sm font-semibold text-gray-500">
-                                    Hisobot yuklanmoqda...
-                                  </div>
-                                ) : detailsByLessonId[report.lesson_id] ? (
-                                  <div className="rounded-2xl border border-gray-200 bg-white p-4">
-                                    <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                                      <div>
-                                        <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">
-                                          Hisobot tafsiloti
-                                        </div>
-                                        <div className="mt-1 text-sm font-black text-gray-900">
-                                          {detailsByLessonId[report.lesson_id].group_name || report.group_name}
-                                        </div>
-                                        <div className="text-xs text-gray-500">
-                                          {dayLabel(report.lesson_date)} • {formatTimeRange(report.lesson_time)} • {report.teacher_name || "-"}
-                                        </div>
-                                      </div>
-                                      <div className="flex gap-2">
-                                        <div className="rounded-2xl bg-gray-50 px-4 py-2">
-                                          <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Total</div>
-                                          <div className="text-lg font-black text-gray-900">{detailsByLessonId[report.lesson_id].total}</div>
-                                        </div>
-                                        <div className="rounded-2xl bg-gray-50 px-4 py-2">
-                                          <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Pct</div>
-                                          <div className="text-lg font-black text-gray-900">{detailsByLessonId[report.lesson_id].percent}%</div>
-                                        </div>
-                                        <div className="rounded-2xl bg-gray-50 px-4 py-2">
-                                          <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">FB</div>
-                                          <div className={`mt-1 inline-flex rounded-full border px-3 py-1 text-xs font-black ${statusTone(detailsByLessonId[report.lesson_id].feedback)}`}>
-                                            {detailsByLessonId[report.lesson_id].feedback}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
+                              <span className="text-[11px] font-semibold text-gray-400">
+                                {reportCreatedTime}
+                              </span>
+                            </div>
+                          </div>
 
-                                    <div className="overflow-hidden rounded-[1.25rem] border border-gray-100">
-                                      <table className="min-w-full text-left text-sm">
-                                        <thead className="bg-[#0B4A7A] text-white">
-                                          <tr>
-                                            <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Students</th>
-                                            <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Homework</th>
-                                            <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Vocabulary</th>
-                                            <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Attendance</th>
-                                            <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Participation</th>
-                                            <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Total</th>
-                                            <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Percent</th>
-                                            <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Feedback</th>
-                                          </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gray-100 bg-white">
-                                          {(detailsByLessonId[report.lesson_id].rows || []).map((row) => (
-                                            <tr key={row.student_id}>
-                                              <td className="px-3 py-3">
-                                                <div className="font-semibold text-gray-900">{row.student_name || "-"}</div>
-                                              </td>
-                                              <td className="px-3 py-3 font-bold text-gray-900">{row.homework}</td>
-                                              <td className="px-3 py-3 font-bold text-gray-900">{row.vocabulary}</td>
-                                              <td className="px-3 py-3 font-bold text-gray-900">{row.attendance}</td>
-                                              <td className="px-3 py-3 font-bold text-gray-900">{row.participation}</td>
-                                              <td className="px-3 py-3 font-bold text-gray-900">{row.total}</td>
-                                              <td className="px-3 py-3 font-bold text-gray-900">{row.percent}%</td>
-                                              <td className="px-3 py-3">
-                                                <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-black ${statusTone(row.feedback)}`}>
-                                                  {row.feedback}
-                                                </span>
-                                              </td>
-                                            </tr>
-                                          ))}
-                                        </tbody>
-                                      </table>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <div className="rounded-2xl border border-dashed border-gray-200 bg-white px-4 py-5 text-sm font-semibold text-gray-500">
-                                    Hisobot topilmadi.
-                                  </div>
-                                )}
-                              </td>
-                            </tr>
-                          ) : null}
-                        </React.Fragment>
-                      ))}
-                    </tbody>
-                  </table>
+                          <div className="flex items-center gap-2 self-end sm:self-auto">
+                            <span className={`inline-flex rounded border px-3 py-1 text-xs font-black ${statusTone(report.feedback)}`}>
+                              {report.feedback}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                toggleDetail(report.lesson_id);
+                              }}
+                              className="inline-flex items-center gap-2 rounded border border-[#A60E07]/20 bg-[#A60E07]/5 px-3 py-2 text-xs font-bold text-[#A60E07] transition hover:bg-[#A60E07]/10"
+                            >
+                              <EyeIcon className="h-4 w-4" />
+                              {expandedLessonId === report.lesson_id ? "Yopish" : "Ko'rish"}
+                            </button>
+                          </div>
+                        </div>
+
+                        {expandedLessonId === report.lesson_id ? (
+                          <div className="bg-slate-50 p-4">
+                            {loadingLessonId === report.lesson_id ? (
+                              <div className="rounded border border-dashed border-gray-200 bg-white px-4 py-5 text-sm font-semibold text-gray-500">
+                                Hisobot yuklanmoqda...
+                              </div>
+                            ) : detail ? (
+                              <div className="space-y-4">
+                                <div className="overflow-hidden rounded border border-gray-200 bg-white shadow-sm">
+                                  <table className="min-w-full text-left text-sm">
+                                    <thead className="bg-[#0B4A7A] text-white">
+                                      <tr>
+                                        <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Students</th>
+                                        <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Homework</th>
+                                        <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Vocabulary</th>
+                                        <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Attendance</th>
+                                        <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Participation</th>
+                                        <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Total</th>
+                                        <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Percent</th>
+                                        <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Feedback</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100 bg-white">
+                                      {(detail.rows || []).map((row) => (
+                                        <tr key={row.student_id}>
+                                          <td className="px-3 py-3">
+                                            <div className="font-semibold text-gray-900">{row.student_name || "-"}</div>
+                                          </td>
+                                          <td className="px-3 py-3 font-bold text-gray-900">{row.homework}</td>
+                                          <td className="px-3 py-3 font-bold text-gray-900">{row.vocabulary}</td>
+                                          <td className="px-3 py-3 font-bold text-gray-900">{row.attendance}</td>
+                                          <td className="px-3 py-3 font-bold text-gray-900">{row.participation}</td>
+                                          <td className="px-3 py-3 font-bold text-gray-900">{row.total}</td>
+                                          <td className="px-3 py-3 font-bold text-gray-900">{row.percent}%</td>
+                                          <td className="px-3 py-3">
+                                            <span className={`inline-flex rounded border px-3 py-1 text-xs font-black ${statusTone(row.feedback)}`}>
+                                              {row.feedback}
+                                            </span>
+                                          </td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="rounded border border-dashed border-gray-200 bg-white px-4 py-5 text-sm font-semibold text-gray-500">
+                                Hisobot topilmadi.
+                              </div>
+                            )}
+                          </div>
+                        ) : null}
+                      </article>
+                    );
+                  })}
                 </div>
               </div>
             ))}
           </div>
         )}
 
-        <div className="mt-4 text-xs text-gray-400">
+        <div className="pt-1 text-xs text-gray-400">
           Yangi hisobot yuborilganda shu sahifa avtomatik yangilanadi.
         </div>
       </section>
-
+        </>
+      ) : null}
     </div>
   );
 }

@@ -74,6 +74,7 @@ function TeacherAttendancePageContent() {
     month: selectedMonth || undefined,
     date: TODAY_DATE,
   });
+  const groupsRefetch = groupsQuery.refetch;
 
   const groups = useMemo(() => {
     const payload = groupsQuery.data?.data ?? groupsQuery.data;
@@ -128,6 +129,7 @@ function TeacherAttendancePageContent() {
   };
 
   const lessonsQuery = useGetGroupLessons(activeGroupId || undefined, selectedMonth);
+  const lessonsRefetch = lessonsQuery.refetch;
   const lessons = useMemo(() => {
     const payload = lessonsQuery.data;
     const raw = Array.isArray(payload)
@@ -170,6 +172,35 @@ function TeacherAttendancePageContent() {
       return aDate.localeCompare(bDate);
     });
   }, [lessonsQuery.data]);
+
+  useEffect(() => {
+    const refreshData = () => {
+      groupsRefetch?.();
+      if (activeGroupId && selectedMonth) {
+        lessonsRefetch?.();
+      }
+    };
+
+    const intervalId = setInterval(refreshData, 30000);
+    const handleVisibility = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        refreshData();
+      }
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("focus", refreshData);
+      document.addEventListener("visibilitychange", handleVisibility);
+    }
+
+    return () => {
+      clearInterval(intervalId);
+      if (typeof window !== "undefined") {
+        window.removeEventListener("focus", refreshData);
+        document.removeEventListener("visibilitychange", handleVisibility);
+      }
+    };
+  }, [groupsRefetch, lessonsRefetch, activeGroupId, selectedMonth]);
 
   const activeLessonId = useMemo(() => {
     const exists = lessons.some((lesson) => String(lesson.id || lesson.lesson_id) === String(selectedLessonId));

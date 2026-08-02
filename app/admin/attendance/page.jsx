@@ -246,9 +246,12 @@ export default function AdminAttendancePage() {
     date: attendanceDate || undefined,
     month: attendanceMonth || undefined,
   });
+  // Bu chip selected date/month bo'yicha guruhlardagi faol talabalar sonini ko'rsatishi kerak.
+  // count_mode=all ishlatilsa, tarixiy join/leave filtrlari chetlab o'tiladi va son oylar bo'yicha
+  // bir xil chiqib qoladi. Shuning uchun tanlangan sanani ham queryga yuboramiz.
   const allGroupsQuery = useGetAttendanceGroups({
     status_filter: "all",
-    count_mode: "all",
+    date: attendanceDate || undefined,
   });
   const monthlySummaryQuery = useQuery({
     queryKey: ["monthly-snapshot-summary", attendanceMonth],
