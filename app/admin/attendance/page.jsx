@@ -4,7 +4,7 @@ import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import { UserGroupIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-import { useGetAttendanceGroups, useGetAttendanceTeachers, useGetStudentAttendanceSnapshot } from "../../../hooks/attendance";
+import { useGetAttendanceTeachers, useGetStudentAttendanceSnapshot } from "../../../hooks/attendance";
 import { format, parseISO, isValid } from "date-fns";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { instance } from "../../../hooks/api";
@@ -246,13 +246,6 @@ export default function AdminAttendancePage() {
     date: attendanceDate || undefined,
     month: attendanceMonth || undefined,
   });
-  // Bu chip selected date/month bo'yicha guruhlardagi faol talabalar sonini ko'rsatishi kerak.
-  // count_mode=all ishlatilsa, tarixiy join/leave filtrlari chetlab o'tiladi va son oylar bo'yicha
-  // bir xil chiqib qoladi. Shuning uchun tanlangan sanani ham queryga yuboramiz.
-  const allGroupsQuery = useGetAttendanceGroups({
-    status_filter: "all",
-    date: attendanceDate || undefined,
-  });
   const monthlySummaryQuery = useQuery({
     queryKey: ["monthly-snapshot-summary", attendanceMonth],
     queryFn: () => getMonthlySnapshotSummary({ month: attendanceMonth }),
@@ -324,9 +317,17 @@ export default function AdminAttendancePage() {
   }, [monthlySummaryQuery.data, monthlySummaryQuery.isLoading, monthlySummaryQuery.isFetching]);
 
   const totalStudents = useMemo(() => {
-    const groups = Array.isArray(allGroupsQuery.data?.data) ? allGroupsQuery.data.data : [];
-    return groups.reduce((sum, item) => sum + Number(item.students_count || 0), 0);
-  }, [allGroupsQuery.data]);
+    const groupBreakdown = Array.isArray(monthlySummaryQuery.data?.group_breakdown)
+      ? monthlySummaryQuery.data.group_breakdown
+      : [];
+
+    const monthlyTotal = groupBreakdown.reduce((sum, item) => {
+      const value = Number(item.students_count || 0);
+      return sum + value;
+    }, 0);
+
+    return monthlyTotal;
+  }, [monthlySummaryQuery.data?.group_breakdown]);
 
   // Tanlangan kunda darsi bor guruhlar bo'yicha davomat holati (mobil dashboarddagi donut kabi)
   const dailyAttendanceStats = useMemo(() => {
