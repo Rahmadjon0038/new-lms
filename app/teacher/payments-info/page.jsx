@@ -1,6 +1,7 @@
 "use client";
 /* eslint-disable react/no-unescaped-entities */
 import React, { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
     CheckCircleIcon,
     XCircleIcon,
@@ -11,7 +12,7 @@ import {
     UsersIcon,
     InformationCircleIcon,
 } from "@heroicons/react/24/outline";
-import { useMonthlyPayments } from "../../../hooks/payments";
+import { instance } from "../../../hooks/api";
 
 const MAIN_COLOR = "#A60E07";
 const CURRENT_MONTH = new Date().toISOString().slice(0, 7);
@@ -22,17 +23,65 @@ const formatPhoneNumber = (value) => {
     return `+998-${normalized.slice(0, 2)}-${normalized.slice(2, 5)}-${normalized.slice(5, 7)}-${normalized.slice(7, 9)}`;
 };
 
+const fetchAllTeacherPayments = async ({ month, payment_status = "all" }) => {
+    const pageSize = 100;
+    let page = 1;
+    let collected = [];
+    let summary = {};
+
+    while (true) {
+        const params = new URLSearchParams();
+        params.append("month", month);
+        params.append("payment_status", payment_status);
+        params.append("page", String(page));
+        params.append("limit", String(pageSize));
+
+        const response = await instance.get(`/api/snapshots?${params.toString()}`);
+        const payload = response.data?.data || {};
+        const students = Array.isArray(payload.students) ? payload.students : [];
+
+        if (!summary || Object.keys(summary).length === 0) {
+            summary = payload.summary || {};
+        }
+
+        collected = collected.concat(students);
+
+        const totalPages = Number(payload.pagination?.total_pages || 1);
+        if (page >= totalPages) break;
+        page += 1;
+    }
+
+    return {
+        success: true,
+        data: {
+            month,
+            students: collected,
+            summary,
+            pagination: {
+                page: 1,
+                limit: collected.length || pageSize,
+                total: collected.length,
+                total_pages: 1,
+            },
+        },
+    };
+};
+
 const TeacherPaymentsInfo = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [tooltipVisible, setTooltipVisible] = useState(null);
     const filters = useMemo(() => ({
         month: CURRENT_MONTH,
         payment_status: 'all',
-        limit: 1000,
     }), []);
 
-    // Fetch payments using existing hook
-    const { data: paymentsData, isLoading, error } = useMonthlyPayments(filters);
+    const { data: paymentsData, isLoading, error } = useQuery({
+        queryKey: ['teacher-payments-info', filters.month, filters.payment_status],
+        queryFn: () => fetchAllTeacherPayments(filters),
+        enabled: !!filters.month,
+        staleTime: 0,
+        keepPreviousData: true,
+    });
 
     const students = useMemo(() => paymentsData?.data?.students || [], [paymentsData]);
     const apiSummary = paymentsData?.data?.summary || {};
