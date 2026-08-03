@@ -392,6 +392,8 @@ export const useUpdateStudentMonthlyStatus = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['lesson-students'] });
             queryClient.invalidateQueries({ queryKey: ['group-lessons'] });
+            queryClient.invalidateQueries({ queryKey: ['students'] });
+            queryClient.invalidateQueries({ queryKey: ['students-all-pages'] });
         },
     });
 };

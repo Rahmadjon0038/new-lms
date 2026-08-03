@@ -4,18 +4,18 @@ import { FiUserPlus, FiFilter } from 'react-icons/fi';
 import { InformationCircleIcon } from '@heroicons/react/24/outline';
 import {
     User, Phone, MapPin, Calendar, GraduationCap,
-    CheckCircle, XCircle, Clock, BookOpen, Users,
+    XCircle, Clock, BookOpen, Users,
     Home, AlertCircle, PlayCircle, PauseCircle, MoreVertical,
-    ShieldBan, Award, UserX, Trash2, Settings, Building2, ChevronDown, ChevronUp, Pencil, X
+    ShieldBan, Award, UserX, Trash2, Settings, Building2, ChevronDown, ChevronUp, Pencil, X, ArrowRight
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useGetAllStudents, useUpdateStudentStatus, useUpdateStudentInfo, useDeleteStudent } from '../../../hooks/students';
+import { useGetAllStudents, useUpdateStudentInfo, useDeleteStudent } from '../../../hooks/students';
 import { usegetTeachers } from '../../../hooks/teacher';
 import { useGetAllSubjects } from '../../../hooks/subjects';
 import { usegetProfile } from '../../../hooks/user';
 import { useGetNotify } from '../../../hooks/notify';
-import { getAllStatusOptions, getStatusInfo } from '../../../utils/studentStatus';
+import { getStatusInfo } from '../../../utils/studentStatus';
 import AddGroup from '../../../components/admistrator/AddGroup';
 
 // --- Tahrirlash Holatida Input Komponenti ---
@@ -332,7 +332,6 @@ const StudentsPageInner = () => {
     const [showUnassigned, setShowUnassigned] = useState(initialFilters.unassigned);
     const [showFiltersDropdown, setShowFiltersDropdown] = useState(false);
     const [showDesktopFilterClear, setShowDesktopFilterClear] = useState(false);
-    const [statusDropdownOpen, setStatusDropdownOpen] = useState(null); // Status dropdown state
     const [page, setPage] = useState(1);
     const [limit] = useState(20);
     const filtersDropdownRef = useRef(null);
@@ -421,8 +420,6 @@ const StudentsPageInner = () => {
     const totalPages = Number(
         pagination.total_pages || (pageLimit ? Math.ceil(totalItems / pageLimit) : 1)
     ) || 1;
-    // Student status o'zgartirish hook
-    const updateStatusMutation = useUpdateStudentStatus();
     const updateStudentMutation = useUpdateStudentInfo();
     const deleteStudentMutation = useDeleteStudent();
     const notify = useGetNotify();
@@ -534,18 +531,6 @@ const StudentsPageInner = () => {
         return () => document.removeEventListener('pointerdown', handleOutsideClick);
     }, []);
 
-    // Status dropdown yopish uchun click outside
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (!event.target.closest('.status-dropdown')) {
-                setStatusDropdownOpen(null);
-            }
-        };
-
-        document.addEventListener('click', handleClickOutside);
-        return () => document.removeEventListener('click', handleClickOutside);
-    }, []);
-
     useEffect(() => {
         const onScroll = () => {
             setShowScrollTop(window.scrollY > 600);
@@ -610,8 +595,6 @@ const StudentsPageInner = () => {
             father_phone: student.father_phone || '',
             address: student.address || '',
             age: student.age || '',
-            status: student.group_status,
-            course_status: student.course_status,
         });
     };
 
@@ -621,38 +604,6 @@ const StudentsPageInner = () => {
 
     const handleModalSuccess = () => {
         refetch(); // Ma'lumotlarni qayta yuklash
-    };
-
-    // Status o'zgartirish function
-    const handleStatusChange = async (studentId, newStatus, groupId) => {
-        if (!groupId) {
-            notify('err', 'Guruh IDsi talab qilinadi.');
-            return;
-        }
-
-        notify('load');
-        try {
-            await updateStatusMutation.mutateAsync({
-                studentId: studentId,
-                groupId: groupId,
-                status: newStatus,
-                onSuccess: () => {
-                    notify('dismiss');
-                    notify('ok', 'Talaba guruh holati muvaffaqiyatli o\'zgartirildi');
-                    refetch();
-                    setStatusDropdownOpen(null);
-                },
-                onError: (error) => {
-                    notify('dismiss');
-                    const errorMessage = error?.response?.data?.message || 'Status o\'zgartirishda xatolik yuz berdi';
-                    notify('err', errorMessage);
-                }
-            });
-        } catch (error) {
-            notify('dismiss');
-            const errorMessage = error?.response?.data?.message || 'Nomalum xatolik yuz berdi';
-            notify('err', errorMessage);
-        }
     };
 
     // Barcha filterlarni tozalash
@@ -686,8 +637,6 @@ const StudentsPageInner = () => {
                         father_phone: String(editData.father_phone).trim(),
                         address: String(editData.address).trim(),
                         age: editData.age,
-                        group_status: editData.status,
-                        course_status: editData.course_status
                     }
                     : s
             )
@@ -1201,6 +1150,15 @@ const StudentsPageInner = () => {
                                     </AddGroup>
 
                                     <div className="flex items-center gap-2">
+                                        {student.group_id ? (
+                                            <Link
+                                                href={`${basePath}/attendance/${student.group_id}`}
+                                                className="inline-flex h-8 items-center gap-1 rounded-lg bg-[#A60E07] px-3 text-xs font-semibold text-white hover:opacity-90"
+                                            >
+                                                <ArrowRight className="h-3.5 w-3.5" />
+                                                Davomat
+                                            </Link>
+                                        ) : null}
                                         <button
                                             type="button"
                                             onClick={() => openStudentEditModal(student)}
@@ -1711,99 +1669,46 @@ const StudentsPageInner = () => {
                                         </td>
 
                                         <td className="px-4 py-3 border-r border-gray-200 text-sm">
-                                            {isEditing ? (
-                                                <div className="flex flex-col gap-2">
-                                                    <select
-                                                        name="status"
-                                                        value={editData.status}
-                                                        onChange={handleEditChange}
-                                                        className="p-2 border border-[#A60E07] rounded w-full text-sm outline-none transition duration-200 focus:ring-1 focus:ring-[#A60E07]"
-                                                    >
-                                                        <option value="active"> Faol</option>
-                                                        <option value="stopped"> To'xtatilgan</option>
-                                                        <option value="finished"> Bitirgan</option>
-                                                    </select>
-                                                </div>
-                                            ) : (
-                                                <div className="space-y-2">
-                                                    {student.group_id ? (
-                                                        /* Custom Status select for students with groups */
-                                                        <div className="relative status-dropdown">
-                                                            <div
-                                                                onClick={() => setStatusDropdownOpen(statusDropdownOpen === `${student.id}-${student.group_id}` ? null : `${student.id}-${student.group_id}`)}
-                                                                className={`w-full p-2 pr-8 border border-gray-300 rounded-lg text-sm cursor-pointer hover:border-gray-400 transition-colors ${student.group_status === 'active' ? 'bg-green-50 text-green-800 border-green-300' :
-                                                                        student.group_status === 'stopped' ? 'bg-orange-50 text-orange-800 border-orange-300' :
-                                                                            student.group_status === 'finished' ? 'bg-purple-50 text-purple-800 border-purple-300' :
-                                                                                'bg-gray-50 text-gray-800 border-gray-300'
-                                                                    } ${updateStatusMutation.isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                            >
-                                                                <div className="flex items-center gap-2">
-                                                                    {React.createElement(getStatusInfo(student.group_status).icon, {
-                                                                        className: `h-4 w-4 ${getStatusInfo(student.group_status).iconColor}`
-                                                                    })}
-                                                                    <span className="font-medium">{getStatusInfo(student.group_status).label}</span>
-                                                                </div>
-                                                            </div>
-
-                                                            {/* Dropdown arrow */}
-                                                            <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                                                                <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                                                                </svg>
-                                                            </div>
-
-                                                            {/* Custom dropdown menu */}
-                                                            {statusDropdownOpen === `${student.id}-${student.group_id}` && (
-                                                                <div className="absolute left-0 top-full mt-1 z-20 w-full bg-white rounded-lg shadow-lg border border-gray-200 py-1 max-h-60 overflow-y-auto">
-                                                                    {getAllStatusOptions().map((statusOption) => {
-                                                                        const Icon = statusOption.icon;
-                                                                        const isSelected = student.group_status === statusOption.value;
-                                                                        return (
-                                                                            <div
-                                                                                key={statusOption.value}
-                                                                                onClick={() => {
-                                                                                    if (!updateStatusMutation.isLoading) {
-                                                                                        handleStatusChange(student.id, statusOption.value, student.group_id);
-                                                                                    }
-                                                                                }}
-                                                                                className={`w-full text-left px-3 py-2 text-sm cursor-pointer flex items-center gap-2 transition-colors ${statusOption.value === 'active' ? 'hover:bg-green-50 text-green-800' :
-                                                                                        statusOption.value === 'stopped' ? 'hover:bg-orange-50 text-orange-800' :
-                                                                                            statusOption.value === 'finished' ? 'hover:bg-purple-50 text-purple-800' :
-                                                                                                'hover:bg-gray-50 text-gray-800'
-                                                                                    } ${isSelected ?
-                                                                                        statusOption.value === 'active' ? 'bg-green-100 text-green-900' :
-                                                                                            statusOption.value === 'stopped' ? 'bg-orange-100 text-orange-900' :
-                                                                                                statusOption.value === 'finished' ? 'bg-purple-100 text-purple-900' :
-                                                                                                    'bg-gray-100 text-gray-900'
-                                                                                        : ''
-                                                                                    } ${updateStatusMutation.isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                                            >
-                                                                                <Icon className={`h-4 w-4 ${statusOption.iconColor}`} />
-                                                                                <span className="font-medium">{statusOption.label}</span>
-                                                                                {isSelected && (
-                                                                                    <CheckCircle className="h-3 w-3 ml-auto text-current" />
-                                                                                )}
-                                                                            </div>
-                                                                        );
-                                                                    })}
-                                                                </div>
-                                                            )}
+                                            <div className="space-y-2">
+                                                {student.group_id ? (
+                                                    <>
+                                                        <div
+                                                            className={`inline-flex items-center gap-2 rounded-lg border px-2 py-1 text-xs font-semibold ${
+                                                                student.group_status === 'active'
+                                                                    ? 'border-green-200 bg-green-50 text-green-800'
+                                                                    : student.group_status === 'stopped'
+                                                                        ? 'border-orange-200 bg-orange-50 text-orange-800'
+                                                                        : student.group_status === 'finished'
+                                                                            ? 'border-purple-200 bg-purple-50 text-purple-800'
+                                                                            : 'border-gray-200 bg-gray-50 text-gray-800'
+                                                            }`}
+                                                        >
+                                                            {React.createElement(getStatusInfo(student.group_status).icon, {
+                                                                className: `h-4 w-4 ${getStatusInfo(student.group_status).iconColor}`
+                                                            })}
+                                                            <span>{getStatusInfo(student.group_status).label}</span>
                                                         </div>
-                                                    ) : (
-                                                        /* Display for unassigned students */
-                                                        <div className="space-y-1.5">
-                                                            <div className="inline-flex items-center gap-1.5 bg-orange-50 px-2 py-1 rounded-lg border border-orange-200">
-                                                                <AlertCircle className="h-3 w-3 text-orange-500" />
-                                                                <span className="text-xs text-orange-700 font-medium">Guruhga biriktirilmagan</span>
-                                                            </div>
-                                                            <div className="max-w-xs rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-xs text-gray-700">
-                                                                <span className="font-semibold text-gray-900">Sabab: </span>
-                                                                {student.unassigned_reason || "Yangi qo'shilgan"}
-                                                            </div>
+                                                        <Link
+                                                            href={`${basePath}/attendance/${student.group_id}`}
+                                                            className="inline-flex items-center gap-1.5 rounded-lg bg-[#A60E07] px-3 py-2 text-xs font-semibold text-white transition hover:opacity-90"
+                                                        >
+                                                            <ArrowRight className="h-3.5 w-3.5" />
+                                                            Davomatga o'tish
+                                                        </Link>
+                                                    </>
+                                                ) : (
+                                                    <div className="space-y-1.5">
+                                                        <div className="inline-flex items-center gap-1.5 rounded-lg border border-orange-200 bg-orange-50 px-2 py-1">
+                                                            <AlertCircle className="h-3 w-3 text-orange-500" />
+                                                            <span className="text-xs font-medium text-orange-700">Guruhga biriktirilmagan</span>
                                                         </div>
-                                                    )}
-                                                </div>
-                                            )}
+                                                        <div className="max-w-xs rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-xs text-gray-700">
+                                                            <span className="font-semibold text-gray-900">Sabab: </span>
+                                                            {student.unassigned_reason || "Yangi qo'shilgan"}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </td>
 
                                     </tr>

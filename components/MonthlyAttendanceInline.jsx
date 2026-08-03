@@ -319,6 +319,8 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
     onSuccess: () => {
       toast.success('Status muvaffaqiyatli o\'zgartirildi!');
       queryClient.invalidateQueries(['monthly-attendance', groupId, normalizedMonth]);
+      queryClient.invalidateQueries(['students']);
+      queryClient.invalidateQueries(['students-all-pages']);
       setStatusModal({ isOpen: false, student: null });
     },
     onError: (error) => {

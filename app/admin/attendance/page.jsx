@@ -309,14 +309,22 @@ export default function AdminAttendancePage() {
   }, [teachers, search]);
 
   const summaryStats = useMemo(() => {
+    const activeValue = monthlySummaryQuery.data?.summary?.active_students;
     const stoppedValue = monthlySummaryQuery.data?.summary?.stopped_students;
+    const activeStudents = monthlySummaryQuery.isLoading || monthlySummaryQuery.isFetching
+      ? null
+      : Number(activeValue || 0);
     const stoppedStudents = monthlySummaryQuery.isLoading || monthlySummaryQuery.isFetching
       ? null
       : Number(stoppedValue || 0);
-    return { stopped: stoppedStudents };
+    return { active: activeStudents, stopped: stoppedStudents };
   }, [monthlySummaryQuery.data, monthlySummaryQuery.isLoading, monthlySummaryQuery.isFetching]);
 
-  const totalStudents = useMemo(() => {
+  const monthlyTotalStudents = useMemo(() => {
+    if (monthlySummaryQuery.isLoading || monthlySummaryQuery.isFetching) {
+      return null;
+    }
+
     const groupBreakdown = Array.isArray(monthlySummaryQuery.data?.group_breakdown)
       ? monthlySummaryQuery.data.group_breakdown
       : [];
@@ -327,7 +335,7 @@ export default function AdminAttendancePage() {
     }, 0);
 
     return monthlyTotal;
-  }, [monthlySummaryQuery.data?.group_breakdown]);
+  }, [monthlySummaryQuery.data?.group_breakdown, monthlySummaryQuery.isLoading, monthlySummaryQuery.isFetching]);
 
   // Tanlangan kunda darsi bor guruhlar bo'yicha davomat holati (mobil dashboarddagi donut kabi)
   const dailyAttendanceStats = useMemo(() => {
@@ -353,10 +361,16 @@ export default function AdminAttendancePage() {
   return (
     <div className="space-y-4 p-3 sm:p-4 md:p-6">
       <div className="flex flex-wrap gap-2">
+        <div className="inline-flex items-center gap-3 rounded-full border border-emerald-200 bg-white px-4 py-2 shadow-sm">
+          <span className="text-[11px] font-bold uppercase tracking-wide text-emerald-700">Faol</span>
+          <span className="inline-flex min-w-10 items-center justify-center rounded-full bg-emerald-600 px-3 py-1 text-sm font-bold text-white">
+            {summaryStats.active === null ? "..." : summaryStats.active}
+          </span>
+        </div>
         <div className="inline-flex items-center gap-3 rounded-full border border-[#A60E07]/15 bg-white px-4 py-2 shadow-sm">
-          <span className="text-[11px] font-bold uppercase tracking-wide text-[#A60E07]">Jami</span>
+          <span className="text-[11px] font-bold uppercase tracking-wide text-[#A60E07]">Oylik jami</span>
           <span className="inline-flex min-w-10 items-center justify-center rounded-full bg-[#A60E07] px-3 py-1 text-sm font-bold text-white">
-            {totalStudents}
+            {monthlyTotalStudents === null ? "..." : monthlyTotalStudents}
           </span>
         </div>
         <button
