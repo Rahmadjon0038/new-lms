@@ -16,6 +16,27 @@ import { instance } from "../../../hooks/api";
 
 const MAIN_COLOR = "#A60E07";
 const CURRENT_MONTH = new Date().toISOString().slice(0, 7);
+const MONTH_NAMES = [
+    'Yanvar',
+    'Fevral',
+    'Mart',
+    'Aprel',
+    'May',
+    'Iyun',
+    'Iyul',
+    'Avgust',
+    'Sentabr',
+    'Oktabr',
+    'Noyabr',
+    'Dekabr',
+];
+
+const formatMonthLabel = (value) => {
+    if (!value || !/^\d{4}-\d{2}$/.test(value)) return value || '-';
+    const [year, month] = value.split('-').map(Number);
+    return `${MONTH_NAMES[month - 1] || month} ${year}`;
+};
+
 const formatPhoneNumber = (value) => {
     const digits = String(value || "").replace(/\D/g, "");
     const normalized = digits.startsWith("998") ? digits.slice(3) : digits.startsWith("8") ? digits.slice(1) : digits;
@@ -32,7 +53,9 @@ const fetchAllTeacherPayments = async ({ month, payment_status = "all" }) => {
     while (true) {
         const params = new URLSearchParams();
         params.append("month", month);
-        params.append("payment_status", payment_status);
+        if (payment_status && payment_status !== "all") {
+            params.append("payment_status", payment_status);
+        }
         params.append("page", String(page));
         params.append("limit", String(pageSize));
 
@@ -70,10 +93,40 @@ const fetchAllTeacherPayments = async ({ month, payment_status = "all" }) => {
 const TeacherPaymentsInfo = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [tooltipVisible, setTooltipVisible] = useState(null);
+    const [selectedMonth, setSelectedMonth] = useState(null);
+
+    const { data: availableMonthsData } = useQuery({
+        queryKey: ['teacher-payments-info-available-months'],
+        queryFn: async () => {
+            const response = await instance.get('/api/snapshots/available');
+            return response.data;
+        },
+        staleTime: 5 * 60 * 1000,
+    });
+
+    const availableMonths = useMemo(() => {
+        const months = Array.isArray(availableMonthsData?.data)
+            ? availableMonthsData.data
+                  .map((item) => item?.month)
+                  .filter((month) => typeof month === 'string' && /^\d{4}-\d{2}$/.test(month))
+            : [];
+        return Array.from(new Set(months));
+    }, [availableMonthsData]);
+
+    const activeMonth = useMemo(() => {
+        if (selectedMonth && /^\d{4}-\d{2}$/.test(selectedMonth)) {
+            return selectedMonth;
+        }
+        if (availableMonths.length > 0) {
+            return availableMonths[0];
+        }
+        return CURRENT_MONTH;
+    }, [selectedMonth, availableMonths]);
+
     const filters = useMemo(() => ({
-        month: CURRENT_MONTH,
+        month: activeMonth,
         payment_status: 'all',
-    }), []);
+    }), [activeMonth]);
 
     const { data: paymentsData, isLoading, error } = useQuery({
         queryKey: ['teacher-payments-info', filters.month, filters.payment_status],
@@ -199,6 +252,33 @@ const TeacherPaymentsInfo = () => {
                     O'quvchilaringizning oylik to'lov ma'lumotlari
                 </p>
             </div> */}
+
+            {availableMonths.length > 0 && (
+                <div className="mb-3 sm:mb-5">
+                    <div className="mb-2 text-[10px] font-black uppercase tracking-[0.28em] text-gray-400">
+                        Oylar
+                    </div>
+                    <div className="flex gap-2 overflow-x-auto pb-1">
+                        {availableMonths.map((month) => {
+                            const active = month === activeMonth;
+                            return (
+                                <button
+                                    key={month}
+                                    type="button"
+                                    onClick={() => setSelectedMonth(month)}
+                                    className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                                        active
+                                            ? "border-[#A60E07] bg-[#A60E07] text-white shadow-sm"
+                                            : "border-gray-200 bg-white text-gray-600 hover:border-[#A60E07] hover:text-[#A60E07]"
+                                    }`}
+                                >
+                                    {formatMonthLabel(month)}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
 
             {/* Search */}
             <div className="mb-3 sm:mb-6">
