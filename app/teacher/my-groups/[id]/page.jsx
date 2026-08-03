@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React from "react";
 import { useParams } from "next/navigation";
 import {
   ChevronLeftIcon,
@@ -9,12 +9,9 @@ import {
   BuildingOfficeIcon,
   ClockIcon,
   PhoneIcon,
-  StarIcon,
 } from "@heroicons/react/24/outline";
 import { TrophyIcon } from "@heroicons/react/24/solid";
-import Link from "next/link";
 import { useGetTeacherGroupById } from "../../../../hooks/groups";
-import PointModal from "../../../../components/teacher/PointModal";
 import { MEDAL_COLORS, StudentAvatar } from "../../../../components/teacher/TopStudentsSection";
 import { normalizeAvatarUrl } from "../../../../utils/avatar";
 
@@ -40,9 +37,6 @@ function TeacherGroupDetail() {
   const params = useParams();
   const groupId = params.id;
   const { data: groupData, isLoading, error } = useGetTeacherGroupById(groupId);
-  // Ball qo'yish modali ochilgan o'quvchi
-  const [pointStudent, setPointStudent] = useState(null);
-
 
   if (isLoading) {
     return (
@@ -289,14 +283,6 @@ function TeacherGroupDetail() {
                         <span className={`px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-bold ${getStatusColor(student.group_status)}`}>
                           {student.status_description || "Noma'lum"}
                         </span>
-                        <button
-                          type="button"
-                          onClick={() => setPointStudent(student)}
-                          className="inline-flex items-center gap-1 rounded-lg bg-[#A60E07] px-2.5 py-1.5 text-[10px] sm:text-xs font-extrabold text-white transition hover:bg-[#8b0c06]"
-                        >
-                          <StarIcon className="h-3.5 w-3.5" />
-                          Ball qo&apos;yish
-                        </button>
                       </div>
                     </div>
 
@@ -321,14 +307,6 @@ function TeacherGroupDetail() {
         </div>
       </div>
 
-      {/* Ball qo'yish modali */}
-      {pointStudent && (
-        <PointModal
-          student={pointStudent}
-          groupId={parseInt(groupId)}
-          onClose={() => setPointStudent(null)}
-        />
-      )}
     </div>
   );
 }

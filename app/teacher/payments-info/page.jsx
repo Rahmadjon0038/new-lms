@@ -27,7 +27,8 @@ const TeacherPaymentsInfo = () => {
     const [tooltipVisible, setTooltipVisible] = useState(null);
     const filters = useMemo(() => ({
         month: CURRENT_MONTH,
-        payment_status: 'all'
+        payment_status: 'all',
+        limit: 1000,
     }), []);
 
     // Fetch payments using existing hook
