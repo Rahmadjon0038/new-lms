@@ -1150,15 +1150,6 @@ const StudentsPageInner = () => {
                                     </AddGroup>
 
                                     <div className="flex items-center gap-2">
-                                        {student.group_id ? (
-                                            <Link
-                                                href={`${basePath}/attendance/${student.group_id}`}
-                                                className="inline-flex h-8 items-center gap-1 rounded-lg bg-[#A60E07] px-3 text-xs font-semibold text-white hover:opacity-90"
-                                            >
-                                                <ArrowRight className="h-3.5 w-3.5" />
-                                                Davomat
-                                            </Link>
-                                        ) : null}
                                         <button
                                             type="button"
                                             onClick={() => openStudentEditModal(student)}
@@ -1688,13 +1679,6 @@ const StudentsPageInner = () => {
                                                             })}
                                                             <span>{getStatusInfo(student.group_status).label}</span>
                                                         </div>
-                                                        <Link
-                                                            href={`${basePath}/attendance/${student.group_id}`}
-                                                            className="inline-flex items-center gap-1.5 rounded-lg bg-[#A60E07] px-3 py-2 text-xs font-semibold text-white transition hover:opacity-90"
-                                                        >
-                                                            <ArrowRight className="h-3.5 w-3.5" />
-                                                            Davomatga o'tish
-                                                        </Link>
                                                     </>
                                                 ) : (
                                                     <div className="space-y-1.5">

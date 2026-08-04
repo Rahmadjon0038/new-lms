@@ -821,12 +821,14 @@ function AdminDashboard() {
                         <th className="px-4 py-2 font-semibold">Talaba</th>
                         <th className="px-4 py-2 font-semibold">Guruh</th>
                         <th className="px-4 py-2 font-semibold">Fan / O&apos;qituvchi</th>
+                        <th className="px-4 py-2 font-semibold">Qatnashgan kunlar</th>
                         <th className="px-4 py-2 font-semibold">Chiqarilgan vaqt</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                       {group.items.map((item, index) => {
                         const removedAt = item.left_at || item.left_date;
+                        const attendedDays = Number(item.attended_days_before_removal || 0);
                         return (
                           <tr key={`${item.id || item.student_id}-${item.group_id}-${group.dateKey}-${index}`} className="align-top">
                             <td className="px-4 py-3">
@@ -841,6 +843,10 @@ function AdminDashboard() {
                             <td className="px-4 py-3 text-gray-700">
                               <div>{item.subject_name || "-"}</div>
                               <div className="text-xs text-gray-500">{item.teacher_name || "-"}</div>
+                            </td>
+                            <td className="px-4 py-3 text-gray-700">
+                              <div className="font-medium text-gray-900">{attendedDays} kun</div>
+                              <div className="text-xs text-gray-500">chiqarilishdan oldin</div>
                             </td>
                             <td className="px-4 py-3 text-gray-700">
                               <div className="font-medium">{formatDateTime(removedAt)}</div>
