@@ -389,11 +389,14 @@ export const useUpdateStudentMonthlyStatus = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: updateStudentMonthlyStatus,
-        onSuccess: () => {
+        onSuccess: (_data, vars) => {
             queryClient.invalidateQueries({ queryKey: ['lesson-students'] });
             queryClient.invalidateQueries({ queryKey: ['group-lessons'] });
             queryClient.invalidateQueries({ queryKey: ['students'] });
             queryClient.invalidateQueries({ queryKey: ['students-all-pages'] });
+            queryClient.invalidateQueries({ queryKey: ['group', String(vars?.group_id)] });
+            queryClient.invalidateQueries({ queryKey: ['group', Number(vars?.group_id)] });
+            queryClient.invalidateQueries({ queryKey: ['groups'] });
         },
     });
 };

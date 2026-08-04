@@ -313,7 +313,7 @@ export const useRemoveStudentFromGroup = () => {
     const queryClient = useQueryClient();
     const removeStudentMutation = useMutation({
         mutationFn: removeStudentFromGroup,
-        onSuccess: () => {
+        onSuccess: (_data, vars) => {
             queryClient.invalidateQueries({ queryKey: ['students'] });
             queryClient.invalidateQueries({ queryKey: ['groups'] });
             queryClient.invalidateQueries({ queryKey: ['lesson-students'] });
@@ -321,6 +321,8 @@ export const useRemoveStudentFromGroup = () => {
             queryClient.invalidateQueries({ queryKey: ['monthly-attendance'] });
             queryClient.invalidateQueries({ queryKey: ['new-students-notification'] });
             queryClient.invalidateQueries({ queryKey: ['monthly-payments'] });
+            queryClient.invalidateQueries({ queryKey: ['group', String(vars?.group_id)] });
+            queryClient.invalidateQueries({ queryKey: ['group', Number(vars?.group_id)] });
         }
     });
     return removeStudentMutation;
