@@ -904,7 +904,6 @@ function AdminDashboard() {
                     <tr key={student.id} className="hover:bg-orange-50 transition">
                       <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="text-base sm:text-lg font-bold text-red-500">#{student.id}</span>
                           <User className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500" />
                           <span className="font-semibold text-gray-900 truncate">{student.surname} {student.name}</span>
                         </div>

@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   XMarkIcon,
   UserIcon,
@@ -15,7 +15,9 @@ import {
 import { usePathname, useRouter } from 'next/navigation';
 import { useRegisterStudent, useJoinStudentToGroup } from '../../../../hooks/students';
 import { usegetAllgroups } from '../../../../hooks/groups';
+import { useAdmins } from '../../../../hooks/admins';
 import { useGetAllSubjects } from '../../../../hooks/subjects';
+import { usegetProfile } from '../../../../hooks/user';
 import { toast } from 'react-hot-toast';
 import GroupsSelect from '../../../../components/admistrator/GroupsSelect';
 
@@ -34,7 +36,9 @@ const createEmptyStudentFormData = () => ({
     father_phone: '',
     address: '',
     age: '',
-    subject_id: ''
+    subject_id: '',
+    admitted_by: '',
+    admitted_by_name: '',
 });
 
 const loadInitialStudentFormData = () => {
@@ -73,6 +77,10 @@ export default function NewStudentPage() {
     const [selectedGroup, setSelectedGroup] = useState('');
     const [subjectFilter, setSubjectFilter] = useState(''); // Filter by subject
     
+    const { data: profileData } = usegetProfile();
+    const profile = profileData?.data || profileData || {};
+    const profileUserId = Number(profile?.id || profile?.user_id || profile?.teacher_id || 0) || '';
+    const { data: adminsData, isLoading: adminsLoading } = useAdmins({ status: 'active' });
     const { data: groupsData, isLoading: groupsLoading } = usegetAllgroups();
     const { data: subjectsData, isLoading: subjectsLoading } = useGetAllSubjects();
     const subjectOptions = Array.isArray(subjectsData?.subjects)
@@ -84,6 +92,21 @@ export default function NewStudentPage() {
                 : [];
     const registerMutation = useRegisterStudent();
     const joinGroupMutation = useJoinStudentToGroup();
+    const adminOptions = useMemo(() => {
+        const admins = Array.isArray(adminsData?.data) ? adminsData.data : Array.isArray(adminsData) ? adminsData : [];
+        return admins
+            .map((admin) => ({
+                id: admin.id,
+                name: `${admin.name || ''} ${admin.surname || ''}`.trim() || admin.username || `Admin #${admin.id}`,
+            }))
+            .filter((admin) => admin.id);
+    }, [adminsData]);
+    const defaultAdmin = useMemo(() => {
+        if (!adminOptions.length) return null;
+        return adminOptions.find((admin) => String(admin.id) === String(profileUserId)) || adminOptions[0];
+    }, [adminOptions, profileUserId]);
+    const selectedAdminId = formData.admitted_by || String(defaultAdmin?.id || '');
+    const selectedAdminName = formData.admitted_by_name || defaultAdmin?.name || '';
 
     const availableGroups = useMemo(() => {
         const groups = groupsData?.groups || [];
@@ -102,6 +125,23 @@ export default function NewStudentPage() {
         const { name, value } = e.target;
         setFormData(prev => {
             const nextState = { ...prev, [name]: value };
+            try {
+                window.localStorage.setItem('studentFormData', JSON.stringify(nextState));
+            } catch (error) {
+                console.error('Student form data saving failed:', error);
+            }
+            return nextState;
+        });
+    };
+
+    const handleSelectAdmin = (admin) => {
+        if (!admin?.id) return;
+        setFormData((prev) => {
+            const nextState = {
+                ...prev,
+                admitted_by: String(admin.id),
+                admitted_by_name: admin.name,
+            };
             try {
                 window.localStorage.setItem('studentFormData', JSON.stringify(nextState));
             } catch (error) {
@@ -138,6 +178,8 @@ export default function NewStudentPage() {
         const payload = {
             ...formData,
             password: nextPassword,
+            admitted_by: Number(selectedAdminId || defaultAdmin?.id || 0) || undefined,
+            admitted_by_name: selectedAdminName || undefined,
         };
 
         try {
@@ -359,7 +401,44 @@ export default function NewStudentPage() {
 
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Foydalanuvchi nomi *
+                                        Qabul qiluvchi admin *
+                                    </label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {adminsLoading ? (
+                                            <div className="text-sm text-gray-500">Adminlar yuklanmoqda...</div>
+                                        ) : (
+                                            adminOptions.map((admin) => {
+                                                const isSelected = String(selectedAdminId) === String(admin.id);
+                                                return (
+                                                    <button
+                                                        key={admin.id}
+                                                        type="button"
+                                                        onClick={() => handleSelectAdmin(admin)}
+                                                        className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition ${
+                                                            isSelected
+                                                                ? 'border-[#A60E07] bg-[#A60E07] text-white'
+                                                                : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                                                        }`}
+                                                    >
+                                                        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-[10px] font-bold">
+                                                            {admin.name?.[0] || 'A'}
+                                                        </span>
+                                                        <span className="whitespace-nowrap">{admin.name}</span>
+                                                    </button>
+                                                );
+                                            })
+                                        )}
+                                    </div>
+                                    {selectedAdminName ? (
+                                        <div className="mt-2 text-xs text-gray-500">
+                                            Tanlangan admin: <span className="font-medium text-gray-700">{selectedAdminName}</span>
+                                        </div>
+                                    ) : null}
+                                </div>
+
+                                <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Foydalanuvchi nomi *
                                     </label>
                                     <input
                                         type="text"
@@ -513,6 +592,11 @@ export default function NewStudentPage() {
                                         <p className="text-sm text-gray-600">
                                             {registeredStudent?.surname} {registeredStudent?.name}
                                         </p>
+                                        {(registeredStudent?.admitted_by_name || formData.admitted_by_name) ? (
+                                            <p className="text-sm text-gray-700 mt-1">
+                                                <span className="font-medium">Qabul qilgan admin:</span> {registeredStudent?.admitted_by_name || formData.admitted_by_name}
+                                            </p>
+                                        ) : null}
                                         <p className="text-sm text-gray-700 mt-1">
                                             <span className="font-medium">Login:</span> {registeredStudent?.username || formData.username}
                                         </p>

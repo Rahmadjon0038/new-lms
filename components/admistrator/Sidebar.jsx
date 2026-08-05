@@ -11,6 +11,7 @@ import {
   AcademicCapIcon, // Fanlar uchun
   BookmarkIcon, // Qollanma
   ClipboardDocumentListIcon, // Davomat uchun
+  ChartBarIcon, // Qabul statistikasi uchun
   ClockIcon, // Kechikish uchun
   WalletIcon, // To'lovlar uchun
   BuildingLibraryIcon, // Xonalar
@@ -25,14 +26,12 @@ import { useNewStudentsNotification } from "../../hooks/payments";
 // Asosiy rang konstantasi
 const MAIN_COLOR = "#A60E07";
 
-// Asosiy bo'limlar
 const primarySidebarItems = [
   {
     name: "Bosh sahifa",
     icon: Squares2X2Icon,
     href: "/admin",
   },
- 
   {
     name: "Davomat",
     icon: ClipboardDocumentListIcon,
@@ -64,14 +63,19 @@ const primarySidebarItems = [
     href: "/admin/rooms",
   },
   {
-    name: "Kechikishlar",
-    icon: ClockIcon,
-    href: "/admin/teachers-lateness",
+    name: "Qabul statistikasi",
+    icon: ChartBarIcon,
+    href: "/admin/admissions-statistics",
   },
 ];
 
 // Qo'shimcha bo'limlar
 const secondarySidebarItems = [
+  {
+    name: "Kechikishlar",
+    icon: ClockIcon,
+    href: "/admin/teachers-lateness",
+  },
   {
     name: "Fanlar",
     icon: AcademicCapIcon,
@@ -92,7 +96,6 @@ const secondarySidebarItems = [
     icon: MegaphoneIcon,
     href: "/admin/news",
   },
-  
   {
     name: "O'qituvchilar",
     icon: UserGroupIcon,
@@ -182,7 +185,7 @@ function AdministratorSidebar({ isOpen = false, onClose = () => {} }) {
           <button
             type="button"
             onClick={() => setIsExtraOpen((prev) => !prev)}
-            className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100 transition"
+            className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-100"
           >
             <span>Qo&apos;shimcha bo&apos;limlar</span>
             <ChevronRightIcon

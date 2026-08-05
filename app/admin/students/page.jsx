@@ -278,16 +278,94 @@ const getStudentPassword = (student) => (
     ''
 );
 
-const getPrimaryStudentGroup = (student) => {
-    const groups = Array.isArray(student?.groups) ? student.groups : [];
-    if (groups.length === 0) return null;
+const matchesFilterValue = (value, filter) => {
+    if (!filter || filter === 'all') return true;
+    return String(value ?? '') === String(filter);
+};
 
-    return (
-        groups.find((group) => group?.group_status === 'active' && !group?.group_left_at) ||
-        groups.find((group) => group?.group_status === 'active') ||
-        groups[0] ||
-        null
-    );
+const buildStudentRows = (student, { statusFilter = 'all', subjectFilter = 'all', teacherFilter = 'all' } = {}) => {
+    const allGroups = Array.isArray(student?.groups) ? student.groups : [];
+    const groups = allGroups.filter((group) => {
+        if (!group || group.group_status === 'removed') return false;
+        if (!matchesFilterValue(group.group_status, statusFilter)) return false;
+        if (!matchesFilterValue(group.subject_id ?? group.subjectId ?? student?.subject_id ?? student?.registered_subject_id, subjectFilter)) return false;
+        if (!matchesFilterValue(group.teacher_id ?? group.teacherId ?? student?.teacher_id, teacherFilter)) return false;
+        return true;
+    });
+
+    const baseRow = {
+        ...student,
+        group_id: student?.group_id || null,
+        group_name: student?.group_name || 'Guruhga biriktirilmagan',
+        group_status: student?.group_status || null,
+        group_admin_status: student?.group_admin_status || null,
+        group_class_status: student?.group_class_status || null,
+        teacher_name: student?.teacher_name || null,
+        teacher_id: student?.teacher_id || null,
+        subject_id: student?.subject_id || student?.registered_subject_id || null,
+        subject_name: student?.subject_name || student?.registered_subject_name || null,
+        room_number: student?.room_number || null,
+        room_capacity: student?.room_capacity || null,
+        has_projector: student?.has_projector || null,
+        group_joined_at: student?.group_joined_at || null,
+        group_left_at: student?.group_left_at || null,
+        price: student?.price || null,
+        class_start_date: student?.class_start_date || null,
+        started_at: student?.started_at || null,
+    };
+
+    if (groups.length === 0) {
+        if (statusFilter !== 'all') {
+            return [];
+        }
+        if (!matchesFilterValue(baseRow.subject_id, subjectFilter)) {
+            return [];
+        }
+        if (!matchesFilterValue(baseRow.teacher_id, teacherFilter)) {
+            return [];
+        }
+        return [{
+            ...baseRow,
+            row_key: `${student?.id || 'student'}-nogroup`,
+            group_id: null,
+            group_name: 'Guruhga biriktirilmagan',
+            group_status: null,
+            group_admin_status: null,
+            group_class_status: null,
+            teacher_name: null,
+            room_number: null,
+            room_capacity: null,
+            has_projector: null,
+            group_joined_at: null,
+            group_left_at: null,
+            class_start_date: null,
+            started_at: null,
+        }];
+    }
+
+    return groups.map((group, index) => {
+        return {
+            ...baseRow,
+            ...group,
+            row_key: `${student?.id || 'student'}-${group.group_id || 'nogroup'}-${group.group_joined_at || group.group_left_at || index}`,
+            group_id: group.group_id || null,
+            group_name: group.group_name || 'Guruhga biriktirilmagan',
+            group_status: group.group_status || null,
+            group_admin_status: group.group_admin_status || null,
+            group_class_status: group.group_class_status || null,
+            teacher_name: group.teacher_name || baseRow.teacher_name || null,
+            teacher_id: group.teacher_id || baseRow.teacher_id || null,
+            subject_id: group.subject_id || baseRow.subject_id || null,
+            subject_name: group.subject_name || baseRow.subject_name || null,
+            room_number: group.room_number || null,
+            room_capacity: group.room_capacity || null,
+            has_projector: group.has_projector || null,
+            group_joined_at: group.group_joined_at || null,
+            group_left_at: group.group_left_at || null,
+            class_start_date: group.class_start_date || null,
+            started_at: group.started_at || null,
+        };
+    });
 };
 
 const StudentsPageInner = () => {
@@ -460,42 +538,25 @@ const StudentsPageInner = () => {
     // Ma'lumot kelganda state-ni yangilash
     useEffect(() => {
         if (hasLoadedStudents) {
-            const normalizedStudents = rawStudents.map((student) => {
-                const primaryGroup = getPrimaryStudentGroup(student);
-
-                return {
-                    ...student,
-                    group_id: primaryGroup?.group_id || null,
-                    group_name: primaryGroup?.group_name || 'Guruhga biriktirilmagan',
-                    group_status: primaryGroup?.group_status || null,
-                    group_admin_status: primaryGroup?.group_admin_status || null,
-                    group_class_status: primaryGroup?.group_class_status || null,
-                    teacher_name: primaryGroup?.teacher_name || null,
-                    subject_name: primaryGroup?.subject_name || student.subject_name || null,
-                    room_number: primaryGroup?.room_number || null,
-                    room_capacity: primaryGroup?.room_capacity || null,
-                    has_projector: primaryGroup?.has_projector || null,
-                    group_joined_at: primaryGroup?.group_joined_at || null,
-                    group_left_at: primaryGroup?.group_left_at || null,
-                    price: primaryGroup?.price || null,
-                    class_start_date: primaryGroup?.class_start_date || null,
-                    started_at: primaryGroup?.started_at || null,
-                };
-            });
+            const normalizedStudents = rawStudents.flatMap((student) => buildStudentRows(student, {
+                statusFilter: selectedStatus,
+                subjectFilter: selectedSubject,
+                teacherFilter: selectedTeacher,
+            }));
 
             // eslint-disable-next-line react-hooks/set-state-in-effect
             setStudents(normalizedStudents);
             setStats(backendData?.stats || backendData?.data?.stats || null);
             setAllStudents((prev) => {
                 if (currentPage <= 1) return normalizedStudents;
-                const merged = new Map(prev.map((student) => [student.id, student]));
+                const merged = new Map(prev.map((student) => [student.row_key || `${student.id}-${student.group_id || 'nogroup'}`, student]));
                 normalizedStudents.forEach((student) => {
-                    merged.set(student.id, student);
+                    merged.set(student.row_key || `${student.id}-${student.group_id || 'nogroup'}`, student);
                 });
                 return Array.from(merged.values());
             });
         }
-    }, [backendData, currentPage, hasLoadedStudents, rawStudents]);
+    }, [backendData, currentPage, hasLoadedStudents, rawStudents, selectedStatus]);
 
     useEffect(() => {
         if (isLoading) return;
@@ -573,7 +634,7 @@ const StudentsPageInner = () => {
         setAllStudents([]);
     }, [searchTerm, selectedTeacher, selectedSubject, selectedStatus, showUnassigned, teacherId, isTeacherRoute]);
 
-    const filteredStudents = allStudents || [];
+    const filteredStudents = useMemo(() => allStudents || [], [allStudents]);
 
     const handleEditChange = useCallback((e) => {
         const { name, value, type } = e.target;
@@ -583,7 +644,7 @@ const StudentsPageInner = () => {
 
     const handleEditClick = (student, index) => {
         // ID, Group ID va Index birikmasi orqali unique key yaratamiz
-        setEditingId(`${student.id}-${student.group_id}-${index}`);
+        setEditingId(student.row_key || `${student.id}-${student.group_id}-${index}`);
         setEditData({
             name: student.name,
             surname: student.surname,
@@ -620,11 +681,12 @@ const StudentsPageInner = () => {
     };
 
     const hasActiveFilters = (isTeacherRoute ? false : (selectedTeacher !== 'all' || selectedSubject !== 'all')) || selectedStatus !== 'all' || showUnassigned || searchTerm;
+    const summaryStats = stats || null;
 
     const handleSave = (uniqueId) => {
         setStudents(prevStudents =>
             prevStudents.map((s, idx) =>
-                `${s.id}-${s.group_id}-${idx}` === uniqueId
+                (s.row_key || `${s.id}-${s.group_id}-${idx}`) === uniqueId
                     ? {
                         ...s,
                         name: String(editData.name).trim(),
@@ -1039,38 +1101,38 @@ const StudentsPageInner = () => {
                 </div>
             </div>
 
-            {stats ? (
+            {summaryStats ? (
                 <div className="mb-4 flex flex-wrap items-center gap-2">
                     <span className="text-sm font-semibold text-gray-700">Jami talabalar:</span>
                     <span className="inline-flex items-center rounded-full bg-[#A60E07] px-3 py-1 text-sm font-bold text-white">
-                        {stats.total_students || 0}
+                        {summaryStats.total_students || 0}
                     </span>
 
                     <span className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wide text-gray-600">
                         Guruhsiz
                         <span className="ml-2 rounded-full bg-gray-100 px-2 py-0.5 text-sm font-bold text-gray-900">
-                            {stats.unassigned_students || 0}
+                            {summaryStats.unassigned_students || 0}
                         </span>
                     </span>
 
                     <span className="inline-flex items-center rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-green-700">
                         Faol
                         <span className="ml-2 rounded-full bg-green-100 px-2 py-0.5 text-sm font-bold text-green-800">
-                            {stats.group_memberships?.active || 0}
+                            {summaryStats.group_memberships?.active || 0}
                         </span>
                     </span>
 
                     <span className="inline-flex items-center rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-orange-700">
                         To'xtatgan
                         <span className="ml-2 rounded-full bg-orange-100 px-2 py-0.5 text-sm font-bold text-orange-800">
-                            {stats.group_memberships?.stopped || 0}
+                            {summaryStats.group_memberships?.stopped || 0}
                         </span>
                     </span>
 
                     <span className="inline-flex items-center rounded-full border border-purple-200 bg-purple-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-purple-700">
                         Bitirgan
                         <span className="ml-2 rounded-full bg-purple-100 px-2 py-0.5 text-sm font-bold text-purple-800">
-                            {stats.group_memberships?.finished || 0}
+                            {summaryStats.group_memberships?.finished || 0}
                         </span>
                     </span>
 
@@ -1115,7 +1177,7 @@ const StudentsPageInner = () => {
             <div className="space-y-3 md:hidden">
                 {filteredStudents.length > 0 ? (
                     filteredStudents.map((student, index) => {
-                        const rowKey = `${student.id}-${student.group_id}-${index}`;
+                        const rowKey = student.row_key || `${student.id}-${student.group_id}-${index}`;
                         const statusInfo = getStatusInfo(student.group_status);
                         const isExpanded = !!mobileExpandedRows[rowKey];
                         const isNotInGroup = !student.group_name || student.group_name === 'Guruhga biriktirilmagan';
@@ -1363,7 +1425,7 @@ const StudentsPageInner = () => {
                     <tbody className="divide-y divide-gray-300">
                         {filteredStudents.length > 0 ? (
                             filteredStudents.map((student, index) => {
-                                const rowKey = `${student.id}-${student.group_id}-${index}`;
+                                const rowKey = student.row_key || `${student.id}-${student.group_id}-${index}`;
                                 const isEditing = editingId === rowKey;
                                 const isNotInGroup = !student.group_name || student.group_name === 'Guruhga biriktirilmagan';
 

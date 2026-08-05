@@ -30,6 +30,15 @@ export const getStatusInfo = (status) => {
       color: 'bg-purple-100 text-purple-800', 
       iconColor: 'text-purple-600',
       description: 'Talaba guruhni muvaffaqiyatli yakunlagan'
+    },
+    removed: {
+      label: "Guruhdan chiqarilgan",
+      icon: UserX,
+      bgClass: 'bg-slate-100',
+      textClass: 'text-slate-800',
+      color: 'bg-slate-100 text-slate-800',
+      iconColor: 'text-slate-600',
+      description: "Talaba ushbu guruhdan chiqarilgan"
     }
   };
   

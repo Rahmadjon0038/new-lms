@@ -131,6 +131,8 @@ export const useRegisterStudent = () => {
         mutationFn: registerStudent,
         onSuccess: () => {
             queryClient.invalidateQueries(['students']);
+            queryClient.invalidateQueries({ queryKey: ['students-all-pages'] });
+            queryClient.invalidateQueries({ queryKey: ['new-students-notification'] });
         }
     });
     return registerStudentMutation;

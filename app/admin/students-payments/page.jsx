@@ -64,6 +64,7 @@ const getStoredPaymentsFilters = () => {
 const getPaymentsFiltersFromSearchParams = (params) => {
     const month = params.get("month") || "";
     const paymentStatus = params.get("payment_status") || "all";
+    const monthlyStatus = params.get("monthly_status") || "all";
     const teacherId = params.get("teacher_id") || "";
     const subjectId = params.get("subject_id") || "";
     const search = params.get("search") || "";
@@ -71,6 +72,7 @@ const getPaymentsFiltersFromSearchParams = (params) => {
     const hasAny =
         params.has("month") ||
         params.has("payment_status") ||
+        params.has("monthly_status") ||
         params.has("teacher_id") ||
         params.has("subject_id") ||
         params.has("search") ||
@@ -79,6 +81,7 @@ const getPaymentsFiltersFromSearchParams = (params) => {
     return {
         month,
         payment_status: paymentStatus,
+        monthly_status: monthlyStatus,
         teacher_id: teacherId,
         subject_id: subjectId,
         search,
@@ -103,6 +106,7 @@ const StudentPaymentsInner = () => {
             return {
                 month: currentMonth,
                 payment_status: "all",
+                monthly_status: "all",
                 teacher_id: "",
                 subject_id: "",
                 search: "",
@@ -116,6 +120,7 @@ const StudentPaymentsInner = () => {
             return {
                 month: parsed.month || currentMonth,
                 payment_status: parsed.payment_status || "all",
+                monthly_status: parsed.monthly_status || "all",
                 teacher_id: parsed.teacher_id || "",
                 subject_id: parsed.subject_id || "",
                 search: parsed.search || "",
@@ -128,6 +133,7 @@ const StudentPaymentsInner = () => {
         return {
             month: stored?.month || currentMonth,
             payment_status: stored?.payment_status || "all",
+            monthly_status: stored?.monthly_status || "all",
             teacher_id: stored?.teacher_id || "",
             subject_id: stored?.subject_id || "",
             search: stored?.search || "",
@@ -237,6 +243,7 @@ const StudentPaymentsInner = () => {
 
         const nextMonth = parsed.month || new Date().toISOString().slice(0, 7);
         const nextStatus = parsed.payment_status || "all";
+        const nextMonthlyStatus = parsed.monthly_status || "all";
         const nextTeacher = parsed.teacher_id || "";
         const nextSubject = parsed.subject_id || "";
         const nextSearch = parsed.search || "";
@@ -247,6 +254,7 @@ const StudentPaymentsInner = () => {
                 ...prev,
                 month: nextMonth,
                 payment_status: nextStatus,
+                monthly_status: nextMonthlyStatus,
                 teacher_id: nextTeacher,
                 subject_id: nextSubject,
                 search: nextSearch,
@@ -264,6 +272,7 @@ const StudentPaymentsInner = () => {
         const payload = {
             month: filters.month,
             payment_status: filters.payment_status,
+            monthly_status: filters.monthly_status,
             teacher_id: filters.teacher_id,
             subject_id: filters.subject_id,
             search: filters.search,
@@ -274,6 +283,7 @@ const StudentPaymentsInner = () => {
         const params = new URLSearchParams();
         if (filters.month) params.set("month", filters.month);
         if (filters.payment_status && filters.payment_status !== "all") params.set("payment_status", filters.payment_status);
+        if (filters.monthly_status && filters.monthly_status !== "all") params.set("monthly_status", filters.monthly_status);
         if (filters.teacher_id) params.set("teacher_id", filters.teacher_id);
         if (filters.subject_id) params.set("subject_id", filters.subject_id);
         if (filters.search?.trim()) params.set("search", filters.search.trim());
@@ -289,6 +299,7 @@ const StudentPaymentsInner = () => {
     }, [
         filters.month,
         filters.payment_status,
+        filters.monthly_status,
         filters.teacher_id,
         filters.subject_id,
         filters.search,
@@ -300,7 +311,7 @@ const StudentPaymentsInner = () => {
 
     useEffect(() => {
         setAllStudents([]);
-    }, [filters.month, filters.payment_status, filters.teacher_id, filters.subject_id, filters.search, filters.limit]);
+    }, [filters.month, filters.payment_status, filters.monthly_status, filters.teacher_id, filters.subject_id, filters.search, filters.limit]);
 
     useEffect(() => {
         if (!paymentsData) return;
@@ -544,6 +555,7 @@ const StudentPaymentsInner = () => {
         setFilters({
             month: new Date().toISOString().slice(0, 7),
             payment_status: 'all',
+            monthly_status: 'all',
             teacher_id: '',
             subject_id: '',
             search: '',
@@ -553,7 +565,7 @@ const StudentPaymentsInner = () => {
     };
 
     // Check if any filter is active
-    const hasActiveDropdownFilters = filters.payment_status !== 'all' || Boolean(filters.teacher_id) || Boolean(filters.subject_id);
+    const hasActiveDropdownFilters = filters.payment_status !== 'all' || filters.monthly_status !== 'all' || Boolean(filters.teacher_id) || Boolean(filters.subject_id);
     const hasActiveFilters = hasActiveDropdownFilters || filters.search.trim();
 
     // Clear student month data
@@ -733,6 +745,18 @@ const StudentPaymentsInner = () => {
             }
             return nextFilters;
         });
+    };
+
+    // Statistika chiplari (Jami/Faol/To'xtatgan/To'liq to'lagan/Qisman/To'lamagan)
+    // bir vaqtning o'zida faqat bittasi active bo'lishi uchun - ikkalasini ham
+    // birgalikda (bitta setFilters chaqiruvida) o'rnatamiz
+    const selectStatChip = (paymentStatus, monthlyStatus) => {
+        setFilters(prev => ({
+            ...prev,
+            payment_status: paymentStatus,
+            monthly_status: monthlyStatus,
+            page: 1
+        }));
     };
 
     useEffect(() => {
@@ -1202,42 +1226,78 @@ const StudentPaymentsInner = () => {
                                 To'lov ma'lumotlari ({students.length} ta)
                             </h2> */}
                             <div className="flex flex-wrap items-center gap-2">
-                                <div className="inline-flex items-center gap-2 rounded-full border border-[#A60E07]/15 bg-[#A60E07]/5 px-3 py-1 text-sm font-semibold text-[#A60E07]">
+                                <button
+                                    type="button"
+                                    onClick={() => selectStatChip('all', 'all')}
+                                    className={`inline-flex items-center gap-2 rounded-full border border-[#A60E07]/15 bg-[#A60E07]/5 px-3 py-1 text-sm font-semibold text-[#A60E07] transition ${
+                                        filters.payment_status === 'all' && filters.monthly_status === 'all' ? 'ring-2 ring-offset-1 ring-[#A60E07]' : ''
+                                    }`}
+                                >
                                     <span>Jami</span>
                                     <span className="rounded-full bg-[#A60E07] px-2.5 py-0.5 text-white">
                                         {stats.total_students}
                                     </span>
-                                </div>
-                                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-sm font-semibold text-emerald-700">
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => selectStatChip('all', filters.monthly_status === 'active' ? 'all' : 'active')}
+                                    className={`inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-sm font-semibold text-emerald-700 transition ${
+                                        filters.monthly_status === 'active' ? 'ring-2 ring-offset-1 ring-emerald-600' : ''
+                                    }`}
+                                >
                                     <span>Faol</span>
                                     <span className="rounded-full bg-emerald-600 px-2.5 py-0.5 text-white">
                                         {stats.active}
                                     </span>
-                                </div>
-                                <div className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-sm font-semibold text-orange-700">
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => selectStatChip('all', filters.monthly_status === 'stopped' ? 'all' : 'stopped')}
+                                    className={`inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-sm font-semibold text-orange-700 transition ${
+                                        filters.monthly_status === 'stopped' ? 'ring-2 ring-offset-1 ring-orange-600' : ''
+                                    }`}
+                                >
                                     <span>To&apos;xtatgan</span>
                                     <span className="rounded-full bg-orange-600 px-2.5 py-0.5 text-white">
                                         {stats.stopped}
                                     </span>
-                                </div>
-                                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-sm font-semibold text-emerald-700">
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => selectStatChip(filters.payment_status === 'paid' ? 'all' : 'paid', 'all')}
+                                    className={`inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-sm font-semibold text-emerald-700 transition ${
+                                        filters.payment_status === 'paid' ? 'ring-2 ring-offset-1 ring-emerald-600' : ''
+                                    }`}
+                                >
                                     <span>To&apos;liq to&apos;lagan</span>
                                     <span className="rounded-full bg-emerald-600 px-2.5 py-0.5 text-white">
                                         {stats.paid}
                                     </span>
-                                </div>
-                                <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-700">
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => selectStatChip(filters.payment_status === 'partial' ? 'all' : 'partial', 'all')}
+                                    className={`inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-700 transition ${
+                                        filters.payment_status === 'partial' ? 'ring-2 ring-offset-1 ring-amber-600' : ''
+                                    }`}
+                                >
                                     <span>Qisman</span>
                                     <span className="rounded-full bg-amber-600 px-2.5 py-0.5 text-white">
                                         {stats.partial}
                                     </span>
-                                </div>
-                                <div className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-sm font-semibold text-rose-700">
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => selectStatChip(filters.payment_status === 'unpaid' ? 'all' : 'unpaid', 'all')}
+                                    className={`inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-sm font-semibold text-rose-700 transition ${
+                                        filters.payment_status === 'unpaid' ? 'ring-2 ring-offset-1 ring-rose-600' : ''
+                                    }`}
+                                >
                                     <span>To&apos;lamagan</span>
                                     <span className="rounded-full bg-rose-600 px-2.5 py-0.5 text-white">
                                         {stats.unpaid}
                                     </span>
-                                </div>
+                                </button>
                             </div>
                         </div>
                         {/* {stats.total_expected > 0 && (

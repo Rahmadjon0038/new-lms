@@ -1,8 +1,26 @@
 import axios from "axios";
 import Cookies from "js-cookie";
 
+const getDefaultApiBaseUrl = () => {
+  if (typeof window === "undefined") {
+    return "http://localhost:5000";
+  }
+
+  const { hostname, protocol } = window.location;
+  const isLocalHost =
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    /^\d{1,3}(\.\d{1,3}){3}$/.test(hostname);
+
+  if (isLocalHost) {
+    return `${protocol}//${hostname}:5000`;
+  }
+
+  return "https://api.taraqqiyot-teaching-center.uz";
+};
+
 export const instance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.taraqqiyot-teaching-center.uz",
+  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || getDefaultApiBaseUrl(),
 });
 
 let isRefreshing = false;
