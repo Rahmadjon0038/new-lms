@@ -281,16 +281,18 @@ const getAttendanceTeachers = async (filters = {}) => {
     const params = new URLSearchParams();
     if (filters.date) params.append('date', filters.date);
     if (filters.shift) params.append('shift', filters.shift);
+    if (filters.subject_id) params.append('subject_id', filters.subject_id);
     const queryString = params.toString();
 
     const response = await instance.get(`/api/attendance/teachers${queryString ? `?${queryString}` : ''}`);
     return response.data;
 };
 
-export const useGetAttendanceTeachers = (filters = {}) => {
+export const useGetAttendanceTeachers = (filters = {}, options = {}) => {
     return useQuery({
         queryKey: ['attendance-teachers-list', filters],
         queryFn: () => getAttendanceTeachers(filters),
+        ...options,
     });
 };
 

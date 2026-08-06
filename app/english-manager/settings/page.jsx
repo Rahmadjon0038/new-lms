@@ -1,22 +1,15 @@
 "use client";
 /* eslint-disable react/no-unescaped-entities */
 
-import React, { useMemo, useState } from "react";
-import { EyeIcon, EyeSlashIcon, KeyIcon, ShieldCheckIcon } from "@heroicons/react/24/outline";
+import React, { useState } from "react";
+import { EyeIcon, EyeSlashIcon, KeyIcon } from "@heroicons/react/24/outline";
 import { useChangePassword, usegetProfile } from "../../../hooks/user";
-import { useGetAllSubjects } from "../../../hooks/subjects";
-import { findEnglishSubject } from "../../../utils/englishManager";
 import { useGetNotify } from "../../../hooks/notify";
 
 const MAIN_COLOR = "#A60E07";
 
 export default function EnglishManagerSettingsPage() {
   const { data: user } = usegetProfile();
-  const { data: subjectsData } = useGetAllSubjects();
-  const englishSubject = useMemo(
-    () => findEnglishSubject(subjectsData?.subjects || []),
-    [subjectsData]
-  );
   const notify = useGetNotify();
   const changePasswordMutation = useChangePassword();
   const [form, setForm] = useState({ old_password: "", new_password: "" });
@@ -45,30 +38,7 @@ export default function EnglishManagerSettingsPage() {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      <section className="rounded-[2rem] border border-white bg-white p-5 shadow-sm">
-        <div className="flex items-start gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50">
-            <ShieldCheckIcon className="h-6 w-6" style={{ color: MAIN_COLOR }} />
-          </div>
-          <div className="min-w-0">
-            <div className="inline-flex rounded-full bg-[#A60E07]/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.25em] text-[#A60E07]">
-              Settings
-            </div>
-            <h1 className="mt-3 text-3xl font-black text-gray-900">Sozlamalar</h1>
-            <p className="mt-1 text-sm text-gray-500">
-              English manager faqat English subject ma'lumotlarini ko'radi.
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-5 grid gap-3 sm:grid-cols-3">
-          <InfoBox label="Username" value={user?.username || "-"} />
-          <InfoBox label="Role" value={user?.role || "-"} />
-          <InfoBox label="English subject" value={englishSubject?.name || "Topilmadi"} />
-        </div>
-      </section>
-
+    <div className="mx-auto max-w-xl">
       <section className="rounded-[2rem] border border-white bg-white p-5 shadow-sm">
         <div className="mb-4 flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-50">
@@ -105,15 +75,6 @@ export default function EnglishManagerSettingsPage() {
           </button>
         </form>
       </section>
-    </div>
-  );
-}
-
-function InfoBox({ label, value }) {
-  return (
-    <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3">
-      <div className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400">{label}</div>
-      <div className="mt-2 truncate text-sm font-semibold text-gray-900">{value}</div>
     </div>
   );
 }

@@ -7,11 +7,11 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import {
   Squares2X2Icon,
   BookOpenIcon,
-  UsersIcon,
   BanknotesIcon,
   Cog6ToothIcon,
   XMarkIcon,
   ChartBarIcon,
+  ClipboardDocumentListIcon,
 } from "@heroicons/react/24/outline";
 import { instance } from "../../hooks/api";
 
@@ -20,8 +20,8 @@ const SEEN_REPORTS_STORAGE_KEY = "english-manager-seen-report-ids";
 
 const items = [
   { name: "Bosh sahifa", icon: Squares2X2Icon, href: "/english-manager" },
+  { name: "Davomat", icon: ClipboardDocumentListIcon, href: "/english-manager/attendance" },
   { name: "Guruhlar", icon: BookOpenIcon, href: "/english-manager/groups" },
-  { name: "Talabalar", icon: UsersIcon, href: "/english-manager/students" },
   { name: "To'lovlar", icon: BanknotesIcon, href: "/english-manager/payments" },
   { name: "Statistika", icon: ChartBarIcon, href: "/english-manager/statistics" },
   { name: "Sozlamalar", icon: Cog6ToothIcon, href: "/english-manager/settings" },
