@@ -320,6 +320,30 @@ export const useGetAttendanceTeacherGroups = (teacher_id, filters = {}, options 
     });
 };
 
+// 1️⃣6️⃣ Tanlangan sanadagi davomat (guruh/dars/student holati bilan)
+// GET /api/attendance/date?date=YYYY-MM-DD&teacher_id=&group_id=&subject_id=&shift=
+const getAttendanceByDate = async (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.date) params.append('date', filters.date);
+    if (filters.teacher_id) params.append('teacher_id', filters.teacher_id);
+    if (filters.group_id) params.append('group_id', filters.group_id);
+    if (filters.subject_id) params.append('subject_id', filters.subject_id);
+    if (filters.shift) params.append('shift', filters.shift);
+
+    const queryString = params.toString();
+    const response = await instance.get(`/api/attendance/date${queryString ? `?${queryString}` : ''}`);
+    return response.data;
+};
+
+export const useGetAttendanceByDate = (filters = {}, options = {}) => {
+    return useQuery({
+        queryKey: ['attendance-by-date', filters],
+        queryFn: () => getAttendanceByDate(filters),
+        enabled: Boolean(filters.date) && (options.enabled ?? true),
+        ...options,
+    });
+};
+
 // 1️⃣1️⃣ PUT /api/attendance/lessons/:lesson_id/mark
 const markLessonAttendance = async ({ lesson_id, attendance_records }) => {
     const response = await instance.put(`/api/attendance/lessons/${lesson_id}/mark`, {

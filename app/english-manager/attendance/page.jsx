@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { UserGroupIcon } from "@heroicons/react/24/outline";
-import { useGetAttendanceTeachers } from "../../../hooks/attendance";
+import { ChevronDownIcon, UserGroupIcon } from "@heroicons/react/24/outline";
+import { useGetAttendanceByDate, useGetAttendanceTeachers } from "../../../hooks/attendance";
 import { useGetAllSubjects } from "../../../hooks/subjects";
 import { findEnglishSubject } from "../../../utils/englishManager";
+import MonthlyAttendanceInline from "../../../components/MonthlyAttendanceInline";
 
 const MAIN_COLOR = "#A60E07";
 const DONE_COLOR = "#10B981";
@@ -28,6 +29,7 @@ const formatDate = (value) => {
 
 export default function EnglishManagerAttendancePage() {
   const [date, setDate] = useState(getTodayYmd());
+  const [expandedTeacherId, setExpandedTeacherId] = useState(null);
 
   const subjectsQuery = useGetAllSubjects();
   const englishSubject = useMemo(() => findEnglishSubject(subjectsQuery.data?.subjects || []), [subjectsQuery.data]);
@@ -35,9 +37,11 @@ export default function EnglishManagerAttendancePage() {
 
   const teachersQuery = useGetAttendanceTeachers({ date, subject_id: subjectId }, { enabled: !!subjectId });
 
-  const teachers = Array.isArray(teachersQuery.data?.data) ? teachersQuery.data.data : [];
+  const allTeachers = Array.isArray(teachersQuery.data?.data) ? teachersQuery.data.data : [];
   // Jami — teacherlarning UMUMIY (barcha) guruhlari soni
-  const allGroups = teachers.reduce((sum, item) => sum + (Number(item.groups_count) || 0), 0);
+  const allGroups = allTeachers.reduce((sum, item) => sum + (Number(item.groups_count) || 0), 0);
+  // "Teacherlar kesimi" ro'yxatida faqat tanlangan sanada darsi bor teacherlar chiqadi
+  const teachers = allTeachers.filter((item) => (Number(item.today_groups_count) || 0) > 0);
   // Bugun darsi bor — tanlangan sanada darsi rejalashtirilgan guruhlar soni
   const todayGroups = teachers.reduce((sum, item) => sum + (Number(item.today_groups_count) || 0), 0);
   const completedGroups = teachers.reduce((sum, item) => sum + (Number(item.today_marked_groups_count) || 0), 0);
@@ -76,7 +80,10 @@ export default function EnglishManagerAttendancePage() {
             <input
               type="date"
               value={date}
-              onChange={(e) => setDate(e.target.value || getTodayYmd())}
+              onChange={(e) => {
+                setDate(e.target.value || getTodayYmd());
+                setExpandedTeacherId(null);
+              }}
               className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-800"
             />
           </div>
@@ -151,20 +158,36 @@ export default function EnglishManagerAttendancePage() {
                   const teacherTotal = Number(item.today_groups_count) || 0;
                   const teacherDone = Number(item.today_marked_groups_count) || 0;
                   const teacherPercent = teacherTotal > 0 ? Math.round((teacherDone / teacherTotal) * 100) : 0;
+                  const isOpen = expandedTeacherId === item.teacher_id;
                   return (
                     <div key={item.teacher_id} className="rounded-md border border-gray-100 bg-gray-50 p-2.5">
-                      <div className="mb-2 flex items-center justify-between gap-2">
-                        <p className="truncate text-sm font-bold text-gray-900">{fullName || "Teacher"}</p>
-                        <span className="shrink-0 rounded-full bg-white px-2 py-1 text-xs font-bold text-gray-700">
-                          {teacherDone}/{teacherTotal} guruh • {teacherPercent}%
-                        </span>
-                      </div>
-                      <div className="h-2 overflow-hidden rounded-full bg-white">
-                        <div
-                          className="h-full rounded-full transition-all"
-                          style={{ width: `${teacherPercent}%`, backgroundColor: MAIN_COLOR }}
-                        />
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setExpandedTeacherId(isOpen ? null : item.teacher_id)}
+                        className="w-full text-left"
+                      >
+                        <div className="mb-2 flex items-center justify-between gap-2">
+                          <p className="flex min-w-0 items-center gap-1.5 truncate text-sm font-bold text-gray-900">
+                            <ChevronDownIcon
+                              className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                            />
+                            <span className="truncate">{fullName || "Teacher"}</span>
+                          </p>
+                          <span className="shrink-0 rounded-full bg-white px-2 py-1 text-xs font-bold text-gray-700">
+                            {teacherDone}/{teacherTotal} guruh • {teacherPercent}%
+                          </span>
+                        </div>
+                        <div className="h-2 overflow-hidden rounded-full bg-white">
+                          <div
+                            className="h-full rounded-full transition-all"
+                            style={{ width: `${teacherPercent}%`, backgroundColor: MAIN_COLOR }}
+                          />
+                        </div>
+                      </button>
+
+                      {isOpen && (
+                        <TeacherAttendanceDetails teacherId={item.teacher_id} date={date} subjectId={subjectId} />
+                      )}
                     </div>
                   );
                 })}
@@ -185,6 +208,57 @@ function LegendRow({ color, label, value }) {
       <span className="font-black" style={{ color }}>
         {value}
       </span>
+    </div>
+  );
+}
+
+// Teacher qatori ochilganda — o'sha kundagi darsi bor guruhlarini va har biri
+// uchun oylik davomat jadvalini (kelgan/kelmagan kunlar) ko'rsatadi.
+function TeacherAttendanceDetails({ teacherId, date, subjectId }) {
+  const query = useGetAttendanceByDate({ date, teacher_id: teacherId, subject_id: subjectId });
+  const groups = Array.isArray(query.data?.data?.groups) ? query.data.data.groups : [];
+  const month = String(date || "").slice(0, 7);
+
+  if (query.isLoading) {
+    return <div className="mt-3 py-3 text-center text-xs text-gray-500">Yuklanmoqda...</div>;
+  }
+
+  if (query.isError) {
+    return (
+      <div className="mt-3 rounded-md border border-red-200 bg-red-50 p-2 text-xs text-red-700">
+        Ma&apos;lumot yuklanmadi
+      </div>
+    );
+  }
+
+  if (groups.length === 0) {
+    return <div className="mt-3 py-3 text-center text-xs text-gray-500">Bu kunda darsi yo&apos;q.</div>;
+  }
+
+  return (
+    <div className="mt-3 space-y-4 border-t border-gray-200 pt-3">
+      {groups.map((group) => {
+        const firstLesson = (group.lessons || [])[0];
+        const start = String(firstLesson?.start_time || "").trim();
+        const end = String(firstLesson?.end_time || "").trim();
+        const timeLabel = start && end ? `${start}-${end}` : start || "";
+        return (
+          <div key={group.group_id} className="rounded-md bg-white p-2">
+            <div className="mb-1 flex items-center justify-between gap-2">
+              <p className="truncate text-xs font-bold text-gray-900">
+                {group.group_name}
+                {timeLabel && (
+                  <span className="ml-1.5 font-semibold text-gray-500">({timeLabel})</span>
+                )}
+              </p>
+              {group.room_number && (
+                <span className="shrink-0 text-[11px] text-gray-500">{group.room_number}-xona</span>
+              )}
+            </div>
+            <MonthlyAttendanceInline groupId={group.group_id} selectedMonth={month} />
+          </div>
+        );
+      })}
     </div>
   );
 }

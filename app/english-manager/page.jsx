@@ -11,11 +11,13 @@ import {
   ClipboardDocumentListIcon,
 } from "@heroicons/react/24/outline";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { useQuery } from "@tanstack/react-query";
 import { useGetAllSubjects, useGetSubjectStats } from "../../hooks/subjects";
 import { useGetAllgroups } from "../../hooks/groups";
 import { useMonthlyPayments } from "../../hooks/payments";
 import { useGetAttendanceTeachers } from "../../hooks/attendance";
-import { findEnglishSubject, formatCount } from "../../utils/englishManager";
+import { instance } from "../../hooks/api";
+import { findEnglishSubject, formatCount, formatMoney } from "../../utils/englishManager";
 
 const getTodayYmd = () => {
   const now = new Date();
@@ -61,6 +63,20 @@ export default function EnglishManagerDashboardPage() {
     { date: getTodayYmd(), subject_id: subjectId },
     { enabled: !!subjectId }
   );
+  // English fani biriktirilgan (yoki hozir English guruhi bor) barcha teacherlar —
+  // teachers-lateness sahifasi bilan bir xil ta'rif, "Jami o'qituvchilar" shu yerdan olinadi.
+  const englishTeachersQuery = useQuery({
+    queryKey: ["english-manager-teachers", currentMonth],
+    queryFn: async () => {
+      const response = await instance.get("/api/teacher-statistics/manager/teachers", {
+        params: { month: currentMonth },
+      });
+      return Array.isArray(response.data?.data) ? response.data.data : [];
+    },
+    enabled: !!subjectId,
+    staleTime: 10 * 60 * 1000,
+  });
+  const englishTeachersCount = englishTeachersQuery.data?.length || 0;
 
   const subjectStats = subjectStatsQuery.data?.stats || {};
   const groups = useMemo(() => (Array.isArray(groupsQuery.data?.groups) ? groupsQuery.data.groups : []), [groupsQuery.data]);
@@ -90,9 +106,9 @@ export default function EnglishManagerDashboardPage() {
     return { total, completed, pending: Math.max(0, total - completed), percent };
   }, [todayAttendanceQuery.data]);
 
-  const todayPaidCount = useMemo(() => {
+  const todayPaidStudents = useMemo(() => {
     const todayDmy = getTodayDMY();
-    return paymentStudents.filter((student) => String(student.last_payment_date || "").startsWith(todayDmy)).length;
+    return paymentStudents.filter((student) => String(student.last_payment_date || "").startsWith(todayDmy));
   }, [paymentStudents]);
 
   const subjectReady = Boolean(subjectId);
@@ -116,7 +132,7 @@ export default function EnglishManagerDashboardPage() {
           />
           <StatCard
             title="Jami o'qituvchilar"
-            value={subjectReady ? formatCount(subjectStats.total_teachers || 0) : "-"}
+            value={subjectReady ? formatCount(englishTeachersCount) : "-"}
             icon={AcademicCapIcon}
           />
           <StatCard
@@ -262,21 +278,53 @@ export default function EnglishManagerDashboardPage() {
               </section>
             </div>
 
-            <Link
-              href="/english-manager/payments"
-              className="flex min-h-[470px] flex-col rounded-lg border border-gray-200 bg-white p-4 transition hover:border-[#A60E07]/30"
-            >
+            <div className="flex min-h-[470px] flex-col rounded-lg border border-gray-200 bg-white p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Bugun to&apos;lov qilganlar</p>
-                  <p className="mt-1 text-3xl font-black tracking-tight text-gray-900">{formatCount(todayPaidCount)}</p>
+                  <p className="mt-1 text-3xl font-black tracking-tight text-gray-900">{formatCount(todayPaidStudents.length)}</p>
                   <p className="mt-1 text-sm text-gray-500">{month} oyi ichida, bugungi to&apos;lovlar</p>
                 </div>
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-50">
                   <BanknotesIcon className="h-6 w-6" style={{ color: MAIN_COLOR }} />
                 </div>
               </div>
-            </Link>
+
+              <div className="mt-4 flex-1 space-y-2 overflow-y-auto">
+                {paymentsQuery.isLoading ? (
+                  <p className="py-4 text-center text-sm text-gray-500">Yuklanmoqda...</p>
+                ) : todayPaidStudents.length === 0 ? (
+                  <p className="py-4 text-center text-sm text-gray-500">Bugun hali to&apos;lov qilingan emas.</p>
+                ) : (
+                  todayPaidStudents.map((student) => {
+                    const fullName = `${student.student_surname || ""} ${student.student_name || ""}`.trim() || "-";
+                    return (
+                      <div
+                        key={`${student.student_id}-${student.group_id}`}
+                        className="flex items-center justify-between gap-2 rounded-md bg-gray-50 px-3 py-2"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-bold text-gray-900">{fullName}</p>
+                          <p className="truncate text-xs text-gray-500">
+                            {student.teacher_name || student.group_name || ""}
+                          </p>
+                        </div>
+                        <span className="shrink-0 text-sm font-black text-emerald-600">
+                          {formatMoney(student.paid_amount || 0)}
+                        </span>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              <Link
+                href="/english-manager/payments"
+                className="mt-3 inline-flex items-center justify-center gap-1 rounded-md border border-gray-200 py-2 text-xs font-bold text-[#A60E07] transition hover:bg-gray-50"
+              >
+                Barchasini ko&apos;rish
+              </Link>
+            </div>
           </section>
         </>
       )}

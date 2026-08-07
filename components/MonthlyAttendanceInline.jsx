@@ -404,6 +404,14 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
   const isHolidayFlag = (value) =>
     value === true || value === 1 || value === "1" || value === "true";
 
+  const getLessonTimeLabel = (lesson) => {
+    const start = String(lesson?.start_time || "").trim();
+    const end = String(lesson?.end_time || "").trim();
+    if (start && start !== "00:00" && end && end !== "00:00") return `${start}-${end}`;
+    if (start && start !== "00:00") return start;
+    return "";
+  };
+
   const renderAttendanceSymbol = (attendanceRecord, lessonDate, isHoliday = false) => {
     const status = attendanceRecord?.status;
     const isMarked = attendanceRecord?.is_marked;
@@ -463,6 +471,7 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
                 <th className="border border-gray-400 px-2 py-2 text-center text-[10px] font-semibold text-gray-700 whitespace-nowrap sm:px-3 sm:py-2 sm:text-xs lg:px-3 lg:py-2.5 lg:text-xs">Qarz</th>
                 {lessons.map((lesson) => {
                   const lessonIsHoliday = isHolidayFlag(lesson.is_holiday);
+                  const timeLabel = getLessonTimeLabel(lesson);
                   return (
                   <th
                     key={lesson.id}
@@ -472,6 +481,9 @@ const MonthlyAttendanceInline = ({ groupId, selectedMonth }) => {
                   >
                     <div>{formatDate(lesson.date)}</div>
                     <div className="text-[9px] font-medium text-gray-500 sm:text-[10px] lg:text-[11px]">{getWeekdayFull(lesson.date)}</div>
+                    {timeLabel ? (
+                      <div className="text-[9px] font-medium text-gray-500 sm:text-[10px] lg:text-[11px]">{timeLabel}</div>
+                    ) : null}
                     {lessonIsHoliday ? (
                       <div className="mt-1 text-[9px] font-semibold text-orange-800 sm:text-[10px]">Dam</div>
                     ) : null}

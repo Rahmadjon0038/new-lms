@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
-  ChevronDownIcon,
+  ArrowLeftIcon,
   ClockIcon,
   EyeIcon,
   MagnifyingGlassIcon,
-  XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { instance } from "../../../hooks/api";
@@ -196,36 +196,36 @@ const ReportDetailTable = ({ detail }) => {
   const columns = normalizeReportColumns(detail);
 
   return (
-    <div className="overflow-hidden rounded border border-gray-200 bg-white shadow-sm">
-      <table className="min-w-full text-left text-sm">
+    <div className="overflow-x-auto rounded border border-gray-200 bg-white shadow-sm">
+      <table className="w-full min-w-max text-left text-xs">
         <thead className="bg-[#0B4A7A] text-white">
           <tr>
-            <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Students</th>
+            <th className="whitespace-nowrap px-2.5 py-2 text-[10px] font-bold uppercase tracking-[0.12em]">Students</th>
             {columns.map((column) => (
-              <th key={column.key} className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">
+              <th key={column.key} className="whitespace-nowrap px-2.5 py-2 text-[10px] font-bold uppercase tracking-[0.12em]">
                 {column.label}
               </th>
             ))}
-            <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Total</th>
-            <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Percent</th>
-            <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Feedback</th>
+            <th className="whitespace-nowrap px-2.5 py-2 text-[10px] font-bold uppercase tracking-[0.12em]">Total</th>
+            <th className="whitespace-nowrap px-2.5 py-2 text-[10px] font-bold uppercase tracking-[0.12em]">Percent</th>
+            <th className="whitespace-nowrap px-2.5 py-2 text-[10px] font-bold uppercase tracking-[0.12em]">Feedback</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100 bg-white">
           {(detail?.rows || []).map((row) => (
             <tr key={row.student_id}>
-              <td className="px-3 py-3">
+              <td className="whitespace-nowrap px-2.5 py-2">
                 <div className="font-semibold text-gray-900">{row.student_name || "-"}</div>
               </td>
               {columns.map((column) => (
-                <td key={column.key} className="px-3 py-3 font-bold text-gray-900">
+                <td key={column.key} className="whitespace-nowrap px-2.5 py-2 font-bold text-gray-900">
                   {getReportRowValue(row, column.key)}
                 </td>
               ))}
-              <td className="px-3 py-3 font-bold text-gray-900">{row.total}</td>
-              <td className="px-3 py-3 font-bold text-gray-900">{row.percent}%</td>
-              <td className="px-3 py-3">
-                <span className={`inline-flex rounded border px-3 py-1 text-xs font-black ${statusTone(row.feedback)}`}>
+              <td className="whitespace-nowrap px-2.5 py-2 font-bold text-gray-900">{row.total}</td>
+              <td className="whitespace-nowrap px-2.5 py-2 font-bold text-gray-900">{row.percent}%</td>
+              <td className="whitespace-nowrap px-2.5 py-2">
+                <span className={`inline-flex rounded border px-2 py-0.5 text-[10px] font-black ${statusTone(row.feedback)}`}>
                   {row.feedback}
                 </span>
               </td>
@@ -255,39 +255,10 @@ const isEnglishReport = (report) => {
   return subject.includes("english") || subject.includes("ingliz");
 };
 
-const TeacherFilterSelect = ({ teachers, value, onChange }) => {
-  const [open, setOpen] = useState(false);
+// Ixcham, doim ochiq teacher ro'yxati (sidebar ko'rinishida) — qidiruv bilan.
+// Avvalgi dropdown-select o'rniga: teacherni ko'rish uchun ochish/yopish shart emas.
+const TeacherSidebarPanel = ({ teachers, value, onChange }) => {
   const [search, setSearch] = useState("");
-  const wrapperRef = React.useRef(null);
-
-  useEffect(() => {
-    const onDocumentClick = (event) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
-        setOpen(false);
-        setSearch("");
-      }
-    };
-
-    const onEscape = (event) => {
-      if (event.key === "Escape") {
-        setOpen(false);
-        setSearch("");
-      }
-    };
-
-    document.addEventListener("mousedown", onDocumentClick);
-    document.addEventListener("keydown", onEscape);
-
-    return () => {
-      document.removeEventListener("mousedown", onDocumentClick);
-      document.removeEventListener("keydown", onEscape);
-    };
-  }, []);
-
-  const selectedTeacher = useMemo(
-    () => teachers.find((teacher) => String(teacher.teacher_id) === String(value)) || null,
-    [teachers, value]
-  );
 
   const filteredTeachers = useMemo(() => {
     const text = normalizeText(search);
@@ -298,114 +269,72 @@ const TeacherFilterSelect = ({ teachers, value, onChange }) => {
     });
   }, [teachers, search]);
 
-  const selectTeacher = (teacherId) => {
-    onChange(teacherId);
-    setOpen(false);
-    setSearch("");
-  };
-
   return (
-    <div ref={wrapperRef} className="relative w-full max-w-full sm:min-w-[300px] sm:max-w-[420px]">
-      <button
-        type="button"
-        onClick={() => setOpen((current) => !current)}
-        className="flex w-full items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-left shadow-sm transition hover:border-[#A60E07]/40 hover:shadow-md"
-      >
-        <div className="min-w-0">
-          <div className="text-[10px] font-black uppercase tracking-[0.28em] text-gray-400">
-            Teacher
-          </div>
-          <div className="truncate text-sm font-bold text-gray-900">
-            {value === "all" ? "Barchasi" : selectedTeacher?.teacher_name || "Tanlang"}
-          </div>
+    <aside className="mb-4 flex w-full shrink-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm lg:mb-0 lg:h-full lg:w-72 lg:rounded-none lg:border-y-0 lg:border-l-0 lg:shadow-none">
+      <div className="flex items-center gap-2 border-b border-gray-100 p-3">
+        <Link
+          href="/english-manager"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-gray-200 text-gray-600 transition hover:border-[#A60E07] hover:text-[#A60E07]"
+          aria-label="Ortga qaytish"
+        >
+          <ArrowLeftIcon className="h-4 w-4" />
+        </Link>
+        <div className="text-[10px] font-black uppercase tracking-[0.28em] text-gray-400">
+          Teacher
         </div>
-        <div className="flex shrink-0 items-center gap-2">
-          {value !== "all" ? (
-            <span
-              role="button"
-              tabIndex={0}
-              aria-label="Tozalash"
-              onClick={(event) => {
-                event.stopPropagation();
-                onChange("all");
-                setOpen(false);
-                setSearch("");
-              }}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  onChange("all");
-                  setOpen(false);
-                  setSearch("");
-                }
-              }}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 text-gray-400 transition hover:border-[#A60E07] hover:text-[#A60E07]"
-            >
-              <XMarkIcon className="h-4 w-4" />
-            </span>
-          ) : null}
-          <ChevronDownIcon
-            className={`h-5 w-5 text-gray-400 transition ${open ? "rotate-180" : ""}`}
+      </div>
+      <div className="border-b border-gray-100 p-3">
+        <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
+          <MagnifyingGlassIcon className="h-4 w-4 shrink-0 text-gray-400" />
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Teacher qidirish..."
+            className="w-full bg-transparent text-sm font-medium text-gray-900 outline-none placeholder:text-gray-400"
           />
         </div>
-      </button>
+      </div>
 
-      {open ? (
-        <div className="absolute left-0 right-0 top-[calc(100%+10px)] z-40 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
-          <div className="border-b border-gray-100 p-3">
-            <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
-              <MagnifyingGlassIcon className="h-4 w-4 text-gray-400" />
-              <input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Teacher qidirish..."
-                className="w-full bg-transparent text-sm font-medium text-gray-900 outline-none placeholder:text-gray-400"
-              />
-            </div>
+      <div className="max-h-64 overflow-y-auto p-2 lg:max-h-none lg:flex-1">
+        <button
+          type="button"
+          onClick={() => onChange("all")}
+          className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition ${
+            value === "all"
+              ? "bg-[#A60E07]/10 text-[#A60E07]"
+              : "text-gray-700 hover:bg-gray-50"
+          }`}
+        >
+          <span>Barchasi</span>
+          {value === "all" ? <span className="text-xs font-black">✓</span> : null}
+        </button>
+
+        {filteredTeachers.length === 0 ? (
+          <div className="px-3 py-6 text-center text-sm font-medium text-gray-400">
+            Natija topilmadi
           </div>
-
-          <div className="max-h-72 overflow-y-auto p-2">
-            <button
-              type="button"
-              onClick={() => selectTeacher("all")}
-              className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition ${
-                value === "all"
-                  ? "bg-[#A60E07]/10 text-[#A60E07]"
-                  : "text-gray-700 hover:bg-gray-50"
-              }`}
-            >
-              <span>Barchasi</span>
-              {value === "all" ? <span className="text-xs font-black">✓</span> : null}
-            </button>
-
-            {filteredTeachers.length === 0 ? (
-              <div className="px-3 py-6 text-center text-sm font-medium text-gray-400">
-                Natija topilmadi
-              </div>
-            ) : (
-              filteredTeachers.map((teacher) => {
-                const active = String(teacher.teacher_id) === String(value);
-                return (
-                  <button
-                    key={teacher.teacher_id}
-                    type="button"
-                    onClick={() => selectTeacher(String(teacher.teacher_id))}
-                    className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition ${
-                      active
-                        ? "bg-[#A60E07]/10 text-[#A60E07]"
-                        : "text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    <span className="truncate">{teacher.teacher_name}</span>
-                    {active ? <span className="text-xs font-black">✓</span> : null}
-                  </button>
-                );
-              })
-            )}
-          </div>
-        </div>
-      ) : null}
-    </div>
+        ) : (
+          filteredTeachers.map((teacher) => {
+            const active = String(teacher.teacher_id) === String(value);
+            return (
+              <button
+                key={teacher.teacher_id}
+                type="button"
+                onClick={() => onChange(String(teacher.teacher_id))}
+                className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition ${
+                  active
+                    ? "bg-[#A60E07]/10 text-[#A60E07]"
+                    : "text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                <span className="truncate">{teacher.teacher_name}</span>
+                {active ? <span className="text-xs font-black">✓</span> : null}
+              </button>
+            );
+          })
+        )}
+      </div>
+    </aside>
   );
 };
 
@@ -581,6 +510,14 @@ export default function EnglishManagerStatisticsPage() {
     () => (Array.isArray(groupReportsQuery.data) ? groupReportsQuery.data.filter(isEnglishReport) : []),
     [groupReportsQuery.data]
   );
+  const feedbackCounts = useMemo(() => {
+    const counts = { PERFECT: 0, GOOD: 0, BAD: 0 };
+    for (const report of reports) {
+      const key = String(report.feedback || "").toUpperCase();
+      if (counts[key] !== undefined) counts[key] += 1;
+    }
+    return counts;
+  }, [reports]);
   const mixedReportsByDay = useMemo(() => {
     if (!isAllTeachersMode) return [];
 
@@ -681,12 +618,19 @@ export default function EnglishManagerStatisticsPage() {
   }, [teacherGroups, teacherId, month, isAllTeachersMode]);
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      {loading ? <StatisticsPageLoader /> : null}
+    <div className="lg:-m-6 lg:flex lg:h-[calc(100dvh-4rem)]">
+      <TeacherSidebarPanel
+        teachers={teachers}
+        value={teacherId}
+        onChange={setTeacherId}
+      />
 
-      {!loading ? (
-        <>
-          <section className="space-y-4">
+      <div className="min-w-0 space-y-4 sm:space-y-6 lg:flex-1 lg:overflow-y-auto lg:p-6">
+        {loading ? <StatisticsPageLoader /> : null}
+
+        {!loading ? (
+          <>
+            <section className="space-y-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <h1 className="text-2xl font-black tracking-tight text-gray-900 sm:text-3xl">
                 Statistika
@@ -718,19 +662,9 @@ export default function EnglishManagerStatisticsPage() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-3 sm:max-w-[420px]">
-              <div className="text-[11px] font-black uppercase tracking-[0.28em] text-gray-400">
-                Teacher
-              </div>
-              <TeacherFilterSelect
-                teachers={teachers}
-                value={teacherId}
-                onChange={setTeacherId}
-              />
-            </div>
-          </section>
+            </section>
 
-      <section className="space-y-4">
+            <section className="space-y-4">
         {reportError || error ? (
           <div className="rounded border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
             {reportError || error}
@@ -777,11 +711,27 @@ export default function EnglishManagerStatisticsPage() {
                     <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5">
                       {selectedLessons.length} ta dars
                     </span>
-                    <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5">
-                      {reports.length} ta report
+                    <span
+                      className={`rounded-full border px-3 py-1.5 font-black ${
+                        selectedLessons.length > 0 && reports.length >= selectedLessons.length
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                          : "border-amber-200 bg-amber-50 text-amber-700"
+                      }`}
+                      title="Yuborilgan report / jami dars"
+                    >
+                      {reports.length}/{selectedLessons.length} report
                     </span>
                   </>
                 )}
+                <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 font-black text-blue-700">
+                  {feedbackCounts.PERFECT} PERFECT
+                </span>
+                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 font-black text-emerald-700">
+                  {feedbackCounts.GOOD} GOOD
+                </span>
+                <span className="rounded-full border border-red-200 bg-red-50 px-3 py-1.5 font-black text-red-700">
+                  {feedbackCounts.BAD} BAD
+                </span>
               </div>
             ) : null}
           </div>
@@ -838,7 +788,7 @@ export default function EnglishManagerStatisticsPage() {
                               : cardTone(report.feedback)
                           }`}
                         >
-                          <div className="flex flex-col gap-4 px-4 py-4 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="flex flex-col gap-3 px-3 py-3 sm:flex-row sm:items-start sm:justify-between">
                             <div className="min-w-0 space-y-2">
                               <div className="flex flex-wrap items-center gap-2 text-sm font-black text-gray-900">
                                 <span className="truncate">Guruh: {groupName}</span>
@@ -889,7 +839,7 @@ export default function EnglishManagerStatisticsPage() {
                           </div>
 
                           {expandedLessonId === lessonId ? (
-                            <div className="bg-slate-50 p-4">
+                            <div className="bg-slate-50 p-3">
                               {loadingLessonId === lessonId ? (
                                 <div className="rounded border border-dashed border-gray-200 bg-white px-4 py-5 text-sm font-semibold text-gray-500">
                                   Hisobot yuklanmoqda...
@@ -1034,7 +984,7 @@ export default function EnglishManagerStatisticsPage() {
                               }}
                               className="cursor-pointer overflow-hidden rounded border border-sky-200 bg-sky-50/60 shadow-sm transition hover:shadow-md"
                             >
-                              <div className="flex flex-col gap-4 px-4 py-4 sm:flex-row sm:items-start sm:justify-between">
+                              <div className="flex flex-col gap-3 px-3 py-3 sm:flex-row sm:items-start sm:justify-between">
                                 <div className="min-w-0 space-y-2">
                                   <div className="flex flex-wrap items-center gap-2 text-sm font-black text-gray-900">
                                     <span className="truncate">Guruh: {selectedGroupData?.group_name || lesson.group_name || "-"}</span>
@@ -1097,7 +1047,7 @@ export default function EnglishManagerStatisticsPage() {
                                 : cardTone(report.feedback)
                             }`}
                           >
-                            <div className="flex flex-col gap-4 px-4 py-4 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="flex flex-col gap-3 px-3 py-3 sm:flex-row sm:items-start sm:justify-between">
                               <div className="min-w-0 space-y-2">
                                 <div className="flex flex-wrap items-center gap-2 text-sm font-black text-gray-900">
                                   <span className="truncate">Guruh: {groupName}</span>
@@ -1148,7 +1098,7 @@ export default function EnglishManagerStatisticsPage() {
                             </div>
 
                             {expandedLessonId === lessonId ? (
-                              <div className="bg-slate-50 p-4">
+                              <div className="bg-slate-50 p-3">
                                 {loadingLessonId === lessonId ? (
                                   <div className="rounded border border-dashed border-gray-200 bg-white px-4 py-5 text-sm font-semibold text-gray-500">
                                     Hisobot yuklanmoqda...
@@ -1180,9 +1130,10 @@ export default function EnglishManagerStatisticsPage() {
             ? "Barcha teacherlarning reportlari shu yerda aralash ko‘rinishda chiqadi."
             : "Guruhga yuborilgan report va report kutilayotgan lessonlar shu yerda alohida ko‘rinadi."}
         </div>
-      </section>
-        </>
-      ) : null}
+            </section>
+          </>
+        ) : null}
+      </div>
     </div>
   );
 }
