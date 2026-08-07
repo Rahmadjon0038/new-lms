@@ -149,7 +149,7 @@ export default function EnglishManagerSidebar({ isOpen = false, onClose = () => 
         </button>
       </div>
 
-      <div className="hidden items-center justify-end border-b border-gray-100 px-4 py-4 lg:flex">
+      <div className="hidden items-center gap-2 border-b border-gray-100 px-4 py-4 lg:flex">
         <button
           type="button"
           onClick={() => setCollapsed((current) => !current)}
@@ -163,6 +163,9 @@ export default function EnglishManagerSidebar({ isOpen = false, onClose = () => 
             <ChevronDoubleLeftIcon className="h-4 w-4" />
           )}
         </button>
+        <span className={`text-sm font-semibold text-gray-700 ${collapsed ? "lg:hidden" : ""}`}>
+          Dashboard
+        </span>
       </div>
 
       <nav className="flex-1 overflow-y-auto px-4 py-5">
