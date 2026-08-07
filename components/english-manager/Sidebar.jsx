@@ -12,6 +12,7 @@ import {
   XMarkIcon,
   ChartBarIcon,
   ClipboardDocumentListIcon,
+  ClockIcon,
 } from "@heroicons/react/24/outline";
 import { instance } from "../../hooks/api";
 
@@ -24,6 +25,7 @@ const items = [
   { name: "Guruhlar", icon: BookOpenIcon, href: "/english-manager/groups" },
   { name: "To'lovlar", icon: BanknotesIcon, href: "/english-manager/payments" },
   { name: "Statistika", icon: ChartBarIcon, href: "/english-manager/statistics" },
+  { name: "Kechikishlar", icon: ClockIcon, href: "/english-manager/teachers-lateness" },
   { name: "Sozlamalar", icon: Cog6ToothIcon, href: "/english-manager/settings" },
 ];
 

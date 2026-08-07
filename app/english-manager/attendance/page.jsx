@@ -36,10 +36,13 @@ export default function EnglishManagerAttendancePage() {
   const teachersQuery = useGetAttendanceTeachers({ date, subject_id: subjectId }, { enabled: !!subjectId });
 
   const teachers = Array.isArray(teachersQuery.data?.data) ? teachersQuery.data.data : [];
-  const totalGroups = teachers.reduce((sum, item) => sum + (Number(item.today_groups_count) || 0), 0);
+  // Jami — teacherlarning UMUMIY (barcha) guruhlari soni
+  const allGroups = teachers.reduce((sum, item) => sum + (Number(item.groups_count) || 0), 0);
+  // Bugun darsi bor — tanlangan sanada darsi rejalashtirilgan guruhlar soni
+  const todayGroups = teachers.reduce((sum, item) => sum + (Number(item.today_groups_count) || 0), 0);
   const completedGroups = teachers.reduce((sum, item) => sum + (Number(item.today_marked_groups_count) || 0), 0);
-  const pendingGroups = Math.max(totalGroups - completedGroups, 0);
-  const percent = totalGroups > 0 ? Math.round((completedGroups / totalGroups) * 100) : 0;
+  const pendingGroups = Math.max(todayGroups - completedGroups, 0);
+  const percent = todayGroups > 0 ? Math.round((completedGroups / todayGroups) * 100) : 0;
 
   if (subjectsQuery.isLoading) {
     return <div className="rounded-lg bg-white p-4 text-sm text-gray-500">Yuklanmoqda...</div>;
@@ -96,9 +99,14 @@ export default function EnglishManagerAttendancePage() {
                 </span>
                 <h2 className="truncate text-base font-bold text-gray-900">Bugungi davomat</h2>
               </div>
-              <span className="shrink-0 rounded-full bg-gray-100 px-3 py-1.5 text-xs font-bold text-gray-700">
-                Jami: {formatNumber(totalGroups)} guruh
-              </span>
+              <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                <span className="rounded-full bg-gray-100 px-3 py-1.5 text-xs font-bold text-gray-700">
+                  Bugun darsi bor: {formatNumber(todayGroups)} guruh
+                </span>
+                <span className="rounded-full bg-gray-100 px-3 py-1.5 text-xs font-bold text-gray-700">
+                  Jami: {formatNumber(allGroups)} guruh
+                </span>
+              </div>
             </div>
 
             <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center sm:gap-8">
@@ -107,7 +115,7 @@ export default function EnglishManagerAttendancePage() {
                   className="relative flex h-40 w-40 items-center justify-center rounded-full"
                   style={{
                     background:
-                      totalGroups > 0
+                      todayGroups > 0
                         ? `conic-gradient(${DONE_COLOR} 0 ${percent}%, ${PENDING_COLOR} ${percent}% 100%)`
                         : "conic-gradient(#E5E7EB 0 100%)",
                   }}

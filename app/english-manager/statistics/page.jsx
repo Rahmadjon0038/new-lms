@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   ChevronDownIcon,
+  ClockIcon,
   EyeIcon,
   MagnifyingGlassIcon,
   XMarkIcon,
@@ -148,6 +149,92 @@ const formatScheduleDays = (schedule) => {
     .map((day) => dayMap[String(day || "").trim().toLowerCase()] || String(day || "").trim())
     .filter(Boolean)
     .join(", ");
+};
+
+const compareLessonDateTime = (left, right) => {
+  const leftDate = String(left?.date || "");
+  const rightDate = String(right?.date || "");
+  if (leftDate !== rightDate) return leftDate.localeCompare(rightDate);
+  return String(left?.start_time || "").localeCompare(String(right?.start_time || ""));
+};
+
+const DEFAULT_REPORT_COLUMNS = [
+  { key: "homework", label: "Homework" },
+  { key: "vocabulary", label: "Vocabulary" },
+  { key: "attendance", label: "Attendance" },
+  { key: "participation", label: "Participation" },
+];
+
+const normalizeReportColumns = (detail) => {
+  const source = Array.isArray(detail?.columns)
+    ? detail.columns
+    : Array.isArray(detail?.report_data?.columns)
+      ? detail.report_data.columns
+      : [];
+  const columns = source
+    .map((column, index) => ({
+      key: String(column?.key || `column_${index + 1}`),
+      label: String(column?.label || column?.title || column?.name || column?.key || `Column ${index + 1}`),
+      enabled: column?.enabled !== false,
+    }))
+    .filter((column) => column.key);
+
+  const enabledColumns = columns.filter((column) => column.enabled !== false);
+  return enabledColumns.length > 0 ? enabledColumns : DEFAULT_REPORT_COLUMNS;
+};
+
+const getReportRowValue = (row, key) => {
+  const values = row?.values && typeof row.values === "object" ? row.values : {};
+  const direct = values[key];
+  if (direct !== undefined && direct !== null && direct !== "") return direct;
+  const fallback = row?.[key];
+  if (fallback !== undefined && fallback !== null && fallback !== "") return fallback;
+  return 0;
+};
+
+const ReportDetailTable = ({ detail }) => {
+  const columns = normalizeReportColumns(detail);
+
+  return (
+    <div className="overflow-hidden rounded border border-gray-200 bg-white shadow-sm">
+      <table className="min-w-full text-left text-sm">
+        <thead className="bg-[#0B4A7A] text-white">
+          <tr>
+            <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Students</th>
+            {columns.map((column) => (
+              <th key={column.key} className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">
+                {column.label}
+              </th>
+            ))}
+            <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Total</th>
+            <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Percent</th>
+            <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Feedback</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100 bg-white">
+          {(detail?.rows || []).map((row) => (
+            <tr key={row.student_id}>
+              <td className="px-3 py-3">
+                <div className="font-semibold text-gray-900">{row.student_name || "-"}</div>
+              </td>
+              {columns.map((column) => (
+                <td key={column.key} className="px-3 py-3 font-bold text-gray-900">
+                  {getReportRowValue(row, column.key)}
+                </td>
+              ))}
+              <td className="px-3 py-3 font-bold text-gray-900">{row.total}</td>
+              <td className="px-3 py-3 font-bold text-gray-900">{row.percent}%</td>
+              <td className="px-3 py-3">
+                <span className={`inline-flex rounded border px-3 py-1 text-xs font-black ${statusTone(row.feedback)}`}>
+                  {row.feedback}
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 };
 
 const StatisticsPageLoader = () => {
@@ -326,6 +413,7 @@ export default function EnglishManagerStatisticsPage() {
   const currentMonth = useMemo(() => new Date().toISOString().slice(0, 7), []);
   const [month, setMonth] = useState(currentMonth);
   const [teacherId, setTeacherId] = useState("all");
+  const [selectedGroupId, setSelectedGroupId] = useState(null);
   const [expandedLessonId, setExpandedLessonId] = useState(null);
   const [detailsByLessonId, setDetailsByLessonId] = useState({});
   const [loadingLessonId, setLoadingLessonId] = useState(null);
@@ -368,6 +456,8 @@ export default function EnglishManagerStatisticsPage() {
     });
   };
 
+  const isAllTeachersMode = teacherId === "all";
+
   const monthsQuery = useQuery({
     queryKey: ["english-manager-months"],
     queryFn: async () => {
@@ -409,32 +499,115 @@ export default function EnglishManagerStatisticsPage() {
     refetchOnMount: false,
   });
 
-  const reportsQuery = useQuery({
-    queryKey: ["english-manager-reports", month, teacherId],
+  const teacherGroupsQuery = useQuery({
+    queryKey: ["english-manager-teacher-groups", month, teacherId],
+    queryFn: async () => {
+      if (teacherId === "all") return [];
+      const response = await instance.get(`/api/attendance/teachers/${teacherId}/groups`, {
+        params: { month },
+      });
+      return Array.isArray(response.data?.data?.groups) ? response.data.data.groups : [];
+    },
+    enabled: !!month && teacherId !== "all",
+    staleTime: 2 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    refetchInterval: 15000,
+    refetchIntervalInBackground: true,
+  });
+
+  const groupLessonsQuery = useQuery({
+    queryKey: ["english-manager-group-lessons", month, selectedGroupId],
+    queryFn: async () => {
+      if (!selectedGroupId) return null;
+      const response = await instance.get(`/api/attendance/groups/${selectedGroupId}/monthly`, {
+        params: { month },
+      });
+      return response.data?.data || null;
+    },
+    enabled: !!month && !!selectedGroupId,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    refetchInterval: 15000,
+    refetchIntervalInBackground: true,
+  });
+
+  const groupReportsQuery = useQuery({
+    queryKey: ["english-manager-group-reports", month, teacherId, selectedGroupId],
     queryFn: async () => {
       const params = { month };
-      if (teacherId !== "all") params.teacher_id = teacherId;
+      if (!isAllTeachersMode) {
+        if (!selectedGroupId) return [];
+        params.group_id = selectedGroupId;
+        params.teacher_id = teacherId;
+      }
       const response = await instance.get("/api/teacher-statistics/manager/reports", {
         params,
       });
       return Array.isArray(response.data?.data) ? response.data.data : [];
     },
     enabled: !!month,
-    placeholderData: keepPreviousData,
     staleTime: 2 * 60 * 1000,
     gcTime: 60 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    refetchInterval: 15000,
+    refetchIntervalInBackground: true,
   });
 
   const teachers = useMemo(() => teachersQuery.data ?? [], [teachersQuery.data]);
-  const reports = useMemo(
-    () => (Array.isArray(reportsQuery.data) ? reportsQuery.data.filter(isEnglishReport) : []),
-    [reportsQuery.data]
+  const teacherGroups = useMemo(
+    () => (Array.isArray(teacherGroupsQuery.data) ? teacherGroupsQuery.data : []),
+    [teacherGroupsQuery.data]
   );
-  const loading = monthsQuery.isLoading || teachersQuery.isLoading || reportsQuery.isLoading;
+  const selectedGroup = useMemo(
+    () => teacherGroups.find((group) => String(group.group_id) === String(selectedGroupId)) || null,
+    [teacherGroups, selectedGroupId]
+  );
+  const selectedGroupData = useMemo(() => {
+    return groupLessonsQuery.data?.group || selectedGroup || null;
+  }, [groupLessonsQuery.data, selectedGroup]);
+  const selectedGroupTime = useMemo(() => {
+    return selectedGroupData?.schedule?.time || selectedGroup?.schedule?.time || "-";
+  }, [selectedGroupData, selectedGroup]);
+  const selectedLessons = useMemo(
+    () => (Array.isArray(groupLessonsQuery.data?.lessons) ? groupLessonsQuery.data.lessons : []),
+    [groupLessonsQuery.data]
+  );
+  const reports = useMemo(
+    () => (Array.isArray(groupReportsQuery.data) ? groupReportsQuery.data.filter(isEnglishReport) : []),
+    [groupReportsQuery.data]
+  );
+  const mixedReportsByDay = useMemo(() => {
+    if (!isAllTeachersMode) return [];
+
+    const items = [...reports].sort((a, b) => {
+      const dateCompare = String(b.lesson_date || "").localeCompare(String(a.lesson_date || ""));
+      if (dateCompare !== 0) return dateCompare;
+      return String(b.lesson_time || "").localeCompare(String(a.lesson_time || ""));
+    });
+
+    const map = new Map();
+    for (const report of items) {
+      const key = report.lesson_date || "-";
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(report);
+    }
+    return Array.from(map.entries());
+  }, [reports, isAllTeachersMode]);
+  const loading = monthsQuery.isLoading || teachersQuery.isLoading || teacherGroupsQuery.isLoading || groupReportsQuery.isLoading;
   const monthsLoading = monthsQuery.isLoading;
-  const reportError = reportsQuery.error?.response?.data?.message || reportsQuery.error?.message || "";
+  const reportError =
+    teacherGroupsQuery.error?.response?.data?.message ||
+    teacherGroupsQuery.error?.message ||
+    groupLessonsQuery.error?.response?.data?.message ||
+    groupLessonsQuery.error?.message ||
+    groupReportsQuery.error?.response?.data?.message ||
+    groupReportsQuery.error?.message ||
+    "";
 
   const toggleDetail = async (lessonId) => {
     const willOpen = expandedLessonId !== lessonId;
@@ -455,19 +628,57 @@ export default function EnglishManagerStatisticsPage() {
     }
   };
 
-  const groupedByDate = useMemo(() => {
+  const reportMap = useMemo(() => {
     const map = new Map();
     for (const report of reports) {
-      const key = report.lesson_date || "-";
+      map.set(String(report.lesson_id), report);
+    }
+    return map;
+  }, [reports]);
+
+  const mergedLessons = useMemo(() => {
+    const items = selectedLessons
+      .map((lesson) => ({
+        ...lesson,
+        report: reportMap.get(String(lesson.lesson_id ?? lesson.id)) || null,
+      }))
+      .sort(compareLessonDateTime);
+
+    const map = new Map();
+    for (const lesson of items) {
+      const key = lesson.date || "-";
       if (!map.has(key)) map.set(key, []);
-      map.get(key).push(report);
+      map.get(key).push(lesson);
     }
     return Array.from(map.entries()).sort(([a], [b]) => String(a).localeCompare(String(b)));
-  }, [reports]);
+  }, [selectedLessons, reportMap]);
 
   const monthChips = useMemo(() => {
     return availableMonths.length ? availableMonths : [currentMonth];
   }, [availableMonths, currentMonth]);
+
+  useEffect(() => {
+    if (isAllTeachersMode) {
+      setSelectedGroupId(null);
+      setExpandedLessonId(null);
+      return;
+    }
+
+    if (!teacherGroups.length) {
+      setSelectedGroupId(null);
+      setExpandedLessonId(null);
+      return;
+    }
+
+    setSelectedGroupId((current) => {
+      const currentExists = current
+        ? teacherGroups.some((group) => String(group.group_id) === String(current))
+        : false;
+      if (currentExists) return current;
+      return String(teacherGroups[0].group_id);
+    });
+    setExpandedLessonId(null);
+  }, [teacherGroups, teacherId, month, isAllTeachersMode]);
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -520,159 +731,454 @@ export default function EnglishManagerStatisticsPage() {
           </section>
 
       <section className="space-y-4">
-        {loading ? (
-          null
-        ) : reportError || error ? (
+        {reportError || error ? (
           <div className="rounded border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
             {reportError || error}
           </div>
-        ) : groupedByDate.length === 0 ? (
+        ) : null}
+
+        <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+            <div className="min-w-0">
+              <div className="text-[11px] font-black uppercase tracking-[0.28em] text-gray-400">
+                Tanlangan guruh
+              </div>
+              <div className="mt-1 text-lg font-black text-gray-900">
+                {isAllTeachersMode ? "Barcha teacherlar" : selectedGroupData?.group_name || "Guruh tanlang"}
+              </div>
+              <div className="mt-1 text-sm text-gray-500">
+                {isAllTeachersMode
+                  ? "Filtr tanlanmagan reportlar aralash ko‘rinishda."
+                  : `${selectedGroupData?.subject_name || "-"} ${
+                      selectedGroupData?.teacher_name ? `• ${selectedGroupData.teacher_name}` : ""
+                    }`}
+              </div>
+            </div>
+
+            {selectedGroupData || isAllTeachersMode ? (
+              <div className="flex shrink-0 flex-wrap gap-2 text-xs font-semibold text-gray-600">
+                {isAllTeachersMode ? (
+                  <>
+                    <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5">
+                      {reports.length} ta report
+                    </span>
+                    <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5">
+                      Barchasi
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5">
+                      {formatScheduleDays(selectedGroupData.schedule || selectedGroup?.schedule)}
+                    </span>
+                    <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5">
+                      {selectedGroupTime}
+                    </span>
+                    <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5">
+                      {selectedLessons.length} ta dars
+                    </span>
+                    <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5">
+                      {reports.length} ta report
+                    </span>
+                  </>
+                )}
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        {isAllTeachersMode ? (
+          groupReportsQuery.isLoading ? (
+            <div className="rounded border border-dashed border-gray-200 p-8 text-center text-sm text-gray-500">
+              Reportlar yuklanmoqda...
+            </div>
+          ) : mixedReportsByDay.length === 0 ? (
+            <div className="rounded border border-dashed border-gray-200 p-8 text-center text-sm text-gray-500">
+              Bu oy uchun report topilmadi.
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {mixedReportsByDay.map(([date, reportsByDay]) => (
+                <div key={date} className="space-y-3">
+                  <div className="flex items-center justify-between text-sm font-black text-gray-900">
+                    <span>{dayLabel(date)}</span>
+                    <span className="text-xs font-bold text-gray-500">{reportsByDay.length} ta</span>
+                  </div>
+
+                  <div className="space-y-3">
+                    {reportsByDay.map((report) => {
+                      const lessonId = report.lessonId ?? report.lesson_id ?? report.id;
+                      const detail = detailsByLessonId[lessonId] || null;
+                      const reportCreatedTime =
+                        report.created_at_label ||
+                        report.updated_at_label ||
+                        formatCreatedAt(report.created_at || report.updated_at);
+                      const isNewReport = !seenReportIds.has(String(report.lesson_id ?? lessonId));
+                      const groupName = report.group_name || "-";
+                      const subjectName = report.subject_name || "-";
+                      const teacherName = report.teacher_name || "-";
+                      const scheduleDays = formatScheduleDays(report.group_schedule);
+                      const lessonTimeLabel = report.lesson_time || "-";
+
+                      return (
+                        <article
+                          key={lessonId}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => toggleDetail(lessonId)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              toggleDetail(lessonId);
+                            }
+                          }}
+                          className={`cursor-pointer overflow-hidden rounded border shadow-sm transition hover:shadow-md ${
+                            isNewReport
+                              ? "border-emerald-500 bg-emerald-50/70 shadow-emerald-100/40"
+                              : cardTone(report.feedback)
+                          }`}
+                        >
+                          <div className="flex flex-col gap-4 px-4 py-4 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="min-w-0 space-y-2">
+                              <div className="flex flex-wrap items-center gap-2 text-sm font-black text-gray-900">
+                                <span className="truncate">Guruh: {groupName}</span>
+                                <span className="text-gray-300">•</span>
+                                <span className="truncate">Fan: {subjectName}</span>
+                                {isNewReport ? (
+                                  <>
+                                    <span className="text-gray-300">•</span>
+                                    <span className="inline-flex items-center rounded-full border border-emerald-500 bg-emerald-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">
+                                      Yangi
+                                    </span>
+                                  </>
+                                ) : null}
+                              </div>
+                              <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-gray-700">
+                                <span className="truncate">O&apos;qituvchi: {teacherName}</span>
+                                <span className="text-gray-300">•</span>
+                                <span className="truncate">Vaqt: {lessonTimeLabel}</span>
+                                <span className="text-gray-300">•</span>
+                                <span className="truncate">Dars kunlari: {scheduleDays}</span>
+                              </div>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-gray-500">
+                                  Report yuborildi
+                                </span>
+                                <span className="text-[11px] font-semibold text-gray-400">
+                                  {reportCreatedTime}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 self-end sm:self-auto">
+                              <span className={`inline-flex rounded border px-3 py-1 text-xs font-black ${statusTone(report.feedback)}`}>
+                                {report.feedback}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  toggleDetail(lessonId);
+                                }}
+                                className="inline-flex items-center gap-2 rounded border border-[#A60E07]/20 bg-[#A60E07]/5 px-3 py-2 text-xs font-bold text-[#A60E07] transition hover:bg-[#A60E07]/10"
+                              >
+                                <EyeIcon className="h-4 w-4" />
+                                {expandedLessonId === lessonId ? "Yopish" : "Ko'rish"}
+                              </button>
+                            </div>
+                          </div>
+
+                          {expandedLessonId === lessonId ? (
+                            <div className="bg-slate-50 p-4">
+                              {loadingLessonId === lessonId ? (
+                                <div className="rounded border border-dashed border-gray-200 bg-white px-4 py-5 text-sm font-semibold text-gray-500">
+                                  Hisobot yuklanmoqda...
+                                </div>
+                              ) : detail ? (
+                                <div className="space-y-4">
+                                          <ReportDetailTable detail={detail} />
+                                </div>
+                              ) : (
+                                <div className="rounded border border-dashed border-gray-200 bg-white px-4 py-5 text-sm font-semibold text-gray-500">
+                                  Hisobot topilmadi.
+                                </div>
+                              )}
+                            </div>
+                          ) : null}
+                        </article>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        ) : teacherGroupsQuery.isLoading ? (
           <div className="rounded border border-dashed border-gray-200 p-8 text-center text-sm text-gray-500">
-            Bu oy uchun statistika topilmadi.
+            Guruhlar yuklanmoqda...
+          </div>
+        ) : teacherGroups.length === 0 ? (
+          <div className="rounded border border-dashed border-gray-200 p-8 text-center text-sm text-gray-500">
+            Bu teacher uchun guruh topilmadi.
           </div>
         ) : (
-          <div className="space-y-6">
-            {groupedByDate.map(([date, items]) => (
-              <div key={date} className="space-y-3">
-                <div className="text-sm font-black text-gray-900">{dayLabel(date)}</div>
-                <div className="space-y-3">
-                  {items.map((report) => {
-                    const detail = detailsByLessonId[report.lesson_id];
-                    const reportCreatedTime =
-                      report.created_at_label ||
-                      report.updated_at_label ||
-                      formatCreatedAt(report.created_at || report.updated_at);
-                    const isNewReport = !seenReportIds.has(String(report.lesson_id));
-                    const scheduleDays = formatScheduleDays(report.group_schedule);
-                    return (
-                      <article
-                        key={report.id}
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => toggleDetail(report.lesson_id)}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter" || event.key === " ") {
-                            event.preventDefault();
-                            toggleDetail(report.lesson_id);
-                          }
-                        }}
-                        className={`cursor-pointer overflow-hidden rounded border shadow-sm transition hover:shadow-md ${
-                          isNewReport ? "ring-2 ring-[#A60E07]/20 ring-offset-0" : ""
-                        } ${cardTone(report.feedback)}`}
-                      >
-                        <div className="flex flex-col gap-4 px-4 py-4 sm:flex-row sm:items-start sm:justify-between">
-                          <div className="min-w-0 space-y-2">
-                            <div className="flex flex-wrap items-center gap-2 text-sm font-black text-gray-900">
-                              <span className="truncate">Teacher: {report.teacher_name || "-"}</span>
-                              <span className="text-gray-300">•</span>
-                              <span className="truncate">Guruh: {report.group_name || "-"}</span>
-                              {isNewReport ? (
-                                <>
-                                  <span className="text-gray-300">•</span>
-                                  <span className="inline-flex items-center rounded-full border border-[#A60E07] bg-[#A60E07]/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#A60E07]">
-                                    Yangi
-                                  </span>
-                                </>
-                              ) : null}
-                            </div>
-                            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-gray-700">
-                              <span className="truncate">Fan: {report.subject_name || "-"}</span>
-                              <span className="text-gray-300">•</span>
-                              <span className="truncate">Vaqt: {formatTimeRange(report.lesson_time)}</span>
-                              <span className="text-gray-300">•</span>
-                              <span className="truncate">Dars kunlari: {scheduleDays}</span>
-                            </div>
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-gray-500">
-                                Report yuborildi
-                              </span>
-                              <span className="text-[11px] font-semibold text-gray-400">
-                                {reportCreatedTime}
-                              </span>
-                            </div>
-                          </div>
+          <>
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {teacherGroups.map((group) => {
+                const active = String(group.group_id) === String(selectedGroupId);
+                return (
+                  <button
+                    key={group.group_id}
+                    type="button"
+                    onClick={() => setSelectedGroupId(String(group.group_id))}
+                    className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                      active
+                        ? "border-[#A60E07] bg-[#A60E07] text-white shadow-sm"
+                        : "border-gray-200 bg-white text-gray-600 hover:border-[#A60E07] hover:text-[#A60E07]"
+                    }`}
+                  >
+                    <span className="max-w-[220px] truncate">
+                      {group.group_name || "-"}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
 
-                          <div className="flex items-center gap-2 self-end sm:self-auto">
-                            <span className={`inline-flex rounded border px-3 py-1 text-xs font-black ${statusTone(report.feedback)}`}>
-                              {report.feedback}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                toggleDetail(report.lesson_id);
-                              }}
-                              className="inline-flex items-center gap-2 rounded border border-[#A60E07]/20 bg-[#A60E07]/5 px-3 py-2 text-xs font-bold text-[#A60E07] transition hover:bg-[#A60E07]/10"
+            {groupLessonsQuery.isLoading ? (
+              <div className="rounded border border-dashed border-gray-200 p-8 text-center text-sm text-gray-500">
+                Guruh darslari yuklanmoqda...
+              </div>
+            ) : !selectedGroupId ? (
+              <div className="rounded border border-dashed border-gray-200 p-8 text-center text-sm text-gray-500">
+                Guruh tanlang.
+              </div>
+            ) : mergedLessons.length === 0 ? (
+              <div className="rounded border border-dashed border-gray-200 p-8 text-center text-sm text-gray-500">
+                Bu guruh uchun bu oy lesson topilmadi.
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {mergedLessons.map(([date, lessons]) => (
+                  <div key={date} className="space-y-3">
+                    <div className="flex items-center justify-between text-sm font-black text-gray-900">
+                      <span>{dayLabel(date)}</span>
+                      <span className="text-xs font-bold text-gray-500">{lessons.length} ta</span>
+                    </div>
+
+                    <div className="space-y-3">
+                      {lessons.map((lesson) => {
+                        const lessonId = lesson.lesson_id ?? lesson.id;
+                        const report = lesson.report;
+                        const lessonHasReport = Boolean(report || lesson.report_sent);
+                        const detail = report ? detailsByLessonId[lessonId] : null;
+                        const reportCreatedTime =
+                          report?.created_at_label ||
+                          report?.updated_at_label ||
+                          formatCreatedAt(report?.created_at || report?.updated_at);
+                        const isNewReport = report ? !seenReportIds.has(String(report.lesson_id)) : false;
+                        const groupName = selectedGroupData?.group_name || lesson.group_name || "-";
+                        const subjectName = selectedGroupData?.subject_name || lesson.subject_name || "-";
+                        const teacherName = selectedGroupData?.teacher_name || lesson.teacher_name || "-";
+                        const scheduleDays = formatScheduleDays(selectedGroupData?.schedule || selectedGroup?.schedule);
+                        const lessonTimeLabel = report?.lesson_time || selectedGroupTime || "-";
+
+                        if (!lessonHasReport) {
+                          return (
+                            <article
+                              key={lessonId}
+                              className="overflow-hidden rounded border border-dashed border-amber-200 bg-amber-50/60 p-4 shadow-sm"
                             >
-                              <EyeIcon className="h-4 w-4" />
-                              {expandedLessonId === report.lesson_id ? "Yopish" : "Ko'rish"}
-                            </button>
-                          </div>
-                        </div>
+                              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                <div className="min-w-0 space-y-2">
+                                  <div className="flex flex-wrap items-center gap-2 text-sm font-black text-gray-900">
+                                    <span className="truncate">Guruh: {groupName}</span>
+                                    <span className="text-gray-300">•</span>
+                                    <span className="truncate">Fan: {subjectName}</span>
+                                  </div>
+                                  <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-gray-700">
+                                    <span className="truncate">O&apos;qituvchi: {teacherName}</span>
+                                    <span className="text-gray-300">•</span>
+                                    <span className="truncate">Vaqt: {lessonTimeLabel}</span>
+                                    <span className="text-gray-300">•</span>
+                                    <span className="truncate">Dars kunlari: {scheduleDays}</span>
+                                  </div>
+                                  <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-white px-3 py-1 text-xs font-black text-amber-700">
+                                    <ClockIcon className="h-4 w-4" />
+                                    Report kutilmoqda
+                                  </div>
+                                </div>
 
-                        {expandedLessonId === report.lesson_id ? (
-                          <div className="bg-slate-50 p-4">
-                            {loadingLessonId === report.lesson_id ? (
-                              <div className="rounded border border-dashed border-gray-200 bg-white px-4 py-5 text-sm font-semibold text-gray-500">
-                                Hisobot yuklanmoqda...
-                              </div>
-                            ) : detail ? (
-                              <div className="space-y-4">
-                                <div className="overflow-hidden rounded border border-gray-200 bg-white shadow-sm">
-                                  <table className="min-w-full text-left text-sm">
-                                    <thead className="bg-[#0B4A7A] text-white">
-                                      <tr>
-                                        <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Students</th>
-                                        <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Homework</th>
-                                        <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Vocabulary</th>
-                                        <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Attendance</th>
-                                        <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Participation</th>
-                                        <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Total</th>
-                                        <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Percent</th>
-                                        <th className="px-3 py-3 text-xs font-bold uppercase tracking-[0.18em]">Feedback</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-100 bg-white">
-                                      {(detail.rows || []).map((row) => (
-                                        <tr key={row.student_id}>
-                                          <td className="px-3 py-3">
-                                            <div className="font-semibold text-gray-900">{row.student_name || "-"}</div>
-                                          </td>
-                                          <td className="px-3 py-3 font-bold text-gray-900">{row.homework}</td>
-                                          <td className="px-3 py-3 font-bold text-gray-900">{row.vocabulary}</td>
-                                          <td className="px-3 py-3 font-bold text-gray-900">{row.attendance}</td>
-                                          <td className="px-3 py-3 font-bold text-gray-900">{row.participation}</td>
-                                          <td className="px-3 py-3 font-bold text-gray-900">{row.total}</td>
-                                          <td className="px-3 py-3 font-bold text-gray-900">{row.percent}%</td>
-                                          <td className="px-3 py-3">
-                                            <span className={`inline-flex rounded border px-3 py-1 text-xs font-black ${statusTone(row.feedback)}`}>
-                                              {row.feedback}
-                                            </span>
-                                          </td>
-                                        </tr>
-                                      ))}
-                                    </tbody>
-                                  </table>
+                                <div className="flex items-center gap-2 self-end sm:self-auto">
+                                  <span className="inline-flex rounded border border-amber-200 bg-amber-100 px-3 py-1 text-xs font-black text-amber-700">
+                                    Kutilmoqda
+                                  </span>
                                 </div>
                               </div>
-                            ) : (
-                              <div className="rounded border border-dashed border-gray-200 bg-white px-4 py-5 text-sm font-semibold text-gray-500">
-                                Hisobot topilmadi.
+                            </article>
+                          );
+                        }
+
+                        if (!report && lesson.report_sent) {
+                          return (
+                            <article
+                              key={lessonId}
+                              role="button"
+                              tabIndex={0}
+                              onClick={() => toggleDetail(lessonId)}
+                              onKeyDown={(event) => {
+                                if (event.key === "Enter" || event.key === " ") {
+                                  event.preventDefault();
+                                  toggleDetail(lessonId);
+                                }
+                              }}
+                              className="cursor-pointer overflow-hidden rounded border border-sky-200 bg-sky-50/60 shadow-sm transition hover:shadow-md"
+                            >
+                              <div className="flex flex-col gap-4 px-4 py-4 sm:flex-row sm:items-start sm:justify-between">
+                                <div className="min-w-0 space-y-2">
+                                  <div className="flex flex-wrap items-center gap-2 text-sm font-black text-gray-900">
+                                    <span className="truncate">Guruh: {selectedGroupData?.group_name || lesson.group_name || "-"}</span>
+                                    <span className="text-gray-300">•</span>
+                                    <span className="truncate">Fan: {selectedGroupData?.subject_name || lesson.subject_name || "-"}</span>
+                                    <span className="text-gray-300">•</span>
+                                    <span className="inline-flex items-center rounded-full border border-sky-200 bg-sky-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-sky-700">
+                                      Yuborildi
+                                    </span>
+                                  </div>
+                                  <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-gray-700">
+                                    <span className="truncate">O&apos;qituvchi: {selectedGroupData?.teacher_name || lesson.teacher_name || "-"}</span>
+                                    <span className="text-gray-300">•</span>
+                                    <span className="truncate">Vaqt: {selectedGroupTime}</span>
+                                    <span className="text-gray-300">•</span>
+                                    <span className="truncate">Dars kunlari: {formatScheduleDays(selectedGroupData?.schedule || selectedGroup?.schedule)}</span>
+                                  </div>
+                                  <div className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-white px-3 py-1 text-xs font-black text-sky-700">
+                                    <ClockIcon className="h-4 w-4" />
+                                    Report yuborilgan
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 self-end sm:self-auto">
+                                  <span className="inline-flex rounded border border-sky-200 bg-sky-100 px-3 py-1 text-xs font-black text-sky-700">
+                                    Ko&apos;rish mumkin
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      toggleDetail(lessonId);
+                                    }}
+                                    className="inline-flex items-center gap-2 rounded border border-sky-200 bg-white px-3 py-2 text-xs font-bold text-sky-700 transition hover:bg-sky-50"
+                                  >
+                                    <EyeIcon className="h-4 w-4" />
+                                    {expandedLessonId === lessonId ? "Yopish" : "Ko'rish"}
+                                  </button>
+                                </div>
                               </div>
-                            )}
-                          </div>
-                        ) : null}
-                      </article>
-                    );
-                  })}
-                </div>
+                            </article>
+                          );
+                        }
+
+                        return (
+                          <article
+                            key={lessonId}
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => toggleDetail(lessonId)}
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter" || event.key === " ") {
+                                event.preventDefault();
+                                toggleDetail(lessonId);
+                              }
+                            }}
+                            className={`cursor-pointer overflow-hidden rounded border shadow-sm transition hover:shadow-md ${
+                              isNewReport
+                                ? "border-emerald-500 bg-emerald-50/70 shadow-emerald-100/40"
+                                : cardTone(report.feedback)
+                            }`}
+                          >
+                            <div className="flex flex-col gap-4 px-4 py-4 sm:flex-row sm:items-start sm:justify-between">
+                              <div className="min-w-0 space-y-2">
+                                <div className="flex flex-wrap items-center gap-2 text-sm font-black text-gray-900">
+                                  <span className="truncate">Guruh: {groupName}</span>
+                                  <span className="text-gray-300">•</span>
+                                  <span className="truncate">Fan: {subjectName}</span>
+                                  {isNewReport ? (
+                                    <>
+                                      <span className="text-gray-300">•</span>
+                                      <span className="inline-flex items-center rounded-full border border-emerald-500 bg-emerald-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">
+                                        Yangi
+                                      </span>
+                                    </>
+                                  ) : null}
+                                </div>
+                                <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-gray-700">
+                                  <span className="truncate">O&apos;qituvchi: {teacherName}</span>
+                                  <span className="text-gray-300">•</span>
+                                  <span className="truncate">Vaqt: {lessonTimeLabel}</span>
+                                  <span className="text-gray-300">•</span>
+                                  <span className="truncate">Dars kunlari: {scheduleDays}</span>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-gray-500">
+                                    Report yuborildi
+                                  </span>
+                                  <span className="text-[11px] font-semibold text-gray-400">
+                                    {reportCreatedTime}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-2 self-end sm:self-auto">
+                                <span className={`inline-flex rounded border px-3 py-1 text-xs font-black ${statusTone(report.feedback)}`}>
+                                  {report.feedback}
+                                </span>
+                                  <button
+                                    type="button"
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      toggleDetail(lessonId);
+                                    }}
+                                  className="inline-flex items-center gap-2 rounded border border-[#A60E07]/20 bg-[#A60E07]/5 px-3 py-2 text-xs font-bold text-[#A60E07] transition hover:bg-[#A60E07]/10"
+                                >
+                                  <EyeIcon className="h-4 w-4" />
+                                  {expandedLessonId === lessonId ? "Yopish" : "Ko'rish"}
+                                </button>
+                              </div>
+                            </div>
+
+                            {expandedLessonId === lessonId ? (
+                              <div className="bg-slate-50 p-4">
+                                {loadingLessonId === lessonId ? (
+                                  <div className="rounded border border-dashed border-gray-200 bg-white px-4 py-5 text-sm font-semibold text-gray-500">
+                                    Hisobot yuklanmoqda...
+                                  </div>
+                                ) : detail ? (
+                                  <div className="space-y-4">
+                                    <ReportDetailTable detail={detail} />
+                                  </div>
+                                ) : (
+                                  <div className="rounded border border-dashed border-gray-200 bg-white px-4 py-5 text-sm font-semibold text-gray-500">
+                                    Hisobot topilmadi.
+                                  </div>
+                                )}
+                              </div>
+                            ) : null}
+                          </article>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
 
         <div className="pt-1 text-xs text-gray-400">
-          Yangi hisobot yuborilganda shu sahifa avtomatik yangilanadi.
+          {isAllTeachersMode
+            ? "Barcha teacherlarning reportlari shu yerda aralash ko‘rinishda chiqadi."
+            : "Guruhga yuborilgan report va report kutilayotgan lessonlar shu yerda alohida ko‘rinadi."}
         </div>
       </section>
         </>
