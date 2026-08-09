@@ -26,7 +26,8 @@ import {
     UserPlusIcon,
     ArrowRightIcon,
     PencilSquareIcon,
-    UserMinusIcon
+    UserMinusIcon,
+    BellAlertIcon
 } from "@heroicons/react/24/outline";
 import { useMonthlyPayments, usePaymentHistory, useCreateSnapshotsForNewStudents, useNewStudentsNotification } from "../../../hooks/payments";
 import { instance } from "../../../hooks/api";
@@ -159,9 +160,12 @@ const StudentPaymentsInner = () => {
     const [showClearModal, setShowClearModal] = useState(false);
     const [showRemoveStudentModal, setShowRemoveStudentModal] = useState(false);
     const [showEditRequiredModal, setShowEditRequiredModal] = useState(false);
+    const [showPaymentReminderModal, setShowPaymentReminderModal] = useState(false);
     const [editRequiredAmount, setEditRequiredAmount] = useState('');
     const [editRequiredLoading, setEditRequiredLoading] = useState(false);
     const [editRequiredStudent, setEditRequiredStudent] = useState(null);
+    const [paymentReminderText, setPaymentReminderText] = useState('');
+    const [paymentReminderLoading, setPaymentReminderLoading] = useState(false);
     const [showStats, setShowStats] = useState(false);
     const [clearLoading, setClearLoading] = useState(false);
     const [removeStudentLoading, setRemoveStudentLoading] = useState(false);
@@ -519,6 +523,51 @@ const StudentPaymentsInner = () => {
         }
     };
 
+    const handleSendPaymentReminder = async () => {
+        const reminderText = paymentReminderText.trim();
+
+        if (!filters.month) {
+            notify('err', 'Avval oyni tanlang');
+            return;
+        }
+
+        if (!reminderText) {
+            notify('err', 'Ogohlantirish matnini kiriting');
+            return;
+        }
+
+        try {
+            setPaymentReminderLoading(true);
+            const response = await instance.post('/api/snapshots/payment-reminder', {
+                month: filters.month,
+                message: reminderText,
+            });
+
+            if (response.data?.success) {
+                const sentCount = response.data?.data?.sent_count ?? 0;
+                const failedCount = response.data?.data?.failed_count ?? 0;
+                notify(
+                    'ok',
+                    sentCount > 0
+                        ? `Ogohlantirish yuborildi: ${sentCount} ta studentga`
+                        : 'Qarzdor talabalar topilmadi'
+                );
+                if (failedCount > 0) {
+                    notify('multi', `Ba'zi xabarlar yuborilmadi: ${failedCount} ta`);
+                }
+                setPaymentReminderText('');
+                setShowPaymentReminderModal(false);
+            } else {
+                notify('err', response.data?.message || 'Ogohlantirish yuborilmadi');
+            }
+        } catch (error) {
+            console.error('Payment reminder error:', error);
+            notify('err', error.response?.data?.message || 'Ogohlantirish yuborishda xatolik yuz berdi');
+        } finally {
+            setPaymentReminderLoading(false);
+        }
+    };
+
     // Get status badge
     const getStatusBadge = (status) => {
         const statusConfig = {
@@ -826,11 +875,11 @@ const StudentPaymentsInner = () => {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="grid w-full grid-cols-2 gap-1.5 sm:grid-cols-2 md:w-auto md:grid-cols-4 md:gap-3">
+                    <div className="flex w-full flex-wrap justify-end gap-2 md:w-auto md:gap-2.5">
                         <button
                             onClick={handleCreateSnapshot}
                             disabled={snapshotLoading}
-                            className="inline-flex w-full items-center justify-center gap-1 rounded-lg bg-green-600 px-2 py-1.5 text-xs font-medium text-white transition-colors hover:opacity-90 focus:ring-2 focus:ring-offset-2 disabled:opacity-50 sm:gap-2 sm:px-4 sm:py-2 sm:text-sm"
+                            className="inline-flex min-w-0 items-center justify-center gap-1 rounded-lg bg-green-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:opacity-90 focus:ring-2 focus:ring-offset-2 disabled:opacity-50 sm:gap-2 sm:px-4 sm:py-2 sm:text-sm"
                             title="Yangi oy uchun to'lov jadvali yaratish"
                         >
                             {snapshotLoading ? (
@@ -846,11 +895,25 @@ const StudentPaymentsInner = () => {
                                 </>
                             )}
                         </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setPaymentReminderText('');
+                                setShowPaymentReminderModal(true);
+                            }}
+                            disabled={!filters.month}
+                            className="inline-flex min-w-0 items-center justify-center gap-1 rounded-lg bg-amber-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:opacity-90 focus:ring-2 focus:ring-offset-2 disabled:opacity-50 sm:gap-2 sm:px-4 sm:py-2 sm:text-sm"
+                            title="Qarzdor studentlarga to'lov ogohlantirishi yuborish"
+                        >
+                            <BellAlertIcon className="h-4 w-4" />
+                            <span className="hidden sm:inline">To'lov haqida ogohlantirish</span>
+                            <span className="sm:hidden">Ogohlantirish</span>
+                        </button>
                         {showSnapshotDeleteButton ? (
                             <button
                                 onClick={handleDeleteSnapshot}
                                 disabled={snapshotDeleteLoading || !filters.month}
-                                className="inline-flex w-full items-center justify-center gap-1 rounded-lg bg-red-600 px-2 py-1.5 text-xs font-medium text-white transition-colors hover:opacity-90 focus:ring-2 focus:ring-offset-2 disabled:opacity-50 sm:gap-2 sm:px-4 sm:py-2 sm:text-sm"
+                                className="inline-flex min-w-0 items-center justify-center gap-1 rounded-lg bg-red-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:opacity-90 focus:ring-2 focus:ring-offset-2 disabled:opacity-50 sm:gap-2 sm:px-4 sm:py-2 sm:text-sm"
                                 title="Tanlangan oy uchun to'lov jadvalini o'chirish"
                             >
                                 {snapshotDeleteLoading ? (
@@ -871,7 +934,7 @@ const StudentPaymentsInner = () => {
                             <button
                                 onClick={handleCreateSnapshotsForNew}
                                 disabled={!filters.month || createSnapshotsMutation.isPending}
-                                className="group relative inline-flex w-full items-center justify-center gap-1 rounded-lg bg-green-600 px-2 py-1.5 text-xs font-medium text-white transition-all duration-300 hover:scale-[1.01] hover:opacity-90 hover:shadow-lg focus:ring-2 focus:ring-offset-2 disabled:opacity-50 sm:gap-2 sm:px-4 sm:py-2 sm:text-sm"
+                                className="group relative inline-flex min-w-0 items-center justify-center gap-1 rounded-lg bg-green-600 px-3 py-2 text-xs font-medium text-white transition-all duration-300 hover:scale-[1.01] hover:opacity-90 hover:shadow-lg focus:ring-2 focus:ring-offset-2 disabled:opacity-50 sm:gap-2 sm:px-4 sm:py-2 sm:text-sm"
                                 title="Yangi qo'shilgan yozuvlar uchun snapshot yaratish"
                             >
                                 {createSnapshotsMutation.isPending ? (
@@ -928,7 +991,7 @@ const StudentPaymentsInner = () => {
                         </div>
                         <button
                             onClick={handleExport}
-                            className="inline-flex w-full items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-white transition-colors hover:opacity-90 focus:ring-2 focus:ring-offset-2 sm:gap-2 sm:px-4 sm:py-2 sm:text-sm"
+                            className="inline-flex min-w-0 items-center justify-center gap-1 rounded-lg px-3 py-2 text-xs font-medium text-white transition-colors hover:opacity-90 focus:ring-2 focus:ring-offset-2 sm:gap-2 sm:px-4 sm:py-2 sm:text-sm"
                             style={{ backgroundColor: MAIN_COLOR, focusRingColor: MAIN_COLOR }}
                         >
                             <ArrowDownTrayIcon className="h-4 w-4" />
@@ -1840,6 +1903,91 @@ const StudentPaymentsInner = () => {
                     student={{...selectedStudent, teacher_id: filters.teacher_id, subject_id: filters.subject_id}}
                     month={filters.month}
                 />
+
+                {showPaymentReminderModal && (
+                    <div
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+                        onClick={() => {
+                            if (paymentReminderLoading) return;
+                            setShowPaymentReminderModal(false);
+                        }}
+                    >
+                        <div
+                            className="w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-5 py-4">
+                                <div>
+                                    <h3 className="text-lg font-bold text-gray-900">
+                                        To&apos;lov haqida ogohlantirish
+                                    </h3>
+                                    <p className="mt-1 text-sm text-gray-500">
+                                        {filters.month} oyi bo&apos;yicha qarzdor talabalar uchun xabar yuboring.
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (paymentReminderLoading) return;
+                                        setShowPaymentReminderModal(false);
+                                    }}
+                                    className="rounded-full p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                                >
+                                    <XCircleIcon className="h-6 w-6" />
+                                </button>
+                            </div>
+
+                            <div className="space-y-4 px-5 py-5">
+                                <div>
+                                    <label className="mb-2 block text-sm font-semibold text-gray-700">
+                                        Xabar matni
+                                    </label>
+                                    <textarea
+                                        value={paymentReminderText}
+                                        onChange={(e) => setPaymentReminderText(e.target.value)}
+                                        rows={6}
+                                        placeholder="Masalan: Iltimos, shu oy uchun qarzdorligingizni imkon qadar tezroq to'lab qo'ying."
+                                        className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-transparent focus:ring-2 focus:ring-amber-500"
+                                    />
+                                    <p className="mt-2 text-xs text-gray-500">
+                                        Xabar avtomatik tarzda qarzi bor studentlarga yuboriladi va bildirishnoma sifatida chiqadi.
+                                    </p>
+                                </div>
+
+                                <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            if (paymentReminderLoading) return;
+                                            setShowPaymentReminderModal(false);
+                                        }}
+                                        className="inline-flex items-center justify-center rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50"
+                                    >
+                                        Bekor qilish
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleSendPaymentReminder}
+                                        disabled={paymentReminderLoading}
+                                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                                    >
+                                        {paymentReminderLoading ? (
+                                            <>
+                                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                                Yuborilmoqda...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <BellAlertIcon className="h-4 w-4" />
+                                                Yuborish
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Payment History Modal */}
                 {showPaymentHistoryModal && selectedStudent && (

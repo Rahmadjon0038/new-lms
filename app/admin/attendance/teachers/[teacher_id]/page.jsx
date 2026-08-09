@@ -802,9 +802,7 @@ export default function AdminTeacherGroupsPage() {
           <div className="flex gap-2 overflow-x-auto pb-1">
             {activeGroups.map((group) => {
               const isActive = String(group.group_id) === activeGroupId;
-              const hasTodayAttendance =
-                group.today_attendance_completed === true ||
-                Number(group.today_marked_students_count) > 0;
+              const hasTodayAttendance = group.today_attendance_fully_completed === true;
               return (
                 <button
                   type="button"
