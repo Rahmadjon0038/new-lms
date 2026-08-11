@@ -7,6 +7,7 @@ import { instance } from "../../hooks/api";
 import {
   BookOpenIcon,
   ClipboardDocumentListIcon, // Davomat uchun
+  ChartBarIcon, // Statistika uchun
   BriefcaseIcon,
   BookmarkIcon, // Qo'llanma uchun
   Cog6ToothIcon,
@@ -36,6 +37,11 @@ const getTeacherSidebarItems = (isEnglishTeacher) => {
       name: "Davomat",
       icon: ClipboardDocumentListIcon,
       href: "/teacher/attendance",
+    },
+    {
+      name: "Statistika",
+      icon: ChartBarIcon,
+      href: "/teacher/statistics",
     },
     {
       name: "Talabalar To'lovlari", // To'lovlar statusini ko'rish uchun

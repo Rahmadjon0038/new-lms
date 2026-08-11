@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   BookOpenIcon,
   CalendarDaysIcon,
+  ChartBarIcon,
   BriefcaseIcon,
   Cog6ToothIcon,
   BookmarkIcon,
@@ -23,6 +24,7 @@ const getTeacherNavItems = (isEnglishTeacher) => {
     { label: "Asosiy", href: "/teacher", icon: Squares2X2Icon },
     { label: "Guruhlar", href: "/teacher/my-groups", icon: BookOpenIcon },
     { label: "Davomat", href: "/teacher/attendance", icon: CalendarDaysIcon },
+    { label: "Statistika", href: "/teacher/statistics", icon: ChartBarIcon },
     { label: "To'lovlar", href: "/teacher/payments-info", icon: BriefcaseIcon },
     { label: "Sozlamalar", href: "/teacher/settings", icon: Cog6ToothIcon },
   ];
