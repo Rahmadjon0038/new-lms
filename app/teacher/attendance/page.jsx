@@ -72,7 +72,6 @@ function TeacherAttendancePageContent() {
 
   const groupsQuery = useGetMyAttendanceGroups({
     month: selectedMonth || undefined,
-    date: TODAY_DATE,
   });
   const groupsRefetch = groupsQuery.refetch;
 
@@ -664,7 +663,7 @@ function TeacherAttendancePageContent() {
                 {lessons.map((lesson) => {
                   const lessonId = String(lesson.id || lesson.lesson_id);
                   const isActiveLesson = lessonId === String(activeLessonId);
-                  const isCompleted = lesson.report_sent === true;
+                  const isCompleted = lesson.attendance_completed === true;
                   const isHoliday = isHolidayFlag(lesson.is_holiday);
                   return (
                     <div key={lessonId}>
