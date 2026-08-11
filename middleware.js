@@ -6,6 +6,7 @@ export function middleware(request) {
   const { pathname } = request.nextUrl;
   const teacherAllowedPaths = [
     '/teacher/attendance',
+    '/teacher/statistics',
     '/teacher/payments-info',
     '/teacher/settings',
     '/teacher/guide',
