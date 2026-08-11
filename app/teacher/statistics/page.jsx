@@ -655,6 +655,14 @@ function TeacherStatisticsPageContent() {
                 <div key={i} className="h-14 animate-pulse rounded-lg bg-gray-100" />
               ))}
             </div>
+          ) : lessonsQuery.isError || reportsQuery.isError ? (
+            <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              {lessonsQuery.error?.response?.data?.message ||
+                reportsQuery.error?.response?.data?.message ||
+                lessonsQuery.error?.message ||
+                reportsQuery.error?.message ||
+                "Darslar yuklanmadi"}
+            </div>
           ) : (
             <div className="space-y-2">
               {lessons.map((lesson) => {
