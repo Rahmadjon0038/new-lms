@@ -445,7 +445,7 @@ function LessonReportEditor({ lesson, existingReport, catalog, readOnly, onClose
                           type="text"
                           inputMode="numeric"
                           disabled={readOnly}
-                          value={rowValues[column.key] ?? 0}
+                          value={rowValues[column.key] || ""}
                           onChange={(e) => handleScoreChange(student.student_id, column.key, e.target.value)}
                           placeholder={`0-${column.max_value}`}
                           className="w-14 rounded-lg border border-gray-300 px-1.5 py-1 text-center disabled:bg-gray-50 disabled:text-gray-500"
