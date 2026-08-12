@@ -561,7 +561,15 @@ function TeacherStatisticsPageContent() {
 
   const lessons = useMemo(() => {
     const payload = lessonsQuery.data;
-    const raw = Array.isArray(payload) ? payload : Array.isArray(payload?.data) ? payload.data : [];
+    const raw = Array.isArray(payload)
+      ? payload
+      : Array.isArray(payload?.data)
+        ? payload.data
+        : Array.isArray(payload?.lessons)
+          ? payload.lessons
+          : Array.isArray(payload?.data?.lessons)
+            ? payload.data.lessons
+            : [];
     return [...raw].sort((a, b) => String(a.date).localeCompare(String(b.date)));
   }, [lessonsQuery.data]);
 
