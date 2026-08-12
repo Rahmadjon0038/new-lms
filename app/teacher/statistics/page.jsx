@@ -416,9 +416,9 @@ function LessonReportEditor({ lesson, existingReport, catalog, readOnly, onClose
               <tr className="rounded-lg text-white" style={{ backgroundColor: "#0B4A7A" }}>
                 <th className="rounded-l-lg px-2 py-2 text-left font-semibold">Talaba</th>
                 {enabledColumns.map((column) => (
-                  <th key={column.key} className="px-2 py-2 text-center font-semibold">
-                    <div>{column.label}</div>
-                    <div className="text-[10px] font-normal opacity-80">{column.max_value}</div>
+                  <th key={column.key} className="w-16 px-1.5 py-2 text-center font-semibold sm:w-20">
+                    <div className="whitespace-normal break-words leading-tight">{column.label}</div>
+                    <div className="text-[10px] font-normal leading-tight opacity-80">{column.max_value}</div>
                   </th>
                 ))}
                 <th className="px-2 py-2 text-center font-semibold">Jami</th>
@@ -701,12 +701,20 @@ function TeacherStatisticsPageContent() {
                   );
                 }
 
+                const canOpen = Boolean(report) || canMutate;
+                const openCard = () => {
+                  if (!canOpen) return;
+                  setExpandedMode(canMutate ? "edit" : "view");
+                  setExpandedLessonId((prev) => (prev === lessonId ? "" : lessonId));
+                };
+
                 return (
                   <div key={lessonId}>
                     <div
+                      onClick={openCard}
                       className={`flex flex-col items-start justify-between gap-2 rounded-lg border px-2.5 py-2 sm:flex-row sm:items-center sm:px-3 ${
                         report ? "border-emerald-300 bg-emerald-50/60" : "border-gray-200 bg-white"
-                      }`}
+                      } ${canOpen ? "cursor-pointer" : ""}`}
                     >
                       <div className="min-w-0">
                         <p className="truncate text-xs font-semibold text-gray-900 sm:text-sm">
@@ -723,34 +731,23 @@ function TeacherStatisticsPageContent() {
 
                       <div className="flex shrink-0 items-center gap-1.5">
                         {!report && canMutate ? (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setExpandedMode("edit");
-                              setExpandedLessonId(isExpanded ? "" : lessonId);
-                            }}
+                          <span
                             className="rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-white sm:px-3 sm:text-xs"
                             style={{ backgroundColor: BRAND }}
                           >
                             Statistika yuborish
-                          </button>
+                          </span>
                         ) : null}
 
                         {report && canMutate ? (
                           <>
+                            <PencilSquareIcon className="h-4 w-4 text-gray-400" />
                             <button
                               type="button"
-                              onClick={() => {
-                                setExpandedMode("edit");
-                                setExpandedLessonId(isExpanded ? "" : lessonId);
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteTarget({ id: lesson.id, label: formatDateYMD(lesson.date) });
                               }}
-                              className="rounded-lg border border-gray-300 p-1.5 text-gray-600 hover:border-[#A60E07] hover:text-[#A60E07]"
-                            >
-                              <PencilSquareIcon className="h-4 w-4" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setDeleteTarget({ id: lesson.id, label: formatDateYMD(lesson.date) })}
                               className="rounded-lg border border-red-200 p-1.5 text-red-500 hover:bg-red-50"
                             >
                               <TrashIcon className="h-4 w-4" />
@@ -759,16 +756,9 @@ function TeacherStatisticsPageContent() {
                         ) : null}
 
                         {report && !canMutate ? (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setExpandedMode("view");
-                              setExpandedLessonId(isExpanded ? "" : lessonId);
-                            }}
-                            className="inline-flex items-center gap-1 rounded-lg border border-gray-300 px-2.5 py-1.5 text-[11px] font-semibold text-gray-700 sm:text-xs"
-                          >
+                          <span className="inline-flex items-center gap-1 rounded-lg border border-gray-300 px-2.5 py-1.5 text-[11px] font-semibold text-gray-700 sm:text-xs">
                             <EyeIcon className="h-4 w-4" /> Ko&apos;rish
-                          </button>
+                          </span>
                         ) : null}
                       </div>
                     </div>
