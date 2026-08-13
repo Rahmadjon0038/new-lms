@@ -3,6 +3,7 @@
 import React from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  AcademicCapIcon,
   BanknotesIcon,
   ChartBarIcon,
   Cog6ToothIcon,
@@ -34,6 +35,11 @@ const sidebarItems = [
     name: "Adminlar",
     icon: UserGroupIcon,
     href: "/super_admin/admins",
+  },
+  {
+    name: "O'qituvchilar",
+    icon: AcademicCapIcon,
+    href: "/super_admin/teachers",
   },
   {
     name: "Admin oyliklari",
