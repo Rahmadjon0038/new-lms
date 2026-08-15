@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { EyeIcon, EyeSlashIcon, KeyIcon, UserCircleIcon } from "@heroicons/react/24/outline";
 import { useChangePassword, usegetProfile } from "../../../hooks/user";
 import { useGetNotify } from "../../../hooks/notify";
+import AppVersionSettings from "../../../components/superadmin/AppVersionSettings";
 
 const MAIN_COLOR = "#A60E07";
 
@@ -96,6 +97,8 @@ export default function SuperAdminSettingsPage() {
           </button>
         </form>
       </section>
+
+      <AppVersionSettings />
     </div>
   );
 }
