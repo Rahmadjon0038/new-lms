@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import { useParams } from "next/navigation";
 import {
   ChevronLeftIcon,
@@ -9,6 +9,9 @@ import {
   BuildingOfficeIcon,
   ClockIcon,
   PhoneIcon,
+  InformationCircleIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
 } from "@heroicons/react/24/outline";
 import { TrophyIcon } from "@heroicons/react/24/solid";
 import { useGetTeacherGroupById } from "../../../../hooks/groups";
@@ -37,6 +40,11 @@ function TeacherGroupDetail() {
   const params = useParams();
   const groupId = params.id;
   const { data: groupData, isLoading, error } = useGetTeacherGroupById(groupId);
+  const [expandedCredentials, setExpandedCredentials] = useState({});
+
+  const toggleCredentials = (studentId) => {
+    setExpandedCredentials((prev) => ({ ...prev, [studentId]: !prev[studentId] }));
+  };
 
   if (isLoading) {
     return (
@@ -277,6 +285,42 @@ function TeacherGroupDetail() {
                             </span>
                           )}
                         </div>
+
+                        {(student.username || student.password) && (
+                          <div className="mt-1.5">
+                            <button
+                              type="button"
+                              onClick={() => toggleCredentials(student.id)}
+                              className="inline-flex items-center gap-1 py-1 text-left"
+                              aria-label={expandedCredentials[student.id] ? "Hisob ma'lumotlarini yopish" : "Hisob ma'lumotlarini ochish"}
+                            >
+                              <InformationCircleIcon className="h-3.5 w-3.5 text-blue-800" />
+                              <span className="text-[11px] font-semibold text-blue-800">
+                                Hisob ma&apos;lumotlari
+                              </span>
+                              {expandedCredentials[student.id] ? (
+                                <ChevronUpIcon className="h-3.5 w-3.5 text-blue-700" />
+                              ) : (
+                                <ChevronDownIcon className="h-3.5 w-3.5 text-blue-700" />
+                              )}
+                            </button>
+
+                            {expandedCredentials[student.id] && (
+                              <div className="mt-1 rounded-md bg-blue-50 p-2 text-[11px] text-blue-900">
+                                {student.username && (
+                                  <p className="break-all">
+                                    <span className="font-semibold">Login:</span> {student.username}
+                                  </p>
+                                )}
+                                {student.password && (
+                                  <p className="break-all">
+                                    <span className="font-semibold">Parol:</span> {student.password}
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       <div className="flex shrink-0 flex-col items-end gap-1.5">

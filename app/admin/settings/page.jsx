@@ -5,6 +5,7 @@ import { EyeIcon, EyeSlashIcon, KeyIcon } from '@heroicons/react/24/outline';
 import { useChangePassword, usegetProfile } from '../../../hooks/user';
 import { useDeleteUnassignedStudents } from '../../../hooks/students';
 import { useGetNotify } from '../../../hooks/notify';
+import AppVersionSettings from '../../../components/superadmin/AppVersionSettings';
 
 const AdminSettingsPage = () => {
   const { data: user } = usegetProfile();
@@ -129,6 +130,10 @@ const AdminSettingsPage = () => {
           >
             {deleteUnassignedMutation.isPending ? 'O\'chirilmoqda...' : 'Guruhsiz talabalarni o\'chirish'}
           </button>
+        </div>
+
+        <div className="mt-6">
+          <AppVersionSettings />
         </div>
 
       </div>
