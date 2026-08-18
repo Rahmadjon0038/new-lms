@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useMemo, useState } from "react";
+import React, { Suspense, useMemo, useRef, useState } from "react";
 import {
   PencilSquareIcon,
   TrashIcon,
@@ -10,6 +10,7 @@ import {
   AdjustmentsHorizontalIcon,
   CheckBadgeIcon,
   HashtagIcon,
+  ArrowsUpDownIcon,
 } from "@heroicons/react/24/outline";
 import { useGetMyAttendanceGroups, useGetGroupLessons, useGetLessonStudents } from "../../../hooks/attendance";
 import {
@@ -108,6 +109,9 @@ const saveLastColumns = (columns) => {
 // ---------- Ustunlarni sozlash modali ----------
 function ColumnConfigModal({ columns, catalog, onCancel, onSave }) {
   const [draft, setDraft] = useState(() => columns.map((c) => ({ ...c })));
+  const [draggingIndex, setDraggingIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
+  const dragIndexRef = useRef(null);
 
   const usedKeys = new Set(draft.map((c) => c.key));
   const catalogByKey = useMemo(() => {
@@ -160,6 +164,50 @@ function ColumnConfigModal({ columns, catalog, onCancel, onSave }) {
     setDraft((prev) => prev.map((c, i) => (i === index ? { ...c, enabled: !c.enabled } : c)));
   };
 
+  const reorder = (from, to) => {
+    if (from === to || from == null || to == null) return;
+    setDraft((prev) => {
+      const next = [...prev];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+  };
+
+  const handleDragStart = (index) => (e) => {
+    dragIndexRef.current = index;
+    setDraggingIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+    // Firefoxda drag boshlanishi uchun setData shart
+    e.dataTransfer.setData("text/plain", String(index));
+  };
+
+  const handleDragEnter = (index) => (e) => {
+    e.preventDefault();
+    if (dragIndexRef.current === null || dragIndexRef.current === index) return;
+    setDragOverIndex(index);
+  };
+
+  const handleDragOver = (index) => (e) => {
+    // Drop hodisasi ishlashi uchun default xatti-harakatni bekor qilish shart
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDrop = (index) => (e) => {
+    e.preventDefault();
+    reorder(dragIndexRef.current, index);
+    dragIndexRef.current = null;
+    setDraggingIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    dragIndexRef.current = null;
+    setDraggingIndex(null);
+    setDragOverIndex(null);
+  };
+
   return (
     <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/50 sm:items-center">
       <div className="flex max-h-[90vh] w-full max-w-lg flex-col rounded-t-2xl bg-white shadow-2xl sm:rounded-2xl">
@@ -187,8 +235,27 @@ function ColumnConfigModal({ columns, catalog, onCancel, onSave }) {
             const locked = column.key === "attendance";
             const knownInCatalog = catalogByKey.has(column.key);
             return (
-              <div key={`${column.key}-${index}`} className="rounded-xl border border-gray-200 bg-gray-50 p-2.5">
+              <div
+                key={`${column.key}-${index}`}
+                draggable
+                onDragStart={handleDragStart(index)}
+                onDragEnter={handleDragEnter(index)}
+                onDragOver={handleDragOver(index)}
+                onDrop={handleDrop(index)}
+                onDragEnd={handleDragEnd}
+                className={`rounded-xl border p-2.5 transition ${
+                  dragOverIndex === index
+                    ? "border-red-300 bg-red-50"
+                    : "border-gray-200 bg-gray-50"
+                } ${draggingIndex === index ? "opacity-40" : ""}`}
+              >
                 <div className="flex items-center gap-2">
+                  <span
+                    className="shrink-0 cursor-grab touch-none rounded-lg p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600 active:cursor-grabbing"
+                    title="Tutib torting va o'rnini almashtiring"
+                  >
+                    <ArrowsUpDownIcon className="h-4 w-4" />
+                  </span>
                   {locked ? (
                     <input
                       value={column.label}
