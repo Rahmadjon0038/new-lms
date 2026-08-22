@@ -9,6 +9,7 @@ import {
   Cog6ToothIcon,
   CreditCardIcon,
   Squares2X2Icon,
+  UserCircleIcon,
   UserGroupIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
@@ -45,6 +46,11 @@ const sidebarItems = [
     name: "Admin oyliklari",
     icon: BanknotesIcon,
     href: "/super_admin/admins/salary",
+  },
+  {
+    name: "Avatarlar",
+    icon: UserCircleIcon,
+    href: "/super_admin/avatars",
   },
   {
     name: "Sozlamalar",
