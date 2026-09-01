@@ -43,6 +43,18 @@ const STATUS_CONFIG = {
     icon: XCircleIcon,
     accent: "bg-slate-50 text-slate-700 border-slate-200",
   },
+  removed_day: {
+    label: "Kunduzgi to'kilganlar",
+    badge: "To'kildi (kunduz)",
+    icon: XCircleIcon,
+    accent: "bg-slate-50 text-slate-700 border-slate-200",
+  },
+  removed_evening: {
+    label: "Kechki to'kilganlar",
+    badge: "To'kildi (kechqurun)",
+    icon: XCircleIcon,
+    accent: "bg-slate-100 text-slate-800 border-slate-300",
+  },
   rejoined: {
     label: "Qayta guruhga biriktirilganlar",
     badge: "Qayta",
@@ -106,8 +118,11 @@ const isCalledUnresolvedRow = (student) => isCalledRow(student) && !RESOLVED_REA
 const isUnassignedRow = (student) => isAdmissionRow(student) && !hasGroupInfo(student) && !isCalledRow(student);
 const isGroupedAdmissionRow = (student) => isAdmissionRow(student) && hasGroupInfo(student);
 const getStudentKey = (student) => `${student?.id || "unknown"}:${student?.record_type || "admission"}:${String(student?.date || "").slice(0, 10)}`;
-const getMembershipKey = (student) =>
-  `${student?.id || "unknown"}:${student?.group_id || student?.closed_group_id || student?.active_group_id || student?.group_name || "unknown"}`;
+// Guruh ID'siga qarab emas, faqat talabaning o'ziga qarab kalit yasaymiz -
+// aks holda "A guruhdan chiqarilgan" va "B guruhga qo'shilgan" voqealari
+// turli guruh ID'lari sabab bir-biri bilan solishtirilmay, talaba markazni
+// tark etmagan bo'lsa ham "chiqarilganlar" ro'yxatida qolib ketardi.
+const getMembershipKey = (student) => String(student?.student_id ?? student?.id ?? "unknown");
 const getEventTimestamp = (student) => {
   const raw = student?.created_at || student?.closed_left_at || student?.followup_at || student?.date || "";
   const ts = new Date(raw).getTime();
@@ -195,7 +210,7 @@ const StudentCard = ({ student, status }) => {
   const displayStatus = student.status || status || "unresolved";
   const config = STATUS_CONFIG[displayStatus] || STATUS_CONFIG.unresolved;
   const Icon = config.icon;
-  const isRemoved = displayStatus === "removed";
+  const isRemoved = displayStatus === "removed" || displayStatus === "removed_day" || displayStatus === "removed_evening";
   const adminLabel =
     isRemoved
       ? "Chiqargan admin"
@@ -209,7 +224,7 @@ const StudentCard = ({ student, status }) => {
         : "Bu oy guruhga biriktirilgan"
       : displayStatus === "rejoined"
         ? "Qayta guruhga biriktirilgan"
-      : displayStatus === "removed"
+      : isRemoved
         ? "Guruhdan chiqarilgan"
         : null;
   const noteText = student.followup_note || student.reason || student.note;
@@ -334,6 +349,8 @@ export default function AdmissionsStatisticsPage() {
     const unresolved = admissionsOnly.filter((student) => isUnassignedRow(student)).length;
     const rejoinedVisible = groupJoinsOnly.filter((student) => latestMembershipByKey.get(getMembershipKey(student))?.record_type === "group_join");
     const removedVisible = removedOnly.filter((student) => latestMembershipByKey.get(getMembershipKey(student))?.record_type === "removed");
+    const removedDayVisible = removedVisible.filter((student) => student.time_shift === "day");
+    const removedEveningVisible = removedVisible.filter((student) => student.time_shift === "evening");
     const calledUnresolved = filteredAdmissions.filter((student) => getEffectiveCallStatus(student) === "called_unresolved").length;
     const calledResolved = filteredAdmissions.filter((student) => getEffectiveCallStatus(student) === "called_resolved").length;
     return {
@@ -343,6 +360,8 @@ export default function AdmissionsStatisticsPage() {
       calledUnresolved,
       calledResolved,
       removed: removedVisible.length,
+      removedDay: removedDayVisible.length,
+      removedEvening: removedEveningVisible.length,
       rejoined: rejoinedVisible.length,
       unassigned: unresolved,
     };
@@ -429,6 +448,8 @@ export default function AdmissionsStatisticsPage() {
 
     const rejoinedAdmissions = groupJoinsOnly.filter((student) => latestMembershipByKey.get(getMembershipKey(student))?.record_type === "group_join");
     const removedVisible = removedOnly.filter((student) => latestMembershipByKey.get(getMembershipKey(student))?.record_type === "removed");
+    const removedDayVisible = removedVisible.filter((student) => student.time_shift === "day");
+    const removedEveningVisible = removedVisible.filter((student) => student.time_shift === "evening");
     return [
       {
         status: "new",
@@ -452,10 +473,16 @@ export default function AdmissionsStatisticsPage() {
         count: unresolvedAdmissions.length,
       },
       {
-        status: "removed",
-        label: STATUS_CONFIG.removed.label,
-        items: removedVisible.map((student) => ({ ...student, status: "removed" })),
-        count: removedVisible.length,
+        status: "removed_day",
+        label: STATUS_CONFIG.removed_day.label,
+        items: removedDayVisible.map((student) => ({ ...student, status: "removed_day" })),
+        count: removedDayVisible.length,
+      },
+      {
+        status: "removed_evening",
+        label: STATUS_CONFIG.removed_evening.label,
+        items: removedEveningVisible.map((student) => ({ ...student, status: "removed_evening" })),
+        count: removedEveningVisible.length,
       },
       {
         status: "rejoined",
@@ -561,7 +588,7 @@ export default function AdmissionsStatisticsPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-5">
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-7">
           <StatCard
             title="Bu oydagi qabul"
             value={summary.total}
@@ -589,6 +616,22 @@ export default function AdmissionsStatisticsPage() {
             icon={XCircleIcon}
             color="#475569"
             bgClass="bg-slate-50"
+          />
+          <StatCard
+            title="Kunduzgi to'kilgan"
+            hint="17:00gacha guruhlar"
+            value={summary.removedDay}
+            icon={XCircleIcon}
+            color="#475569"
+            bgClass="bg-slate-50"
+          />
+          <StatCard
+            title="Kechki to'kilgan"
+            hint="17:00dan keyin"
+            value={summary.removedEvening}
+            icon={XCircleIcon}
+            color="#334155"
+            bgClass="bg-slate-100"
           />
           <StatCard
             title="Qayta guruhga biriktirilgan"
