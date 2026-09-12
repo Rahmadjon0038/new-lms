@@ -6,11 +6,12 @@ import {
     User, Phone, MapPin, Calendar, GraduationCap,
     XCircle, Clock, BookOpen, Users,
     Home, AlertCircle, PlayCircle, PauseCircle, MoreVertical,
-    ShieldBan, Award, UserX, Trash2, Settings, Building2, ChevronDown, ChevronUp, Pencil, X, ArrowRight
+    ShieldBan, Award, UserX, Trash2, Settings, Building2, ChevronDown, ChevronUp, Pencil, X, ArrowRight, CheckSquare
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useGetAllStudents, useUpdateStudentInfo, useDeleteStudent } from '../../../hooks/students';
+import { useBulkRemoveStudentsFromGroup } from '../../../hooks/groups';
 import { usegetTeachers } from '../../../hooks/teacher';
 import { useGetAllSubjects } from '../../../hooks/subjects';
 import { usegetProfile } from '../../../hooks/user';
@@ -207,6 +208,59 @@ const StudentDeleteModal = ({ isOpen, onClose, student, onConfirm, isLoading }) 
                             className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
                         >
                             {isLoading ? "O'chirilmoqda..." : "O'chirish"}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const BulkRemoveFromGroupModal = ({ isOpen, onClose, count, reason, onReasonChange, onConfirm, isLoading }) => {
+    if (!isOpen) return null;
+
+    return (
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3"
+            onClick={onClose}
+        >
+            <div
+                className="w-full max-w-md rounded-xl bg-white shadow-xl"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="border-b border-gray-200 p-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Talabalarni guruhdan chiqarish</h3>
+                    <p className="mt-1 text-xs text-gray-500">{count} ta talaba tanlandi</p>
+                </div>
+                <div className="space-y-3 p-4">
+                    <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+                        Tanlangan {count} ta talaba faqat o'zi biriktirilgan guruhidan chiqariladi. Boshqa talabalar yoki guruhlarga ta'sir qilmaydi.
+                    </div>
+                    <div>
+                        <label className="block text-xs font-semibold text-gray-700">Sabab (ixtiyoriy)</label>
+                        <textarea
+                            value={reason}
+                            onChange={(e) => onReasonChange(e.target.value)}
+                            rows={3}
+                            className="mt-1 w-full resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#A60E07]"
+                            placeholder="Masalan: boshqa guruhga o'tdi"
+                        />
+                    </div>
+                    <div className="flex items-center justify-end gap-2">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50"
+                        >
+                            Bekor qilish
+                        </button>
+                        <button
+                            type="button"
+                            onClick={onConfirm}
+                            disabled={isLoading}
+                            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
+                        >
+                            {isLoading ? "Chiqarilmoqda..." : "Guruhdan chiqarish"}
                         </button>
                     </div>
                 </div>
@@ -500,7 +554,14 @@ const StudentsPageInner = () => {
     ) || 1;
     const updateStudentMutation = useUpdateStudentInfo();
     const deleteStudentMutation = useDeleteStudent();
+    const bulkRemoveMutation = useBulkRemoveStudentsFromGroup();
     const notify = useGetNotify();
+
+    // Ommaviy tanlash (guruhdan chiqarish uchun)
+    const [selectionMode, setSelectionMode] = useState(false);
+    const [selectedRowKeys, setSelectedRowKeys] = useState(() => new Set());
+    const [showBulkRemoveModal, setShowBulkRemoveModal] = useState(false);
+    const [bulkRemoveReason, setBulkRemoveReason] = useState('');
 
     // Backenddan ma'lumotlarni boshqarish uchun lokal state
     const [students, setStudents] = useState([]);
@@ -632,9 +693,19 @@ const StudentsPageInner = () => {
     useEffect(() => {
         setPage(1);
         setAllStudents([]);
+        setSelectedRowKeys(new Set());
     }, [searchTerm, selectedTeacher, selectedSubject, selectedStatus, showUnassigned, teacherId, isTeacherRoute]);
 
     const filteredStudents = useMemo(() => allStudents || [], [allStudents]);
+
+    // Faqat guruhga biriktirilgan qatorlargina "guruhdan chiqarish" uchun tanlanishi mumkin
+    const selectableRows = useMemo(
+        () => filteredStudents.filter((row) => Boolean(row.group_id)),
+        [filteredStudents]
+    );
+    const allSelectableSelected = selectableRows.length > 0 &&
+        selectableRows.every((row) => selectedRowKeys.has(row.row_key));
+    const someSelectableSelected = selectableRows.some((row) => selectedRowKeys.has(row.row_key));
 
     const handleEditChange = useCallback((e) => {
         const { name, value, type } = e.target;
@@ -665,6 +736,120 @@ const StudentsPageInner = () => {
 
     const handleModalSuccess = () => {
         refetch(); // Ma'lumotlarni qayta yuklash
+    };
+
+    const handleToggleSelectionMode = () => {
+        setSelectionMode((prev) => {
+            if (prev) {
+                setSelectedRowKeys(new Set());
+            }
+            return !prev;
+        });
+    };
+
+    const handleToggleRowSelected = useCallback((rowKey) => {
+        setSelectedRowKeys((prev) => {
+            const next = new Set(prev);
+            if (next.has(rowKey)) {
+                next.delete(rowKey);
+            } else {
+                next.add(rowKey);
+            }
+            return next;
+        });
+    }, []);
+
+    const handleToggleSelectAll = () => {
+        setSelectedRowKeys((prev) => {
+            const next = new Set(prev);
+            if (allSelectableSelected) {
+                selectableRows.forEach((row) => next.delete(row.row_key));
+            } else {
+                selectableRows.forEach((row) => next.add(row.row_key));
+            }
+            return next;
+        });
+    };
+
+    const openBulkRemoveModal = () => {
+        setBulkRemoveReason('');
+        setShowBulkRemoveModal(true);
+    };
+
+    const closeBulkRemoveModal = () => {
+        if (bulkRemoveMutation.isPending) return;
+        setShowBulkRemoveModal(false);
+    };
+
+    const handleBulkRemoveConfirm = async () => {
+        const selectedRows = filteredStudents.filter(
+            (row) => selectedRowKeys.has(row.row_key) && row.group_id
+        );
+
+        if (selectedRows.length === 0) {
+            notify('err', "Guruhga biriktirilgan talaba tanlanmagan");
+            setShowBulkRemoveModal(false);
+            return;
+        }
+
+        const byGroup = new Map();
+        selectedRows.forEach((row) => {
+            const groupId = Number(row.group_id);
+            if (!byGroup.has(groupId)) byGroup.set(groupId, new Set());
+            byGroup.get(groupId).add(Number(row.id));
+        });
+
+        const trimmedReason = bulkRemoveReason.trim();
+        let removedCount = 0;
+        let skippedCount = 0;
+        let hadError = false;
+
+        notify('load');
+        for (const [groupId, studentIdSet] of byGroup.entries()) {
+            try {
+                const result = await bulkRemoveMutation.mutateAsync({
+                    group_id: groupId,
+                    student_ids: Array.from(studentIdSet),
+                    reason: trimmedReason
+                });
+                const summary = result?.summary || {};
+                removedCount += Number(summary.removed || 0);
+                skippedCount += Number(summary.skipped || 0);
+
+                const removedIds = new Set((result?.removed || []).map((item) => Number(item.student_id)));
+                const removedRowKeysForGroup = new Set(
+                    selectedRows
+                        .filter((row) => Number(row.group_id) === groupId && removedIds.has(Number(row.id)))
+                        .map((row) => row.row_key)
+                );
+
+                // Har bir guruh natijasini darhol qo'llaymiz — bitta guruh xato bersa ham,
+                // muvaffaqiyatli chiqarilganlar ro'yxatda "chiqarilgan" bo'lib qoladi
+                setAllStudents((prev) => prev.filter((row) => !removedRowKeysForGroup.has(row.row_key)));
+                setSelectedRowKeys((prev) => {
+                    const next = new Set(prev);
+                    removedRowKeysForGroup.forEach((key) => next.delete(key));
+                    return next;
+                });
+            } catch (error) {
+                hadError = true;
+                notify('err', error?.response?.data?.message || `Guruh #${groupId}dan chiqarishda xatolik yuz berdi`);
+            }
+        }
+
+        notify('dismiss');
+        if (removedCount > 0) {
+            notify(
+                'ok',
+                `${removedCount} ta talaba guruhdan chiqarildi${skippedCount ? `, ${skippedCount} tasi o'tkazib yuborildi` : ''}`
+            );
+        }
+
+        setShowBulkRemoveModal(false);
+        if (!hadError) {
+            setSelectionMode(false);
+        }
+        refetch();
     };
 
     // Barcha filterlarni tozalash
@@ -1174,6 +1359,59 @@ const StudentsPageInner = () => {
                 </div>
             )} */}
 
+            <div className="mb-3 flex flex-col gap-2 rounded-lg border border-gray-200 bg-white p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-wrap items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={handleToggleSelectionMode}
+                        className={`inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-sm font-semibold transition ${
+                            selectionMode
+                                ? 'border-[#A60E07] bg-[#A60E07] text-white'
+                                : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                        }`}
+                    >
+                        <CheckSquare className="h-4 w-4" />
+                        {selectionMode ? 'Tanlashni bekor qilish' : 'Tanlash'}
+                    </button>
+
+                    {selectionMode ? (
+                        <>
+                            <label className={`inline-flex h-9 items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-700 ${selectableRows.length === 0 ? 'opacity-60' : 'cursor-pointer'}`}>
+                                <input
+                                    type="checkbox"
+                                    checked={allSelectableSelected}
+                                    ref={(el) => {
+                                        if (el) {
+                                            el.indeterminate = someSelectableSelected && !allSelectableSelected;
+                                        }
+                                    }}
+                                    onChange={handleToggleSelectAll}
+                                    disabled={selectableRows.length === 0}
+                                    className="h-4 w-4 rounded border-gray-300 text-[#A60E07] focus:ring-[#A60E07]"
+                                />
+                                Hammasini tanlash
+                                <span className="text-xs text-gray-400">({selectableRows.length} ta guruhdagi)</span>
+                            </label>
+
+                            <span className="text-sm font-medium text-gray-600">
+                                {selectedRowKeys.size} ta tanlandi
+                            </span>
+                        </>
+                    ) : null}
+                </div>
+
+                {selectionMode && selectedRowKeys.size > 0 ? (
+                    <button
+                        type="button"
+                        onClick={openBulkRemoveModal}
+                        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-red-600 px-3 text-sm font-semibold text-white transition hover:bg-red-700"
+                    >
+                        <UserX className="h-4 w-4" />
+                        Guruhdan chiqarish ({selectedRowKeys.size})
+                    </button>
+                ) : null}
+            </div>
+
             <div className="space-y-3 md:hidden">
                 {filteredStudents.length > 0 ? (
                     filteredStudents.map((student, index) => {
@@ -1188,7 +1426,20 @@ const StudentsPageInner = () => {
                                     isNotInGroup ? 'border-orange-400 bg-orange-100' : 'border-gray-200 bg-white'
                                 }`}
                             >
-                                <div className="mb-2">
+                                <div className="mb-2 flex items-center gap-2">
+                                    {selectionMode ? (
+                                        student.group_id ? (
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedRowKeys.has(rowKey)}
+                                                onChange={() => handleToggleRowSelected(rowKey)}
+                                                className="h-4 w-4 flex-shrink-0 rounded border-gray-300 text-[#A60E07] focus:ring-[#A60E07]"
+                                                aria-label={`${student.surname} ${student.name} tanlash`}
+                                            />
+                                        ) : (
+                                            <span className="h-4 w-4 flex-shrink-0 rounded border border-dashed border-gray-300" />
+                                        )
+                                    ) : null}
                                     <div className="min-w-0">
                                         <p className="text-sm font-semibold text-gray-900">{student.surname} {student.name}</p>
                                     </div>
@@ -1416,6 +1667,23 @@ const StudentsPageInner = () => {
                 <table className="min-w-[1200px] w-full divide-y divide-gray-300 border-collapse">
                     <thead className="bg-gradient-to-r from-gray-100 to-gray-200 border-b-2 border-gray-400">
                         <tr>
+                            {selectionMode ? (
+                                <th className="w-10 px-3 py-3 text-left border-r border-gray-300 bg-gradient-to-b from-gray-100 to-gray-200">
+                                    <input
+                                        type="checkbox"
+                                        checked={allSelectableSelected}
+                                        ref={(el) => {
+                                            if (el) {
+                                                el.indeterminate = someSelectableSelected && !allSelectableSelected;
+                                            }
+                                        }}
+                                        onChange={handleToggleSelectAll}
+                                        disabled={selectableRows.length === 0}
+                                        className="h-4 w-4 rounded border-gray-300 text-[#A60E07] focus:ring-[#A60E07]"
+                                        aria-label="Hammasini tanlash"
+                                    />
+                                </th>
+                            ) : null}
                             <th className="px-4 py-3 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider min-w-[220px] border-r border-gray-300 bg-gradient-to-b from-gray-100 to-gray-200">Student ma'lumotlari</th>
                             <th className="px-4 py-3 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider min-w-[250px] border-r border-gray-300 bg-gradient-to-b from-gray-100 to-gray-200">Guruh / Kurs ma'lumotlari</th>
                             <th className="px-4 py-3 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider border-r border-gray-300 bg-gradient-to-b from-gray-100 to-gray-200">Ro'yxatdan sana</th>
@@ -1434,6 +1702,24 @@ const StudentsPageInner = () => {
                                             isNotInGroup ? 'bg-orange-100 border-l-4 border-orange-400' :
                                                 (index % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50 hover:bg-gray-100')
                                         } transition duration-150 border-b border-gray-200`}>
+                                        {selectionMode ? (
+                                            <td className="px-3 py-3 border-r border-gray-200 align-top">
+                                                {student.group_id ? (
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedRowKeys.has(rowKey)}
+                                                        onChange={() => handleToggleRowSelected(rowKey)}
+                                                        className="h-4 w-4 rounded border-gray-300 text-[#A60E07] focus:ring-[#A60E07]"
+                                                        aria-label={`${student.surname} ${student.name} tanlash`}
+                                                    />
+                                                ) : (
+                                                    <span
+                                                        className="block h-4 w-4 rounded border border-dashed border-gray-300"
+                                                        title="Guruhga biriktirilmagan"
+                                                    />
+                                                )}
+                                            </td>
+                                        ) : null}
                                         <td className="px-4 py-3 border-r border-gray-200 text-sm">
                                             {isEditing ? (
                                                 <div className="flex flex-col gap-1">
@@ -1764,6 +2050,11 @@ const StudentsPageInner = () => {
                             <>
                                 {Array.from({ length: 6 }).map((_, index) => (
                                     <tr key={`sk-d-${index}`} className="bg-white animate-pulse">
+                                        {selectionMode ? (
+                                            <td className="px-3 py-3 border-r border-gray-200">
+                                                <div className="h-4 w-4 rounded bg-gray-200"></div>
+                                            </td>
+                                        ) : null}
                                         <td className="px-4 py-3 border-r border-gray-200">
                                             <div className="space-y-2">
                                                 <div className="h-4 w-40 rounded bg-gray-200"></div>
@@ -1789,7 +2080,7 @@ const StudentsPageInner = () => {
                             </>
                         ) : showEmptyState ? (
                             <tr className="bg-white">
-                                <td colSpan="4" className="px-4 py-12 text-center text-gray-500 border-b border-gray-200">
+                                <td colSpan={selectionMode ? 5 : 4} className="px-4 py-12 text-center text-gray-500 border-b border-gray-200">
                                     <div className="flex flex-col items-center gap-4">
                                         <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
                                             <User className="h-8 w-8 text-gray-400" />
@@ -1827,6 +2118,15 @@ const StudentsPageInner = () => {
                 student={studentDeleteModal.student}
                 onConfirm={handleStudentDelete}
                 isLoading={deleteStudentMutation.isLoading}
+            />
+            <BulkRemoveFromGroupModal
+                isOpen={showBulkRemoveModal}
+                onClose={closeBulkRemoveModal}
+                count={selectedRowKeys.size}
+                reason={bulkRemoveReason}
+                onReasonChange={setBulkRemoveReason}
+                onConfirm={handleBulkRemoveConfirm}
+                isLoading={bulkRemoveMutation.isPending}
             />
             {showScrollTop && (
                 <button
