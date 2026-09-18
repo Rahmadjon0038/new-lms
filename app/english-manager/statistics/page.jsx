@@ -4,9 +4,11 @@ import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeftIcon,
+  CheckCircleIcon,
   ClockIcon,
   EyeIcon,
   MagnifyingGlassIcon,
+  XCircleIcon,
 } from "@heroicons/react/24/outline";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { instance } from "../../../hooks/api";
@@ -83,11 +85,14 @@ const formatTimeRange = (value) => {
   return cleaned;
 };
 
+// To'q, aniq ranglar — och pastel fonlar past sifatli/eski monitorlarda
+// yaxshi ko'rinmaydi, shuning uchun bu yerda doim to'liq to'q fon + oq matn
+// ishlatiladi (kontrast maksimal bo'lishi uchun).
 const statusTone = (feedback) => {
   const status = String(feedback || "").toUpperCase();
-  if (status === "PERFECT") return "bg-blue-100 text-blue-700 border-blue-200";
-  if (status === "GOOD") return "bg-emerald-100 text-emerald-700 border-emerald-200";
-  return "bg-red-100 text-red-700 border-red-200";
+  if (status === "PERFECT") return "bg-blue-600 text-white border-blue-700";
+  if (status === "GOOD") return "bg-emerald-600 text-white border-emerald-700";
+  return "bg-red-600 text-white border-red-700";
 };
 
 const cardTone = (feedback) => {
@@ -237,6 +242,45 @@ const ReportDetailTable = ({ detail }) => {
   );
 };
 
+const HomeworkStatusBlock = ({ homework }) => {
+  if (homework?.homework_text) {
+    return (
+      <div className="mt-3 rounded-xl border-2 border-indigo-300 bg-indigo-50 p-3">
+        <div className="text-[10px] font-black uppercase tracking-[0.16em] text-indigo-700">
+          Uyga vazifa berilgan
+        </div>
+        <div className="mt-1 whitespace-pre-wrap text-sm font-semibold text-gray-900">
+          {homework.homework_text}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-3 rounded-xl border-2 border-gray-300 bg-gray-100 p-3">
+      <div className="text-[10px] font-black uppercase tracking-[0.16em] text-gray-600">
+        Uyga vazifa berilmadi
+      </div>
+    </div>
+  );
+};
+
+// Dars kartochkasi ochilmagan (kengaytirilmagan) holatda ham uyga vazifa
+// berilgan-berilmaganini ko'rsatadigan kichik belgi. Qo'shni "Report
+// kutilmoqda"/"Yuborildi" piллlar bilan bir xil o'lcham/shakl (rounded-full,
+// px-3 py-1, text-xs font-black + ikonka) — shu bilan bir qatorda turganda
+// dizayn buzilmaydi.
+const HomeworkGivenBadge = ({ given }) => (
+  <span
+    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black ${
+      given ? "bg-indigo-600 text-white" : "bg-gray-500 text-white"
+    }`}
+  >
+    {given ? <CheckCircleIcon className="h-4 w-4" /> : <XCircleIcon className="h-4 w-4" />}
+    {given ? "Vazifa berilgan" : "Vazifa berilmagan"}
+  </span>
+);
+
 const StatisticsPageLoader = () => {
   return (
     <div className="flex min-h-[60vh] items-center justify-center rounded border border-gray-200 bg-white shadow-sm">
@@ -301,8 +345,8 @@ const TeacherSidebarPanel = ({ teachers, value, onChange }) => {
           onClick={() => onChange("all")}
           className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition ${
             value === "all"
-              ? "bg-[#A60E07]/10 text-[#A60E07]"
-              : "text-gray-700 hover:bg-gray-50"
+              ? "bg-[#A60E07] text-white"
+              : "text-gray-700 hover:bg-gray-100"
           }`}
         >
           <span>Barchasi</span>
@@ -323,8 +367,8 @@ const TeacherSidebarPanel = ({ teachers, value, onChange }) => {
                 onClick={() => onChange(String(teacher.teacher_id))}
                 className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition ${
                   active
-                    ? "bg-[#A60E07]/10 text-[#A60E07]"
-                    : "text-gray-700 hover:bg-gray-50"
+                    ? "bg-[#A60E07] text-white"
+                    : "text-gray-700 hover:bg-gray-100"
                 }`}
               >
                 <span className="truncate">{teacher.teacher_name}</span>
@@ -345,6 +389,7 @@ export default function EnglishManagerStatisticsPage() {
   const [selectedGroupId, setSelectedGroupId] = useState(null);
   const [expandedLessonId, setExpandedLessonId] = useState(null);
   const [detailsByLessonId, setDetailsByLessonId] = useState({});
+  const [homeworkByLessonId, setHomeworkByLessonId] = useState({});
   const [loadingLessonId, setLoadingLessonId] = useState(null);
   const [error, setError] = useState("");
   const [seenReportIds, setSeenReportIds] = useState(() => new Set());
@@ -487,6 +532,36 @@ export default function EnglishManagerStatisticsPage() {
     refetchIntervalInBackground: true,
   });
 
+  // Har bir dars kartochkasida (hatto ochilmagan holatda ham) uyga vazifa
+  // berilgan-berilmaganini ko'rsatish uchun — shu oy (va tanlangan
+  // teacher/guruh) uchun uyga vazifasi bor darslarning lesson_id ro'yxati.
+  const homeworkQuery = useQuery({
+    queryKey: ["english-manager-lessons-with-homework", month, teacherId, selectedGroupId],
+    queryFn: async () => {
+      const params = { month };
+      if (!isAllTeachersMode) {
+        if (!selectedGroupId) return [];
+        params.group_id = selectedGroupId;
+        params.teacher_id = teacherId;
+      }
+      const response = await instance.get("/api/homework/manager/lessons-with-homework", {
+        params,
+      });
+      return Array.isArray(response.data?.data) ? response.data.data : [];
+    },
+    enabled: !!month,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    refetchInterval: 15000,
+    refetchIntervalInBackground: true,
+  });
+  const homeworkLessonIds = useMemo(
+    () => new Set((homeworkQuery.data || []).map((id) => String(id))),
+    [homeworkQuery.data]
+  );
+
   const teachers = useMemo(() => teachersQuery.data ?? [], [teachersQuery.data]);
   const teacherGroups = useMemo(
     () => (Array.isArray(teacherGroupsQuery.data) ? teacherGroupsQuery.data : []),
@@ -518,6 +593,11 @@ export default function EnglishManagerStatisticsPage() {
     }
     return counts;
   }, [reports]);
+  // Yuborilgan reportlardan nechtasiga uyga vazifa berilgani — statistika
+  // qatoridagi umumiy hisoblagich uchun (PERFECT/GOOD/BAD bilan bir qatorda).
+  const homeworkGivenCount = useMemo(() => {
+    return reports.filter((report) => homeworkLessonIds.has(String(report.lesson_id))).length;
+  }, [reports, homeworkLessonIds]);
   const mixedReportsByDay = useMemo(() => {
     if (!isAllTeachersMode) return [];
 
@@ -550,13 +630,29 @@ export default function EnglishManagerStatisticsPage() {
     const willOpen = expandedLessonId !== lessonId;
     setExpandedLessonId((current) => (current === lessonId ? null : lessonId));
     if (willOpen) markReportSeen(lessonId);
-    if (detailsByLessonId[lessonId]) return;
+    if (detailsByLessonId[lessonId] && homeworkByLessonId[lessonId] !== undefined) return;
     setLoadingLessonId(lessonId);
     try {
-      const response = await instance.get(`/api/teacher-statistics/lessons/${lessonId}`);
+      const [reportResponse, homeworkResponse] = await Promise.all([
+        // Statistika hali yuborilmagan bo'lishi mumkin (masalan uyga vazifa
+        // berilgan, lekin report yo'q) — bu holatda ham UI buzilmasin,
+        // xatolikni "report yo'q" sifatida talqin qilamiz.
+        instance
+          .get(`/api/teacher-statistics/lessons/${lessonId}`)
+          .catch(() => ({ data: { data: null } })),
+        // Uy vazifasi topilmasa (berilmagan bo'lsa) ham UI buzilmasin —
+        // xatolikni "vazifa yo'q" sifatida talqin qilamiz.
+        instance
+          .get(`/api/homework/lessons/${lessonId}`)
+          .catch(() => ({ data: { data: null } })),
+      ]);
       setDetailsByLessonId((current) => ({
         ...current,
-        [lessonId]: response.data?.data || null,
+        [lessonId]: reportResponse.data?.data || null,
+      }));
+      setHomeworkByLessonId((current) => ({
+        ...current,
+        [lessonId]: homeworkResponse.data?.data || null,
       }));
     } catch (err) {
       setError(err?.response?.data?.message || "Hisobot yuklanmadi");
@@ -693,29 +789,29 @@ export default function EnglishManagerStatisticsPage() {
               <div className="flex shrink-0 flex-wrap gap-2 text-xs font-semibold text-gray-600">
                 {isAllTeachersMode ? (
                   <>
-                    <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5">
+                    <span className="rounded-full border border-gray-300 bg-gray-100 px-3 py-1.5 text-gray-800">
                       {reports.length} ta report
                     </span>
-                    <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5">
+                    <span className="rounded-full border border-gray-300 bg-gray-100 px-3 py-1.5 text-gray-800">
                       Barchasi
                     </span>
                   </>
                 ) : (
                   <>
-                    <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5">
+                    <span className="rounded-full border border-gray-300 bg-gray-100 px-3 py-1.5 text-gray-800">
                       {formatScheduleDays(selectedGroupData.schedule || selectedGroup?.schedule)}
                     </span>
-                    <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5">
+                    <span className="rounded-full border border-gray-300 bg-gray-100 px-3 py-1.5 text-gray-800">
                       {selectedGroupTime}
                     </span>
-                    <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5">
+                    <span className="rounded-full border border-gray-300 bg-gray-100 px-3 py-1.5 text-gray-800">
                       {selectedLessons.length} ta dars
                     </span>
                     <span
-                      className={`rounded-full border px-3 py-1.5 font-black ${
+                      className={`rounded-full px-3 py-1.5 font-black text-white ${
                         selectedLessons.length > 0 && reports.length >= selectedLessons.length
-                          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                          : "border-amber-200 bg-amber-50 text-amber-700"
+                          ? "bg-emerald-600"
+                          : "bg-amber-600"
                       }`}
                       title="Yuborilgan report / jami dars"
                     >
@@ -723,14 +819,20 @@ export default function EnglishManagerStatisticsPage() {
                     </span>
                   </>
                 )}
-                <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 font-black text-blue-700">
+                <span className="rounded-full bg-blue-600 px-3 py-1.5 font-black text-white">
                   {feedbackCounts.PERFECT} PERFECT
                 </span>
-                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 font-black text-emerald-700">
+                <span className="rounded-full bg-emerald-600 px-3 py-1.5 font-black text-white">
                   {feedbackCounts.GOOD} GOOD
                 </span>
-                <span className="rounded-full border border-red-200 bg-red-50 px-3 py-1.5 font-black text-red-700">
+                <span className="rounded-full bg-red-600 px-3 py-1.5 font-black text-white">
                   {feedbackCounts.BAD} BAD
+                </span>
+                <span
+                  className="rounded-full bg-indigo-600 px-3 py-1.5 font-black text-white"
+                  title="Uyga vazifa berilgan darslar / yuborilgan reportlar"
+                >
+                  {homeworkGivenCount}/{reports.length} vazifa berildi
                 </span>
               </div>
             ) : null}
@@ -797,7 +899,7 @@ export default function EnglishManagerStatisticsPage() {
                                 {isNewReport ? (
                                   <>
                                     <span className="text-gray-300">•</span>
-                                    <span className="inline-flex items-center rounded-full border border-emerald-500 bg-emerald-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">
+                                    <span className="inline-flex items-center rounded-full bg-emerald-600 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white">
                                       Yangi
                                     </span>
                                   </>
@@ -811,10 +913,11 @@ export default function EnglishManagerStatisticsPage() {
                                 <span className="truncate">Dars kunlari: {scheduleDays}</span>
                               </div>
                               <div className="flex flex-wrap items-center gap-2">
-                                <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-gray-500">
+                                <span className="inline-flex rounded-full bg-gray-200 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-gray-700">
                                   Report yuborildi
                                 </span>
-                                <span className="text-[11px] font-semibold text-gray-400">
+                                <HomeworkGivenBadge given={homeworkLessonIds.has(String(lessonId))} />
+                                <span className="text-[11px] font-semibold text-gray-500">
                                   {reportCreatedTime}
                                 </span>
                               </div>
@@ -847,6 +950,7 @@ export default function EnglishManagerStatisticsPage() {
                               ) : detail ? (
                                 <div className="space-y-4">
                                           <ReportDetailTable detail={detail} />
+                                          <HomeworkStatusBlock homework={homeworkByLessonId[lessonId]} />
                                 </div>
                               ) : (
                                 <div className="rounded border border-dashed border-gray-200 bg-white px-4 py-5 text-sm font-semibold text-gray-500">
@@ -934,12 +1038,29 @@ export default function EnglishManagerStatisticsPage() {
                         const lessonTimeLabel = report?.lesson_time || selectedGroupTime || "-";
 
                         if (!lessonHasReport) {
+                          const hasHomework = homeworkLessonIds.has(String(lessonId));
+                          const canOpenPending = hasHomework;
                           return (
                             <article
                               key={lessonId}
-                              className="overflow-hidden rounded border border-dashed border-amber-200 bg-amber-50/60 p-4 shadow-sm"
+                              role={canOpenPending ? "button" : undefined}
+                              tabIndex={canOpenPending ? 0 : undefined}
+                              onClick={canOpenPending ? () => toggleDetail(lessonId) : undefined}
+                              onKeyDown={
+                                canOpenPending
+                                  ? (event) => {
+                                      if (event.key === "Enter" || event.key === " ") {
+                                        event.preventDefault();
+                                        toggleDetail(lessonId);
+                                      }
+                                    }
+                                  : undefined
+                              }
+                              className={`overflow-hidden rounded border border-dashed border-amber-200 bg-amber-50/60 shadow-sm ${
+                                canOpenPending ? "cursor-pointer transition hover:shadow-md" : ""
+                              }`}
                             >
-                              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                              <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between">
                                 <div className="min-w-0 space-y-2">
                                   <div className="flex flex-wrap items-center gap-2 text-sm font-black text-gray-900">
                                     <span className="truncate">Guruh: {groupName}</span>
@@ -953,18 +1074,46 @@ export default function EnglishManagerStatisticsPage() {
                                     <span className="text-gray-300">•</span>
                                     <span className="truncate">Dars kunlari: {scheduleDays}</span>
                                   </div>
-                                  <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-white px-3 py-1 text-xs font-black text-amber-700">
-                                    <ClockIcon className="h-4 w-4" />
-                                    Report kutilmoqda
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <div className="inline-flex items-center gap-2 rounded-full bg-amber-600 px-3 py-1 text-xs font-black text-white">
+                                      <ClockIcon className="h-4 w-4" />
+                                      Report kutilmoqda
+                                    </div>
+                                    <HomeworkGivenBadge given={hasHomework} />
                                   </div>
                                 </div>
 
                                 <div className="flex items-center gap-2 self-end sm:self-auto">
-                                  <span className="inline-flex rounded border border-amber-200 bg-amber-100 px-3 py-1 text-xs font-black text-amber-700">
+                                  <span className="inline-flex rounded bg-amber-600 px-3 py-1 text-xs font-black text-white">
                                     Kutilmoqda
                                   </span>
+                                  {canOpenPending ? (
+                                    <button
+                                      type="button"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        toggleDetail(lessonId);
+                                      }}
+                                      className="inline-flex items-center gap-2 rounded border border-amber-300 bg-white px-3 py-2 text-xs font-bold text-amber-700 transition hover:bg-amber-50"
+                                    >
+                                      <EyeIcon className="h-4 w-4" />
+                                      {expandedLessonId === lessonId ? "Yopish" : "Ko'rish"}
+                                    </button>
+                                  ) : null}
                                 </div>
                               </div>
+
+                              {canOpenPending && expandedLessonId === lessonId ? (
+                                <div className="bg-white/60 p-3">
+                                  {loadingLessonId === lessonId ? (
+                                    <div className="rounded border border-dashed border-gray-200 bg-white px-4 py-5 text-sm font-semibold text-gray-500">
+                                      Yuklanmoqda...
+                                    </div>
+                                  ) : (
+                                    <HomeworkStatusBlock homework={homeworkByLessonId[lessonId]} />
+                                  )}
+                                </div>
+                              ) : null}
                             </article>
                           );
                         }
@@ -991,7 +1140,7 @@ export default function EnglishManagerStatisticsPage() {
                                     <span className="text-gray-300">•</span>
                                     <span className="truncate">Fan: {selectedGroupData?.subject_name || lesson.subject_name || "-"}</span>
                                     <span className="text-gray-300">•</span>
-                                    <span className="inline-flex items-center rounded-full border border-sky-200 bg-sky-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-sky-700">
+                                    <span className="inline-flex items-center rounded-full bg-sky-600 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white">
                                       Yuborildi
                                     </span>
                                   </div>
@@ -1002,14 +1151,17 @@ export default function EnglishManagerStatisticsPage() {
                                     <span className="text-gray-300">•</span>
                                     <span className="truncate">Dars kunlari: {formatScheduleDays(selectedGroupData?.schedule || selectedGroup?.schedule)}</span>
                                   </div>
-                                  <div className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-white px-3 py-1 text-xs font-black text-sky-700">
-                                    <ClockIcon className="h-4 w-4" />
-                                    Report yuborilgan
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <div className="inline-flex items-center gap-2 rounded-full bg-sky-600 px-3 py-1 text-xs font-black text-white">
+                                      <ClockIcon className="h-4 w-4" />
+                                      Report yuborilgan
+                                    </div>
+                                    <HomeworkGivenBadge given={homeworkLessonIds.has(String(lessonId))} />
                                   </div>
                                 </div>
 
                                 <div className="flex items-center gap-2 self-end sm:self-auto">
-                                  <span className="inline-flex rounded border border-sky-200 bg-sky-100 px-3 py-1 text-xs font-black text-sky-700">
+                                  <span className="inline-flex rounded bg-sky-600 px-3 py-1 text-xs font-black text-white">
                                     Ko&apos;rish mumkin
                                   </span>
                                   <button
@@ -1056,7 +1208,7 @@ export default function EnglishManagerStatisticsPage() {
                                   {isNewReport ? (
                                     <>
                                       <span className="text-gray-300">•</span>
-                                      <span className="inline-flex items-center rounded-full border border-emerald-500 bg-emerald-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">
+                                      <span className="inline-flex items-center rounded-full bg-emerald-600 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white">
                                         Yangi
                                       </span>
                                     </>
@@ -1070,10 +1222,11 @@ export default function EnglishManagerStatisticsPage() {
                                   <span className="truncate">Dars kunlari: {scheduleDays}</span>
                                 </div>
                                 <div className="flex flex-wrap items-center gap-2">
-                                  <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-gray-500">
+                                  <span className="inline-flex rounded-full bg-gray-200 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-gray-700">
                                     Report yuborildi
                                   </span>
-                                  <span className="text-[11px] font-semibold text-gray-400">
+                                  <HomeworkGivenBadge given={homeworkLessonIds.has(String(lessonId))} />
+                                  <span className="text-[11px] font-semibold text-gray-500">
                                     {reportCreatedTime}
                                   </span>
                                 </div>
@@ -1106,6 +1259,7 @@ export default function EnglishManagerStatisticsPage() {
                                 ) : detail ? (
                                   <div className="space-y-4">
                                     <ReportDetailTable detail={detail} />
+                                    <HomeworkStatusBlock homework={homeworkByLessonId[lessonId]} />
                                   </div>
                                 ) : (
                                   <div className="rounded border border-dashed border-gray-200 bg-white px-4 py-5 text-sm font-semibold text-gray-500">
